@@ -1,3 +1,25 @@
+# PARALLEL CODEX RULES — supersede lane-overlapping text below (2026-10-13)
+
+This repository currently has **seven parallel Codex lanes**. The **issue for the lane is authoritative for implementation scope**. The old "First Codex task" section below applies only to foundation issue #1. Never treat issue #1's coding checklist as an obligation for lanes #2–#7.
+
+| Lane | Issue | Branch | Exclusive owned areas |
+|---|---|---|---|
+| S0 Django backend | #1 | `codex/fatwa-foundation-20261013` | `config/**`, `apps/reference/**`, `templates/**`, `manage.py`, root deps, `tests/reference/**`, `docs/architecture/**` |
+| S1 source ingest | #2 | `codex/s1-fiqh-import-20261013` | `tools/fiqh_import/**`, `tests/fiqh_import/**`, `docs/data-ingest/**` |
+| S2 functional UI | #3 | `codex/s2-rtl-public-fixtures-20261013` | `ui_drafts/fiqh/**`, `docs/ui-api-contract/**` |
+| S3 RBAC/workflow docs validators | #4 | `codex/s3-contract-validators-20261013` | `contracts/**`, `tests/contracts/**`, `docs/contracts/**` |
+| S4 independent quality/security | #5 | `codex/s4-security-qa-20261013` | `quality/security/**`, `quality/api_contract/**`, `docs/security-review/**` |
+| S5 local infrastructure/CI | #6 | `codex/s5-infra-ci-20261013` | `infra/dev/**`, `.github/workflows/**`, `docs/operations/**` |
+| S6 product feature trace | #7 | `codex/s6-scope-product-20261013` | `docs/product/**`, `docs/release-plan/**`, `tools/feature_registry/**` |
+
+**Never edit:** `AGENTS.md`, `docs/coordination/**`, another lane's area, `main`, old Telegram bot. Do not rename shared paths without a coordinator-approved change. Each agent starts from the exact branch noted above, commits there only, and opens a **draft PR to main** without merging/deploying.
+
+The shared base is source-agnostic. User-owned source ZIPs are in ChatGPT attachments, **not automatically in the GitHub repository**. Cite actual SHA and input fixture identity when running acceptance tests; do not fabricate a pass if fixtures or PostgreSQL unavailable. Architectural and non-sensitive **development prototypes** only; Gate B NOT_PASSED, Gate C/D/E HOLD, Phase01 BLOCKED, U03/U10 76 clauses pending owner acceptance. AI and private-user operations disabled. Owner wants Figma *after* functions.
+
+See `docs/coordination/PARALLEL_EXECUTION_20261013.md` for integration sequence and agent prompts.
+
+---
+
 # AGENTS.md — Fatwa Platform (Codex development branch)
 
 ## Mission
@@ -19,7 +41,7 @@ Build a professional Arabic-first fatwa and scholarly research platform in measu
 - Services with typed interfaces and explicit domain boundaries. No unsafe implicit state transitions, hidden permission grants, or unreviewed database mutations. Configurable environment secrets and CSP/security defaults. Do not commit keys/tokens or requester data.
 - Real Postgres-backed tests and migrations. Pin project dependencies. Lint, format, system checks, unit/integration/UI/security tests in CI. Measure query counts and response performance, do not invent results. Respect crawl/rights limits.
 
-## First Codex task
+## Historical initial foundation task (#1 only; superseded by parallel lane ownership)
 1. Read issue #1 carefully. Inspect repository and state exactly what is missing.
 2. Build production-architectured **development-only** Django foundation for a public read-only reference catalog. No deployment.
 3. If provided separately by the owner, validate:
