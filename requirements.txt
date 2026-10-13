@@ -1,0 +1,9 @@
+# Exact runtime and transitive pins; Python 3.13. Install with pip --no-deps.
+Django==5.2.18
+asgiref==3.12.1
+sqlparse==0.6.0
+tzdata==2026.4
+django-htmx==1.29.0
+psycopg==3.3.6
+psycopg-binary==3.3.6
+typing_extensions==4.16.0
