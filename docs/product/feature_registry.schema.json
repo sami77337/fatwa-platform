@@ -10,7 +10,7 @@
       "const": "1.0"
     },
     "revision": {
-      "const": "S6-20261013-R1"
+      "const": "S6-20261013-R2"
     },
     "context": {
       "type": "object",
@@ -259,7 +259,7 @@
     },
     "sources": {
       "type": "array",
-      "minItems": 5,
+      "minItems": 7,
       "items": {
         "$ref": "#/$defs/source"
       }
@@ -327,7 +327,9 @@
             "_codex_input/FATWA_PINNED_ORIGINAL_479_REQUIREMENTS_REGISTRY_20261010.jsonl",
             "AGENTS.md",
             "docs/coordination/PARALLEL_EXECUTION_20261013.md",
-            "_codex_input/issue.md"
+            "_codex_input/issue.md",
+            "_codex_input/queued_issue_10.md",
+            "docs/product/D072_RELEASE_DEFERRAL.md"
           ]
         },
         "sha256": {
@@ -342,7 +344,8 @@
           "enum": [
             "LOCAL_PINNED_EXPORT",
             "REPOSITORY_MANDATE",
-            "LOCAL_TASK_COPY"
+            "LOCAL_TASK_COPY",
+            "LOCAL_DECISION_RECORD"
           ]
         }
       },
@@ -711,6 +714,52 @@
               "status"
             ]
           }
+        },
+        "release_timing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "DEFERRED_POST_FIRST_RELEASE"
+            },
+            "decision_id": {
+              "const": "D-072"
+            },
+            "recorded_date": {
+              "const": "2026-10-13"
+            },
+            "basis": {
+              "const": "OWNER_DECISION_IN_QUEUED_ISSUE"
+            },
+            "evidence_ids": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "applies_to": {
+              "const": "ALL_28_U10_CLAUSES"
+            },
+            "excluded_from_first_release": {
+              "const": true
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "decision_id",
+            "recorded_date",
+            "basis",
+            "evidence_ids",
+            "applies_to",
+            "excluded_from_first_release",
+            "scope"
+          ]
         }
       },
       "required": [

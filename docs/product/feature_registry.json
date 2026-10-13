@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "revision": "S6-20261013-R1",
+  "revision": "S6-20261013-R2",
   "context": {
     "repository": "sami77337/fatwa-platform",
     "branch": "codex/s6-scope-product-20261013",
@@ -92,6 +92,20 @@
       "sha256": "1487b1487165739a666bb22b38bea203c1d3e4225ab830d3bf2d7a097f492e84",
       "revision": "ISSUE-7-LOCAL-20261013",
       "kind": "LOCAL_TASK_COPY"
+    },
+    {
+      "id": "ISSUE_10",
+      "path": "_codex_input/queued_issue_10.md",
+      "sha256": "5c731493499ac0d3389d8dd480df6e0c5a9207d87d38d1f125be6cffdcbc56a2",
+      "revision": "ISSUE-10-LOCAL-20261013",
+      "kind": "LOCAL_TASK_COPY"
+    },
+    {
+      "id": "D072_RECORD",
+      "path": "docs/product/D072_RELEASE_DEFERRAL.md",
+      "sha256": "2cc176f8d30e2468d6d9c13c14244e30dc54f9bbc0cd1e1c994345afbe97be76",
+      "revision": "D072-20261013",
+      "kind": "LOCAL_DECISION_RECORD"
     }
   ],
   "evidence": [
@@ -7509,6 +7523,26 @@
       "start_line": 16,
       "end_line": 18,
       "text_sha256": "d63a2ec24ea6b0548dc1a95f8987f521cabbf75fc0b573f2b3cd565debc5870a"
+    },
+    {
+      "id": "TASK-D072",
+      "kind": "TASK_MANDATE",
+      "source_id": "ISSUE_10",
+      "revision": "ISSUE-10-LOCAL-20261013",
+      "decision_id": "D-072",
+      "start_line": 4,
+      "end_line": 6,
+      "text_sha256": "184f505781a00dbd02fdf19b519f40e6d78c3a1a8535cbd9f5f4eb444676fb42"
+    },
+    {
+      "id": "RECORD-D072",
+      "kind": "TASK_MANDATE",
+      "source_id": "D072_RECORD",
+      "revision": "D072-20261013",
+      "decision_id": "D-072",
+      "start_line": 3,
+      "end_line": 9,
+      "text_sha256": "07fc8fc28948a8b1c565b57258b5018f63f4e14ed6564ac8aa120b059ef0b95b"
     }
   ],
   "dependencies": [
@@ -7581,6 +7615,11 @@
       "id": "OWNER_ACCEPTED_FUNCTIONS",
       "label": "Owner acceptance of the final functional scope",
       "status": "OWNER_APPROVAL_PENDING"
+    },
+    {
+      "id": "HADITH_LIBRARY_SOURCE",
+      "label": "Owner-supplied specialist U10 Hadith Library source corpus",
+      "status": "MISSING"
     }
   ],
   "slices": [
@@ -7645,12 +7684,25 @@
       ]
     },
     {
+      "id": "HADITH_LIBRARY_POST_FIRST_RELEASE",
+      "label": "Specialized U10 Hadith Library after the first release per D-072",
+      "status": "DEFERRED",
+      "dependency_ids": [
+        "GATE_B",
+        "GATE_C",
+        "GATE_D",
+        "GATE_E",
+        "OWNER_U10",
+        "HADITH_LIBRARY_SOURCE",
+        "SOURCE_RIGHTS"
+      ]
+    },
+    {
       "id": "OTHER_SCIENCE_LATER",
       "label": "Other-science source data",
       "status": "DEFERRED",
       "dependency_ids": [
-        "OTHER_SCIENCE_SOURCE",
-        "OWNER_U10"
+        "OTHER_SCIENCE_SOURCE"
       ]
     },
     {
@@ -8810,9 +8862,9 @@
     },
     {
       "id": "FR-U10",
-      "title": "بيانات الحديث قيد الاعتماد",
-      "summary": "Preserve transmitted texts, distinct narrations, chains and attributed scholar statements with optional enrichment; generate no authenticity judgements.",
-      "classification": "OWNER_APPROVAL_PENDING",
+      "title": "مكتبة الحديث المتخصصة مؤجلة لما بعد الإصدار الأول",
+      "summary": "D-072 excludes all 28 specialist U10 clauses from the first release: narrations, isnads, narrator knowledge/criticism, hadith rulings, comparisons, advanced specialist search and associated UI. Later inclusion remains possible; exact clause acceptance is still pending.",
+      "classification": "DEFERRED",
       "owner_approval": {
         "status": "OWNER_APPROVAL_PENDING",
         "basis": "PENDING_MANDATE",
@@ -8851,7 +8903,9 @@
         "SPEC-U10-026",
         "SPEC-U10-027",
         "SPEC-U10-028",
-        "MANDATE-U03-U10"
+        "MANDATE-U03-U10",
+        "TASK-D072",
+        "RECORD-D072"
       ],
       "dependencies": [
         "GATE_B",
@@ -8859,11 +8913,12 @@
         "GATE_D",
         "GATE_E",
         "OWNER_U10",
-        "OTHER_SCIENCE_SOURCE"
+        "HADITH_LIBRARY_SOURCE",
+        "SOURCE_RIGHTS"
       ],
       "security_sensitivity": "SCHOLARLY_AUTHORITY",
-      "suggested_release_slice": "V1_KNOWLEDGE",
-      "development_scope": "BLOCKED",
+      "suggested_release_slice": "HADITH_LIBRARY_POST_FIRST_RELEASE",
+      "development_scope": "DEFERRED",
       "activation": "DISABLED",
       "implementation": {
         "status": "NOT_EVALUATED",
@@ -8877,11 +8932,13 @@
       "acceptance_criteria": [
         {
           "id": "AC-U10-01",
-          "criterion": "All 28 clauses remain pending until exact approval; U09 approval and D-068 do not approve this unit.",
+          "criterion": "D-072 excludes all 28 specialist U10 clauses and their UI from the first release. Exact clause acceptance remains pending, with no rejection or removal; D-068 human-reviewed inline citations remain planned V1 independently.",
           "source_evidence_ids": [
             "SPEC-U10-001",
             "SPEC-U10-024",
-            "SPEC-U10-028"
+            "SPEC-U10-028",
+            "TASK-D072",
+            "RECORD-D072"
           ],
           "status": "NOT_RUN"
         },
@@ -8935,7 +8992,20 @@
           ],
           "status": "NOT_RUN"
         }
-      ]
+      ],
+      "release_timing": {
+        "status": "DEFERRED_POST_FIRST_RELEASE",
+        "decision_id": "D-072",
+        "recorded_date": "2026-10-13",
+        "basis": "OWNER_DECISION_IN_QUEUED_ISSUE",
+        "evidence_ids": [
+          "TASK-D072",
+          "RECORD-D072"
+        ],
+        "applies_to": "ALL_28_U10_CLAUSES",
+        "excluded_from_first_release": true,
+        "scope": "Release timing resolved from the owner-authored queued issue; precise clause acceptance, source/rights policies and the later release remain pending. D-068 citation assistance remains planned V1 independently."
+      }
     },
     {
       "id": "FR-U11",
@@ -9946,7 +10016,6 @@
       ],
       "dependencies": [
         "OTHER_SCIENCE_SOURCE",
-        "OWNER_U10",
         "SOURCE_RIGHTS"
       ],
       "security_sensitivity": "SCHOLARLY_AUTHORITY",

@@ -10,10 +10,12 @@ export const SOURCE_PINS = Object.freeze({
   AGENTS: ['AGENTS.md', '04033feb603c07d9ea077bd64e21ea643a97b146e06c312991bd85fcaf2e2de7'],
   COORDINATION: ['docs/coordination/PARALLEL_EXECUTION_20261013.md', '58a21d2b685e7acafb82fb6286d7f6172db11d03bbc34a58f878402298c5e43f'],
   ISSUE_7: ['_codex_input/issue.md', '1487b1487165739a666bb22b38bea203c1d3e4225ab830d3bf2d7a097f492e84'],
+  ISSUE_10: ['_codex_input/queued_issue_10.md', '5c731493499ac0d3389d8dd480df6e0c5a9207d87d38d1f125be6cffdcbc56a2'],
+  D072_RECORD: ['docs/product/D072_RELEASE_DEFERRAL.md', '2cc176f8d30e2468d6d9c13c14244e30dc54f9bbc0cd1e1c994345afbe97be76'],
 });
 const APPROVAL_LINES = Object.freeze({1: 135, 2: 301, 4: 616, 5: 758, 6: 904, 7: 1034, 8: 1173, 9: 1315, 11: 1595, 12: 1734, 13: 1870, 14: 2009, 15: 2148, 16: 2271});
-const DEPENDENCY_STATES = Object.freeze({GATE_B: 'NOT_PASSED', GATE_C: 'HOLD', GATE_D: 'HOLD', GATE_E: 'HOLD', OWNER_U03: 'OWNER_APPROVAL_PENDING', OWNER_U10: 'OWNER_APPROVAL_PENDING', SOURCE_TOC: 'MISSING', SOURCE_RIGHTS: 'PENDING', PUBLIC_BASELINE: 'UNVERIFIED', OTHER_SCIENCE_SOURCE: 'MISSING', FULL_DECISION_LOG: 'MISSING', ORIGINAL_REVIEW: 'MISSING', OWNER_FEATURE_CHOICES: 'OWNER_APPROVAL_PENDING', OWNER_ACCEPTED_FUNCTIONS: 'OWNER_APPROVAL_PENDING'});
-const SLICE_STATES = Object.freeze({PUBLIC_CATALOG_DEV: 'SAFE_DEV_ONLY', POLICY_DOCS: 'DOCUMENTATION_ONLY', SENSITIVE_WORKFLOWS: 'BLOCKED', V1_KNOWLEDGE: 'BLOCKED', AI_V1_LATER: 'DEFERRED', V2_EXTERNAL: 'DEFERRED', OTHER_SCIENCE_LATER: 'DEFERRED', DESIGN_LAST: 'DEFERRED', CURRENT_EXCLUSIONS: 'OUT_OF_SCOPE'});
+const DEPENDENCY_STATES = Object.freeze({GATE_B: 'NOT_PASSED', GATE_C: 'HOLD', GATE_D: 'HOLD', GATE_E: 'HOLD', OWNER_U03: 'OWNER_APPROVAL_PENDING', OWNER_U10: 'OWNER_APPROVAL_PENDING', SOURCE_TOC: 'MISSING', SOURCE_RIGHTS: 'PENDING', PUBLIC_BASELINE: 'UNVERIFIED', OTHER_SCIENCE_SOURCE: 'MISSING', HADITH_LIBRARY_SOURCE: 'MISSING', FULL_DECISION_LOG: 'MISSING', ORIGINAL_REVIEW: 'MISSING', OWNER_FEATURE_CHOICES: 'OWNER_APPROVAL_PENDING', OWNER_ACCEPTED_FUNCTIONS: 'OWNER_APPROVAL_PENDING'});
+const SLICE_STATES = Object.freeze({PUBLIC_CATALOG_DEV: 'SAFE_DEV_ONLY', POLICY_DOCS: 'DOCUMENTATION_ONLY', SENSITIVE_WORKFLOWS: 'BLOCKED', V1_KNOWLEDGE: 'BLOCKED', AI_V1_LATER: 'DEFERRED', V2_EXTERNAL: 'DEFERRED', OTHER_SCIENCE_LATER: 'DEFERRED', HADITH_LIBRARY_POST_FIRST_RELEASE: 'DEFERRED', DESIGN_LAST: 'DEFERRED', CURRENT_EXCLUSIONS: 'OUT_OF_SCOPE'});
 const DECISION_FEATURES = Object.freeze({
   'FR-D067': ['OWNER_APPROVED', 'OWNER_APPROVED', 'POLICY_DOCS', 'DOCUMENTATION_ONLY', 'MANDATE-D067'],
   'FR-D068-V1': ['DEFERRED', 'OWNER_APPROVED', 'AI_V1_LATER', 'DEFERRED', 'MANDATE-D068'],
@@ -94,8 +96,8 @@ export function validateRegistry(registry, schema) {
   if (sources.size !== Object.keys(SOURCE_PINS).length) errors.push('sources: unexpected manifest size');
   for (const [id, [sourcePath, digest]] of Object.entries(SOURCE_PINS)) {
     const source = sources.get(id);
-    const expectedKind = ['AGENTS', 'COORDINATION'].includes(id) ? 'REPOSITORY_MANDATE' : id === 'ISSUE_7' ? 'LOCAL_TASK_COPY' : 'LOCAL_PINNED_EXPORT';
-    const expectedRevision = id === 'AGENTS' ? 'PARALLEL-RULES-20261013' : id === 'COORDINATION' ? 'PARALLEL-RUNBOOK-20261013' : id === 'ISSUE_7' ? 'ISSUE-7-LOCAL-20261013' : 'PINNED-20261010';
+    const expectedKind = ['AGENTS', 'COORDINATION'].includes(id) ? 'REPOSITORY_MANDATE' : id.startsWith('ISSUE_') ? 'LOCAL_TASK_COPY' : id === 'D072_RECORD' ? 'LOCAL_DECISION_RECORD' : 'LOCAL_PINNED_EXPORT';
+    const expectedRevision = id === 'AGENTS' ? 'PARALLEL-RULES-20261013' : id === 'COORDINATION' ? 'PARALLEL-RUNBOOK-20261013' : id === 'D072_RECORD' ? 'D072-20261013' : id.startsWith('ISSUE_') ? id.replace('_', '-') + '-LOCAL-20261013' : 'PINNED-20261010';
     if (!source || source.path !== sourcePath || source.sha256 !== digest || source.kind !== expectedKind || source.revision !== expectedRevision) errors.push('sources: pin mismatch');
   }
   for (const [id, state] of Object.entries(DEPENDENCY_STATES)) if (dependencies.get(id)?.status !== state) errors.push('dependencies: pinned blocker changed');
@@ -128,8 +130,9 @@ export function validateRegistry(registry, schema) {
     if (group.evidence_ids.some((id) => evidence.get(id)?.kind === 'CLAUSE' && evidence.get(id).clause.unit !== unit)) errors.push('coverage: clause assigned to wrong unit');
     const pending = unit === 3 || unit === 10;
     const requiredStatus = pending ? 'OWNER_APPROVAL_PENDING' : 'OWNER_APPROVED';
-    if (group.classification !== requiredStatus || group.owner_approval.status !== requiredStatus) errors.push('approval: unit status changed without exact decision');
-    if (group.development_scope !== 'BLOCKED') errors.push('scope: full product units remain blocked');
+    const requiredClassification = unit === 10 ? 'DEFERRED' : requiredStatus;
+    if (group.classification !== requiredClassification || group.owner_approval.status !== requiredStatus) errors.push('approval: unit status changed without exact decision');
+    if (group.development_scope !== (unit === 10 ? 'DEFERRED' : 'BLOCKED')) errors.push('scope: full product units remain blocked; U10 is deferred under D-072');
     for (const dep of ['GATE_B', 'GATE_C', 'GATE_D', 'GATE_E', ...(pending ? ['OWNER_' + uu] : [])]) if (!group.dependencies.includes(dep)) errors.push('dependencies: required unit blocker omitted');
     if (pending) {
       if (group.owner_approval.basis !== 'PENDING_MANDATE' || group.owner_approval.recorded_date !== null || JSON.stringify(group.owner_approval.evidence_ids) !== JSON.stringify(['MANDATE-U03-U10'])) errors.push('approval: pending unit cannot gain documentary acceptance');
@@ -143,9 +146,30 @@ export function validateRegistry(registry, schema) {
     const feature = features.get(id);
     if (!feature || feature.classification !== classification || feature.owner_approval.status !== approval || feature.suggested_release_slice !== slice || feature.development_scope !== scope || !feature.evidence_ids.includes(anchor) || !feature.owner_approval.evidence_ids.includes(anchor)) errors.push('decisions: missing or widened D067/D068/D069/D070/current-scope record');
   }
+  // D-072 resolves release timing only; it does not accept any U10 clause.
+  const hadith = features.get('FR-U10');
+  const timing = hadith?.release_timing;
+  const d072Anchors = {
+    'TASK-D072': ['ISSUE_10', 'ISSUE-10-LOCAL-20261013', 4, 6, '184f505781a00dbd02fdf19b519f40e6d78c3a1a8535cbd9f5f4eb444676fb42'],
+    'RECORD-D072': ['D072_RECORD', 'D072-20261013', 3, 9, '07fc8fc28948a8b1c565b57258b5018f63f4e14ed6564ac8aa120b059ef0b95b'],
+  };
+  for (const [id, [source, revision, start, end, digest]] of Object.entries(d072Anchors)) {
+    const anchor = evidence.get(id);
+    if (!anchor || anchor.kind !== 'TASK_MANDATE' || anchor.source_id !== source || anchor.revision !== revision || anchor.decision_id !== 'D-072' || anchor.start_line !== start || anchor.end_line !== end || anchor.text_sha256 !== digest) errors.push('D072: release timing requires exact task provenance');
+  }
+  if (!timing || timing.status !== 'DEFERRED_POST_FIRST_RELEASE' || timing.decision_id !== 'D-072' || timing.recorded_date !== '2026-10-13' || timing.basis !== 'OWNER_DECISION_IN_QUEUED_ISSUE' || timing.applies_to !== 'ALL_28_U10_CLAUSES' || timing.excluded_from_first_release !== true || JSON.stringify(timing.evidence_ids) !== JSON.stringify(Object.keys(d072Anchors)) || !Object.keys(d072Anchors).every((id) => hadith.evidence_ids.includes(id))) errors.push('D072: all 28 U10 clauses are deferred after the first release with separate pending acceptance');
+  if (hadith?.suggested_release_slice !== 'HADITH_LIBRARY_POST_FIRST_RELEASE') errors.push('D072: U10 cannot enter V1 or a broader science slice');
+  for (const dep of ['HADITH_LIBRARY_SOURCE', 'SOURCE_RIGHTS']) if (!hadith?.dependencies.includes(dep)) errors.push('D072: specialist source and rights blockers remain required');
+  for (const dep of ['GATE_B', 'GATE_C', 'GATE_D', 'GATE_E', 'OWNER_U10', 'HADITH_LIBRARY_SOURCE', 'SOURCE_RIGHTS']) if (!slices.get('HADITH_LIBRARY_POST_FIRST_RELEASE')?.dependency_ids.includes(dep)) errors.push('D072: specialist slice blocker omitted');
+  if (slices.get('OTHER_SCIENCE_LATER')?.dependency_ids.includes('OWNER_U10') || features.get('FR-D069-OTHER')?.dependencies.includes('OWNER_U10') || hadith?.dependencies.includes('OTHER_SCIENCE_SOURCE')) errors.push('D072: specialist U10 deferral is distinct from broader science sources');
+  if ([...(features.get('FR-D068-V1')?.dependencies ?? []), ...(slices.get('AI_V1_LATER')?.dependency_ids ?? [])].some((id) => ['OWNER_U10', 'HADITH_LIBRARY_SOURCE'].includes(id))) errors.push('D068: planned V1 citation assistance remains independent of U10');
   const catalog = features.get('FR-D069');
   for (const dep of ['SOURCE_TOC', 'SOURCE_RIGHTS', 'PUBLIC_BASELINE']) if (!catalog?.dependencies.includes(dep)) errors.push('catalog: required source or integration dependency omitted');
   for (const feature of registry.features) {
+    if (feature.release_timing) {
+      checkRefs(feature.release_timing.evidence_ids, evidence, 'release timing evidence', errors);
+      if (feature.id !== 'FR-U10') errors.push('D072: release timing applies only to U10');
+    }
     checkRefs(feature.evidence_ids, evidence, 'feature evidence', errors);
     checkRefs(feature.owner_approval.evidence_ids, evidence, 'approval evidence', errors);
     checkRefs(feature.dependencies, dependencies, 'feature dependencies', errors);
@@ -236,7 +260,7 @@ export async function main(args = process.argv.slice(2)) {
     }
     bytesById = new Map();
     for (const source of registry.sources) {
-      if (source.kind === 'REPOSITORY_MANDATE') bytesById.set(source.id, await readContained(root, source.path));
+      if (['REPOSITORY_MANDATE', 'LOCAL_DECISION_RECORD'].includes(source.kind)) bytesById.set(source.id, await readContained(root, source.path));
       else if (sourceDir) bytesById.set(source.id, await readContained(sourceDir, path.basename(source.path)));
     }
     const errors = verifySourceBytes(registry, bytesById);
@@ -249,6 +273,8 @@ export async function main(args = process.argv.slice(2)) {
   }
   console.log('REGISTRY PASS: ' + registry.features.length + ' feature groups; 479 exact clause anchors; U03=48/U10=28 pending');
   console.log('REPOSITORY_EVIDENCE PASS: AGENTS and coordination SHA256/line anchors');
+  console.log('D072_RECORD PASS: tracked task-derived summary SHA256/line anchors; U10 post-first-release; exact acceptance pending; D068 planned V1 unchanged');
+  console.log(sourceDir ? 'TASK_EVIDENCE PASS: issue 7 and queued issue 10 SHA256/line anchors; live Decision Log NOT_VERIFIED' : 'TASK_EVIDENCE NOT_RUN: ignored issue copies not read; live Decision Log NOT_VERIFIED');
   console.log(sourceDir ? 'PINNED_ORIGINALS PASS: both source SHA256 pins, 479 identities, line ranges, clause hashes and approval anchors' : 'PINNED_ORIGINALS NOT_RUN: use --source-dir with the ignored local exports');
   console.log('PRODUCT_ACCEPTANCE NOT_RUN: ' + registry.features.reduce((n, f) => n + f.acceptance_criteria.length, 0) + ' planned group criteria; no integrated product or TOC fixture tested');
   console.log('NOT_DEPLOYED / GATES_HOLD: B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; all product activation DISABLED');
