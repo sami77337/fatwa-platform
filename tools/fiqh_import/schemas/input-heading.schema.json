@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical book 622 heading input (JSON/JSONL)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "parent_id",
+    "title",
+    "sibling_order",
+    "part",
+    "page",
+    "title_origin"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\S(?:.*\\S)?$"
+    },
+    "parent_id": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "sibling_order": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$",
+          "maxLength": 18
+        }
+      ]
+    },
+    "part": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "pattern": "^0*[1-9][0-9]*$",
+          "maxLength": 18
+        },
+        {
+          "const": "المقدمة"
+        }
+      ]
+    },
+    "page": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036854775807
+        },
+        {
+          "type": "string",
+          "pattern": "^0*[1-9][0-9]*$",
+          "maxLength": 18
+        }
+      ]
+    },
+    "title_origin": {
+      "enum": [
+        "direct",
+        "inferred"
+      ]
+    },
+    "edition": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "inference_evidence": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "root_kind": {
+      "enum": [
+        "introduction",
+        "fiqh_book",
+        null
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "title_origin": {
+            "const": "inferred"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "inference_evidence"
+        ],
+        "properties": {
+          "inference_evidence": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "inference_evidence": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "parent_id": {
+            "type": "string"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "root_kind": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

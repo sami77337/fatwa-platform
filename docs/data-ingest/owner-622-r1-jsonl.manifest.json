@@ -1,0 +1,11 @@
+{
+  "dataset_id": "owner-622-complete-toc-r1-20261011-jsonl",
+  "source_kind": "owner_supplied",
+  "book_id": "622",
+  "edition": "كشاف القناع عن متن الإقناع — طبعة وزارة العدل السعودية — الكتاب 622 في المكتبة الشاملة",
+  "provenance": "Owner-supplied archive FATWA_622_FIQH_COMPLETE_TOC_11397_20261011.zip; archive SHA256 82a797806430635350decdde27d07fe41fb1278838c8173dc4080f9d109957ce; member FATWA_622_FIQH_COMPLETE/622_الفهرس_كامل_11397.jsonl; direct original Lucene titles keyed 622-id, independently compared with supplied ID/title CSV; source db SHA256 67a2eaf08503814df654459a734fca7df3901d8e0f050259e8828df0cb5ba1ec; source title.zip SHA256 0e40043a8981cfca1c733e6cf6a5f6e9d9bc0e40912f931218a6577dd3d04096 (upstream hashes declared in owner archive, upstream files not supplied).",
+  "input_sha256": "37544f6122ef72fb6bd908556ffb41821b235be28bcbd1413752042dbac01d14",
+  "expected_nodes": 11397,
+  "expected_roots": 32,
+  "expected_max_depth": 5
+}

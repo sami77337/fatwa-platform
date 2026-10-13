@@ -1,0 +1,11 @@
+{
+  "dataset_id": "synthetic-five-level-v1",
+  "source_kind": "synthetic",
+  "book_id": "622",
+  "edition": "SYNTHETIC TEST EDITION — not an original source",
+  "provenance": "Locally generated S1 test headings; not Shamela source data.",
+  "input_sha256": "fa37b33efc506f3deb9f8d2f32223ef8bce85c9748fb840061b359437b3c94d3",
+  "expected_nodes": 7,
+  "expected_roots": 2,
+  "expected_max_depth": 5
+}
