@@ -1,0 +1,70 @@
+[
+  {
+    "id": "intro",
+    "parent_id": null,
+    "title": "مقدمة اصطناعية للاختبار فقط",
+    "sibling_order": 0,
+    "part": 1,
+    "page": 1,
+    "title_origin": "direct",
+    "root_kind": "introduction"
+  },
+  {
+    "id": "book",
+    "parent_id": null,
+    "title": "كتاب فقهي اصطناعي للاختبار فقط",
+    "sibling_order": 1,
+    "part": 1,
+    "page": 2,
+    "title_origin": "direct",
+    "root_kind": "fiqh_book"
+  },
+  {
+    "id": "chapter",
+    "parent_id": "book",
+    "title": "  بَابُ إِجَارَةٍ اصطناعي  ",
+    "sibling_order": 0,
+    "part": "01",
+    "page": "007",
+    "title_origin": "direct"
+  },
+  {
+    "id": "section",
+    "parent_id": "chapter",
+    "title": "فصل اصطناعي",
+    "sibling_order": 0,
+    "part": 1,
+    "page": 8,
+    "title_origin": "direct"
+  },
+  {
+    "id": "branch",
+    "parent_id": "section",
+    "title": "فرع اصطناعي",
+    "sibling_order": 0,
+    "part": 1,
+    "page": 9,
+    "title_origin": "direct"
+  },
+  {
+    "id": "leaf",
+    "parent_id": "branch",
+    "title": "عنوان استدلالي اصطناعي",
+    "sibling_order": 0,
+    "part": 1,
+    "page": 10,
+    "title_origin": "inferred",
+    "inference_evidence": "Synthetic fixture: explicit inference label, no scholarly claim."
+  },
+  {
+    "id": "sibling",
+    "parent_id": "book",
+    "title": "باب ثان اصطناعي",
+    "sibling_order": 2,
+    "part": 1,
+    "page": 11,
+    "title_origin": "direct",
+    "edition": "Synthetic per-heading edition override",
+    "provenance": "Synthetic per-heading provenance override"
+  }
+]
