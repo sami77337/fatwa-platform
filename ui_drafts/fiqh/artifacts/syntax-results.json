@@ -1,0 +1,42 @@
+[
+  {
+    "path": "ui_drafts/fiqh/api.js",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/app.js",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/fixture.js",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/server.mjs",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/tests/api.test.mjs",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/tests/browser.mjs",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/tests/server.test.mjs",
+    "code": 0,
+    "stderr": ""
+  },
+  {
+    "path": "ui_drafts/fiqh/tests/source-identity.test.mjs",
+    "code": 0,
+    "stderr": ""
+  }
+]
