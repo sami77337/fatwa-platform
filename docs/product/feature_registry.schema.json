@@ -1,0 +1,784 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fatwa-platform:s6:feature-registry:1.0",
+  "title": "S6 source-backed feature registry",
+  "description": "Derived metadata only; approval, release planning and implementation evidence are independent.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "revision": {
+      "const": "S6-20261013-R2"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "const": "sami77337/fatwa-platform"
+        },
+        "branch": {
+          "const": "codex/s6-scope-product-20261013"
+        },
+        "base_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "production_status": {
+          "const": "NOT_DEPLOYED"
+        },
+        "gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "B": {
+              "const": "NOT_PASSED"
+            },
+            "C": {
+              "const": "HOLD"
+            },
+            "D": {
+              "const": "HOLD"
+            },
+            "E": {
+              "const": "HOLD"
+            },
+            "Phase01": {
+              "const": "BLOCKED"
+            }
+          },
+          "required": [
+            "B",
+            "C",
+            "D",
+            "E",
+            "Phase01"
+          ]
+        },
+        "pending_units": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "U03": {
+              "const": 48
+            },
+            "U10": {
+              "const": 28
+            }
+          },
+          "required": [
+            "U03",
+            "U10"
+          ]
+        },
+        "historical_permissions": {
+          "const": 70
+        },
+        "permission_binding": {
+          "const": "NONE_CANDIDATE_BINDING_ONLY"
+        },
+        "default_access": {
+          "const": "DENY_DEFAULT"
+        },
+        "draft_transitions": {
+          "const": 58
+        },
+        "domain_transaction_is_principal": {
+          "const": false
+        },
+        "product_operations_enabled": {
+          "const": false
+        },
+        "ai_enabled": {
+          "const": false
+        },
+        "source_book": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "const": 622
+            },
+            "kind": {
+              "const": "FIQH_TOC_METADATA"
+            },
+            "tradition": {
+              "const": "HANBALI"
+            },
+            "is_global_taxonomy": {
+              "const": false
+            },
+            "is_published_fatwa_corpus": {
+              "const": false
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "tradition",
+            "is_global_taxonomy",
+            "is_published_fatwa_corpus"
+          ]
+        }
+      },
+      "required": [
+        "repository",
+        "branch",
+        "base_sha",
+        "production_status",
+        "gates",
+        "pending_units",
+        "historical_permissions",
+        "permission_binding",
+        "default_access",
+        "draft_transitions",
+        "domain_transaction_is_principal",
+        "product_operations_enabled",
+        "ai_enabled",
+        "source_book"
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "clauses_available": {
+          "const": 479
+        },
+        "clauses_traced": {
+          "const": 479
+        },
+        "unit_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "U01": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U02": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U03": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U04": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U05": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U06": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U07": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U08": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U09": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U10": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U11": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U12": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U13": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U14": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U15": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "U16": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "U01",
+            "U02",
+            "U03",
+            "U04",
+            "U05",
+            "U06",
+            "U07",
+            "U08",
+            "U09",
+            "U10",
+            "U11",
+            "U12",
+            "U13",
+            "U14",
+            "U15",
+            "U16"
+          ]
+        },
+        "granularity": {
+          "const": "UNIT_GROUPS_WITH_EXACT_CLAUSE_ANCHORS"
+        },
+        "acceptance_status": {
+          "const": "PLANNED_GROUP_CHECKS_NOT_EXHAUSTIVE_CLAUSE_TESTS"
+        },
+        "full_original_scope_reconciled": {
+          "const": false
+        }
+      },
+      "required": [
+        "clauses_available",
+        "clauses_traced",
+        "unit_counts",
+        "granularity",
+        "acceptance_status",
+        "full_original_scope_reconciled"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 7,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "slices": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/slice"
+      }
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/feature"
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "revision",
+    "context",
+    "coverage",
+    "sources",
+    "evidence",
+    "dependencies",
+    "slices",
+    "features"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "path": {
+          "type": "string",
+          "enum": [
+            "_codex_input/FATWA_PINNED_ORIGINAL_PRODUCT_SPEC_TEXT_20261010.txt",
+            "_codex_input/FATWA_PINNED_ORIGINAL_479_REQUIREMENTS_REGISTRY_20261010.jsonl",
+            "AGENTS.md",
+            "docs/coordination/PARALLEL_EXECUTION_20261013.md",
+            "_codex_input/issue.md",
+            "_codex_input/queued_issue_10.md",
+            "docs/product/D072_RELEASE_DEFERRAL.md"
+          ]
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "LOCAL_PINNED_EXPORT",
+            "REPOSITORY_MANDATE",
+            "LOCAL_TASK_COPY",
+            "LOCAL_DECISION_RECORD"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "sha256",
+        "revision",
+        "kind"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "CLAUSE",
+            "APPROVAL_MARKER",
+            "REPOSITORY_MANDATE",
+            "TASK_MANDATE"
+          ]
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_id": {
+          "$ref": "#/$defs/id"
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "text_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "clause": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "unit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16
+            },
+            "number": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+$"
+            },
+            "index_line": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 479
+            }
+          },
+          "required": [
+            "unit",
+            "number",
+            "index_line"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "source_id",
+        "revision",
+        "decision_id",
+        "start_line",
+        "end_line",
+        "text_sha256"
+      ]
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "NOT_PASSED",
+            "HOLD",
+            "OWNER_APPROVAL_PENDING",
+            "MISSING",
+            "PENDING",
+            "UNVERIFIED"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "status"
+      ]
+    },
+    "slice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "SAFE_DEV_ONLY",
+            "DOCUMENTATION_ONLY",
+            "BLOCKED",
+            "DEFERRED",
+            "OUT_OF_SCOPE"
+          ]
+        },
+        "dependency_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "status",
+        "dependency_ids"
+      ]
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "classification": {
+          "type": "string",
+          "enum": [
+            "OWNER_APPROVED",
+            "OWNER_APPROVAL_PENDING",
+            "PROPOSED",
+            "SUPERSEDED",
+            "DEFERRED",
+            "OUT_OF_SCOPE",
+            "IMPLEMENTED_VERIFIED",
+            "UNKNOWN"
+          ]
+        },
+        "owner_approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "OWNER_APPROVED",
+                "OWNER_APPROVAL_PENDING",
+                "UNKNOWN"
+              ]
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "DOCUMENTARY_UNIT_RECORD",
+                "PENDING_MANDATE",
+                "REPOSITORY_DECISION_RECORD",
+                "NOT_RECORDED"
+              ]
+            },
+            "evidence_ids": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "recorded_date": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "basis",
+            "evidence_ids",
+            "recorded_date",
+            "scope"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "security_sensitivity": {
+          "type": "string",
+          "enum": [
+            "DOCUMENTATION",
+            "PUBLIC_METADATA",
+            "PRIVATE_CASE_DATA",
+            "SCHOLARLY_AUTHORITY",
+            "EXTERNAL_PROVIDER",
+            "ACCESS_CONTROL"
+          ]
+        },
+        "suggested_release_slice": {
+          "$ref": "#/$defs/id"
+        },
+        "development_scope": {
+          "type": "string",
+          "enum": [
+            "BLOCKED",
+            "DOCUMENTATION_ONLY",
+            "READ_ONLY_DEV",
+            "DEFERRED",
+            "PROHIBITED"
+          ]
+        },
+        "activation": {
+          "const": "DISABLED"
+        },
+        "implementation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "NOT_EVALUATED",
+                "NOT_IMPLEMENTED",
+                "IMPLEMENTED_UNVERIFIED",
+                "IMPLEMENTED_VERIFIED"
+              ]
+            },
+            "evidence_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          },
+          "required": [
+            "status",
+            "evidence_ids"
+          ]
+        },
+        "test_status": {
+          "type": "string",
+          "enum": [
+            "NOT_RUN",
+            "FAIL",
+            "PASS"
+          ]
+        },
+        "owner_removal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "NOT_DECIDED",
+                "REMOVAL_PENDING",
+                "REMOVED"
+              ]
+            },
+            "evidence_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          },
+          "required": [
+            "status",
+            "evidence_ids"
+          ]
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "criterion": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_evidence_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "NOT_RUN",
+                  "FAIL",
+                  "PASS"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "criterion",
+              "source_evidence_ids",
+              "status"
+            ]
+          }
+        },
+        "release_timing": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "DEFERRED_POST_FIRST_RELEASE"
+            },
+            "decision_id": {
+              "const": "D-072"
+            },
+            "recorded_date": {
+              "const": "2026-10-13"
+            },
+            "basis": {
+              "const": "OWNER_DECISION_IN_QUEUED_ISSUE"
+            },
+            "evidence_ids": {
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "applies_to": {
+              "const": "ALL_28_U10_CLAUSES"
+            },
+            "excluded_from_first_release": {
+              "const": true
+            },
+            "scope": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "status",
+            "decision_id",
+            "recorded_date",
+            "basis",
+            "evidence_ids",
+            "applies_to",
+            "excluded_from_first_release",
+            "scope"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "summary",
+        "classification",
+        "owner_approval",
+        "evidence_ids",
+        "dependencies",
+        "security_sensitivity",
+        "suggested_release_slice",
+        "development_scope",
+        "activation",
+        "implementation",
+        "test_status",
+        "owner_removal",
+        "acceptance_criteria"
+      ]
+    }
+  }
+}
