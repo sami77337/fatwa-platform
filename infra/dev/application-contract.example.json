@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "status": "EXAMPLE_ONLY_DO_NOT_ACTIVATE",
+  "settings_module": "S0.SETTINGS_MODULE",
+  "dependency_files": [
+    "S0_DECLARED_REQUIREMENTS_FILE"
+  ],
+  "database_env": {
+    "DATABASE_URL": "url"
+  },
+  "commands": {
+    "install": [
+      [
+        "python",
+        "-m",
+        "pip",
+        "install",
+        "--requirement",
+        "S0_DECLARED_REQUIREMENTS_FILE"
+      ]
+    ],
+    "lint": [
+      [
+        "python",
+        "-m",
+        "ruff",
+        "check",
+        "."
+      ]
+    ],
+    "format": [
+      [
+        "python",
+        "-m",
+        "ruff",
+        "format",
+        "--check",
+        "."
+      ]
+    ],
+    "type": [
+      [
+        "python",
+        "-m",
+        "mypy",
+        "S0_DECLARED_TYPE_TARGET"
+      ]
+    ],
+    "system": [
+      [
+        "python",
+        "manage.py",
+        "check"
+      ]
+    ],
+    "migration": [
+      [
+        "python",
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ]
+    ],
+    "tests": [
+      [
+        "python",
+        "manage.py",
+        "test",
+        "S0_DECLARED_TEST_TARGET"
+      ]
+    ]
+  }
+}
