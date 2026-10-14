@@ -1,0 +1,29 @@
+Command: node --test ui_drafts/fiqh/tests/api.test.mjs ui_drafts/fiqh/tests/server.test.mjs ui_drafts/fiqh/tests/source-identity.test.mjs
+Exit: 0
+✔ synthetic fixture: 11,397 unique headings / 32 roots / 30 books / depth 5 (2.2516ms)
+✔ catalog returns 30 books and 2 introductions without all descendant nodes (2.307ms)
+✔ children are lazy and paged, with reversible opaque cursor handling (30.1936ms)
+✔ anchored sibling page reveals search hit without loading all intervening nodes (45.326ms)
+✔ detail returns the exact parent trail at depth five (15.4524ms)
+✔ Arabic search normalizes marks and alef without mutating original titles (40.7187ms)
+✔ invalid query, cursor, root and unknown node fail explicitly (35.8748ms)
+✔ mock responses are copies and cannot mutate the fixture (31.0373ms)
+✔ aborted lazy requests reject instead of delivering stale data (0.3584ms)
+✔ public projection drops unknown private fields and rejects fatwa content (0.2949ms)
+✔ read-only adapter rejects cross-origin and ambiguous API bases (0.2061ms)
+✔ integration requests are GET-only, credential-free, bounded and URL-encoded (13.8869ms)
+✔ integration adapter validates catalog, children, detail and anchored pages (62.7988ms)
+✔ integration adapter rejects wrong parents, roots, breadcrumb edges and oversize pages (30.8168ms)
+✔ integration adapter rejects invalid JSON, wrong media type, HTTP errors and oversized streams (1.038ms)
+✔ search is literal rather than treating user input as a regular expression (21.8701ms)
+✔ integration rejects source drift, impossible root/leaf shapes and out-of-order siblings (2.789ms)
+✔ local preview serves only public kit assets and denies mutations (32.0408ms)
+✔ supplied book-622 ZIP matches expected SHA256 (identity only, no source-heading acceptance) (4.9716ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 413.6364

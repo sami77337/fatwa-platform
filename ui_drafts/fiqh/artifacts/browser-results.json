@@ -1,0 +1,7 @@
+{
+  "fixture_id": "s2-synthetic-11397-v1",
+  "status": "BLOCKED_BEFORE_UI_INITIALIZATION",
+  "completed_checks": 0,
+  "tests": [],
+  "failure": "Error: CDP timeout: Page.enable"
+}
