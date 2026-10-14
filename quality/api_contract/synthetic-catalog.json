@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "identity": "s4-public-catalog-synthetic-v1",
+  "synthetic": true,
+  "source": {
+    "book_id": "622",
+    "work_title": "SYNTHETIC_REFERENCE_622_NOT_SOURCE_TEXT",
+    "edition": "SYNTHETIC_MOJ_EDITION_NOT_VERIFIED",
+    "school": "hanbali",
+    "catalog_kind": "source_table_of_contents",
+    "fixture_id": "s4-public-catalog-synthetic-v1"
+  },
+  "public_nodes": [
+    {
+      "id": "s4-root-a",
+      "parent_id": null,
+      "title": "اختبار مرجع ألف",
+      "order": 1,
+      "printed_part": 1,
+      "printed_page": 1,
+      "has_children": true,
+      "source": {
+        "book_id": "622",
+        "work_title": "SYNTHETIC_REFERENCE_622_NOT_SOURCE_TEXT",
+        "edition": "SYNTHETIC_MOJ_EDITION_NOT_VERIFIED",
+        "school": "hanbali",
+        "catalog_kind": "source_table_of_contents",
+        "fixture_id": "s4-public-catalog-synthetic-v1"
+      }
+    },
+    {
+      "id": "s4-root-b",
+      "parent_id": null,
+      "title": "اختبار مرجع باء",
+      "order": 2,
+      "printed_part": 1,
+      "printed_page": 2,
+      "has_children": false,
+      "source": {
+        "book_id": "622",
+        "work_title": "SYNTHETIC_REFERENCE_622_NOT_SOURCE_TEXT",
+        "edition": "SYNTHETIC_MOJ_EDITION_NOT_VERIFIED",
+        "school": "hanbali",
+        "catalog_kind": "source_table_of_contents",
+        "fixture_id": "s4-public-catalog-synthetic-v1"
+      }
+    },
+    {
+      "id": "s4-child-a",
+      "parent_id": "s4-root-a",
+      "title": "اختبار فرع تجريبي",
+      "order": 3,
+      "printed_part": 1,
+      "printed_page": 3,
+      "has_children": false,
+      "source": {
+        "book_id": "622",
+        "work_title": "SYNTHETIC_REFERENCE_622_NOT_SOURCE_TEXT",
+        "edition": "SYNTHETIC_MOJ_EDITION_NOT_VERIFIED",
+        "school": "hanbali",
+        "catalog_kind": "source_table_of_contents",
+        "fixture_id": "s4-public-catalog-synthetic-v1"
+      }
+    },
+    {
+      "id": "s4-child-xss",
+      "parent_id": "s4-root-a",
+      "title": "اختبار فرع <img src=x onerror=alert('S4_XSS')>",
+      "order": 4,
+      "printed_part": 1,
+      "printed_page": 4,
+      "has_children": false,
+      "source": {
+        "book_id": "622",
+        "work_title": "SYNTHETIC_REFERENCE_622_NOT_SOURCE_TEXT",
+        "edition": "SYNTHETIC_MOJ_EDITION_NOT_VERIFIED",
+        "school": "hanbali",
+        "catalog_kind": "source_table_of_contents",
+        "fixture_id": "s4-public-catalog-synthetic-v1"
+      }
+    }
+  ],
+  "private_canaries": {
+    "lookup": "محجوب",
+    "hidden_node_id": "s4-hidden-901",
+    "markers": [
+      "S4_SYNTHETIC_REQUESTER_PRIVATE_901",
+      "S4_SYNTHETIC_UNAPPROVED_FATWA_902",
+      "S4_SYNTHETIC_USER_CONTACT_903"
+    ]
+  }
+}

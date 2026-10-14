@@ -1,0 +1,412 @@
+TAP version 13
+# Subtest: CLI documents local-only arguments without contacting a server
+ok 1 - CLI documents local-only arguments without contacting a server
+  ---
+  duration_ms: 104.8606
+  type: 'test'
+  ...
+# Subtest: CLI rejects external target origins and does not echo credentials
+ok 2 - CLI rejects external target origins and does not echo credentials
+  ---
+  duration_ms: 186.4857
+  type: 'test'
+  ...
+# Subtest: CLI rejects ambiguous or missing configuration arguments
+ok 3 - CLI rejects ambiguous or missing configuration arguments
+  ---
+  duration_ms: 294.0821
+  type: 'test'
+  ...
+# Subtest: CLI rejects outputs outside S4 before probing a server
+ok 4 - CLI rejects outputs outside S4 before probing a server
+  ---
+  duration_ms: 278.3205
+  type: 'test'
+  ...
+# Subtest: typed fixture and proposed profile validate without treating them as owner source data
+ok 5 - typed fixture and proposed profile validate without treating them as owner source data
+  ---
+  duration_ms: 1.293
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: extra top-level field
+ok 6 - rejects invalid fixture: extra top-level field
+  ---
+  duration_ms: 0.3386
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: nonsynthetic fixture
+ok 7 - rejects invalid fixture: nonsynthetic fixture
+  ---
+  duration_ms: 0.1103
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: wrong fixture identity
+ok 8 - rejects invalid fixture: wrong fixture identity
+  ---
+  duration_ms: 0.0953
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: duplicate identifier
+ok 9 - rejects invalid fixture: duplicate identifier
+  ---
+  duration_ms: 0.1247
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: missing parent
+ok 10 - rejects invalid fixture: missing parent
+  ---
+  duration_ms: 0.1031
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: self cycle
+ok 11 - rejects invalid fixture: self cycle
+  ---
+  duration_ms: 0.0945
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: incorrect children flag
+ok 12 - rejects invalid fixture: incorrect children flag
+  ---
+  duration_ms: 0.1157
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: private marker in public title
+ok 13 - rejects invalid fixture: private marker in public title
+  ---
+  duration_ms: 0.1795
+  type: 'test'
+  ...
+# Subtest: rejects invalid fixture: private marker sent as lookup
+ok 14 - rejects invalid fixture: private marker sent as lookup
+  ---
+  duration_ms: 0.1595
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: extra config field
+ok 15 - rejects invalid profile: extra config field
+  ---
+  duration_ms: 0.1391
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: external route
+ok 16 - rejects invalid profile: external route
+  ---
+  duration_ms: 0.0933
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: relative route
+ok 17 - rejects invalid profile: relative route
+  ---
+  duration_ms: 0.0709
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: traversal
+ok 18 - rejects invalid profile: traversal
+  ---
+  duration_ms: 0.063
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: missing placeholder
+ok 19 - rejects invalid profile: missing placeholder
+  ---
+  duration_ms: 0.0543
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: unbounded page size
+ok 20 - rejects invalid profile: unbounded page size
+  ---
+  duration_ms: 0.0662
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: relaxed forbidden status
+ok 21 - rejects invalid profile: relaxed forbidden status
+  ---
+  duration_ms: 0.0859
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: unbounded timeout
+ok 22 - rejects invalid profile: unbounded timeout
+  ---
+  duration_ms: 0.0773
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: duplicate params
+ok 23 - rejects invalid profile: duplicate params
+  ---
+  duration_ms: 0.056
+  type: 'test'
+  ...
+# Subtest: rejects invalid profile: forbidden/public overlap
+ok 24 - rejects invalid profile: forbidden/public overlap
+  ---
+  duration_ms: 0.5443
+  type: 'test'
+  ...
+# Subtest: node schema rejects private fields, altered edition and invalid citations
+ok 25 - node schema rejects private fields, altered edition and invalid citations
+  ---
+  duration_ms: 0.1193
+  type: 'test'
+  ...
+# Subtest: JSON oracle rejects malformed content, wrong content type and noninteger counts
+ok 26 - JSON oracle rejects malformed content, wrong content type and noninteger counts
+  ---
+  duration_ms: 0.4894
+  type: 'test'
+  ...
+# Subtest: pagination oracle rejects malicious, duplicate or inconsistent next links
+ok 27 - pagination oracle rejects malicious, duplicate or inconsistent next links
+  ---
+  duration_ms: 6.8399
+  type: 'test'
+  ...
+# Subtest: rejection oracle rejects debug traces, private error fields and redirects
+ok 28 - rejection oracle rejects debug traces, private error fields and redirects
+  ---
+  duration_ms: 0.3602
+  type: 'test'
+  ...
+# Subtest: read-only oracle rejects CSRF masking and mutating Allow headers
+ok 29 - read-only oracle rejects CSRF masking and mutating Allow headers
+  ---
+  duration_ms: 0.1694
+  type: 'test'
+  ...
+# Subtest: private canaries are caught in JSON escapes, HTML entities, percent encodings and headers
+ok 30 - private canaries are caught in JSON escapes, HTML entities, percent encodings and headers
+  ---
+  duration_ms: 0.1644
+  type: 'test'
+  ...
+# Subtest: restrictive CSP cannot be weakened by script overrides or duplicate directives
+ok 31 - restrictive CSP cannot be weakened by script overrides or duplicate directives
+  ---
+  duration_ms: 0.1833
+  type: 'test'
+  ...
+# Subtest: HTML oracle accepts escaped fixture text and rejects executable XSS and missing form token
+ok 32 - HTML oracle accepts escaped fixture text and rejects executable XSS and missing form token
+  ---
+  duration_ms: 0.9531
+  type: 'test'
+  ...
+# Subtest: canonical snapshots ignore key order and catch public catalog drift
+ok 33 - canonical snapshots ignore key order and catch public catalog drift
+  ---
+  duration_ms: 0.1145
+  type: 'test'
+  ...
+# Subtest: safe synthetic model passes positive and negative probes with public state snapshots
+ok 34 - safe synthetic model passes positive and negative probes with public state snapshots
+  ---
+  duration_ms: 37.5504
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: deny-all
+ok 35 - rejects deliberately unsafe synthetic target: deny-all
+  ---
+  duration_ms: 0.2757
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: private-field
+ok 36 - rejects deliberately unsafe synthetic target: private-field
+  ---
+  duration_ms: 0.2478
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: private-header
+ok 37 - rejects deliberately unsafe synthetic target: private-header
+  ---
+  duration_ms: 0.2152
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: wrong-source
+ok 38 - rejects deliberately unsafe synthetic target: wrong-source
+  ---
+  duration_ms: 0.2443
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: oversized-page
+ok 39 - rejects deliberately unsafe synthetic target: oversized-page
+  ---
+  duration_ms: 0.1749
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: cross-origin-page
+ok 40 - rejects deliberately unsafe synthetic target: cross-origin-page
+  ---
+  duration_ms: 0.2013
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: no-security-headers
+ok 41 - rejects deliberately unsafe synthetic target: no-security-headers
+  ---
+  duration_ms: 0.1661
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: sql-injection
+ok 42 - rejects deliberately unsafe synthetic target: sql-injection
+  ---
+  duration_ms: 19.2904
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: reflects-xss
+ok 43 - rejects deliberately unsafe synthetic target: reflects-xss
+  ---
+  duration_ms: 18.8037
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: missing-csrf
+ok 44 - rejects deliberately unsafe synthetic target: missing-csrf
+  ---
+  duration_ms: 18.2654
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: open-redirect
+ok 45 - rejects deliberately unsafe synthetic target: open-redirect
+  ---
+  duration_ms: 17.9132
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: allows-write
+ok 46 - rejects deliberately unsafe synthetic target: allows-write
+  ---
+  duration_ms: 17.6277
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: csrf-masks-route
+ok 47 - rejects deliberately unsafe synthetic target: csrf-masks-route
+  ---
+  duration_ms: 23.5422
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: mutates-on-denial
+ok 48 - rejects deliberately unsafe synthetic target: mutates-on-denial
+  ---
+  duration_ms: 6.5525
+  type: 'test'
+  ...
+# Subtest: rejects deliberately unsafe synthetic target: cache-leak
+ok 49 - rejects deliberately unsafe synthetic target: cache-leak
+  ---
+  duration_ms: 18.5979
+  type: 'test'
+  ...
+# Subtest: unavailable backend is reported accurately and no remaining requests are made
+ok 50 - unavailable backend is reported accurately and no remaining requests are made
+  ---
+  duration_ms: 0.2706
+  type: 'test'
+  ...
+# Subtest: missing log evidence keeps runtime incomplete
+ok 51 - missing log evidence keeps runtime incomplete
+  ---
+  duration_ms: 18.0074
+  type: 'test'
+  ...
+# Subtest: mutation acknowledgement is required, while positive read tests still run
+ok 52 - mutation acknowledgement is required, while positive read tests still run
+  ---
+  duration_ms: 1.9997
+  type: 'test'
+  ...
+# Subtest: private markers in test-only logs fail without disclosing them in results
+ok 53 - private markers in test-only logs fail without disclosing them in results
+  ---
+  duration_ms: 17.6473
+  type: 'test'
+  ...
+# Subtest: unrelated log cannot produce a pass
+ok 54 - unrelated log cannot produce a pass
+  ---
+  duration_ms: 17.538
+  type: 'test'
+  ...
+# Subtest: log adapter reads after the request matrix completes
+ok 55 - log adapter reads after the request matrix completes
+  ---
+  duration_ms: 18.6774
+  type: 'test'
+  ...
+# Subtest: unexpected transport exceptions are sanitized
+ok 56 - unexpected transport exceptions are sanitized
+  ---
+  duration_ms: 0.239
+  type: 'test'
+  ...
+# Subtest: read-only-only run still detects changes made by a forbidden GET
+ok 57 - read-only-only run still detects changes made by a forbidden GET
+  ---
+  duration_ms: 2.099
+  type: 'test'
+  ...
+# Subtest: transport loss during the matrix marks remaining cases NOT_RUN
+ok 58 - transport loss during the matrix marks remaining cases NOT_RUN
+  ---
+  duration_ms: 0.4197
+  type: 'test'
+  ...
+# Subtest: only local origins without paths or credentials are accepted
+ok 59 - only local origins without paths or credentials are accepted
+  ---
+  duration_ms: 0.7582
+  type: 'test'
+  ...
+# Subtest: relative request paths cannot escape the loopback origin
+ok 60 - relative request paths cannot escape the loopback origin
+  ---
+  duration_ms: 0.2574
+  type: 'test'
+  ...
+# Subtest: HTTP round trip preserves synthetic method/body and pins localhost to loopback
+ok 61 - HTTP round trip preserves synthetic method/body and pins localhost to loopback
+  ---
+  duration_ms: 19.0934
+  type: 'test'
+  ...
+# Subtest: HTTP redirects are returned without being followed
+ok 62 - HTTP redirects are returned without being followed
+  ---
+  duration_ms: 3.1553
+  type: 'test'
+  ...
+# Subtest: response streaming is limited by bytes
+ok 63 - response streaming is limited by bytes
+  ---
+  duration_ms: 2.1583
+  type: 'test'
+  ...
+# Subtest: deadline also terminates a stalled streaming response
+ok 64 - deadline also terminates a stalled streaming response
+  ---
+  duration_ms: 107.0947
+  type: 'test'
+  ...
+# Subtest: credentials and host overrides are refused before any request is made
+ok 65 - credentials and host overrides are refused before any request is made
+  ---
+  duration_ms: 1.2399
+  type: 'test'
+  ...
+# Subtest: unsupported methods fail before issuing a request
+ok 66 - unsupported methods fail before issuing a request
+  ---
+  duration_ms: 0.1186
+  type: 'test'
+  ...
+# Subtest: complete black-box HTTP suite passes against a disposable synthetic loopback server
+ok 67 - complete black-box HTTP suite passes against a disposable synthetic loopback server
+  ---
+  duration_ms: 272.0876
+  type: 'test'
+  ...
+1..67
+# tests 67
+# suites 0
+# pass 67
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 949.6787

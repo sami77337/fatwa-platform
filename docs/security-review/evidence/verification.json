@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-13T11:27:55.274Z",
+  "revision": "08f9e25e8ada9af56561d815f74b2c7ec9ba7ead",
+  "branch": "codex/s4-security-qa-20261013",
+  "implementation_state": "LOCAL_UNCOMMITTED",
+  "scope": "SYNTHETIC_DEVELOPMENT_ONLY",
+  "node_version": "v24.16.0",
+  "harness_sha256": "8dbfd4e2e9c021af11ca41f0df6de425fe92d16f481a8d803bf15ab5b652ec32",
+  "fixture_identity": "s4-public-catalog-synthetic-v1",
+  "fixture_sha256": "4c370b0a7739f1491a9c9d83ccaf3d3eb472ef9e4a6e3a548d7413cb907481f3",
+  "profile_identity": "s4-proposed-http-v1",
+  "profile_sha256": "38065bfaeb4a68b3f93b8f730900ae99e8b762dce06c6d7addb338160d602a91",
+  "source_and_test_file_sha256": {
+    "quality/api_contract/synthetic-catalog.json": "4c370b0a7739f1491a9c9d83ccaf3d3eb472ef9e4a6e3a548d7413cb907481f3",
+    "quality/api_contract/proposed-profile.json": "38065bfaeb4a68b3f93b8f730900ae99e8b762dce06c6d7addb338160d602a91",
+    "quality/api_contract/catalog.ts": "1ffa64ef9e94deffda1ab1c4158d73ba5698d62080af7faba285c1cfa30f2bfd",
+    "quality/security/transport.ts": "cb5cd59317a7657bfae1b1dee45c7de07b7820015a2a89f137362aef8c201187",
+    "quality/security/tests/transport.test.ts": "8df1550b63e9874564acf4b9492528d6c77cfa98112cff6e717cba411255d9b3",
+    "quality/security/tests/synthetic-target.ts": "682f3c61ba47fc3cfe22cda4bb838332bfc57ac8c052ebaa09aa459826bd488e",
+    "quality/security/tests/suite.test.ts": "7edec7c5e63c9b725ec6f76fcd5609f8a9c34f296070737925bed7dc7cb4d5b3",
+    "quality/security/tests/contract.test.ts": "0e8dc156f1be4227fd4868c81469877ccc4744ec04b1541d27032fd49c3fdd91",
+    "quality/security/tests/cli.test.ts": "afb2fb62aada3a526598b7799a61401b73e0200962302c505f3623cfec30837e",
+    "quality/security/suite.ts": "cfa49287e1eb077f622ea58e0361fc55c58d4ed9973dd56eb132139eef5b50de",
+    "quality/security/oracle.ts": "3160b2c72b76e9ce0b24a63864f23c82a6ef88c55ab525f044ebbf27ad62a273",
+    "quality/security/cli.ts": "5a1ca6c8701de291e5d86fb0d7990f4f847fbda8b734fc3c36ff83c34061f5ce"
+  },
+  "commands": [
+    {
+      "exe": "node",
+      "args": [
+        "--test",
+        "--test-reporter=tap",
+        "quality/security/tests/contract.test.ts",
+        "quality/security/tests/suite.test.ts",
+        "quality/security/tests/transport.test.ts",
+        "quality/security/tests/cli.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "Literal stdout is in docs/security-review/evidence/synthetic-tests.tap",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "quality/security/cli.ts",
+        "--base-url",
+        "http://127.0.0.1:8000",
+        "--output",
+        "docs/security-review/evidence/local-server-probe.json"
+      ],
+      "exitCode": 2,
+      "stdout": "{\n  \"schema_version\": 1,\n  \"generated_at\": \"2026-10-13T11:26:34.411Z\",\n  \"revision\": \"08f9e25e8ada9af56561d815f74b2c7ec9ba7ead\",\n  \"branch\": \"codex/s4-security-qa-20261013\",\n  \"node_version\": \"v24.16.0\",\n  \"base_url\": \"http://127.0.0.1:8000\",\n  \"harness_sha256\": \"8dbfd4e2e9c021af11ca41f0df6de425fe92d16f481a8d803bf15ab5b652ec32\",\n  \"fixture_identity\": \"s4-public-catalog-synthetic-v1\",\n  \"fixture_sha256\": \"4c370b0a7739f1491a9c9d83ccaf3d3eb472ef9e4a6e3a548d7413cb907481f3\",\n  \"profile_identity\": \"s4-proposed-http-v1\",\n  \"profile_sha256\": \"38065bfaeb4a68b3f93b8f730900ae99e8b762dce06c6d7addb338160d602a91\",\n  \"run_marker\": \"S4-QA-755e3059-bf5f-40c8-8eeb-3c6a2c0ce82e\",\n  \"log_sha256\": null,\n  \"mutating_probes_enabled\": false,\n  \"duration_ms\": 5,\n  \"safety_state\": \"NOT_DEPLOYED / GATES_HOLD\",\n  \"gate_b\": \"NOT_PASSED\",\n  \"gates_c_d_e\": \"HOLD\",\n  \"phase01\": \"BLOCKED\",\n  \"status\": \"SERVER_NOT_AVAILABLE\",\n  \"cases\": [\n    {\n      \"id\": \"public-fixture-preflight\",\n      \"status\": \"SERVER_NOT_AVAILABLE\",\n      \"requests\": 1,\n      \"http_statuses\": [],\n      \"code\": \"SERVER_NOT_AVAILABLE\"\n    }\n  ],\n  \"scope\": \"SYNTHETIC_DEVELOPMENT_ONLY\",\n  \"log_check\": {\n    \"id\": \"private-artifacts-in-local-log\",\n    \"status\": \"NOT_RUN\",\n    \"requests\": 0,\n    \"http_statuses\": [],\n    \"code\": \"PREFLIGHT_FAILED\"\n  },\n  \"limitations\": [\n    \"Remaining probes were NOT_RUN because the local fixture preflight did not pass.\",\n    \"No source ZIP, PostgreSQL, authenticated session, cache internals or production acceptance was verified.\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "status",
+        "--short",
+        "--branch"
+      ],
+      "exitCode": 0,
+      "stdout": "## codex/s4-security-qa-20261013...origin/codex/s4-security-qa-20261013\n?? docs/security-review/\n?? quality/\n",
+      "stderr": ""
+    },
+    {
+      "exe": "git",
+      "args": [
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "syntax_checks": [
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/api_contract/catalog.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/transport.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/tests/transport.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/tests/synthetic-target.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/tests/suite.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/tests/contract.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/tests/cli.test.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/suite.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/oracle.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "node",
+      "args": [
+        "--check",
+        "quality/security/cli.ts"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "environment_probes": [
+    {
+      "exe": "py",
+      "args": [
+        "-0p"
+      ],
+      "exitCode": 0,
+      "stdout": "No installed Pythons found!\r\n",
+      "stderr": ""
+    },
+    {
+      "exe": "python",
+      "args": [
+        "--version"
+      ],
+      "exitCode": "ENOENT",
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "python3",
+      "args": [
+        "--version"
+      ],
+      "exitCode": "ENOENT",
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "exe": "where.exe",
+      "args": [
+        "psql"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "INFO: Could not find files for the given pattern(s).\r\n"
+    }
+  ],
+  "scope_audit": {
+    "unauthorized_changed_paths": [],
+    "source_whitespace_failures": [],
+    "protected_base_file_diff": {
+      "exe": "git",
+      "args": [
+        "diff",
+        "--exit-code",
+        "--",
+        "AGENTS.md",
+        "README.md",
+        "docs/coordination"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  "not_run": [
+    "Django runtime security acceptance",
+    "Django manage.py check",
+    "PostgreSQL version/migrations/integration",
+    "Original owner source ZIP validation/import",
+    "Real target synthetic private canary seed/reset verification",
+    "Actual backend test-only log inspection",
+    "Authenticated CSRF/RBAC",
+    "Shared-cache/private database side-effect inspection",
+    "Browser CSP/DOM execution",
+    "Static TypeScript type checking"
+  ],
+  "safety_state": "NOT_DEPLOYED / GATES_HOLD"
+}

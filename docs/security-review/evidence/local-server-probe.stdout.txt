@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-13T11:26:34.411Z",
+  "revision": "08f9e25e8ada9af56561d815f74b2c7ec9ba7ead",
+  "branch": "codex/s4-security-qa-20261013",
+  "node_version": "v24.16.0",
+  "base_url": "http://127.0.0.1:8000",
+  "harness_sha256": "8dbfd4e2e9c021af11ca41f0df6de425fe92d16f481a8d803bf15ab5b652ec32",
+  "fixture_identity": "s4-public-catalog-synthetic-v1",
+  "fixture_sha256": "4c370b0a7739f1491a9c9d83ccaf3d3eb472ef9e4a6e3a548d7413cb907481f3",
+  "profile_identity": "s4-proposed-http-v1",
+  "profile_sha256": "38065bfaeb4a68b3f93b8f730900ae99e8b762dce06c6d7addb338160d602a91",
+  "run_marker": "S4-QA-755e3059-bf5f-40c8-8eeb-3c6a2c0ce82e",
+  "log_sha256": null,
+  "mutating_probes_enabled": false,
+  "duration_ms": 5,
+  "safety_state": "NOT_DEPLOYED / GATES_HOLD",
+  "gate_b": "NOT_PASSED",
+  "gates_c_d_e": "HOLD",
+  "phase01": "BLOCKED",
+  "status": "SERVER_NOT_AVAILABLE",
+  "cases": [
+    {
+      "id": "public-fixture-preflight",
+      "status": "SERVER_NOT_AVAILABLE",
+      "requests": 1,
+      "http_statuses": [],
+      "code": "SERVER_NOT_AVAILABLE"
+    }
+  ],
+  "scope": "SYNTHETIC_DEVELOPMENT_ONLY",
+  "log_check": {
+    "id": "private-artifacts-in-local-log",
+    "status": "NOT_RUN",
+    "requests": 0,
+    "http_statuses": [],
+    "code": "PREFLIGHT_FAILED"
+  },
+  "limitations": [
+    "Remaining probes were NOT_RUN because the local fixture preflight did not pass.",
+    "No source ZIP, PostgreSQL, authenticated session, cache internals or production acceptance was verified."
+  ]
+}
