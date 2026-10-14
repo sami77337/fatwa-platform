@@ -1,0 +1,106 @@
+{
+  "evidence_version": "1.0",
+  "date": "2026-10-13",
+  "base_sha": "08f9e25e8ada9af56561d815f74b2c7ec9ba7ead",
+  "branch": "codex/s3-contract-validators-20261013",
+  "issue": 4,
+  "local_only": true,
+  "checks": [
+    {
+      "command": "node --test tests/contracts/test_artifacts.mjs",
+      "runtime": "Node v24.16.0",
+      "scope": "ARTIFACT_INTEGRITY_ONLY",
+      "status": "PASS",
+      "exit_code": 0,
+      "tests_executed": 8,
+      "passes": 8,
+      "failures": 0,
+      "duration_ms": 53.6764
+    },
+    {
+      "command": "py -3.13 -B -m unittest discover -s tests/contracts -v",
+      "status": "NOT_RUN",
+      "exit_code": 112,
+      "stdout": "",
+      "stderr": "No installed Python found!\r\n",
+      "test_methods_authored": 64,
+      "tests_executed": 0
+    },
+    {
+      "command": "py -3.13 -B -m contracts",
+      "status": "NOT_RUN",
+      "exit_code": 112,
+      "stdout": "",
+      "stderr": "No installed Python found!\r\n"
+    },
+    {
+      "method": "Node assertions over every new file: no trailing spaces/tabs and final newline",
+      "scope": "NEW_FILE_WHITESPACE",
+      "status": "PASS",
+      "files_checked": 13
+    },
+    {
+      "command": "git diff --exit-code",
+      "scope": "PREEXISTING_TRACKED_FILES_UNCHANGED",
+      "status": "PASS",
+      "exit_code": 0
+    }
+  ],
+  "source_acceptance": {
+    "status": "BLOCKED",
+    "reason": "SOURCE_CONTRACT_MISSING",
+    "reviewed_contract_files_supplied": 0,
+    "reconstructed_full_inventory": false,
+    "record_binding": "NOT_VERIFIED"
+  },
+  "synthetic_inputs": [
+    {
+      "path": "tests/contracts/fixtures/synthetic_inventory.json",
+      "sha256": "40df94e24af7d64b4fac4285000aa928282ac25f2110b07dce055d2994820dd4",
+      "action_count": 4,
+      "transition_count": 1,
+      "fixture_kind": "SYNTHETIC"
+    },
+    {
+      "path": "tests/contracts/fixtures/synthetic_review_excerpt.json",
+      "sha256": "266e07ae6b229a19df2d11b8a9aa986e9cd468a05ecacfd7d22de3ebdd7b760d",
+      "fixture_kind": "SYNTHETIC"
+    }
+  ],
+  "limits": {
+    "python_syntax_checks": "NOT_RUN",
+    "python_policy_negative_tests": "NOT_RUN",
+    "python_cli_checks": "NOT_RUN",
+    "full_source_validation": "BLOCKED",
+    "django_postgresql": "NOT_RUN_OUT_OF_SCOPE"
+  },
+  "runtime_executable": false,
+  "active_grants": 0,
+  "grant_effect": "NONE",
+  "owner_approval": "OWNER_APPROVAL_PENDING",
+  "gate_b": "NOT_PASSED",
+  "gates_c_d_e": "HOLD",
+  "phase01": "BLOCKED",
+  "deployment": "NOT_DEPLOYED",
+  "ownership_audit": {
+    "status": "PASS",
+    "new_files": 13,
+    "all_paths_in_s3_owned_areas": true,
+    "head_unchanged": true,
+    "paths": [
+      "contracts/.gitignore",
+      "contracts/__init__.py",
+      "contracts/__main__.py",
+      "contracts/inventory.schema.json",
+      "contracts/validator.py",
+      "docs/contracts/README.md",
+      "docs/contracts/TEST_RESULTS.md",
+      "docs/contracts/validation-evidence.json",
+      "tests/contracts/.gitignore",
+      "tests/contracts/fixtures/synthetic_inventory.json",
+      "tests/contracts/fixtures/synthetic_review_excerpt.json",
+      "tests/contracts/test_artifacts.mjs",
+      "tests/contracts/test_validator.py"
+    ]
+  }
+}

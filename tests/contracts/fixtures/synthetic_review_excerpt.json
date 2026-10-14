@@ -1,0 +1,11 @@
+{
+  "fixture_kind": "SYNTHETIC",
+  "notice": "Invented test excerpt; not reviewed source records or owner acceptance.",
+  "records": [
+    "P00-03::case.project",
+    "P00-03::delivery.hold",
+    "synthetic::answer.create",
+    "synthetic::catalog.inspect",
+    "synthetic::answer.draft"
+  ]
+}
