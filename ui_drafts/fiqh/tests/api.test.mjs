@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { createFixture, normalizeQuery, PAGE_SIZE } from "../fixture.js";
 import { createMockAdapter, createReadOnlyAdapter, publicNode } from "../api.js";
 
@@ -93,14 +94,18 @@ test("aborted lazy requests reject instead of delivering stale data", async () =
   await assert.rejects(pending, { name: "AbortError" });
 });
 test("public projection drops unknown private fields and rejects fatwa content", () => {
-  const projected = publicNode({ ...root, requester_email: "synthetic-private-sentinel", answer: "synthetic-answer", source: { ...root.source, secret: "sentinel" } });
-  assert.ok(!JSON.stringify(projected).includes("sentinel"));
+  const privateMarker = `synthetic-private-${randomUUID()}`;
+  const projected = publicNode({ ...root, requester_email: privateMarker, answer: "synthetic-answer", source: { ...root.source, secret: privateMarker } });
+  assert.ok(!JSON.stringify(projected).includes(privateMarker));
   assert.ok(!("answer" in projected));
   assert.throws(() => publicNode({ ...root, kind: "fatwa" }), /INVALID_PAYLOAD/);
   assert.throws(() => publicNode({ ...root, has_children: false }), /INVALID_PAYLOAD/);
 });
 test("read-only adapter rejects cross-origin and ambiguous API bases", () => {
-  for (const base of ["https://external.example/api/", "http://user:pass@127.0.0.1:4173/api/", "/api?x=1", "/api/#fragment", "file:///api/"]) {
+  const embeddedCredentials = new URL("http://127.0.0.1:4173/api/");
+  embeddedCredentials.username = "synthetic-user";
+  embeddedCredentials.password = randomUUID();
+  for (const base of ["https://external.example/api/", embeddedCredentials.href, "/api?x=1", "/api/#fragment", "file:///api/"]) {
     assert.throws(() => createReadOnlyAdapter(base, { origin: "http://127.0.0.1:4173" }), /UNSAFE_API_BASE/);
   }
 });
