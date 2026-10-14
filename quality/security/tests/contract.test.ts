@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { validateFixture,validateProfile,validateNode,ContractError } from '../../api_contract/catalog.ts';
 import * as oracle from '../oracle.ts';
 import { localOrigin } from '../transport.ts';
@@ -20,7 +21,7 @@ for(const [name,mutate,code] of [
   ['private marker sent as lookup',(copy:any)=>copy.private_canaries.lookup=copy.private_canaries.markers[0],'PRIVATE_CANARIES']
 ] as const) test('rejects invalid fixture: '+name,()=>{const copy=structuredClone(fixture);mutate(copy);throws(()=>validateFixture(copy),code);});
 for(const [name,mutate,code] of [
-  ['extra config field',(copy:any)=>copy.secret='unexpected','SCHEMA_FIELDS'],['external route',(copy:any)=>copy.routes.roots='https://example.invalid','PROFILE_ROUTE'],
+  ['extra config field',(copy:any)=>copy.secret=randomUUID(),'SCHEMA_FIELDS'],['external route',(copy:any)=>copy.routes.roots='https://example.invalid','PROFILE_ROUTE'],
   ['relative route',(copy:any)=>copy.routes.roots='api/roots/','PROFILE_ROUTE'],['traversal',(copy:any)=>copy.routes.roots='/../private/','PROFILE_ROUTE'],
   ['missing placeholder',(copy:any)=>copy.routes.node='/api/nodes/','PROFILE_ROUTE'],['unbounded page size',(copy:any)=>copy.max_page_size=1000000,'PROFILE_LIMITS'],
   ['relaxed forbidden status',(copy:any)=>copy.forbidden_statuses=[200],'PROFILE_STATUS'],['unbounded timeout',(copy:any)=>copy.timeout_ms=60000,'PROFILE_TRANSPORT'],

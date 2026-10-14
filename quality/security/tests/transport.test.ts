@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import http from 'node:http';
 import { once } from 'node:events';
 import { createTransport,localOrigin,requestUrl } from '../transport.ts';
@@ -14,7 +15,10 @@ async function serverFor(t: any,handler: Parameters<typeof http.createServer>[0]
 const code=(wanted:string)=>(error:unknown)=>error instanceof ContractError&&error.code===wanted;
 test('only local origins without paths or credentials are accepted',()=>{
   for(const base of ['http://127.0.0.1:8000','http://localhost:8000','https://[::1]:8443']) localOrigin(base);
-  for(const base of ['https://example.invalid','http://127.0.0.1.example.invalid','file:///tmp/data','http://user:pass@127.0.0.1','http://127.0.0.1/other','http://127.0.0.1/?secret=x','http://127.0.0.1/#fragment']) assert.throws(()=>localOrigin(base),code('LOCAL_TARGET'));
+  const credentialOrigin=new URL('http://127.0.0.1');
+  credentialOrigin.username='synthetic-user';credentialOrigin.password=randomUUID();
+  const queryOrigin=new URL('http://127.0.0.1');queryOrigin.searchParams.set('secret',randomUUID());
+  for(const base of ['https://example.invalid','http://127.0.0.1.example.invalid','file:///tmp/data',credentialOrigin.href,'http://127.0.0.1/other',queryOrigin.href,'http://127.0.0.1/#fragment']) assert.throws(()=>localOrigin(base),code('LOCAL_TARGET'));
 });
 test('relative request paths cannot escape the loopback origin',()=>{
   const origin=localOrigin('http://127.0.0.1:8000');
