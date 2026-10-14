@@ -15,6 +15,7 @@ from contracts.validator import (
     EXPECTED_COUNTS,
     MAX_BYTES,
     MAX_ISSUES,
+    MAX_JSON_DEPTH,
     SCHEMA_PATH,
     inspect_structure,
     validate_inventory,
@@ -374,7 +375,90 @@ class FileAndCLITests(unittest.TestCase):
 
     def test_deeply_nested_json_rejected(self) -> None:
         path = self.write(b"[" * 2000 + b"0" + b"]" * 2000)
-        self.assertIn("INVALID_JSON", codes(self.synthetic_report(path)["issues"]))
+        report = self.synthetic_report(path)
+        self.assertEqual(codes(report["issues"]), {"INVALID_JSON"})
+        self.assertEqual(report["status"], "INVALID")
+        self.assertFalse(report["validation_passed"])
+        self.assertIsNone(report["inventory_counts"])
+        self.assertEqual(report["original_sources"], [])
+
+    def test_json_nesting_boundary_for_arrays_objects_and_mixed_containers(self) -> None:
+        for kind in ("array", "object", "mixed"):
+            for depth in (MAX_JSON_DEPTH - 1, MAX_JSON_DEPTH, MAX_JSON_DEPTH + 1):
+                with self.subTest(kind=kind, depth=depth):
+                    payload = b"0"
+                    for level in range(depth):
+                        if kind == "array" or (kind == "mixed" and level % 2):
+                            payload = b"[" + payload + b"]"
+                        else:
+                            payload = b'{"nested":' + payload + b"}"
+                    report = self.synthetic_report(self.write(payload))
+                    self.assertFalse(report["validation_passed"])
+                    if depth > MAX_JSON_DEPTH:
+                        self.assertEqual(codes(report["issues"]), {"INVALID_JSON"})
+                        self.assertIsNone(report["inventory_counts"])
+                        self.assertEqual(report["original_sources"], [])
+                    else:
+                        self.assertNotIn("INVALID_JSON", codes(report["issues"]))
+                        self.assertIn("SCHEMA_VIOLATION", codes(report["issues"]))
+                        self.assertIsNotNone(report["inventory_counts"])
+
+    def test_excessive_nesting_in_known_and_unknown_fields_is_invalid_json(self) -> None:
+        nested: object = 0
+        for _ in range(MAX_JSON_DEPTH):
+            nested = [nested]
+        for field in ("actions", "unknown_extension"):
+            with self.subTest(field=field):
+                document = json.loads(FIXTURE.read_text(encoding="utf-8"))
+                document[field] = nested
+                report = self.synthetic_report(self.write(json.dumps(document).encode("utf-8")))
+                self.assertEqual(codes(report["issues"]), {"INVALID_JSON"})
+                self.assertEqual(report["status"], "INVALID")
+                self.assertFalse(report["validation_passed"])
+                self.assertIsNone(report["inventory_counts"])
+                self.assertEqual(report["original_sources"], [])
+
+    def test_json_depth_counts_open_containers_not_siblings(self) -> None:
+        payload = b"[" + b",".join([b"{}"] * (MAX_JSON_DEPTH + 1)) + b"]"
+        report = self.synthetic_report(self.write(payload))
+        self.assertEqual(codes(report["issues"]), {"SCHEMA_VIOLATION"})
+
+    def test_quoted_brackets_and_escapes_do_not_count_as_nesting(self) -> None:
+        for character in ("[", "{", "]", "}"):
+            for backslashes in range(1, 5):
+                with self.subTest(character=character, backslashes=backslashes):
+                    document = json.loads(FIXTURE.read_text(encoding="utf-8"))
+                    document["transitions"][0]["from_state"] = (
+                        'نص "' + "\\" * backslashes + '"' + character * (MAX_JSON_DEPTH + 1)
+                        + "\\" * backslashes
+                    )
+                    payload = json.dumps(document, ensure_ascii=False).encode("utf-8")
+                    report = self.synthetic_report(self.write(payload))
+                    self.assertEqual(report["issues"], [])
+                    self.assertEqual(report["status"], "SYNTHETIC_VALIDATED")
+
+    def test_closing_quote_after_backslashes_cannot_hide_excessive_nesting(self) -> None:
+        for backslashes in range(1, 5):
+            with self.subTest(backslashes=backslashes):
+                quoted = json.dumps("\\" * backslashes).encode("utf-8")
+                payload = (b'{"quoted":' + quoted + b',"nested":'
+                           + b"[" * MAX_JSON_DEPTH + b"0" + b"]" * MAX_JSON_DEPTH + b"}")
+                report = self.synthetic_report(self.write(payload))
+                self.assertEqual(codes(report["issues"]), {"INVALID_JSON"})
+
+    def test_depth_guard_does_not_replace_strict_json_validation(self) -> None:
+        for payload in (b'{"a":[0,]}', b'{"a":01}', b'{"a":"bad\\q"}',
+                        b'{"a":[0}', b'{"a":"unterminated}', b'{} {}'):
+            with self.subTest(payload=payload):
+                report = self.synthetic_report(self.write(payload))
+                self.assertEqual(codes(report["issues"]), {"INVALID_JSON"})
+                self.assertFalse(report["validation_passed"])
+
+    def test_shallow_schema_violation_is_not_invalid_json(self) -> None:
+        for payload in (b"[]", b"null", b"false", b"42", b'"text"'):
+            with self.subTest(payload=payload):
+                report = self.synthetic_report(self.write(payload))
+                self.assertEqual(codes(report["issues"]), {"SCHEMA_VIOLATION"})
 
     def test_inventory_cannot_supply_a_source_path(self) -> None:
         document = json.loads(FIXTURE.read_text(encoding="utf-8"))
@@ -398,6 +482,18 @@ class FileAndCLITests(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertIn("SOURCE_CONTRACT_MISSING", codes(report["issues"]))
         self.assertFalse(report["runtime_executable"])
+
+    def test_cli_excessive_nesting_is_invalid_json_exit_two(self) -> None:
+        path = self.write(b"[" * (MAX_JSON_DEPTH + 1) + b"0" + b"]" * (MAX_JSON_DEPTH + 1))
+        result = self.cli(str(path), "--synthetic-fixture")
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stderr, "")
+        report = json.loads(result.stdout)
+        self.assertEqual(codes(report["issues"]), {"INVALID_JSON"})
+        self.assertEqual(report["status"], "INVALID")
+        self.assertFalse(report["validation_passed"])
+        self.assertIsNone(report["inventory_counts"])
+        self.assertEqual(report["original_sources"], [])
 
     def test_cli_explicit_synthetic_success_exit_zero(self) -> None:
         result = self.cli(str(FIXTURE), "--synthetic-fixture", "--sha256", FIXTURE_SHA,

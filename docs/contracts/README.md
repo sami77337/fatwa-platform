@@ -80,21 +80,40 @@ historical_answer_mutable. Explicit candidate principals contain only kind ROLE
 and a name from MUFTI, ORGANIZER_ADMIN, ORGANIZER.
 
 Input files are limited to 4 MiB each. UTF-8 JSON must reject duplicate keys,
-NaN/Infinity, oversized input, and excessive nesting. Reports cap diagnostics,
+NaN/Infinity, oversized input, and excessive nesting. Inventory JSON has an
+inclusive limit of 64 simultaneously open object/array containers (root container
+counts as 1; empty containers count too). An iterative scan enforces this before
+JSON decoding and schema inspection, including in unknown fields. Brackets inside
+quoted strings are data; escaped quotes and backslashes do not alter the limit.
+The limit is fixed independently of Python 3.12/3.13 parser recursion thresholds.
+
+Exceeding that limit produces INVALID_JSON, even if the input also violates the
+schema. Malformed JSON and invalid UTF-8 also produce INVALID_JSON. Syntactically
+valid JSON within the depth limit proceeds to the unchanged schema checks; for
+example, a top-level array produces SCHEMA_VIOLATION. Duplicate keys still produce
+DUPLICATE_JSON_KEY, NaN/Infinity produce NONSTANDARD_JSON_NUMBER, and files
+exceeding 4 MiB produce INPUT_TOO_LARGE. File/hash checks precede JSON checks,
+so their diagnostics may also appear. Reports cap diagnostics,
 never copy arbitrary field values or parser excerpts, and contain no input file
 paths. A source record ID is an identity reference; state labels and action
 operation classifications still require independent comparison with reviewed
 originals when their actual format is supplied.
 
-## Reproduce with Python 3.13
+## Reproduce with Python 3.12 and 3.13
 
 No dependency installation or PostgreSQL instance is needed for this offline lane.
-Run these commands from the repository root with an existing Python 3.13 runtime.
-On Windows, use py -3.13 instead of python if appropriate.
+Run these commands from the repository root with an existing Python 3.12 or 3.13
+runtime. Run the full suite with both versions to verify compatibility. On Windows,
+use py -3.12 and py -3.13 instead of python as appropriate.
 
 Run the authored Python test suite:
 
     python -B -m unittest discover -s tests/contracts -v
+
+Windows cross-version commands:
+
+    py -3.12 -B -m unittest discover -s tests/contracts -v
+    py -3.13 -B -m unittest discover -s tests/contracts -v
 
 Optional artifact-only checks with an existing Node runtime:
 

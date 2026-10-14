@@ -16,6 +16,7 @@ from typing import Any, Mapping
 
 SCHEMA_PATH = Path(__file__).with_name("inventory.schema.json")
 MAX_BYTES = 4 * 1024 * 1024
+MAX_JSON_DEPTH = 64
 MAX_ISSUES = 100
 POLICY_TOKEN = "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013"
 EXPECTED_COUNTS = {
@@ -49,6 +50,34 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def _reject_constant(value: str) -> None:
     raise InvalidJSON("NONSTANDARD_JSON_NUMBER")
+
+
+def _check_json_depth(text: str) -> None:
+    """Bound containers before decoding, independently of Python's recursion limit.
+
+    Quoted brackets and escaped quotes are data, not containers. The JSON decoder
+    still checks the full grammar, duplicate keys, and non-standard constants.
+    """
+    closers: list[str] = []
+    in_string = False
+    escaped = False
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+        elif character == '"':
+            in_string = True
+        elif character in "[{":
+            if len(closers) >= MAX_JSON_DEPTH:
+                raise ValueError("JSON nesting exceeds the offline input limit.")
+            closers.append("]" if character == "[" else "}")
+        elif character in "]}":
+            if not closers or closers.pop() != character:
+                raise ValueError("Unbalanced JSON container.")
 
 
 def _issue(issues: list[dict[str, str]], code: str, path: str,
@@ -308,7 +337,9 @@ def validate_inventory(path: Path | str | None = None, *,
     elif not synthetic and not valid_pin:
         _issue(issues, "SOURCE_HASH_REQUIRED", "$", "Source mode requires an independently supplied inventory hash.", blocker=True)
     try:
-        document = json.loads(inventory_bytes.decode("utf-8"), object_pairs_hook=_unique_object,
+        text = inventory_bytes.decode("utf-8")
+        _check_json_depth(text)
+        document = json.loads(text, object_pairs_hook=_unique_object,
                               parse_constant=_reject_constant)
     except InvalidJSON as error:
         _issue(issues, str(error), "$", "Ambiguous or non-standard JSON is forbidden.")
