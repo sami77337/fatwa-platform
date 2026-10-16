@@ -11,11 +11,13 @@
   "D2": {
     "implementation": [
       "apps/editorial_demo/views.py",
-      "config/urls.py"
+      "config/urls.py",
+      "apps/editorial_demo/integration.py"
     ],
     "python": [],
     "django": [
-      "tests.editorial_demo.test_preview"
+      "tests.editorial_demo.test_preview",
+      "tests.editorial_demo.test_pipeline_preview"
     ],
     "node": []
   },
