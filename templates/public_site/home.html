@@ -2,27 +2,75 @@
 {% block title %}الرئيسية | الفهرس الفقهي{% endblock %}
 {% block content %}
   <h1>استكشف عناوين المرجع الفقهي</h1>
-  <p>تصفح أبواب الفقه وعناوينها الفرعية، أو ابحث بكلمة من العنوان للوصول إلى موضعه في المرجع.</p>
-  <p class="scope-note">هذا فهرس كتاب فقهي واحد، وليس تصنيفًا عامًا للفتاوى. العناوين ليست أجوبة عن أسئلة أو أحكامًا معتمدة للإفتاء.</p>
-  <p>استخدم إحالة الجزء والصفحة للتحقق من النص في المصدر؛ توفر الفهرس لا يعني اعتماد حكم شرعي.</p>
+  <p>تصفح أبواب الفقه ومقدمات المصدر، أو ابحث بكلمة من العنوان.</p>
+  <p class="scope-note">هذا فهرس كتاب فقهي واحد، وليس تصنيفًا عامًا للفتاوى. المحتوى عناوين مرجعية، وليست فتاوى منشورة.</p>
+  {% if error %}<p role="alert">{{ error }}</p>{% endif %}
   {% if catalog_state == 'available' %}
-    {% if source %}<p>المرجع المتاح: <cite>{{ source }}</cite>.</p>{% endif %}
-    <section aria-labelledby="search-title">
-      <h2 id="search-title">ابحث في العناوين</h2>
-      <form role="search" method="get" action="{% url 'catalog' %}">
-        <input type="hidden" name="basic" value="1">
-        <label for="home-query">كلمة أو عبارة من العنوان</label>
-        <input id="home-query" name="q" type="search" maxlength="160" required aria-describedby="search-help">
-        <p id="search-help">حتى ١٦٠ حرفًا وعشر كلمات. البحث في عناوين الفهرس، ولا يشمل نص الكتاب كاملًا.</p>
-        <button type="submit">ابحث في الفهرس</button>
-      </form>
+    <p>المرجع المتاح: <cite>{{ source }}</cite>.</p>
+    <form role="search" method="get" action="{% url 'home' %}">
+      <label for="home-query">كلمة أو عبارة من العنوان</label>
+      <input id="home-query" name="q" type="search" maxlength="160" value="{{ query }}" required aria-describedby="search-help">
+      <p id="search-help">حتى ١٦٠ حرفًا وعشر كلمات. البحث في عناوين الفهرس، ولا يشمل نص الكتاب كاملًا.</p>
+      <details>
+      <summary>خيارات البحث والمرشحات</summary>
+      <label for="home-mode">طريقة البحث</label>
+      <select id="home-mode" name="mode">
+        <option value="normalized"{% if mode == 'normalized' %} selected{% endif %}>بحث عربي مبسّط</option>
+        <option value="literal"{% if mode == 'literal' %} selected{% endif %}>كلمات كما كُتبت</option>
+        <option value="exact"{% if mode == 'exact' %} selected{% endif %}>مطابقة العنوان كاملًا</option>
+      </select>
+      <label for="home-depth">عمق العنوان</label>
+      <select id="home-depth" name="depth">
+        <option value="">كل المستويات</option>
+        <option value="1"{% if depth == '1' %} selected{% endif %}>١ — الجذور</option>
+        <option value="2"{% if depth == '2' %} selected{% endif %}>٢</option>
+        <option value="3"{% if depth == '3' %} selected{% endif %}>٣</option>
+        <option value="4"{% if depth == '4' %} selected{% endif %}>٤</option>
+        <option value="5"{% if depth == '5' %} selected{% endif %}>٥</option>
+      </select>
+      <label for="home-children">العناوين الفرعية</label>
+      <select id="home-children" name="has_children">
+        <option value="">الكل</option>
+        <option value="true"{% if has_children == 'true' %} selected{% endif %}>له عناوين فرعية</option>
+        <option value="false"{% if has_children == 'false' %} selected{% endif %}>بلا عناوين فرعية</option>
+      </select>
+      </details>
+      <button type="submit">ابحث في الفهرس</button>
+    </form>
+    <p>عدد عناوين المصدر: {{ heading_count }}. عدد الجذور: {{ roots.total }}.</p>
+    {% if searching %}
+    <section aria-labelledby="results-title">
+      <h2 id="results-title">نتائج البحث</h2>
+      {% if results %}
+      <p>عدد النتائج: {{ results.total }}. تُعرض أول {{ results.limit }} نتيجة كحد أقصى؛ ضيّق البحث للوصول إلى عنوان محدد.</p>
+      <ul>
+      {% for heading in results.items %}
+        <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a></li>
+      {% empty %}<li>لا توجد عناوين مطابقة. جرّب كلمة أخرى أو أزل المرشحات.</li>{% endfor %}
+      </ul>
+      {% endif %}
+      <p><a href="{% url 'home' %}">مسح البحث والمرشحات</a></p>
     </section>
+    {% endif %}
+    <section aria-labelledby="roots-title">
+      <h2 id="roots-title">أبواب المصدر ومقدماته</h2>
+      <p>العناوين بترتيب المصدر الأصلي، وتشمل مقدماته؛ ليست جميع الجذور كتبًا فقهية.</p>
+      <ol>
+      {% for heading in roots.items %}
+        <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a> — {{ heading.children_count }} عنوانًا فرعيًا</li>
+      {% empty %}<li>المصدر مسجل، لكن لا توجد جذور محمّلة للتصفح بعد.</li>{% endfor %}
+      </ol>
+      {% if roots.next_offset %}<p><a href="{% url 'catalog' %}?basic=1&amp;edition={{ edition_id }}&amp;offset={{ roots.next_offset }}&amp;limit=100">بقية الجذور</a></p>{% endif %}
+    </section>
+  {% elif catalog_state == 'invalid' %}
+    <p><a href="{% url 'home' %}">مسح البحث والمرشحات والعودة إلى البداية</a></p>
   {% elif catalog_state == 'multiple' %}
+    <p>البحث المباشر معطّل حتى تحديد مصدر من الفهرس.</p>
     <p>يمكن الوصول إلى المراجع المتاحة من صفحة الفهرس.</p>
   {% elif catalog_state == 'empty' %}
-    <p>لم يُحمّل فهرس مرجعي بعد. يمكنك قراءة دليل الاستخدام والمصدر.</p>
+    <p>لم يُحمّل فهرس مرجعي بعد. البحث والتصفح المباشر غير متاحين حتى تحميل المصدر.</p>
   {% else %}
-    <p>تعذر الوصول إلى الفهرس حاليًا. يمكنك قراءة دليل الاستخدام والمصدر ثم المحاولة لاحقًا.</p>
+    <p>تعذر الوصول إلى الفهرس حاليًا. البحث والتصفح المباشر غير متاحين؛ حاول لاحقًا.</p>
   {% endif %}
   {% if catalog_state == 'empty' or catalog_state == 'unavailable' %}
     <p>غياب البيانات أو تعذر الاتصال ليس نتيجة بحث فارغة.</p>
