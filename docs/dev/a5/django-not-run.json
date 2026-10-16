@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-10-15T15:22:59.549Z",
+  "command": "py -3.13 -B manage.py test tests/security --settings=config.settings.test",
+  "test_count_authored": 7,
+  "result": "NOT_RUN",
+  "outcome": [
+    {
+      "status": "rejected",
+      "code": 112,
+      "stdout": "",
+      "stderr": "No installed Python found!\r\n"
+    }
+  ]
+}

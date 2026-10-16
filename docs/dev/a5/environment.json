@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-10-15T15:25:08.087Z",
+  "node": "v24.16.0",
+  "standard_terminal": "UNAVAILABLE: setup refresh had errors",
+  "fallback": "Node REPL filesystem and execFile; read-only git commands; Node HTTP",
+  "python": "NOT_AVAILABLE: python ENOENT; py -3.13 exit 112 No installed Python found",
+  "browser": {
+    "inventory": {
+      "apps": [],
+      "browsers": []
+    },
+    "attempt": "cua.createBrowserTab(iab, http://127.0.0.1:8000/fiqh, visible=false)",
+    "result": "Browser is not available: iab"
+  },
+  "source_zip": "NOT_OPENED_OR_REHASHED",
+  "database": "NO_DIRECT_CONNECTION_OR_WRITES",
+  "javascript_syntax_checks": [
+    {
+      "file": "support.mjs",
+      "pass": true
+    },
+    {
+      "file": "static.test.mjs",
+      "pass": true
+    },
+    {
+      "file": "adapter.test.mjs",
+      "pass": true
+    },
+    {
+      "file": "http.test.mjs",
+      "pass": true
+    },
+    {
+      "file": "run.mjs",
+      "pass": true
+    }
+  ]
+}
