@@ -64,7 +64,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     return trail;
   };
   const citation = node => "الجزء: " + (node.source.printed_part ?? "غير متاح") +
-    "، الصفحة المطبوعة: " + (node.source.printed_page === null ? "غير متاحة" : number.format(node.source.printed_page));
+    "، الصفحة المطبوعة: " + (node.source.printed_page == null ? "غير متاحة" : number.format(node.source.printed_page));
   const publication = node => node.source.work_title;
   const snapshot = () => ({ root: state.root, selected: state.selected, focusId: state.focusId,
     expanded: [...state.expanded], groups: [...state.groups], searchPage: state.searchPage,
@@ -97,23 +97,48 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     }
     get("breadcrumbs").replaceChildren(list);
     const address = new URL(href(node.id), view?.location.href ?? "http://localhost").href;
-    const manualCopy = () => {
-      const field = element("input", null, { type: "url", readonly: "", "aria-label": "رابط العنوان للنسخ اليدوي", dir: "ltr" });
-      field.value = address;
-      get("reference-content").append(field); field.focus(); field.select?.();
-      announce("انسخ الرابط المحدد من حقل الرابط.");
-    };
-    const copy = button("نسخ رابط العنوان", async () => {
+    const content = get("reference-content");
+    const tools = element("div", null, { class: "reference-tools", "aria-label": "أدوات العنوان" });
+    const fallback = element("div", null, { class: "copy-fallback" });
+    const feedback = element("p", "", { role: "status", "aria-live": "polite", "aria-atomic": "true" });
+    const reference = publication(node) + "\nالعنوان الأصلي: " + node.title + "\n" + citation(node);
+    const copyText = async (text, isLink = false) => {
+      // Local feedback belongs to this selection, even if a clipboard promise settles later.
+      fallback.replaceChildren();
       try {
-        if (!view?.navigator?.clipboard?.writeText) { manualCopy(); return; }
-        await view.navigator.clipboard.writeText(address);
-        announce("تم نسخ رابط العنوان.");
-      } catch { manualCopy(); }
-    });
-    get("reference-content").replaceChildren(
+        if (!view?.navigator?.clipboard?.writeText) throw new Error("Clipboard unavailable");
+        await view.navigator.clipboard.writeText(text);
+        feedback.textContent = isLink ? "تم نسخ رابط العنوان." : "تم نسخ المرجع.";
+      } catch {
+        const field = element(isLink ? "input" : "textarea", null, {
+          readonly: "", "aria-label": isLink ? "رابط العنوان للنسخ اليدوي" : "المرجع للنسخ اليدوي",
+          dir: isLink ? "ltr" : "rtl",
+        });
+        if (isLink) field.setAttribute("type", "url");
+        else field.setAttribute("rows", "5");
+        field.value = text;
+        fallback.replaceChildren(field);
+        // Do not steal focus after navigation or disposal.
+        if (state.selected === node && !state.disposed) { field.focus(); field.select?.(); }
+        feedback.textContent = "تعذّر النسخ التلقائي. حدّد النص وانسخه يدويًا؛ ثم اضغط Tab للمتابعة.";
+      }
+    };
+    tools.append(
+      button("نسخ رابط العنوان", () => void copyText(address, true)),
+      button("نسخ المرجع", () => void copyText(reference)),
+      button("طباعة", () => {
+        try {
+          if (!view?.print) throw new Error("Print unavailable");
+          view.print();
+          feedback.textContent = "يمكنك متابعة القراءة بعد إغلاق نافذة الطباعة.";
+        } catch { feedback.textContent = "تعذّر فتح الطباعة. استخدم أمر الطباعة في المتصفح."; }
+      }),
+    );
+    content.replaceChildren(
       element("p", node.title, { class: "selected-title" }),
       element("p", publication(node)), element("p", citation(node)),
-      element("a", "رابط هذا العنوان", { href: href(node.id) }), copy,
+      element("p", "عنوان أصلي من فهرس مرجع، وليس فتوى منشورة.", { class: "reference-note" }),
+      element("a", "رابط هذا العنوان", { href: href(node.id) }), tools, fallback, feedback,
     );
     get("basic-link")?.setAttribute("href", href(node.id, true));
     doc.title = node.title + " — فهرس المرجع";
