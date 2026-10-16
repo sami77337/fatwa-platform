@@ -1,2 +1,2 @@
 {% extends 'reference/base.html' %}
-{% block content %}<main id="catalog-content" tabindex="-1"><h1>تعذر عرض الفهرس</h1><p role="alert">تعذر تحميل العناوين. تحقق من رابط الصفحة أو حاول مرة أخرى.</p><a href="{% url 'catalog' %}">العودة إلى الفهرس</a></main>{% endblock %}
+{% block content %}<main id="catalog-content" tabindex="-1"><h1>تعذر عرض الفهرس</h1><p role="alert">تعذر تحميل العناوين. تحقق من رابط الصفحة أو حاول مرة أخرى.</p>{% if retry_url %}<p><a href="{{ retry_url }}">إعادة المحاولة</a></p>{% endif %}<a href="{% url 'catalog' %}">العودة إلى الفهرس</a></main>{% endblock %}

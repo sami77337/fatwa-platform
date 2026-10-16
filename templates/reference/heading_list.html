@@ -2,21 +2,21 @@
 {% for item in results.items %}
   <li>
   {% if item.children_count %}
-    <details hx-get="{% url 'branch' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}" hx-trigger="toggle once" hx-target="#branch-{{ edition.id }}-{{ item.id }}" hx-swap="innerHTML">
+    <details hx-get="{% url 'branch' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}{{ search_detail_query }}" hx-trigger="toggle once" hx-target="#branch-{{ edition.id }}-{{ item.id }}" hx-swap="innerHTML">
       <summary>{{ item.title }} <span class="child-count">({{ item.children_count }} عنوانًا فرعيًا)</span></summary>
-      <p><a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">تفاصيل العنوان ومساره</a></p>
+      <p><a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}{{ search_detail_query }}">تفاصيل العنوان ومساره</a></p>
       <div id="branch-{{ edition.id }}-{{ item.id }}" class="branch-contents" aria-live="polite">
-        <a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">عرض العناوين الفرعية</a>
+        <a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}{{ search_detail_query }}">عرض العناوين الفرعية</a>
       </div>
     </details>
-  {% else %}<a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ item.title }}</a>{% endif %}
+  {% else %}<a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}{{ search_detail_query }}">{{ item.title }}</a>{% endif %}
     <small>الجزء: {{ item.part }}، الصفحة المطبوعة: {{ item.page }}</small>
   </li>
-{% empty %}<li>{% if query %}لم نعثر على عناوين تطابق البحث.{% else %}لا توجد عناوين فرعية في هذه القائمة.{% endif %}</li>{% endfor %}
+{% empty %}<li>{% if node %}لا توجد عناوين فرعية في هذه القائمة.{% elif searching or query %}لم نعثر على عناوين تطابق البحث.{% else %}لا توجد عناوين فرعية في هذه القائمة.{% endif %}</li>{% endfor %}
 </ul>
 {% if previous_offset != None or results.next_offset != None %}
 <nav aria-label="صفحات القائمة">
-  {% if previous_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ previous_offset }}{% if query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% if depth %}&amp;depth={{ depth }}{% endif %}{% if has_children %}&amp;has_children={{ has_children }}{% endif %}{% if root %}&amp;root={{ root }}{% endif %}{% endif %}">السابق</a>{% endif %}
-  {% if results.next_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ results.next_offset }}{% if query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% if depth %}&amp;depth={{ depth }}{% endif %}{% if has_children %}&amp;has_children={{ has_children }}{% endif %}{% if root %}&amp;root={{ root }}{% endif %}{% endif %}">التالي</a>{% endif %}
+  {% if previous_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ previous_offset }}{% if node and search_offset != None %}&amp;search_offset={{ search_offset }}{% endif %}{% if searching or query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% if depth %}&amp;depth={{ depth }}{% endif %}{% if has_children %}&amp;has_children={{ has_children }}{% endif %}{% if root %}&amp;root={{ root }}{% endif %}{% endif %}">السابق</a>{% endif %}
+  {% if results.next_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ results.next_offset }}{% if node and search_offset != None %}&amp;search_offset={{ search_offset }}{% endif %}{% if searching or query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% if depth %}&amp;depth={{ depth }}{% endif %}{% if has_children %}&amp;has_children={{ has_children }}{% endif %}{% if root %}&amp;root={{ root }}{% endif %}{% endif %}">التالي</a>{% endif %}
 </nav>
 {% endif %}

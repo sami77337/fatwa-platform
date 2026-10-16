@@ -39,3 +39,16 @@ test("D4 serializes only selected typed filters and preserves exact whitespace",
     assert.equal(requests.length, count);
   }
 });
+
+test("E4 all Arabic modes pass empty filter-only queries with typed scope and paging", async () => {
+  const requests = [];
+  const adapter = adapterWith((payload, url) => { requests.push(url); return payload; });
+  await adapter.catalog();
+  for (const mode of ["normalized", "literal", "exact"]) for (const query of ["", "   "]) {
+    await adapter.search(query, { mode, rootId: "1", depth: 2, hasChildren: false, cursor: "20" });
+    const params = requests.at(-1).searchParams;
+    assert.equal(params.get("q"), query); assert.equal(params.get("mode"), mode);
+    assert.equal(params.get("root"), "1"); assert.equal(params.get("depth"), "2");
+    assert.equal(params.get("has_children"), "false"); assert.equal(params.get("offset"), "20");
+  }
+});
