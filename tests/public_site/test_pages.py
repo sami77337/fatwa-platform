@@ -48,6 +48,13 @@ class PublicPageTests(SimpleTestCase):
         self.books = self.enterContext(
             patch("apps.public_site.views.list_books", return_value=CatalogPage([], 0, 1, 0, None))
         )
+        self.edition = object()
+        self.resolve_edition = self.enterContext(
+            patch("apps.public_site.views.resolve_edition", return_value=self.edition)
+        )
+        self.roots = self.enterContext(
+            patch("apps.public_site.views.roots", return_value=CatalogPage([], 0, 100, 0, None))
+        )
 
     def one_source(self) -> None:
         self.books.return_value = CatalogPage([SOURCE], 1, 1, 0, None)
@@ -91,7 +98,7 @@ class PublicPageTests(SimpleTestCase):
         response = self.client.get("/")
         self.assertContains(response, SOURCE["work"]["title_original"])
         self.assertNotContains(response, "لم يُحمّل")
-        self.assertNotContains(response, str(SOURCE["heading_count"]))
+        self.assertContains(response, str(SOURCE["heading_count"]))
         self.books.assert_called_once_with(Page(1))
 
     def test_multiple_sources_do_not_silently_choose_a_source_or_offer_a_selector(self) -> None:
@@ -150,29 +157,23 @@ class PublicPageTests(SimpleTestCase):
         self.one_source()
         document = Elements(self.client.get("/").content)
         (form,) = document.find("form")
-        self.assertEqual(form, {"role": "search", "method": "get", "action": "/fiqh"})
+        self.assertEqual(form, {"role": "search", "method": "get", "action": "/"})
         fields = {i["name"]: i for i in document.find("input")}
-        self.assertEqual(set(fields), {"q", "basic"})
-        self.assertEqual(fields["basic"]["value"], "1")
+        self.assertEqual(set(fields), {"q"})
         self.assertEqual(fields["q"]["maxlength"], "160")
         self.assertIn("required", fields["q"])
         self.assertTrue(
             any(label.get("for") == fields["q"]["id"] for label in document.find("label"))
         )
         query = "عنوان اختبار"
-        with (
-            patch(
-                "apps.reference.views.services.list_books",
-                return_value=CatalogPage([], 0, 100, 0, None),
-            ),
-            patch("apps.reference.views.services.resolve_edition", return_value=None),
-            patch(
-                "apps.reference.views.services.search", return_value=CatalogPage([], 0, 30, 0, None)
-            ) as search,
-        ):
-            response = self.client.get(form["action"] + "?" + urlencode({"basic": "1", "q": query}))
+        with patch(
+            "apps.public_site.views.search", return_value=CatalogPage([], 0, 30, 0, None)
+        ) as search:
+            response = self.client.get(form["action"] + "?" + urlencode({"q": query}))
         self.assertEqual(response.status_code, 200)
-        search.assert_called_once_with(None, query, "normalized", Page())
+        search.assert_called_once_with(
+            self.edition, query, "normalized", Page(), depth=None, has_children=None
+        )
         self.assertNotContains(response, "reference/catalog.js")
 
     def test_pages_have_rtl_landmarks_skip_link_and_no_client_script(self) -> None:
@@ -208,10 +209,14 @@ class PublicPageTests(SimpleTestCase):
             with self.subTest(route=route):
                 response = self.client.get(route)
                 self.assertContains(response, "وليست فتاوى منشورة")
-                self.assertFalse(Elements(response.content).find("select"))
+                self.assertFalse(
+                    any(
+                        item.get("name") == "edition"
+                        for item in Elements(response.content).find("select")
+                    )
+                )
                 for text in [
                     'name="edition"',
-                    "?edition=",
                     SOURCE["edition_key"],
                     SOURCE["title"],
                     SOURCE["source_archive_sha256"],
