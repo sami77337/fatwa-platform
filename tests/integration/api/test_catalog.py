@@ -208,9 +208,10 @@ class ORMReadTests(SimpleTestCase):
             with cursor_rows([values(heading(2, 1, 2))]):
                 with self.assertRaises(InvalidQuery):
                     services.search(self.edition, text, "normalized", Page(), 2)
-        with cursor_rows([values(heading())]) as fake:
-            self.assertEqual(services.search(self.edition, "", "normalized", Page(), 1).total, 0)
-            self.assertEqual(len(fake.calls), 1)
+        # A valid root alone is now an explicit filter-only request.
+        with cursor_rows([values(heading())], [(1,)], [values(heading())]) as fake:
+            self.assertEqual(services.search(self.edition, "", "normalized", Page(), 1).total, 1)
+            self.assertEqual(len(fake.calls), 3)
         with self.assertRaises(services.HeadingNotFound):
             services.search(None, "", "normalized", Page(), 1)
 
