@@ -63,9 +63,10 @@ both paths. D1 previously could return a report that `json_bytes()` could not
 serialize. Final synthetic-example coverage was added afterward as executable
 documentation of existing behavior.
 
-## GREEN commands and counts
+## Initial increment GREEN commands and counts
 
-Executed from repository root with the isolated Python3.13 venv. No source
+Initial head `44209c174d6625fa1f8254a7a0fdca3166e75145` was executed from
+repository root with the isolated Python3.13 venv. No source
 archive, catalog DB or media URL was opened. Separate commands count overlapping
 tests again; totals must not be summed as unique coverage.
 
@@ -119,3 +120,57 @@ disposable `/tmp/wave6-e1-*` files, not owner-data artifacts.
   discover both new test modules through their owned directories.
 - No independent review, product/source acceptance or next-wave authorization
   claimed. USAGE_NOT_OBSERVED. NOT_DEPLOYED / GATES_HOLD.
+
+## Follow-up: control characters in external IDs
+
+The coordinator requested an E1-only fix on the same branch/PR54 after the
+[E3 integration reproduction](https://github.com/sami77337/fatwa-platform/issues/50#issuecomment-6226480861).
+At initial head `44209c174d6625fa1f8254a7a0fdca3166e75145`, C1's general
+question/note allowance for TAB/CR/LF was also applied to `external_id`; DEL
+was not checked. D1 therefore created drafts for IDs rejected by unchanged D3.
+
+New regressions were run RED before changing production code:
+
+```sh
+.venv/bin/python -m unittest discover -s tests/content_intake -p test_exact_prepared.py -v
+.venv/bin/python -m unittest discover -s tests/prepared_pipeline -p test_wave6_contract.py -v
+```
+
+C1: 19 methods, 12 failing subtests (TAB/CR/LF/DEL across JSON/JSONL/CSV),
+exit 1. D1: nine methods, one failure, exit 1: the mixed six-row batch created
+six drafts instead of two. The ordinary-interior-space ID compatibility test
+already passed and is not claimed as a new fix.
+
+The only production change adds an external-ID-specific ASCII control check
+to C1 validation. This check is inherited by D1 before draft creation; IDs are
+never normalized. The mixed batch now retains all six original rows and their
+exact questions/notes, blocks the four control IDs with `draft=None` and no
+reference result/citation, and creates only the two eligible drafts. Both valid
+rows retain their trusted synthetic reference evidence. D3 still rejects the
+original mixed input; forwarding only D1-eligible rows resolves the two valid
+IDs, including `SYN UNSEEN`, unchanged. E2 display/composition after assembly
+still requires the coordinator's combined-SHA verification.
+
+Fresh GREEN commands on the follow-up code (same Python3.13 uv venv):
+
+| Actual command | Result |
+| --- | --- |
+| `.venv/bin/python -m unittest discover -s tests/content_intake -v` | 30 PASS, 0 fail/error/skip |
+| `.venv/bin/python -m unittest discover -s tests/prepared_pipeline -v` | 37 PASS, 0 fail/error/skip |
+| `.venv/bin/python -m unittest discover -s tests/fatwa_drafts -v` | 17 PASS, 0 fail/error/skip |
+| `.venv/bin/python -m unittest discover -s tests/reference_links -v` | 37 PASS, 0 fail/error/skip; baseline pure/mocked adapter suite |
+| `.venv/bin/python tools/dev/wave3_qa.py --standalone --require-integrated` | PASS: 30 C1 + 17 C2 + 37 reference tests |
+| `.venv/bin/python tools/dev/wave4_qa.py --wave3 --json /tmp/wave6-e1-control-wave4-summary.json` | All 11 entries PASS: D1 37, editorial 16+9+19, D3 37, filter UI 4, D4 Node 26, landing 18, nested C6 PASS; Django system check PASS |
+
+The complete owned suites rerun the exact million-byte/1,000-row/100-reference
+positive boundary and excess-bound rejection. No bounds or D3/C2 contracts
+were relaxed. The original executable seven-row fixture and hashes are
+unchanged. Follow-up production/test/doc changes remain within E1 ownership.
+Clean-commit rerun, exact new SHA, actual push and CI status are recorded in
+PR54/Issue50 after publication; initial-head CI is not evidence for the new head.
+
+NOT_RUN for this follow-up: Windows, local PostgreSQL/migrations, full importer,
+real browser/source acceptance, assembled Wave6 E2/E3 and independent review.
+No cross-lane production files, root dependencies, source fixtures, routes,
+security settings or permissions changed. MAIN_UNCHANGED / NOT_DEPLOYED /
+GATES_HOLD / USAGE_NOT_OBSERVED.

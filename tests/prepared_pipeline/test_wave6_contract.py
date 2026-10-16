@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import apps.prepared_pipeline as pipeline
 from apps.fatwa_drafts.intake import ReferenceLink, ValidationError, parse_intake, serialize_intake
+from apps.reference_links.bridge import resolve_prepared_pointers
 from apps.reference_links.resolution import Heading, SnapshotCatalog
 from tools.content_intake.cli import SCHEMA, artifacts, normalize
 
@@ -21,6 +22,45 @@ def row(external_id="SYN-E1-valid", **changes):
 
 
 class Wave6ContractTests(unittest.TestCase):
+    def test_mixed_control_ids_are_blocked_without_rewriting_or_losing_rows(self):
+        example = Path(__file__).resolve().parents[2] / "docs/dev/e1/synthetic_example.py"
+        _, mapping, bridge, catalog = runpy.run_path(str(example))["build_inputs"]()
+        original_question = " \tسُؤالٌ اصطناعيّ\r\nالسطرُ الثاني\n  "
+        original_notes = " \tملاحظاتٌ\r\nاصطناعيّة\n  "
+        ids = [f"SYN{control}UNSEEN" for control in ("\t", "\r", "\n", "\x7f")]
+        ids += ["SYN UNSEEN", "SYN-VALID"]
+        rows = [row(ident, question=original_question, staff_notes=original_notes,
+                    reference_links=[{"source_id": "synthetic-source", "heading_id": "opaque-heading"}])
+                for ident in ids]
+        raw = raw_rows(rows)
+        batch = pipeline.prepare_batch(raw, synthetic_fixtures_only=True,
+                                       reference_map=mapping, catalog=catalog)
+        reports = batch.report["items"]
+        self.assertEqual(len(reports), 6)
+        self.assertEqual([r["original"] for r in reports], rows)
+        self.assertEqual([r["original"] for r in json.loads(batch.json_bytes())["items"]], rows)
+        self.assertEqual([draft.intake.external_id for draft in batch.drafts], ids[4:])
+        self.assertEqual(batch.report["summary"], {"ready-for-editor": 2, "blocked-invalid": 4,
+                                                  "needs-editor-review": 0, "references-unverified": 4})
+        for report in reports[:4]:
+            self.assertIn("blocked-invalid", report["statuses"])
+            self.assertIsNone(report["draft"])
+            self.assertEqual(report["references"], [])
+            self.assertIn({"field": "external_id", "code": "invalid_unicode_or_control",
+                           "severity": "error"}, report["findings"])
+        for report, draft in zip(reports[4:], batch.drafts, strict=True):
+            self.assertEqual(report["references"][0]["outcome"], "verified")
+            self.assertEqual(draft.intake.question, original_question)
+            self.assertEqual(draft.intake.staff_notes, original_notes)
+            self.assertEqual(parse_intake(serialize_intake((draft.intake,))), (draft.intake,))
+        # D3 keeps its strict identity contract. E2 can forward only eligible rows,
+        # while retaining all six originals from the D1 report for display.
+        with self.assertRaises(ValueError):
+            resolve_prepared_pointers(raw, bridge, catalog)
+        eligible = [r["original"] for r in reports if r["draft"] is not None]
+        resolved = resolve_prepared_pointers(raw_rows(eligible), bridge, catalog)
+        self.assertEqual([r.external_id for r in resolved], ids[4:])
+
     def test_published_synthetic_example(self):
         example = Path(__file__).resolve().parents[2] / "docs/dev/e1/synthetic_example.py"
         raw, mapping, bridge, catalog = runpy.run_path(str(example))["build_inputs"]()

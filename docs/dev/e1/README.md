@@ -11,6 +11,14 @@ legacy title/question conflict checks may inspect stripped copies, but never
 write those copies into the original fields. There is no derived search field
 in this adapter and no Unicode normalization.
 
+External IDs have a field-specific identity rule: ASCII controls (`ord < 32`
+or DEL `ord == 127`), including interior TAB/CR/LF, block the row before draft
+creation. The exact submitted ID, question and notes remain in D1's original
+row/report; no control character is converted into a space or replacement ID.
+Ordinary interior ID spaces remain accepted. Question and note TAB/CR/LF remain
+supported and are preserved exactly. This matches D3's existing ID restriction
+without weakening D3 or the 1,000,000-byte input limit.
+
 C1 accepts at most 1,000,000 input bytes, 1,000 records and 100 references per
 record. The CLI reads at most the byte limit plus one sentinel. CSV and JSONL
 record iteration stops at the row limit plus one; JSON parsing is first bounded

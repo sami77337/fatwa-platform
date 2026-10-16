@@ -116,7 +116,11 @@ def normalize(rows):
             if not isinstance(value, str):
                 finding(number, field, "must_be_string")
                 value = ""
-            if any(unicodedata.category(c) == "Cs" or (ord(c) < 32 and c not in "\n\r\t") for c in value):
+            # Prepared text keeps tabs/newlines; IDs follow D3's strict control rule.
+            invalid_id_control = field == "external_id" and any(
+                ord(c) < 32 or ord(c) == 127 for c in value)
+            if invalid_id_control or any(
+                    unicodedata.category(c) == "Cs" or (ord(c) < 32 and c not in "\n\r\t") for c in value):
                 finding(number, field, "invalid_unicode_or_control")
             item[field] = value
             if field == "external_id" and value != value.strip():

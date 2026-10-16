@@ -170,6 +170,26 @@ class ExactPreparedTests(unittest.TestCase):
             self.assertEqual(manifest["status"], "INVALID")
             self.assertEqual(json.loads(outputs["intake.json"])["items"], [])
 
+    def test_external_id_controls_are_invalid_in_every_adapter(self):
+        for control in ("\t", "\r", "\n", "\x7f"):
+            for suffix in (".json", ".jsonl", ".csv"):
+                with self.subTest(control=ord(control), suffix=suffix):
+                    row = synthetic_row(external_id=f"SYN{control}UNSEEN")
+                    outputs, manifest = artifacts(adapter_bytes(row, suffix), suffix)
+                    self.assertEqual(manifest["status"], "INVALID")
+                    self.assertEqual(json.loads(outputs["intake.json"])["items"], [])
+                    self.assertIn({"row": 1, "field": "external_id",
+                                   "code": "invalid_unicode_or_control", "severity": "error"},
+                                  manifest["findings"])
+
+    def test_interior_id_spaces_and_original_question_notes_remain_valid(self):
+        row = synthetic_row(external_id="SYN UNSEEN")
+        for suffix in (".json", ".jsonl", ".csv"):
+            with self.subTest(suffix=suffix):
+                outputs, manifest = artifacts(adapter_bytes(row, suffix), suffix)
+                self.assertEqual(manifest["status"], "VALID")
+                self.assertEqual(json.loads(outputs["intake.json"])["items"], [row])
+
     def test_oversized_cli_input_returns_invalid_without_export(self):
         root = Path(__file__).resolve().parents[2]
         with tempfile.TemporaryDirectory(dir=root / "tests/content_intake") as directory:
