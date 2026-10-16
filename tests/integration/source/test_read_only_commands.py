@@ -122,6 +122,8 @@ class AuditCommandTests(unittest.TestCase):
         report = self.run_mocked()
         self.assertEqual(report["matched_rows"], 7)
         self.assertEqual(report["database_import"], "NOT_RUN")
+        self.assertEqual(report["citation_metadata"]["heading_count"], 7)
+        self.assertEqual(report["citation_metadata"]["mapped_checksum"], self.prepared.checksum)
         self.assertNotIn("عُنْوان", self.stdout.getvalue())
 
     def test_drift_is_failure_with_bounded_report_and_no_repair(self):
@@ -147,6 +149,8 @@ class AuditCommandTests(unittest.TestCase):
         path.assert_called_once_with(self.edition, heading)
         self.assertEqual(report["citation"]["part"], "01")
         self.assertEqual(report["citation"]["path"], ancestors)
+        self.assertEqual(report["citation"]["edition_key"], self.prepared.spec.edition_key)
+        self.assertEqual(report["citation"]["source_archive_sha256"], self.prepared.spec.source_archive_sha256)
 
 
 class ImportPreviewSafetyTests(unittest.TestCase):

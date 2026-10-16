@@ -12,6 +12,7 @@ from apps.reference.records import MAX_ROWS, InvalidCatalog
 from apps.reference.services import CatalogUnavailable, HeadingNotFound, heading_path, node
 from tools.fiqh_import.audit import ROW_FIELDS, audit_catalog
 from tools.fiqh_import.book622 import validate_book622
+from tools.fiqh_import.citation_audit import audit_citation_metadata
 from tools.fiqh_import.ingest import IngestError
 from tools.fiqh_import.postgres import ReadOnlySnapshotError, read_only_snapshot
 
@@ -69,6 +70,7 @@ class Command(BaseCommand):
                     max_issues=options["max_issues"],
                 )
                 report.update({
+                    "citation_metadata": audit_citation_metadata(prepared),
                     "source_validation": source,
                     "postgres_version": database.pg_version,
                     "transaction": "REPEATABLE READ / READ ONLY",
@@ -83,6 +85,11 @@ class Command(BaseCommand):
                         "kind": "SOURCE_BOOK_TOC_NOT_FATWAS",
                         "work_title": edition.work.title_original,
                         "edition_title": edition.title,
+                        "edition_key": edition.edition_key,
+                        "source_namespace": edition.work.source_namespace,
+                        "source_book_id": edition.work.source_book_id,
+                        "source_archive_sha256": edition.source_archive_sha256,
+                        "source_input_sha256": edition.source_input_sha256,
                         "source_id": heading.source_id,
                         "heading_id": heading.source_row_id,
                         "title": heading.title_original,
