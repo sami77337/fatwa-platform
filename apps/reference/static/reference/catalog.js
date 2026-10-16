@@ -65,7 +65,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   };
   const citation = node => "الجزء: " + (node.source.printed_part ?? "غير متاح") +
     "، الصفحة المطبوعة: " + (node.source.printed_page === null ? "غير متاحة" : number.format(node.source.printed_page));
-  const publication = node => node.source.work_title + " — " + node.source.edition + "؛ " + node.source.publisher;
+  const publication = node => node.source.work_title;
   const snapshot = () => ({ root: state.root, selected: state.selected, focusId: state.focusId,
     expanded: [...state.expanded], groups: [...state.groups], searchPage: state.searchPage,
     searchOptions: state.searchOptions, query: get("search-query").value,
@@ -96,10 +96,24 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       list.append(li);
     }
     get("breadcrumbs").replaceChildren(list);
+    const address = new URL(href(node.id), view?.location.href ?? "http://localhost").href;
+    const manualCopy = () => {
+      const field = element("input", null, { type: "url", readonly: "", "aria-label": "رابط العنوان للنسخ اليدوي", dir: "ltr" });
+      field.value = address;
+      get("reference-content").append(field); field.focus(); field.select?.();
+      announce("انسخ الرابط المحدد من حقل الرابط.");
+    };
+    const copy = button("نسخ رابط العنوان", async () => {
+      try {
+        if (!view?.navigator?.clipboard?.writeText) { manualCopy(); return; }
+        await view.navigator.clipboard.writeText(address);
+        announce("تم نسخ رابط العنوان.");
+      } catch { manualCopy(); }
+    });
     get("reference-content").replaceChildren(
       element("p", node.title, { class: "selected-title" }),
       element("p", publication(node)), element("p", citation(node)),
-      element("a", "رابط هذا العنوان", { href: href(node.id) }),
+      element("a", "رابط هذا العنوان", { href: href(node.id) }), copy,
     );
     get("basic-link")?.setAttribute("href", href(node.id, true));
     doc.title = node.title + " — فهرس المرجع";
@@ -329,7 +343,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       state.searchPage = data.searchPage; state.searchOptions = data.searchOptions;
       get("search-query").value = data.query; get("search-scope").value = data.scope; get("search-mode").value = data.mode;
       get("search-query").removeAttribute("aria-invalid");
-      markRoot(); showSelection(state.selected); renderTree(true); renderSearch();
+      markRoot(); showSelection(state.selected); renderTree(event.restore !== true); renderSearch();
       announce("تمت استعادة موضعك في الفهرس.");
     } else {
       const match = view.location.pathname.match(new RegExp("^/fiqh/nodes/([1-9][0-9]*)$"));
@@ -375,7 +389,10 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       if (current("catalogRequest", request) && error.name !== "AbortError") { busy("tree-region", false); failure(() => void start()); }
     }
   }
-  const ready = start();
+  const savedAtLoad = view?.history?.state;
+  const ready = start().then(async () => {
+    if (state.initialized && savedAtLoad?.fatwaCatalog?.version === 1) await pop({ state: savedAtLoad, restore: true });
+  });
   return { ready, destroy() {
     state.disposed = true;
     for (const lane of ["treeRequest", "searchRequest", "catalogRequest"]) cancel(lane);
@@ -392,7 +409,7 @@ if (panel) {
     document.querySelector(".skip-link").href = "#catalog-panel";
     const source = catalog.source;
     document.getElementById("source-summary").textContent = source
-      ? source.work.title_original + "؛ " + source.publisher + "؛ المذهب: " + source.work.madhhab + "؛ عدد العناوين: " + number.format(catalog.totals.nodes)
+      ? source.work.title_original + "؛ عدد العناوين: " + number.format(catalog.totals.nodes)
       : "لم يُحمّل فهرس مرجعي بعد.";
   } });
 }

@@ -70,6 +70,7 @@ body { max-width: none; padding: 0; }
 #tree-pagination .pagination { border-block-end: 1px solid #b8c6d0; padding-block: .5rem; }
 #tree-pagination .pagination > span { flex: 1 1 100%; overflow-wrap: anywhere; }
 .selected-title { font-weight: bold; }
+#reference-content input { display: block; inline-size: 100%; margin-block: .5rem; }
 #tree-region[aria-busy="true"] { border-inline-start: .25rem solid #075681; }
 #tree-region:empty { display: none; }
 #request-status:empty { display: none; }
