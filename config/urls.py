@@ -1,9 +1,13 @@
 from django.urls import path
 
+from apps.editorial_demo import views as editorial_views
 from apps.public_site import views as public_views
 from apps.reference import views
 
 urlpatterns = [
+    path("dev/editorial-preview", editorial_views.preview, name="editorial_demo"),
+    path("dev/editorial-preview/style.css", editorial_views.stylesheet, name="editorial_demo_style"),
+    path("dev/editorial-preview/<str:ident>", editorial_views.preview, name="editorial_demo_detail"),
     path("", public_views.home, name="home"),
     path("help", public_views.help_page, name="public_help"),
     path("fiqh", views.catalog, name="catalog"),

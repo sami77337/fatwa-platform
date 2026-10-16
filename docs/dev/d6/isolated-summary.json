@@ -1,0 +1,65 @@
+{
+  "gates": "NOT_DEPLOYED / GATES_HOLD",
+  "source_acceptance": "NOT_RUN",
+  "postgres": "NOT_RUN: database access disabled",
+  "suites": {
+    "node_version": {
+      "status": "PASS",
+      "exit_code": 0,
+      "reason": "exit",
+      "output_tail": "v24.16.0\r\n",
+      "output_truncated": false
+    },
+    "django": {
+      "status": "PASS",
+      "exit_code": 0,
+      "reason": "exit",
+      "output_tail": "System check identified no issues (0 silenced).\r\n",
+      "output_truncated": false
+    },
+    "D1": {
+      "status": "NOT_RUN",
+      "missing": [
+        "tools/content_intake/wave4.py",
+        "tests/vertical/d1"
+      ]
+    },
+    "D2": {
+      "status": "NOT_RUN",
+      "missing": [
+        "apps/fatwa_drafts/wave4.py",
+        "tests/vertical/d2"
+      ]
+    },
+    "D3": {
+      "status": "NOT_RUN",
+      "missing": [
+        "apps/reference_links/wave4.py",
+        "tests/vertical/d3"
+      ]
+    },
+    "D4": {
+      "status": "NOT_RUN",
+      "missing": [
+        "ui_drafts/fiqh/wave4.mjs",
+        "tests/vertical/d4",
+        "tests/vertical/d4/functional.test.mjs"
+      ]
+    },
+    "D5": {
+      "status": "NOT_RUN",
+      "missing": [
+        "quality/security/wave4.py",
+        "tests/vertical/d5"
+      ]
+    },
+    "wave3": {
+      "status": "PASS",
+      "exit_code": 0,
+      "reason": "exit",
+      "output_tail": "ok\r\ntest_required_readiness_fields (test_domain.DraftTests.test_required_readiness_fields) ... ok\r\ntest_revision_cycle (test_domain.DraftTests.test_revision_cycle) ... ok\r\ntest_bad_json_and_utf8 (test_domain.IntakeTests.test_bad_json_and_utf8) ... ok\r\ntest_exact_manual_reference_preserved (test_domain.IntakeTests.test_exact_manual_reference_preserved) ... ok\r\ntest_missing_ambiguous_or_duplicate_references (test_domain.IntakeTests.test_missing_ambiguous_or_duplicate_references) ... ok\r\ntest_missing_required_fields_and_links (test_domain.IntakeTests.test_missing_required_fields_and_links) ... ok\r\ntest_types_bounds_and_unknown_fields (test_domain.IntakeTests.test_types_bounds_and_unknown_fields) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 17 tests in 0.004s\r\n\r\nOK\r\ntest_exact_service_reads (test_django_adapter.AdapterTests.test_exact_service_reads) ... ok\r\ntest_missing_and_unavailable (test_django_adapter.AdapterTests.test_missing_and_unavailable) ... ok\r\ntest_alias_exact_id (test_resolution.ResolutionTests.test_alias_exact_id) ... ok\r\ntest_changed_names_and_locations (test_resolution.ResolutionTests.test_changed_names_and_locations) ... ok\r\ntest_cross_edition_isolation (test_resolution.ResolutionTests.test_cross_edition_isolation) ... ok\r\ntest_duplicate_identity_ambiguous_even_if_metadata_matches (test_resolution.ResolutionTests.test_duplicate_identity_ambiguous_even_if_metadata_matches) ... ok\r\ntest_html_unicode_and_determinism (test_resolution.ResolutionTests.test_html_unicode_and_determinism) ... ok\r\ntest_intake_malformed_utf8_duplicates_and_null (test_resolution.ResolutionTests.test_intake_malformed_utf8_duplicates_and_null) ... ok\r\ntest_intake_no_inference_or_media_access (test_resolution.ResolutionTests.test_intake_no_inference_or_media_access) ... ok\r\ntest_invalid_source_evidence (test_resolution.ResolutionTests.test_invalid_source_evidence) ... ok\r\ntest_missing_source_page_or_part (test_resolution.ResolutionTests.test_missing_source_page_or_part) ... ok\r\ntest_no_text_association_or_unknown_fields (test_resolution.ResolutionTests.test_no_text_association_or_unknown_fields) ... ok\r\ntest_snapshot_bound (test_resolution.ResolutionTests.test_snapshot_bound) ... ok\r\ntest_strict_null_and_types (test_resolution.ResolutionTests.test_strict_null_and_types) ... ok\r\ntest_unavailable_and_adapter_identity_violation (test_resolution.ResolutionTests.test_unavailable_and_adapter_identity_violation) ... ok\r\ntest_verified_deep_path_and_provenance (test_resolution.ResolutionTests.test_verified_deep_path_and_provenance) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 16 tests in 0.255s\r\n\r\nOK\r\n{\r\n  \"gates\": \"NOT_DEPLOYED / GATES_HOLD\",\r\n  \"source_acceptance\": \"NOT_RUN\",\r\n  \"postgres\": \"NOT_RUN: no database actions\",\r\n  \"sha\": \"cf877ab6d0abadbeafe15efa8ef9c286e7795b23\",\r\n  \"working_tree\": \"DIRTY\",\r\n  \"content_intake\": \"PASS\",\r\n  \"fatwa_drafts\": \"PASS\",\r\n  \"reference_links\": \"PASS\"\r\n}\r\n",
+      "output_truncated": true
+    }
+  },
+  "acceptance": "NOT_RUN"
+}

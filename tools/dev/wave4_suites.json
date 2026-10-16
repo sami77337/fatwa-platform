@@ -1,0 +1,56 @@
+{
+  "D1": {
+    "implementation": [
+      "apps/prepared_pipeline/__init__.py"
+    ],
+    "python": [
+      "tests/prepared_pipeline"
+    ],
+    "node": []
+  },
+  "D2": {
+    "implementation": [
+      "apps/editorial_demo/views.py",
+      "config/urls.py"
+    ],
+    "python": [],
+    "django": [
+      "tests.editorial_demo.test_preview"
+    ],
+    "node": []
+  },
+  "D3": {
+    "implementation": [
+      "apps/reference_links/bridge.py"
+    ],
+    "python": [
+      "tests/reference_links"
+    ],
+    "node": []
+  },
+  "D4": {
+    "implementation": [
+      "apps/reference/static/reference/catalog.js",
+      "apps/reference/static/reference/django-api.mjs"
+    ],
+    "python": [],
+    "django": [
+      "tests.integration.api.test_d4_filter_ui"
+    ],
+    "node": [
+      "tests/integration/ui/adapter.test.mjs",
+      "tests/integration/ui/catalog.test.mjs"
+    ]
+  },
+  "D5": {
+    "implementation": [
+      "apps/public_site/views.py",
+      "templates/public_site/home.html"
+    ],
+    "python": [],
+    "django": [
+      "tests.public_site.test_landing"
+    ],
+    "node": []
+  }
+}

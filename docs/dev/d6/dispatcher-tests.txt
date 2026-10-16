@@ -1,0 +1,75 @@
+python : test_ci_rejects_dirty_checkout (test_b6_qa.QATests.test_ci_rejects_dirty_checkout) ... ok
+At line:59 char:1
++ python -m unittest discover -s tests/dev -p 'test_*.py' -v *> docs/de ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_ci_rejects...heckout) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+test_clean_checkout_identified (test_b6_qa.QATests.test_clean_checkout_identified) ... ok
+test_ephemeral_topology_and_real_app_commands (test_b6_qa.QATests.test_ephemeral_topology_and_real_app_commands) ... ok
+test_inherited_credentials_removed (test_b6_qa.QATests.test_inherited_credentials_removed) ... ok
+test_local_transports (test_b6_qa.QATests.test_local_transports) ... ok
+test_pg17_covers_image_volume_with_tmpfs (test_b6_qa.QATests.test_pg17_covers_image_volume_with_tmpfs) ... ok
+test_remote_and_injected_transports_rejected (test_b6_qa.QATests.test_remote_and_injected_transports_rejected) ... ok
+test_shell_is_never_used_with_spaced_paths (test_b6_qa.QATests.test_shell_is_never_used_with_spaced_paths) ... ok
+test_unavailable_docker_never_builds_or_mutates (test_b6_qa.QATests.test_unavailable_docker_never_builds_or_mutates) 
+... ok
+test_wrong_postgres_version_fails_before_docker (test_b6_qa.QATests.test_wrong_postgres_version_fails_before_docker) 
+... ok
+test_candidate_connections_force_read_only 
+(test_db_guard.DatabaseGuardTests.test_candidate_connections_force_read_only) ... ok
+test_different_identity_privileges_or_existing_tables_are_refused 
+(test_db_guard.DatabaseGuardTests.test_different_identity_privileges_or_existing_tables_are_refused) ... ok
+test_even_valid_preflight_never_runs_django_or_mutations 
+(test_db_guard.DatabaseGuardTests.test_even_valid_preflight_never_runs_django_or_mutations) ... ok
+test_inherited_connection_overrides_are_refused 
+(test_db_guard.DatabaseGuardTests.test_inherited_connection_overrides_are_refused) ... ok
+test_protected_and_ambiguous_targets_fail_before_any_connection 
+(test_db_guard.DatabaseGuardTests.test_protected_and_ambiguous_targets_fail_before_any_connection) ... ok
+test_same_cluster_even_with_distinct_database_is_refused 
+(test_db_guard.DatabaseGuardTests.test_same_cluster_even_with_distinct_database_is_refused) ... ok
+test_absent_packages_are_not_pass (test_wave3_qa.DispatcherTests.test_absent_packages_are_not_pass) ... ok
+test_checkout_failure_runs_nothing (test_wave3_qa.DispatcherTests.test_checkout_failure_runs_nothing) ... ok
+test_cmd_unicode_checkout_and_nonzero_exit (test_wave3_qa.DispatcherTests.test_cmd_unicode_checkout_and_nonzero_exit) 
+... ok
+test_discovery_uses_explicit_python313_directories 
+(test_wave3_qa.DispatcherTests.test_discovery_uses_explicit_python313_directories) ... ok
+test_failure_continues_and_propagates (test_wave3_qa.DispatcherTests.test_failure_continues_and_propagates) ... ok
+test_missing_django_and_node_propagate (test_wave3_qa.DispatcherTests.test_missing_django_and_node_propagate) ... ok
+test_only_read_only_default_commands (test_wave3_qa.DispatcherTests.test_only_read_only_default_commands) ... ok
+test_real_discovery_empty_pass_and_failure (test_wave3_qa.DispatcherTests.test_real_discovery_empty_pass_and_failure) 
+... ok
+test_real_unicode_path_subprocess (test_wave3_qa.DispatcherTests.test_real_unicode_path_subprocess) ... ok
+test_wrong_python_runs_nothing (test_wave3_qa.DispatcherTests.test_wrong_python_runs_nothing) ... ok
+test_absent_required (test_wave4_qa.Wave4Tests.test_absent_required) ... ok
+test_cli_options_and_invalid_argument (test_wave4_qa.Wave4Tests.test_cli_options_and_invalid_argument) ... usage: 
+python.exe -m unittest [-h] [--isolated] [--wave3]
+                              [--manifest MANIFEST] [--json JSON]
+python.exe -m unittest: error: unrecognized arguments: --unknown
+ok
+test_cmd_propagates_failure_unicode_path (test_wave4_qa.Wave4Tests.test_cmd_propagates_failure_unicode_path) ... ok
+test_empty_tests_rejected (test_wave4_qa.Wave4Tests.test_empty_tests_rejected) ... ok
+test_existing_good_python_and_node_modules (test_wave4_qa.Wave4Tests.test_existing_good_python_and_node_modules) ... ok
+test_failure_continues (test_wave4_qa.Wave4Tests.test_failure_continues) ... ok
+test_implementation_missing_even_with_tests (test_wave4_qa.Wave4Tests.test_implementation_missing_even_with_tests) ... 
+ok
+test_integrated_explicit_commands (test_wave4_qa.Wave4Tests.test_integrated_explicit_commands) ... ok
+test_invalid_manifest_and_escape (test_wave4_qa.Wave4Tests.test_invalid_manifest_and_escape) ... ok
+test_isolated_does_not_claim_acceptance (test_wave4_qa.Wave4Tests.test_isolated_does_not_claim_acceptance) ... ok
+test_real_complete_synthetic_integration (test_wave4_qa.Wave4Tests.test_real_complete_synthetic_integration) ... ok
+test_real_node_zero_failure_and_good (test_wave4_qa.Wave4Tests.test_real_node_zero_failure_and_good) ... ok
+test_real_python_discovery_lf_crlf_zero_and_failure 
+(test_wave4_qa.Wave4Tests.test_real_python_discovery_lf_crlf_zero_and_failure) ... ok
+test_subprocess_codes_and_bounded_output (test_wave4_qa.Wave4Tests.test_subprocess_codes_and_bounded_output) ... ok
+test_unicode_space_path_and_shell_false (test_wave4_qa.Wave4Tests.test_unicode_space_path_and_shell_false) ... ok
+test_wrong_python_no_subprocess (test_wave4_qa.Wave4Tests.test_wrong_python_no_subprocess) ... ok
+
+----------------------------------------------------------------------
+Ran 42 tests in 2.794s
+
+OK
+
+
+{
+  "acceptance": "NOT_RUN"
+}

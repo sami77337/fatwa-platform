@@ -92,3 +92,7 @@ body { max-width: none; padding: 0; }
   .basic-reading-help { display: none !important; }
   .selected-title, .basic-reference { overflow-wrap: anywhere; }
 }
+
+/* Preserve original title spacing without preventing mobile wrapping. */
+.selected-title, .result-list a, .tree-row > span:last-child, .heading-list summary, .heading-list a { white-space: pre-wrap; overflow-wrap: anywhere; }
+#search-form select, #catalog-content select { max-inline-size: 100%; min-block-size: 2.75rem; }
