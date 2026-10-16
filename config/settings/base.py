@@ -17,6 +17,7 @@ ASGI_APPLICATION = "config.asgi.application"
 INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_htmx",
+    "apps.public_site.apps.PublicSiteConfig",
     "apps.reference.apps.ReferenceConfig",
 ]
 MIDDLEWARE = [
