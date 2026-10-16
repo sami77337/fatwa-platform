@@ -28,10 +28,13 @@ jobs:
           node-version: '24'
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests/dev -p 'test_*.py' -v
-      - run: python tools/dev/wave4_qa.py --wave3 --json wave4-summary.json
+      - run: python tools/dev/wave4_qa.py --wave3 --reports .local/qa/d6 --json wave4-summary.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: wave4-${{ matrix.os }}
-          path: wave4-summary.json
-          if-no-files-found: warn
+          path: |
+            wave4-summary.json
+            .local/qa/d6/*.json
+          include-hidden-files: true
+          if-no-files-found: error

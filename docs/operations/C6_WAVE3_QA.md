@@ -41,3 +41,13 @@ No live HTTP checks or browser acceptance are implied by Node tests.
 NOT_DEPLOYED / GATES_HOLD. Source acceptance is NOT_RUN. The original 11,397 headings
 are reference contents, not fatwas. No publication, approval, media processing,
 private workflow or account functionality is activated.
+
+## Wave6 E5 increment
+
+The required pure package list now also includes **all of `tests/fiqh_import`**.
+Both Ubuntu and Windows jobs install Node 24, retain Python 3.13, and run the
+same fail-closed module inventory. An empty/uncollected module fails alongside
+nonempty modules. `--reports .local/qa/c6` saves per-package HEAD, working-tree
+state, case totals, module inventory and bounded skip reasons; CI uploads these
+as `c6-<os>`. Source-only skips remain explicit, never source acceptance.
+See [E5 evidence](../dev/e5/README.md) and its integration dependency handoff.

@@ -29,12 +29,26 @@ def execute(command, root, timeout=180):
             code, reason = 124, "timeout"
         except OSError:
             code, reason = 127, "unavailable"
+        counts = None
+        if len(command) > 2 and Path(command[1]).name == "manage.py" and command[2] == "test":
+            output.seek(0)
+            for line in iter(lambda: output.readline(8192), b""):
+                match = re.match(rb"Ran (\d+) tests? in ", line)
+                if match:
+                    counts = {"run": int(match[1]), "failures": 0, "errors": 0,
+                              "skipped": 0, "expected_failures": 0, "unexpected_successes": 0}
+                if counts is not None:
+                    for label, value in re.findall(rb"(failures|errors|skipped|expected failures|unexpected successes)=(\d+)", line):
+                        counts[label.decode().replace(" ", "_")] = int(value)
+            if code == 0 and (counts is None or counts["run"] == 0):
+                code, reason = 2, "zero_or_unreported_tests"
         output.seek(0, 2)
         size = output.tell()
         output.seek(max(0, size - 3000))
         tail = output.read().decode("utf-8", errors="replace")
     return {"status": "PASS" if code == 0 else "FAIL", "exit_code": code,
-            "reason": reason, "output_tail": tail, "output_truncated": size > 3000}
+            "reason": reason, "output_tail": tail, "output_truncated": size > 3000,
+            **({"counts": counts} if counts is not None else {})}
 
 
 def safe_path(root, value):
@@ -77,15 +91,16 @@ def load_contract(root, manifest):
     return data
 
 
-def dispatch(root=ROOT, manifest=None, isolated=False, wave3=False):
+def dispatch(root=ROOT, manifest=None, isolated=False, wave3=False, reports=None):
     report = {"gates": "NOT_DEPLOYED / GATES_HOLD", "source_acceptance": "NOT_RUN",
               "postgres": "NOT_RUN: database access disabled", "suites": {}}
     if sys.version_info[:2] != (3, 13):
         report["preflight"] = "FAIL: Python 3.13 required"
         return 3, report
     try:
+        report.update(qa.committed())
         contract = load_contract(root, manifest or root / "tools/dev/wave4_suites.json")
-    except (OSError, ValueError, TypeError):
+    except (OSError, ValueError, TypeError, RuntimeError, subprocess.SubprocessError):
         report["preflight"] = "FAIL: invalid integration manifest"
         return 2, report
     failed, missing = False, False
@@ -121,14 +136,15 @@ def dispatch(root=ROOT, manifest=None, isolated=False, wave3=False):
         for index, label in enumerate(entry.get("django", [])):
             run(f"{lane}.django.{index}", [
                 sys.executable, "manage.py", "test", label, "--noinput",
-                "--settings=config.settings.test",
+                "--settings=config.settings.test", "--verbosity=2",
             ])
         if entry["node"]:
             # Node treats files with no registered tests as successful; wrapper checks TAP count.
             run(f"{lane}.node", [sys.executable, str(root / "tools/dev/wave4_node.py"), *entry["node"]])
     if wave3:
         run("wave3", [sys.executable, str(root / "tools/dev/wave3_qa.py"),
-                      "--standalone", "--require-integrated"])
+                      "--standalone", "--require-integrated",
+                      *(["--reports", str(reports)] if reports is not None else [])])
     report["acceptance"] = "FAIL" if failed else ("NOT_RUN" if missing else "PASS")
     return (1 if failed else 4 if missing and not isolated else 0), report
 
@@ -139,8 +155,9 @@ def main(argv=None):
     parser.add_argument("--wave3", action="store_true", help="Also require existing C1-C3 suites")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--json", type=Path, help="Save bounded summary")
+    parser.add_argument("--reports", type=Path, help="Save C6/importer collection evidence")
     args = parser.parse_args(argv)
-    code, report = dispatch(manifest=args.manifest, isolated=args.isolated, wave3=args.wave3)
+    code, report = dispatch(manifest=args.manifest, isolated=args.isolated, wave3=args.wave3, reports=args.reports)
     serialized = json.dumps(report, ensure_ascii=True, indent=2)
     print(serialized)
     if args.json:
