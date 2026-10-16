@@ -49,6 +49,9 @@ class ExistingSnapshotReadOnlyTests(unittest.TestCase):
         self.assertEqual(report["source_archive_sha256"], ARCHIVE_SHA256)
         self.assertEqual(report["source_input_sha256"], INPUT_PINS["jsonl"])
         self.assertEqual(report["database_import"], "NOT_RUN")
+        self.assertEqual(report["citation_metadata"]["heading_count"], 11397)
+        self.assertEqual(report["citation_metadata"]["mapped_checksum"], MAPPED_CHECKSUM)
+        self.assertEqual(report["citation"]["source_archive_sha256"], ARCHIVE_SHA256)
         self.assertLessEqual(len(report["citation"]["path"]), 5)
         self.assertEqual(report["citation"]["source_id"], "622-1")
         print(json.dumps({

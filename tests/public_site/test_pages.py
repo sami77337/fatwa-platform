@@ -282,3 +282,51 @@ class PublicPageTests(SimpleTestCase):
             self.assertEqual(response.status_code, 400)
             self.assertIn("Content-Security-Policy", response)
         self.books.assert_not_called()
+
+    def test_help_section_links_have_unique_existing_targets(self) -> None:
+        document = Elements(self.client.get("/help").content)
+        ids = [attrs["id"] for _, attrs in document.elements if "id" in attrs]
+        self.assertEqual(len(ids), len(set(ids)))
+        for anchor in document.find("a"):
+            if anchor["href"].startswith("#"):
+                self.assertIn(anchor["href"][1:], ids)
+        for _, attrs in document.elements:
+            for target in attrs.get("aria-labelledby", "").split():
+                self.assertIn(target, ids)
+
+    def test_unavailable_home_has_retry_and_working_help_fragment(self) -> None:
+        for error in [None, OperationalError("private database detail")]:
+            with self.subTest(error=error):
+                self.books.side_effect = error
+                response = self.client.get("/")
+                self.assertContains(response, 'href="/help#availability-title"')
+                self.assertContains(response, 'href="/"')
+                self.assertContains(response, "ليس نتيجة بحث فارغة")
+                help_document = Elements(self.client.get("/help").content)
+                self.assertTrue(
+                    any(a.get("id") == "availability-title" for _, a in help_document.elements)
+                )
+
+    def test_no_js_browse_link_reaches_real_empty_and_offline_catalog(self) -> None:
+        with (
+            patch(
+                "apps.reference.views.services.list_books",
+                return_value=CatalogPage([], 0, 100, 0, None),
+            ),
+            patch("apps.reference.views.services.resolve_edition", return_value=None),
+            patch(
+                "apps.reference.views.services.roots", return_value=CatalogPage([], 0, 30, 0, None)
+            ),
+        ):
+            response = self.client.get("/fiqh?basic=1")
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "لم يُحمّل فهرس مرجعي بعد")
+            self.assertNotContains(response, "reference/catalog.js")
+        with patch(
+            "apps.reference.views.services.list_books",
+            side_effect=OperationalError("private database detail"),
+        ):
+            response = self.client.get("/fiqh?basic=1")
+            self.assertEqual(response.status_code, 503)
+            self.assertNotContains(response, "private database detail", status_code=503)
+        self.assertEqual(self.client.get("/help").status_code, 200)

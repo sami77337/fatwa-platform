@@ -1,7 +1,7 @@
 <main id="catalog-content" tabindex="-1">
   <h1 tabindex="-1">{% if node %}{{ node.title }}{% elif query %}نتائج البحث في العناوين{% else %}فهرس المرجع{% endif %}</h1>
   {% if edition %}
-  <p class="attribution">{{ edition.work.title_original }}؛ {{ edition.publisher }}؛ المذهب: {{ edition.work.madhhab }}.</p>
+  <p class="attribution">{{ edition.work.title_original }}.</p>
   <form method="get" action="{% url 'catalog' %}" role="search">
     <input type="hidden" name="edition" value="{{ edition.id }}">
     {% if basic %}<input type="hidden" name="basic" value="1">{% endif %}
@@ -22,7 +22,7 @@
   </ol></nav>
   {% if node %}
   <section aria-label="الاستشهاد المرجعي">
-    <p>{{ edition.work.title_original }} — {{ edition.title }}؛ {{ edition.publisher }}؛ الجزء: {{ node.part }}، الصفحة المطبوعة: {{ node.page }}.</p>
+    <p>{{ edition.work.title_original }}؛ الجزء: {{ node.part }}، الصفحة المطبوعة: {{ node.page }}.</p>
     <p><a href="{% url 'heading' node.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">رابط هذا العنوان</a></p>
   </section>
   {% endif %}
