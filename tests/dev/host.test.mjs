@@ -75,7 +75,7 @@ test("real supplied archive identity matches pin; no database acceptance is impl
   assert.equal(createHash("sha256").update(raw).digest("hex"), pins.archive);
 });
 
-test("HTTP acceptance checks source metadata, all search modes, nesting and denied writes (mock transport)", async () => {
+test("HTTP acceptance checks source metadata, all search modes, nesting using GET only (mock transport)", async () => {
   const originalFetch = globalThis.fetch;
   const requests = [];
   const sample = { id: 42, source_id: "synthetic-42", title: "عنوان اختبار", parent_id: 41, depth: 5, part: "1", page: 9, page_id: 90, source_entry_number: null, path: [1, 2, 3, 41, 42] };
@@ -97,7 +97,7 @@ test("HTTP acceptance checks source metadata, all search modes, nesting and deni
   try {
     assert.equal((await checkHttp(worker)).result, "PASS");
     assert.deepEqual(requests.filter(([p]) => p.endsWith("/search")).filter(([, , method]) => !method).map(([, q]) => new URLSearchParams(q).get("mode")), ["exact", "literal", "normalized"]);
-    assert.equal(requests.filter(([, , method]) => method).length, 4);
+    assert.equal(requests.filter(([, , method]) => method).length, 0);
     assert.ok(requests.some(([, q]) => q.includes("anchor=42")));
   } finally { globalThis.fetch = originalFetch; }
 });

@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-10-15T15:29:09.753Z",
+  "code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "working_files": "A1 uncommitted edits over integrated baseline",
+  "scope": "Original ZIP identity plus sampled live API records and real frontend adapter. HTTP only; no SQL or Django test database.",
+  "tests": [
+    {
+      "name": "pinned original ZIP and JSONL identity",
+      "result": "PASS"
+    },
+    {
+      "name": "real source identity / 11,397 headings / 32 roots / 30 books and 2 introductions / depth 5",
+      "result": "PASS"
+    },
+    {
+      "name": "depth-five original title, lineage, printed part/page and anchored sibling pages",
+      "result": "PASS"
+    },
+    {
+      "name": "exact original Arabic search, scoped search, paging, empty result",
+      "result": "PASS"
+    },
+    {
+      "name": "safe errors, HEAD and rejected mutation methods on existing read-only catalog",
+      "result": "PASS"
+    },
+    {
+      "name": "live SSR baseline deep link remains reachable (does not validate unserved A1 templates)",
+      "result": "PASS"
+    }
+  ],
+  "source": {
+    "archive_sha256": "82a797806430635350decdde27d07fe41fb1278838c8173dc4080f9d109957ce",
+    "input_member": "FATWA_622_FIQH_COMPLETE/622_الفهرس_كامل_11397.jsonl",
+    "input_sha256": "37544f6122ef72fb6bd908556ffb41821b235be28bcbd1413752042dbac01d14",
+    "original_rows": 11397
+  },
+  "sample": {
+    "id": 8668,
+    "path": [
+      8550,
+      8551,
+      8665,
+      8667,
+      8668
+    ],
+    "title": "النوع الثاني: تفويض المهر"
+  },
+  "a1_assets_on_existing_site": false,
+  "result": "PASS"
+}

@@ -1,15 +1,13 @@
-<main id="catalog-content">
-  <h1 tabindex="-1">{% if node %}{{ node.title }}{% else %}فهرس المرجع{% endif %}</h1>
-  {% if books %}
-  <form method="get" action="{% url 'catalog' %}">
+<main id="catalog-content" tabindex="-1">
+  <h1 tabindex="-1">{% if node %}{{ node.title }}{% elif query %}نتائج البحث في العناوين{% else %}فهرس المرجع{% endif %}</h1>
+  {% if edition %}
+  <p class="attribution">{{ edition.work.title_original }}؛ {{ edition.publisher }}؛ المذهب: {{ edition.work.madhhab }}.</p>
+  <form method="get" action="{% url 'catalog' %}" role="search">
+    <input type="hidden" name="edition" value="{{ edition.id }}">
     {% if basic %}<input type="hidden" name="basic" value="1">{% endif %}
-    <label for="edition">المرجع والطبعة</label>
-    <select id="edition" name="edition" required>
-      {% if not edition %}<option value="" disabled selected>اختر الطبعة</option>{% endif %}
-      {% for book in books %}<option value="{{ book.id }}"{% if book.id == edition.id %} selected{% endif %}>{{ book.work.title_original }} — {{ book.title }}</option>{% endfor %}
-    </select>
     <label for="query">ابحث في العنوان الأصلي</label>
-    <input id="query" name="q" type="search" value="{{ query }}" maxlength="160">
+    <input id="query" name="q" type="search" value="{{ query }}" maxlength="160" aria-describedby="basic-search-help">
+    <p id="basic-search-help">حتى ١٦٠ حرفًا وعشر كلمات. البحث في العناوين المرجعية فقط.</p>
     <label for="mode">طريقة البحث</label>
     <select id="mode" name="mode">
       <option value="normalized"{% if mode == 'normalized' %} selected{% endif %}>بحث عربي مبسّط</option>
@@ -18,18 +16,19 @@
     </select>
     <button type="submit">بحث</button>
   </form>
-  {% endif %}
-  {% if edition %}
-  <p class="attribution">{{ edition.work.title_original }} — {{ edition.title }}؛ {{ edition.publisher }}؛ المذهب: {{ edition.work.madhhab }}؛ معرّف المصدر: {{ edition.work.source_namespace }}/{{ edition.work.source_book_id }}.</p>
-  <p><a href="{% url 'catalog' %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">جذور فهرس هذه الطبعة</a></p>
-  {% if ancestors %}
   <nav aria-label="مسار العنوان"><ol class="breadcrumbs">
+    <li><a href="{% url 'catalog' %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">جذور الفهرس</a></li>
     {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
   </ol></nav>
+  {% if node %}
+  <section aria-label="الاستشهاد المرجعي">
+    <p>{{ edition.work.title_original }} — {{ edition.title }}؛ {{ edition.publisher }}؛ الجزء: {{ node.part }}، الصفحة المطبوعة: {{ node.page }}.</p>
+    <p><a href="{% url 'heading' node.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">رابط هذا العنوان</a></p>
+  </section>
   {% endif %}
-  {% if node %}<p>موضع العنوان في الطبعة: {{ node.part }}، صفحة {{ node.page }}؛ معرّف صفحة المصدر {{ node.page_id }}؛ معرّف العنوان {{ node.source_id }}.</p>{% endif %}
+  <h2>{% if query %}العناوين المطابقة{% elif node %}العناوين الفرعية{% else %}جذور الفهرس{% endif %}</h2>
   <p>عدد العناوين في هذه القائمة: {{ results.total }}</p>
   <div class="branch-contents">{% include 'reference/heading_list.html' %}</div>
-  {% elif books %}<p>اختر طبعة للبحث أو التصفح.</p>
-  {% else %}<p>لم يُحمّل فهرس مرجعي بعد. لا توجد فتاوى منشورة هنا.</p>{% endif %}
+  {% elif books %}<p role="status">الفهرس غير متاح للتصفح حاليًا.</p>
+  {% else %}<p role="status">لم يُحمّل فهرس مرجعي بعد.</p>{% endif %}
 </main>

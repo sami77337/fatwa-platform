@@ -70,7 +70,7 @@ def list_books(page: Page) -> CatalogPage:
         total,
         page.limit,
         page.offset,
-        page.offset + page.limit if page.offset + page.limit < total else None,
+        page.next_offset(total),
     )
 
 
@@ -89,7 +89,8 @@ def resolve_edition(edition_id: int | None) -> ReferenceEdition | None:
 
 def _headings(edition: ReferenceEdition) -> QuerySet:
     return ReferenceHeading.objects.filter(edition=edition).annotate(
-        parent_source_row_id=F("parent__source_row_id"), children_count=Count("children")
+        parent_source_row_id=F("parent__source_row_id"),
+        children_count=Count("children", filter=Q(children__edition=edition)),
     )
 
 
@@ -118,14 +119,19 @@ def _paginate(queryset: QuerySet, page: Page) -> CatalogPage:
         total,
         page.limit,
         page.offset,
-        page.offset + page.limit if page.offset + page.limit < total else None,
+        page.next_offset(total),
     )
 
 
 def roots(edition: ReferenceEdition | None, page: Page) -> CatalogPage:
     if edition is None:
         return CatalogPage([], 0, page.limit, page.offset, None)
-    return _paginate(_headings(edition).filter(parent__isnull=True).order_by("position"), page)
+    return _paginate(
+        _headings(edition)
+        .filter(parent__isnull=True)
+        .order_by("position", "source_order", "source_row_id"),
+        page,
+    )
 
 
 def node(edition: ReferenceEdition | None, ident: int) -> ReferenceHeading:
@@ -137,25 +143,48 @@ def node(edition: ReferenceEdition | None, ident: int) -> ReferenceHeading:
         raise HeadingNotFound("Unknown heading") from error
 
 
+def _same_edition(edition: ReferenceEdition, heading: ReferenceHeading) -> None:
+    if heading.edition_id != edition.pk:
+        raise CatalogUnavailable("Invalid source hierarchy")
+
+
 def children(edition: ReferenceEdition, heading: ReferenceHeading, page: Page) -> CatalogPage:
-    return _paginate(_headings(edition).filter(parent=heading).order_by("position"), page)
+    _same_edition(edition, heading)
+    return _paginate(
+        _headings(edition)
+        .filter(parent=heading)
+        .order_by("position", "source_order", "source_row_id"),
+        page,
+    )
 
 
 def heading_path(edition: ReferenceEdition, heading: ReferenceHeading) -> list[dict]:
+    """Read at most four parents; a malformed path must never reveal another source."""
     result = []
     seen: set[int] = set()
     current = heading
     for _ in range(5):
-        if current.source_row_id in seen:
+        _same_edition(edition, current)
+        if current.pk in seen or not 1 <= current.depth <= 5:
             raise CatalogUnavailable("Invalid source hierarchy")
-        seen.add(current.source_row_id)
+        seen.add(current.pk)
         result.append(heading_data(current))
-        if current.parent_source_row_id is None:
+        if current.parent_id is None:
+            if current.depth != 1 or current.parent_source_row_id is not None:
+                raise CatalogUnavailable("Invalid source hierarchy")
             return result[::-1]
+        if current.depth == 1 or current.parent_source_row_id is None:
+            raise CatalogUnavailable("Invalid source hierarchy")
+        # Do not issue an unnecessary sixth query for an invalid depth-five path.
+        if len(result) == 5:
+            break
         try:
-            current = node(edition, current.parent_source_row_id)
+            parent = node(edition, current.parent_source_row_id)
         except HeadingNotFound as error:
             raise CatalogUnavailable("Invalid source hierarchy") from error
+        if parent.pk != current.parent_id or parent.depth != current.depth - 1:
+            raise CatalogUnavailable("Invalid source hierarchy")
+        current = parent
     raise CatalogUnavailable("Source hierarchy exceeds maximum depth")
 
 
@@ -168,17 +197,22 @@ def search(
 ) -> CatalogPage:
     validate_search(text, mode)
     value = normalize_title(text) if mode == "normalized" else text
+    # Scope validity is independent of whether the search text has any matches.
+    root = None
+    if root_id is not None:
+        root = node(edition, root_id)
+        if root.parent_id is not None or root.depth != 1:
+            raise InvalidQuery("Search scope must be a root")
     if edition is None or not value.strip():
         return CatalogPage([], 0, page.limit, page.offset, None)
     queryset = _headings(edition)
-    if root_id is not None:
-        root = node(edition, root_id)
-        if root.parent_source_row_id is not None:
-            raise InvalidQuery("Search scope must be a root")
-        # At most four parent joins, bounded by the immutable maximum depth of five.
-        scope = Q(source_row_id=root_id)
+    if root is not None:
+        # Fixed-depth ORM joins, with source identity checked at every ancestor.
+        # Use database PKs internally; source row IDs may repeat across editions.
+        scope = Q(pk=root.pk)
         for depth in range(1, 5):
-            scope |= Q(**{"parent__" * depth + "source_row_id": root_id})
+            ancestors = {"parent__" * level + "edition": edition for level in range(1, depth + 1)}
+            scope |= Q(**{"parent__" * depth + "pk": root.pk, **ancestors})
         queryset = queryset.filter(scope)
     if mode == "exact":
         queryset = queryset.filter(title_original=value)
@@ -197,14 +231,28 @@ def child_page(
     anchor_id: int | None = None,
 ) -> CatalogPage:
     """Locate a breadcrumb child without guessing that sibling positions are contiguous."""
+    _same_edition(edition, heading)
     if anchor_id is not None:
+        if page.offset:
+            raise InvalidQuery("Anchor and offset are mutually exclusive")
         anchor = node(edition, anchor_id)
         if anchor.parent_id != heading.pk:
             raise HeadingNotFound("Anchor is not a direct child")
-        preceding = ReferenceHeading.objects.filter(
-            edition=edition,
-            parent=heading,
-            position__lt=anchor.position,
-        ).count()
+        preceding = (
+            ReferenceHeading.objects.filter(
+                edition=edition,
+                parent=heading,
+            )
+            .filter(
+                Q(position__lt=anchor.position)
+                | Q(position=anchor.position, source_order__lt=anchor.source_order)
+                | Q(
+                    position=anchor.position,
+                    source_order=anchor.source_order,
+                    source_row_id__lt=anchor.source_row_id,
+                )
+            )
+            .count()
+        )
         page = Page(page.limit, preceding // page.limit * page.limit)
     return children(edition, heading, page)

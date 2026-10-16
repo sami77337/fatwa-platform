@@ -3,16 +3,16 @@
   <li>
   {% if item.children_count %}
     <details hx-get="{% url 'branch' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}" hx-trigger="toggle once" hx-target="#branch-{{ edition.id }}-{{ item.id }}" hx-swap="innerHTML">
-      <summary>{{ item.title }} <span class="child-count">({{ item.children_count }})</span></summary>
+      <summary>{{ item.title }} <span class="child-count">({{ item.children_count }} عنوانًا فرعيًا)</span></summary>
       <p><a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">تفاصيل العنوان ومساره</a></p>
       <div id="branch-{{ edition.id }}-{{ item.id }}" class="branch-contents" aria-live="polite">
         <a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">عرض العناوين الفرعية</a>
       </div>
     </details>
   {% else %}<a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ item.title }}</a>{% endif %}
-    <small>الموضع: {{ item.part }}، ص {{ item.page }}؛ معرّف المصدر {{ item.source_id }}</small>
+    <small>الجزء: {{ item.part }}، الصفحة المطبوعة: {{ item.page }}</small>
   </li>
-{% empty %}<li>لا توجد عناوين في هذه القائمة.</li>{% endfor %}
+{% empty %}<li>{% if query %}لم نعثر على عناوين تطابق البحث.{% else %}لا توجد عناوين فرعية في هذه القائمة.{% endif %}</li>{% endfor %}
 </ul>
 {% if previous_offset != None or results.next_offset != None %}
 <nav aria-label="صفحات القائمة">

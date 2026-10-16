@@ -1,9 +1,11 @@
 from django.urls import path
 
+from apps.public_site import views as public_views
 from apps.reference import views
 
 urlpatterns = [
-    path("", views.catalog, name="home"),
+    path("", public_views.home, name="home"),
+    path("help", public_views.help_page, name="public_help"),
     path("fiqh", views.catalog, name="catalog"),
     path("fiqh/nodes/<int:ident>", views.catalog, name="heading"),
     path("fiqh/nodes/<int:ident>/children", views.branch, name="branch"),

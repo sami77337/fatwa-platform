@@ -1,0 +1,28 @@
+{% extends 'public_site/base.html' %}
+{% block title %}الرئيسية | الفهرس الفقهي{% endblock %}
+{% block content %}
+  <h1>استكشف عناوين المرجع الفقهي</h1>
+  <p>تصفح أبواب الفقه وعناوينها الفرعية، أو ابحث بكلمة من العنوان للوصول إلى موضعه في المرجع.</p>
+  <p class="scope-note">هذا فهرس كتاب فقهي واحد، وليس تصنيفًا عامًا للفتاوى. العناوين ليست أجوبة عن أسئلة أو أحكامًا معتمدة للإفتاء.</p>
+  {% if catalog_state == 'available' %}
+    {% if source %}<p>المرجع المتاح: <cite>{{ source }}</cite>.</p>{% endif %}
+    <section aria-labelledby="search-title">
+      <h2 id="search-title">ابحث في العناوين</h2>
+      <form role="search" method="get" action="{% url 'catalog' %}">
+        <input type="hidden" name="basic" value="1">
+        <label for="home-query">كلمة أو عبارة من العنوان</label>
+        <input id="home-query" name="q" type="search" maxlength="160" required aria-describedby="search-help">
+        <p id="search-help">حتى ١٦٠ حرفًا وعشر كلمات. البحث في عناوين الفهرس، ولا يشمل نص الكتاب كاملًا.</p>
+        <button type="submit">ابحث في الفهرس</button>
+      </form>
+    </section>
+  {% elif catalog_state == 'multiple' %}
+    <p>يمكن الوصول إلى المراجع المتاحة من صفحة الفهرس.</p>
+  {% elif catalog_state == 'empty' %}
+    <p>لم يُحمّل فهرس مرجعي بعد. يمكنك قراءة دليل الاستخدام والمصدر.</p>
+  {% else %}
+    <p>تعذر الوصول إلى الفهرس حاليًا. يمكنك قراءة دليل الاستخدام والمصدر ثم المحاولة لاحقًا.</p>
+  {% endif %}
+  <p><a href="{% url 'catalog' %}?basic=1">تصفح أبواب الفهرس</a></p>
+  <p><a href="{% url 'public_help' %}">كيف أبحث وأقرأ إحالة العنوان؟</a></p>
+{% endblock %}

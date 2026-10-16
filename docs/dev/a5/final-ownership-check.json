@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-10-15T15:30:35.632Z",
+  "reviewed_implementation_files": 55,
+  "changed_implementation_hashes": [],
+  "new_git_status_lines": [
+    "?? docs/dev/a5/A5_REPORT_AR.md",
+    "?? docs/dev/a5/adapter.tap",
+    "?? docs/dev/a5/baseline.json",
+    "?? docs/dev/a5/django-not-run.json",
+    "?? docs/dev/a5/environment.json",
+    "?? docs/dev/a5/http.tap",
+    "?? docs/dev/a5/initial-run.json",
+    "?? docs/dev/a5/live-observations.json",
+    "?? docs/dev/a5/results.json",
+    "?? docs/dev/a5/static.tap",
+    "?? docs/security-review/A5_FINDINGS.md",
+    "?? quality/security/a5/README.md",
+    "?? quality/security/a5/adapter.test.mjs",
+    "?? quality/security/a5/http.test.mjs",
+    "?? quality/security/a5/run.mjs",
+    "?? quality/security/a5/static.test.mjs",
+    "?? quality/security/a5/support.mjs",
+    "?? tests/security/__init__.py",
+    "?? tests/security/test_a5_public.py"
+  ],
+  "ownership_violations": [],
+  "head": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe"
+}

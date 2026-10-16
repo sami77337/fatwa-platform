@@ -1,13 +1,9 @@
 // One-click HOST continuation. Existing local Docker objects only; no shell strings.
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
-import * as fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
+import { main as operationalMain } from "./local.mjs";
 
-const execute = promisify(execFile);
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const base = path.resolve(root, "../..");
 export const pins = {
@@ -90,7 +86,7 @@ export function workerArgs(site, database, suffix) {
     "--env", "PGHOST=" + database.Name.replace(/^\//, ""), "--env", "PGPORT=5432",
     "--env", "PGDATABASE=fatwa_reference", "--env", "PGUSER=fatwa_app", "--env", "FATWA_PRODUCTION=0",
     "--env", "PYTHONDONTWRITEBYTECODE=1", "--env", "PYTHONUNBUFFERED=1",
-    "--entrypoint", "python", site.Image, "/site/tools/dev/container_workflow.py"];
+    "--entrypoint", "python", site.Image, "/site/tools/dev/container_workflow.py", "--verify-source"];
 }
 
 async function http(route, json = true, options = {}) {
@@ -137,113 +133,11 @@ export async function checkHttp(worker) {
       assert.ok(children.items.some(item => item.id === expected.id), "Nested child is absent");
     }
   }
-  for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
-    const response = await fetch("http://127.0.0.1:8000/api/v1/fiqh/search", { method, signal: AbortSignal.timeout(5000) });
-    assert.equal(response.status, 405);
-  }
-  return { result: "PASS", scope: "Live HTTP, edition, roots, depth-five path, original fields, nested children, search, SSR, denied writes. Browser/mobile NOT_RUN." };
+  return { result: "PASS", scope: "Live HTTP, edition, roots, depth-five path, original fields, nested children, search and SSR; GET-only checks. Browser/mobile NOT_RUN." };
 }
 
-export async function main() {
-  const report = { timestamp: new Date().toISOString(), REAL_SOURCE_DATABASE_IMPORT: "NOT_RUN",
-    DJANGO_SITE_HTTP: "NOT_RUN", REAL_CATALOG_HTTP: "NOT_RUN", gates: "NOT_DEPLOYED / GATES_HOLD" };
-  const local = path.join(root, ".local");
-  await fs.mkdir(local, { recursive: true });
-  let lock;
-  let env;
-  const run = async args => {
-    try {
-      const result = await execute("docker", args, { cwd: root, env, windowsHide: true,
-        timeout: 900000, maxBuffer: 4 * 1024 * 1024 });
-      return result.stdout.trim();
-    } catch (error) {
-      // The worker returns structured evidence even when its phase fails.
-      if (args[0] === "run" && error.stdout?.trim().startsWith("{")) return error.stdout.trim();
-      throw new Error("Docker operation " + args[0] + " failed: " + (error.stderr || error.message).slice(0,1800));
-    }
-  };
-  try {
-    try {
-      const html = await http("/fiqh", false);
-      assert.match(html, /lang="ar" dir="rtl"/);
-      await http("/readyz");
-      const inventory = await http("/api/v1/fiqh/books");
-      report.DJANGO_SITE_HTTP = "PASS";
-      report.current_http_inventory = { editions: inventory.total };
-    } catch { /* A stopped site can be started after the verified import. */ }
-    lock = await fs.open(path.join(local, "host-run.lock"), "wx");
-    await lock.writeFile(String(process.pid));
-    const bytes = await fs.readFile(locations.archive);
-    assert.equal(createHash("sha256").update(bytes).digest("hex"), pins.archive, "Owner archive SHA256 mismatch");
-    assert.ok((await fs.stat(locations.secret)).isFile(), "Existing app-password file missing");
-    assert.ok((await fs.stat(locations.wheels)).isDirectory(), "Existing offline wheel directory missing");
-    const branch = await execute("git", ["branch", "--show-current"], { cwd: root, windowsHide: true });
-    assert.equal(branch.stdout.trim(), "codex/integration-site-v1-20261015");
-    const revision = await execute("git", ["rev-parse", "HEAD"], { cwd: root, windowsHide: true });
-    report.code_sha = revision.stdout.trim();
-    const dirty = await execute("git", ["status", "--porcelain"], { cwd: root, windowsHide: true });
-    report.working_tree_modified = Boolean(dirty.stdout.trim());
-    env = cleanEnvironment(process.env);
-    const endpoint = process.env.DOCKER_HOST || await run(["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"]);
-    env.DOCKER_HOST = localEndpoint(endpoint);
-    const engine = await run(["version", "--format", "{{.Server.Version}}"]);
-    assert.ok(Number(engine.split(".")[0]) >= 28, "Docker Engine 28+ required for loopback publication");
-    const inspect = async name => JSON.parse(await run(["inspect", name]))[0];
-    const network = JSON.parse(await run(["network", "inspect", networkName]))[0];
-    const candidates = await Promise.all(Object.keys(network.Containers ?? {}).map(inspect));
-    const databases = candidates.filter(item => item.Config.Labels?.["com.docker.compose.project"] === "fatwa-s5-dev-pg18"
-      && item.Config.Labels?.["com.docker.compose.service"] === "postgres");
-    // A stopped container may not be listed in network.Containers; query only the exact existing project.
-    if (!databases.length) {
-      const ids = (await run(["ps", "-aq", "--filter", "label=com.docker.compose.project=fatwa-s5-dev-pg18",
-        "--filter", "label=com.docker.compose.service=postgres"])).split(/\s+/).filter(Boolean);
-      for (const id of ids) databases.push(await inspect(id));
-    }
-    assert.equal(databases.length, 1, "Exactly one existing S5 PG18 container is required");
-    let database = databases[0];
-    const site = await inspect(siteName);
-    // Do not start or mutate anything before validating the actual topology and mounts.
-    validateTopology(site, database, network);
-    if (!database.State.Running) await run(["start", database.Id]);
-    let ready = false;
-    for (let attempt = 0; attempt < 30; attempt++) {
-      database = await inspect(database.Id);
-      if (database.State.Running && database.State.Health?.Status === "healthy") { ready = true; break; }
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    assert.ok(ready, "Existing PostgreSQL container did not become healthy");
-    validateTopology(site, database, JSON.parse(await run(["network", "inspect", networkName]))[0]);
-    console.log("Source pin and local isolation verified; running S1 preview/import/verification and tests...");
-    const worker = JSON.parse(await run(workerArgs(site, database, randomUUID().slice(0,8))));
-    report.REAL_SOURCE_DATABASE_IMPORT = worker.REAL_SOURCE_DATABASE_IMPORT;
-    report.worker = { ...worker }; delete report.worker._probes;
-    assert.equal(worker.REAL_SOURCE_DATABASE_IMPORT, "PASS", worker.blocker?.message || "Source import failed");
-    if (!site.State.Running) await run(["start", site.Id]);
-    let httpError;
-    for (let attempt = 0; attempt < 10; attempt++) {
-      try { report.http = await checkHttp(worker); httpError = null; break; }
-      catch (error) { httpError = error; await new Promise(resolve => setTimeout(resolve, 1000)); }
-    }
-    if (httpError) throw httpError;
-    report.DJANGO_SITE_HTTP = "PASS";
-    report.REAL_CATALOG_HTTP = "PASS";
-    const nodeTests = await execute(process.execPath, ["--test", "tests/integration/django-api.test.mjs",
-      "ui_drafts/fiqh/tests/api.test.mjs", "ui_drafts/fiqh/tests/server.test.mjs", "ui_drafts/fiqh/tests/source-identity.test.mjs"],
-      { cwd: root, env: { ...cleanEnvironment(process.env), FATWA_622_ARCHIVE: locations.archive }, windowsHide: true, maxBuffer: 2e6 });
-    report.frontend_tests = { result: "PASS", output: nodeTests.stdout };
-    if (worker.blocker || Object.values(worker.tests).some(item => item.result !== "PASS")) {
-      report.blocker = "Import/site evidence is recorded; some tests did not pass or could not run. See worker.tests.";
-    }
-  } catch (error) {
-    report.blocker = error.message;
-  } finally {
-    if (lock) { await lock.close(); await fs.unlink(path.join(local, "host-run.lock")); }
-    await fs.writeFile(path.join(local, "host-result.json"), JSON.stringify(report, null, 2) + "\n");
-  }
-  console.log(JSON.stringify(report, null, 2));
-  console.log("Local URL: http://127.0.0.1:8000/fiqh | Report: .local/host-result.json");
-  return report.blocker ? 1 : 0;
-}
+// Preserve pinned legacy source helpers; lifecycle always uses the no-import A6 runner.
+export const main = operationalMain;
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   process.exitCode = await main();

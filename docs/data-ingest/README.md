@@ -1,5 +1,9 @@
 # S1 — standalone book 622 heading ingestion
 
+> A4 (2026-10-15): current read-only audit, coordinator commands and exact execution limits
+> are in [docs/dev/a4](../dev/a4/README.md). Original-source availability and runtime
+> claims below are historical S1 evidence, not results from this isolated A4 snapshot.
+
 **NON_PRODUCTION_LOCAL_CHANGES / NOT_DEPLOYED / GATES_HOLD**.
 Gate B NOT_PASSED; Gates C/D/E HOLD; Phase01 BLOCKED. This package validates
 heading metadata for one Hanbali reference work. It does not establish a global

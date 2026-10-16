@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-10-15T15:21:07.231Z",
+  "head": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "branch": "codex/site-functions-20261015-181420-c415-a5",
+  "working_tree_modified": true,
+  "node": "v24.16.0",
+  "scope": "INDEPENDENT_QA_ONLY",
+  "gates": "B_NOT_PASSED_C_D_E_HOLD",
+  "suites": [
+    {
+      "group": "static",
+      "command": "node --test --test-concurrency=1 --test-reporter=tap quality/security/a5/static.test.mjs",
+      "exit_code": 0,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "docs/dev/a5/static.tap"
+    },
+    {
+      "group": "adapter",
+      "command": "node --test --test-concurrency=1 --test-reporter=tap quality/security/a5/adapter.test.mjs",
+      "exit_code": 1,
+      "tests": 13,
+      "passed": 9,
+      "failed": 4,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "docs/dev/a5/adapter.tap"
+    },
+    {
+      "group": "http",
+      "command": "node --test --test-concurrency=1 --test-reporter=tap quality/security/a5/http.test.mjs",
+      "exit_code": 1,
+      "tests": 18,
+      "passed": 16,
+      "failed": 2,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "docs/dev/a5/http.tap"
+    }
+  ],
+  "direct_database_tests": "NOT_RUN",
+  "browser_execution": "NOT_RUN",
+  "source_archive_rehash": "NOT_RUN",
+  "totals": {
+    "tests": 40,
+    "passed": 34,
+    "failed": 6,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "implementation_changes": [],
+  "new_git_status_lines": [
+    "?? docs/dev/a5/adapter.tap",
+    "?? docs/dev/a5/baseline.json",
+    "?? docs/dev/a5/http.tap",
+    "?? docs/dev/a5/live-observations.json",
+    "?? docs/dev/a5/static.tap",
+    "?? quality/security/a5/adapter.test.mjs",
+    "?? quality/security/a5/http.test.mjs",
+    "?? quality/security/a5/run.mjs",
+    "?? quality/security/a5/static.test.mjs",
+    "?? quality/security/a5/support.mjs"
+  ],
+  "ownership_violations": [],
+  "status": "SUPERSEDED_HARNESS_DIAGNOSTIC_ONLY",
+  "notes": [
+    "Not the final test totals. See results.json and current TAP files.",
+    "Fetch forbids TRACE and filters Host; final harness uses raw Node HTTP.",
+    "Private canary injection was accidentally applied to edition inventory; corrected to target heading rows.",
+    "Those three harness errors are not product defects."
+  ]
+}

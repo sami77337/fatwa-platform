@@ -1,0 +1,153 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { mount, MAX_TREE_ITEMS } from "../../../apps/reference/static/reference/catalog.js";
+import { documentHarness, settle, deferred } from "./dom-harness.mjs";
+
+// Explicit test-only graph: 25 non-contiguous sibling positions and a depth-five path.
+const source = { work_title: "مرجع اصطناعي للاختبار", edition: "طبعة اختبار", publisher: "ناشر اختبار", madhhab: "اختبار", source_id: "INTERNAL-SOURCE-KEY", page_id: 7654321, printed_part: "المقدمة", printed_page: 4 };
+function fixture() {
+  const graph = new Map();
+  const row = (id, parent, depth, title) => ({ id: String(id), parent_id: parent === null ? null : String(parent), depth, title, position: id * 10, source, child_count: 0, has_children: false });
+  graph.set("1", row(1, null, 1, "جذر اختبار"));
+  for (let id = 2; id <= 26; id++) graph.set(String(id), row(id, 1, 2, "فرع اختبار " + id));
+  for (const [id, parent, depth] of [[27, 26, 3], [28, 27, 4], [29, 28, 5]]) graph.set(String(id), row(id, parent, depth, id === 29 ? '<img src=x onerror="alert(1)"> عنوان عربي' : "مسار اختبار " + id));
+  graph.set("90", row(90, null, 1, "مقدمة اختبار مستقلة"));
+  const children = id => [...graph.values()].filter(node => node.parent_id === id);
+  for (const node of graph.values()) { node.child_count = children(node.id).length; node.has_children = node.child_count > 0; }
+  const page = (items, offset = 0) => ({ items: items.slice(offset, offset + 20).map((node, i) => ({ ...node, sibling_ordinal: offset + i + 1, sibling_total: items.length })), total: items.length, offset, limit: 20, previous_cursor: offset ? String(Math.max(0, offset - 20)) : null, next_cursor: offset + 20 < items.length ? String(offset + 20) : null });
+  const calls = [];
+  const adapter = {
+    async catalog() { return { books: [graph.get("1")], introductions: [graph.get("90")], source: { id: 7 }, totals: { nodes: graph.size } }; },
+    async children(id, { cursor = null, anchorId = null, signal } = {}) { calls.push({ id, cursor, anchorId, signal }); const items = children(id); const offset = anchorId === null ? Number(cursor ?? 0) : Math.floor(items.findIndex(node => node.id === anchorId) / 20) * 20; return page(items, offset); },
+    async node(id) { const node = graph.get(id); if (!node) throw Object.assign(Error("missing"), { code: "NOT_FOUND" }); const breadcrumbs = [node]; for (let parent = graph.get(node.parent_id); parent; parent = graph.get(parent.parent_id)) breadcrumbs.unshift(parent); return { node, breadcrumbs }; },
+    async search(query, options) { calls.push({ query, ...options }); return page(query === "فارغ" ? [] : query === "عميق" ? [graph.get("29")] : [...graph.values()].filter(node => node.depth === 2), Number(options.cursor ?? 0)); },
+  };
+  return { adapter, calls, graph };
+}
+const get = (doc, id) => doc.getElementById(id);
+const items = doc => get(doc, "tree").querySelectorAll('[role="treeitem"]');
+const item = (doc, id) => items(doc).find(node => node.dataset.id === id);
+async function setup(options) { const fixtureData = fixture(), doc = documentHarness(options?.url); let shown = 0; const app = mount(fixtureData.adapter, doc, { initialNode: options?.initialNode ?? null, onCatalog() { shown++; } }); await app.ready; return { ...fixtureData, doc, app, shown: () => shown }; }
+
+test("initial real-UI code renders nested links, one tab stop, citation and no internal keys", async () => {
+  const { doc, shown, app } = await setup();
+  assert.equal(shown(), 1); assert.equal(items(doc).length, 21); assert.equal(items(doc).filter(node => node.tabIndex === 0).length, 1);
+  assert.equal(get(doc, "books").querySelector("a").getAttribute("href"), "/fiqh/nodes/1?edition=7");
+  assert.equal(doc.defaultView.location.pathname, "/fiqh"); assert.equal(doc.activeElement, null);
+  assert.match(get(doc, "reference-content").textContent, /طبعة اختبار.*ناشر اختبار.*المقدمة/);
+  assert.doesNotMatch(get(doc, "reference-content").textContent, /INTERNAL-SOURCE-KEY|7654321|معرّف/);
+  app.destroy();
+});
+test("RTL hierarchical keyboard moves focus independently of selection, expands, collapses and activates", async () => {
+  const { doc, app } = await setup(); item(doc, "1").focus();
+  item(doc, "1").key("ArrowRight"); assert.equal(items(doc).length, 1);
+  item(doc, "1").key("ArrowLeft"); await settle(); assert.equal(items(doc).length, 21);
+  item(doc, "1").key("ArrowLeft"); assert.equal(doc.activeElement.dataset.id, "2");
+  doc.activeElement.key("ArrowRight"); assert.equal(doc.activeElement.dataset.id, "1");
+  doc.activeElement.key("ArrowDown"); assert.equal(doc.activeElement.dataset.id, "2");
+  assert.equal(item(doc, "1").getAttribute("aria-selected"), "true"); assert.equal(doc.defaultView.history.length, 1);
+  doc.activeElement.key("End"); assert.equal(doc.activeElement.dataset.id, "21");
+  doc.activeElement.key("Home"); assert.equal(doc.activeElement.dataset.id, "1");
+  doc.activeElement.key("Enter"); assert.equal(items(doc).length, 1);
+  doc.activeElement.key(" "); await settle(); assert.equal(items(doc).length, 21);
+  doc.activeElement.key("ArrowDown"); doc.activeElement.key("Enter");
+  assert.equal(item(doc, "2").getAttribute("aria-selected"), "true"); assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/2");
+  assert.equal(items(doc).filter(node => node.tabIndex === 0).length, 1); app.destroy();
+});
+test("paging uses ordinals rather than gapped source positions and moves focus to parent", async () => {
+  const { doc, app } = await setup(); get(doc, "tree-pagination").querySelector("button").click(); await settle();
+  assert.equal(items(doc).length, 6); assert.equal(item(doc, "22").getAttribute("aria-posinset"), "21");
+  assert.equal(item(doc, "26").getAttribute("aria-posinset"), "25"); assert.equal(item(doc, "26").getAttribute("aria-setsize"), "25");
+  assert.equal(doc.activeElement.dataset.id, "1"); get(doc, "tree-pagination").querySelector("button").click(); await settle();
+  assert.equal(items(doc).length, 21); app.destroy();
+});
+test("deep link reveals anchored sibling pages, depth five, all ancestor pagers and escaped title text", async () => {
+  const { doc, calls, app } = await setup({ initialNode: "29", url: "http://localhost/fiqh/nodes/29?edition=7" });
+  assert.deepEqual(calls.filter(call => call.anchorId).map(call => [call.id, call.anchorId]), [["1", "26"], ["26", "27"], ["27", "28"], ["28", "29"]]);
+  assert.equal(item(doc, "29").getAttribute("aria-level"), "5"); assert.equal(item(doc, "26").getAttribute("aria-posinset"), "25");
+  assert.equal(items(doc).filter(node => node.tabIndex === 0).length, 1); assert.ok(items(doc).length <= MAX_TREE_ITEMS);
+  assert.equal(get(doc, "breadcrumbs").querySelectorAll("li").length, 6);
+  assert.equal(get(doc, "tree-pagination").querySelectorAll("div").length, 4);
+  assert.match(get(doc, "reference-content").textContent, /<img src=x/); assert.equal(get(doc, "reference-content").querySelectorAll("img").length, 0);
+  get(doc, "tree-pagination").querySelector("button").click(); await settle();
+  assert.equal(item(doc, "29"), undefined); assert.equal(items(doc).length, 21); app.destroy();
+});
+test("direct link to a branch displays its children immediately", async () => {
+  const { doc, app } = await setup({ initialNode: "26" }); assert.ok(item(doc, "27")); assert.equal(item(doc, "26").getAttribute("aria-expanded"), "true"); app.destroy();
+});
+test("search result native link reveals deep path and modified click preserves browser navigation", async () => {
+  const { doc, app } = await setup(); get(doc, "search-query").value = "عميق"; get(doc, "search-form").dispatch("submit"); await settle();
+  const result = get(doc, "search-results").querySelector("a"); assert.equal(result.getAttribute("href"), "/fiqh/nodes/29?edition=7");
+  assert.equal(result.click({ ctrlKey: true }).defaultPrevented, false); assert.equal(doc.defaultView.location.pathname, "/fiqh");
+  result.click(); await settle(); assert.equal(doc.activeElement.dataset.id, "29"); assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/29"); app.destroy();
+});
+test("back/forward restores path, expanded pages, citations and search results", async () => {
+  const { doc, app } = await setup(); get(doc, "search-query").value = "عميق"; get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "search-results").querySelector("a").click(); await settle();
+  get(doc, "introductions").querySelector("a").click(); await settle(); assert.equal(items(doc).length, 1);
+  await doc.defaultView.history.back(); assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/29"); assert.ok(item(doc, "29"));
+  assert.equal(item(doc, "26").getAttribute("aria-posinset"), "25"); assert.equal(get(doc, "search-query").value, "عميق"); assert.ok(get(doc, "search-results").querySelector("a"));
+  await doc.defaultView.history.back(); assert.equal(doc.defaultView.location.pathname, "/fiqh"); assert.equal(items(doc).length, 21);
+  await doc.defaultView.history.forward(); assert.ok(item(doc, "29")); assert.match(get(doc, "reference-content").textContent, /<img/); app.destroy();
+});
+test("search pagination retains submitted mode and scope after input controls change", async () => {
+  const { doc, calls, app } = await setup(); get(doc, "search-query").value = "عنوان"; get(doc, "search-mode").value = "exact"; get(doc, "search-scope").value = "1";
+  get(doc, "search-form").dispatch("submit"); await settle(); get(doc, "search-mode").value = "literal"; get(doc, "search-scope").value = "90";
+  get(doc, "search-results").querySelector("button").click(); await settle();
+  const call = calls.filter(call => call.query).at(-1); assert.equal(call.mode, "exact"); assert.equal(call.rootId, "1"); assert.equal(call.cursor, "20");
+  assert.equal(get(doc, "search-results").querySelector("h3"), doc.activeElement); app.destroy();
+});
+test("child request failure keeps existing tree, resets busy and retries", async () => {
+  const { doc, adapter, app } = await setup(); const original = adapter.children; adapter.children = async () => { throw Error("unavailable"); };
+  get(doc, "tree-pagination").querySelector("button").click(); await settle(); assert.equal(items(doc).length, 21);
+  assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false"); assert.ok(get(doc, "error").querySelector("button"));
+  adapter.children = original; get(doc, "error").querySelector("button").click(); await settle(); assert.equal(items(doc).length, 6); assert.equal(get(doc, "error").textContent, ""); app.destroy();
+});
+test("initial child failure leaves SSR visible and visible retry completes initialization", async () => {
+  const { adapter } = fixture(); const original = adapter.children; adapter.children = async () => { throw Error("offline"); };
+  const doc = documentHarness(); let shown = 0; const app = mount(adapter, doc, { onCatalog() { shown++; } }); await app.ready;
+  assert.equal(shown, 0); assert.ok(get(doc, "request-status").querySelector("button")); adapter.children = original;
+  get(doc, "request-status").querySelector("button").click(); await settle(); assert.equal(shown, 1); assert.equal(items(doc).length, 21); app.destroy();
+});
+test("stale tree response cannot replace a newer root even if transport ignores abort", async () => {
+  const { doc, adapter, app } = await setup(); const original = adapter.children, pending = deferred(); adapter.children = () => pending.promise;
+  get(doc, "tree-pagination").querySelector("button").click(); get(doc, "introductions").querySelector("a").click(); await settle();
+  pending.resolve(await original("1")); await settle(); assert.equal(items(doc).length, 1); assert.equal(item(doc, "90").getAttribute("aria-selected"), "true");
+  assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false"); app.destroy();
+});
+test("empty, invalid and failed searches expose truthful states, retry and clear cancel late results", async () => {
+  const { doc, adapter, app } = await setup(); get(doc, "search-query").value = "فارغ"; get(doc, "search-form").dispatch("submit"); await settle(); assert.match(get(doc, "search-results").textContent, /لم نعثر/);
+  adapter.search = async () => { throw Object.assign(Error("query"), { code: "INVALID_QUERY" }); }; get(doc, "search-form").dispatch("submit"); await settle(); assert.equal(get(doc, "search-query").getAttribute("aria-invalid"), "true");
+  get(doc, "clear-search").click(); assert.equal(get(doc, "search-query").getAttribute("aria-invalid"), null); assert.equal(doc.activeElement, get(doc, "search-query"));
+  adapter.search = async () => { throw Error("offline"); }; get(doc, "search-form").dispatch("submit"); await settle(); assert.match(get(doc, "error").textContent, /تعذّر البحث/);
+  const pending = deferred(); adapter.search = () => pending.promise; get(doc, "error").querySelector("button").click(); assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "true");
+  get(doc, "clear-search").click(); pending.resolve({ items: [], total: 0, offset: 0, next_cursor: null, previous_cursor: null }); await settle();
+  assert.equal(get(doc, "search-results").textContent, ""); assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false"); app.destroy();
+});
+test("empty catalog stays empty without a tree role or invented content", async () => {
+  const doc = documentHarness(); const app = mount({ catalog: async () => ({ books: [], introductions: [], source: null, totals: { nodes: 0 } }) }, doc); await app.ready;
+  assert.equal(items(doc).length, 0); assert.equal(get(doc, "tree").getAttribute("role"), null); assert.equal(get(doc, "search-form").hidden, true);
+  assert.match(get(doc, "tree-region").textContent, /لم يُحمّل/); app.destroy();
+});
+test("catalog failure and missing deep heading never announce successful initialization", async () => {
+  for (const missing of [false, true]) { const { adapter } = fixture(); if (!missing) adapter.catalog = async () => { throw Error("offline"); };
+    const doc = documentHarness(); let shown = false; const app = mount(adapter, doc, { initialNode: missing ? "999" : null, onCatalog() { shown = true; } }); await app.ready;
+    assert.equal(shown, false); assert.ok(get(doc, "request-status").querySelector("button")); assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false"); app.destroy(); }
+});
+
+test("back navigation aborts pending reveal and ignores its late result", async () => {
+  const { doc, adapter, app } = await setup(); get(doc, "introductions").querySelector("a").click(); await settle();
+  const original = adapter.node, pending = deferred(); adapter.node = () => pending.promise;
+  get(doc, "breadcrumbs").querySelector("a").click(); await settle();
+  // Home selected a real root; launch another result from the preserved search area.
+  get(doc, "search-query").value = "عميق"; get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "search-results").querySelector("a").click(); await settle();
+  await doc.defaultView.history.back(); const path = doc.defaultView.location.pathname;
+  pending.resolve(await original("29")); await settle(); assert.equal(doc.defaultView.location.pathname, path); assert.equal(item(doc, "29"), undefined);
+  assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false"); app.destroy();
+});
+test("history storage failure leaves native links and tree navigation usable", async () => {
+  const { adapter } = fixture(), doc = documentHarness(); doc.defaultView.history.replaceState = () => { throw Error("history unavailable"); }; doc.defaultView.history.pushState = () => { throw Error("history unavailable"); };
+  const app = mount(adapter, doc); await app.ready; assert.equal(items(doc).length, 21);
+  get(doc, "introductions").querySelector("a").click(); await settle(); assert.equal(items(doc).length, 1); assert.equal(get(doc, "reference-content").querySelector("a").getAttribute("href"), "/fiqh/nodes/90?edition=7"); app.destroy();
+});

@@ -54,7 +54,7 @@ export function createDjangoAdapter({ editionId = null, origin = globalThis.loca
   };
   const setEdition = value => {
     check(value && value.work);
-    integer(value.id); text(value.title); text(value.publisher);
+    integer(value.id); text(value.edition_key); text(value.title); text(value.publisher);
     text(value.work.title_original); text(value.work.madhhab, 100);
     text(value.work.source_namespace, 40); text(value.work.source_book_id, 80);
     integer(value.heading_count, 1, 20000); integer(value.root_count, 1, 20000); integer(value.max_depth, 1, 5);
@@ -63,7 +63,11 @@ export function createDjangoAdapter({ editionId = null, origin = globalThis.loca
   };
   const verifyEdition = value => {
     check(value?.id === editionId && value.source_archive_sha256 === edition.source_archive_sha256 &&
-      value.source_input_sha256 === edition.source_input_sha256 && value.edition_key === edition.edition_key);
+      value.source_input_sha256 === edition.source_input_sha256 && value.edition_key === edition.edition_key &&
+      value.work?.source_namespace === edition.work.source_namespace &&
+      value.work?.source_book_id === edition.work.source_book_id &&
+      value.work?.title_original === edition.work.title_original && value.title === edition.title &&
+      value.publisher === edition.publisher && value.work?.madhhab === edition.work.madhhab);
   };
   const project = row => {
     check(edition !== null && row);
@@ -89,7 +93,9 @@ export function createDjangoAdapter({ editionId = null, origin = globalThis.loca
     check(Array.isArray(payload.items) && payload.items.length <= limit && offset + payload.items.length <= Math.max(offset, total));
     const next = offset + limit < total ? offset + limit : null;
     check(payload.next_offset === next);
-    return { items: payload.items.map(project), total, next_cursor: next === null ? null : String(next),
+    // Original sibling positions can have gaps. ARIA uses the ordinal within this page.
+    return { items: payload.items.map((row, index) => ({ ...project(row),
+      sibling_ordinal: offset + index + 1, sibling_total: total })), total, offset, limit, next_cursor: next === null ? null : String(next),
       previous_cursor: offset ? String(Math.max(0, offset - limit)) : null };
   };
   return {
@@ -107,7 +113,8 @@ export function createDjangoAdapter({ editionId = null, origin = globalThis.loca
         check(roots.length <= 1000);
         offset = result.next_cursor === null ? null : Number(result.next_cursor);
       } while (offset !== null);
-      check(roots.length === edition.root_count);
+      check(roots.length === edition.root_count && new Set(roots.map(row => row.id)).size === roots.length);
+      check(roots.every(row => row.parent_id === null));
       return { books: roots.filter(row => row.kind !== "introduction"), introductions: roots.filter(row => row.kind === "introduction"),
         totals: { nodes: edition.heading_count, roots: edition.root_count, max_depth: edition.max_depth }, source: edition };
     },
