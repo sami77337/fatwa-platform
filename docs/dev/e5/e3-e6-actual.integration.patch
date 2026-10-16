@@ -23,10 +23,8 @@
 +        with:
 +          node-version: '24'
        - run: python -m pip install -r requirements.txt
-@@ -90,3 +93,97 @@
-             tests.integration.test_site \
-+            tests.reference_links_db.test_catalog_adapter \
-             --noinput --verbosity=2 --settings=config.settings.test 2>&1 | tee b6-postgres.log
+@@ -78,2 +81,12 @@
+       - run: python manage.py migrate --check --settings=config.settings.test
 +      - name: Require nonzero actual E3 adapter collection
 +        if: ${{ !cancelled() }}
 +        run: |
@@ -37,6 +35,11 @@
 +          suite = DiscoverRunner().build_suite(['tests.reference_links_db.test_catalog_adapter'])
 +          assert suite.countTestCases() > 0, 'E3 missing/zero adapter cases fail'
 +          PYCODE
+       - name: Django PostgreSQL integration tests
+@@ -90,3 +103,87 @@
+             tests.integration.test_site \
++            tests.reference_links_db.test_catalog_adapter \
+             --noinput --verbosity=2 --settings=config.settings.test 2>&1 | tee b6-postgres.log
 +      - name: Verify protected browser and E6 pure guards
 +        id: e6-preflight
 +        if: ${{ !cancelled() }}
