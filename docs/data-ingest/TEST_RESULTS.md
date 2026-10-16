@@ -1,5 +1,9 @@
 # S1 actual verification results — 2026-10-13
 
+> A4 (2026-10-15): current read-only audit, coordinator commands and exact execution limits
+> are in [docs/dev/a4](../dev/a4/README.md). Original-source availability and runtime
+> claims below are historical S1 evidence, not results from this isolated A4 snapshot.
+
 **NON_PRODUCTION_LOCAL_CHANGES / NOT_DEPLOYED / GATES_HOLD / Phase01 BLOCKED.**
 
 Branch: `codex/s1-fiqh-import-20261013`.

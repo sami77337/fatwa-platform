@@ -1,0 +1,207 @@
+{
+  "recorded_at_utc": "2026-10-15T15:30:31.358Z",
+  "base_commit": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "branch": "codex/site-functions-20261015-181420-c415-a4",
+  "worktree_initially_dirty": true,
+  "commands": [
+    {
+      "argv": [
+        "py",
+        "-3.13",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/fiqh_import",
+        "-v"
+      ],
+      "exitCode": 112,
+      "stdout": "",
+      "stderr": "No installed Python found!\r\n"
+    },
+    {
+      "argv": [
+        "py",
+        "-3.13",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/integration/source",
+        "-v"
+      ],
+      "exitCode": 112,
+      "stdout": "",
+      "stderr": "No installed Python found!\r\n"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'apps/reference/management/commands/benchmark_reference.py', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'templates/reference/base.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'templates/reference/catalog.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'templates/reference/catalog_content.html', LF will be replaced by CRLF the next time Git touches it\n"
+    }
+  ],
+  "new_defined_test_methods": [
+    {
+      "file": "tests/fiqh_import/test_catalog_audit.py",
+      "defined_test_methods": 12
+    },
+    {
+      "file": "tests/fiqh_import/test_book622_verification.py",
+      "defined_test_methods": 7
+    },
+    {
+      "file": "tests/integration/source/test_read_only_commands.py",
+      "defined_test_methods": 13
+    },
+    {
+      "file": "tests/integration/source/test_existing_snapshot.py",
+      "defined_test_methods": 1
+    }
+  ],
+  "total_new_defined_test_methods": 33,
+  "executed_python_tests": 0,
+  "python_test_result": "NOT_RUN_RUNTIME_UNAVAILABLE",
+  "source_status": "SOURCE_DATA_MISSING_IN_THIS_WORKTREE",
+  "source_archive_expected": "_codex_input/FATWA_622_FIQH_COMPLETE_TOC_11397_20261011.zip",
+  "source_archive_expected_sha256": "82a797806430635350decdde27d07fe41fb1278838c8173dc4080f9d109957ce",
+  "source_archive_sha256_recomputed_in_A4": false,
+  "actual_database_audit": "NOT_RUN",
+  "actual_benchmark": "NOT_RUN",
+  "actual_citation_qa": "NOT_RUN",
+  "database_write_path_executed": false,
+  "docker_commands_executed": false,
+  "git_commit_push_pr": false,
+  "synthetic_fixture": {
+    "file": "tests/fiqh_import/fixtures/synthetic-five-level.json",
+    "sha256": "fa37b33efc506f3deb9f8d2f32223ef8bce85c9748fb840061b359437b3c94d3",
+    "manifest_expected_sha256": "fa37b33efc506f3deb9f8d2f32223ef8bce85c9748fb840061b359437b3c94d3",
+    "acceptance": "NOT_RUN"
+  },
+  "static_file_checks": [
+    {
+      "file": "tools/fiqh_import/audit.py",
+      "sha256": "9a9134326617eff5f219e88e27f29ccd6fbf3fa65d826922af1d5ff4c9ad0f6a",
+      "bytes": 6474,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tools/fiqh_import/postgres.py",
+      "sha256": "fda8643f0a365c2f6fe60f75ad5b1c44b4662df9bcea87397e10abdb1f539289",
+      "bytes": 1397,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tools/fiqh_import/book622.py",
+      "sha256": "c76a3f8fdba50f4b7595138e6ba846786417f62b070333270af9ed1228a1497d",
+      "bytes": 6009,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tools/fiqh_import/owner_r1.py",
+      "sha256": "85ae997294ed8bdca5d9843eea2de3f0d81c7b53b242fe62244a1754d77f1139",
+      "bytes": 6650,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "apps/reference/management/commands/audit_book622.py",
+      "sha256": "740723c3650d7daccfb80ad265733b735d56e4403b8c045ae5a96b73d5f26c4d",
+      "bytes": 5444,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "apps/reference/management/commands/benchmark_reference.py",
+      "sha256": "c2a5ab489ca0cd8ab41b4f328d6228b85f0de18dd08dfa532c500265e15dee87",
+      "bytes": 6651,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tests/fiqh_import/test_catalog_audit.py",
+      "sha256": "3fecdcd51771f8bb9022ee4e36fa1abeaca26f52c3f89bcfc604a0fe17341000",
+      "bytes": 7521,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tests/fiqh_import/test_book622_verification.py",
+      "sha256": "2827020796ea6a93442fc9fba36e6f4eea59b261a01e585b617495ab5187ebf7",
+      "bytes": 7584,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tests/integration/source/__init__.py",
+      "sha256": "e057f9bb28b84021b05b858ffb3ff615e7b75ea22698635aeb23b69476d83fa0",
+      "bytes": 77,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tests/integration/source/test_read_only_commands.py",
+      "sha256": "0839f1f8baeae08fb6410bd62291802f60fd8da9d505580ab29b3ca7d65a70e4",
+      "bytes": 11919,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "tests/integration/source/test_existing_snapshot.py",
+      "sha256": "07aaaf7dbaf5a2bb4972a2fbf3f8aa0a2bd4e5a3d91d1c80422d66f2dadb4f48",
+      "bytes": 2560,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "docs/data-ingest/README.md",
+      "sha256": "c0f7df41ffd3f3804040874dcaf5832dd296c1d346842d655b4a53ad01d93ff2",
+      "bytes": 9861,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "docs/data-ingest/TEST_RESULTS.md",
+      "sha256": "aad2e6b6713ce4bb452fe6880915ed96fa29f2ec436a9bd236097544b097b87e",
+      "bytes": 6906,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    },
+    {
+      "file": "docs/dev/a4/README.md",
+      "sha256": "9ed6597c5119f1d2d7278e525d000a0919f1effa13cbf8c9edfec8ff00a721c0",
+      "bytes": 7486,
+      "trailing_whitespace_lines": [],
+      "ends_with_newline": true
+    }
+  ],
+  "static_checks_are_not_python_syntax_or_runtime_tests": true,
+  "additional_git_check": {
+    "argv": [
+      "git",
+      "-c",
+      "core.autocrlf=false",
+      "diff",
+      "--check"
+    ],
+    "exitCode": 2,
+    "reason": "Nondefault autocrlf setting reports inherited CRLF files as trailing whitespace across checkout; no such unrelated files edited."
+  },
+  "new_file_git_no_index_checks": {
+    "exitCode": 1,
+    "stdout": "",
+    "stderr": "",
+    "interpretation": "Files differ from NUL; no whitespace diagnostics. Use the explicit static_file_checks too."
+  },
+  "deployment_status": "NOT_DEPLOYED",
+  "gates": "GATES_HOLD_PHASE01_BLOCKED"
+}
