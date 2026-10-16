@@ -1,0 +1,469 @@
+{
+  "recorded_at": "2026-10-15T15:31:54.639Z",
+  "base_code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "uncommitted_tooling": true,
+  "action_reports": [
+    {
+      "action": "start",
+      "report": {
+        "action": "start",
+        "timestamp": "2026-10-15T15:30:55.562Z",
+        "result": "FAIL",
+        "site": "fatwa-site-v1",
+        "url": "http://127.0.0.1:8000/fiqh",
+        "gates": "NOT_DEPLOYED / GATES_HOLD",
+        "source_import": "NOT_RUN",
+        "database_migrations": "NOT_RUN",
+        "django_postgresql_tests": "NOT_RUN",
+        "failure": {
+          "code": "DOCKER_PERMISSION_DENIED",
+          "message": "Access to the local Docker engine was denied. Run the button in the owner session with Docker Desktop access."
+        },
+        "health": {
+          "result": "PASS",
+          "http_behavior": "PASS",
+          "catalog_metadata": {
+            "result": "PASS",
+            "basis": "Live API metadata only; archive bytes and all stored rows are not verified.",
+            "observed_counts": {
+              "headings": 11397,
+              "roots": 32,
+              "max_depth": 5
+            },
+            "expected_counts": {
+              "headings": 11397,
+              "roots": 32,
+              "max_depth": 5
+            },
+            "archive_sha256_matches": true,
+            "input_sha256_matches": true
+          },
+          "source_archive_verification": "NOT_RUN",
+          "full_source_row_comparison": "NOT_RUN",
+          "django_postgresql_tests": "NOT_RUN",
+          "browser_mobile_keyboard": "NOT_RUN",
+          "method": "GET_ONLY",
+          "origin": "http://127.0.0.1:8000",
+          "checks": [
+            {
+              "check": "homepage",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 20
+            },
+            {
+              "check": "fiqh",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 18
+            },
+            {
+              "check": "fiqh_basic",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 19
+            },
+            {
+              "check": "liveness",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 2
+            },
+            {
+              "check": "readiness",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 9
+            },
+            {
+              "check": "public_status",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 9
+            },
+            {
+              "check": "books",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 10
+            },
+            {
+              "check": "roots",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 12
+            },
+            {
+              "check": "node",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 10
+            },
+            {
+              "check": "children",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 11
+            },
+            {
+              "check": "search_exact",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 11
+            },
+            {
+              "check": "search_literal",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 18
+            },
+            {
+              "check": "search_normalized",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 19
+            },
+            {
+              "check": "invalid_limit_rejected",
+              "result": "PASS",
+              "status": 400,
+              "elapsed_ms": 2
+            }
+          ]
+        },
+        "code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+        "working_tree": "Includes local A6 edits; commit SHA alone does not identify uncommitted tooling.",
+        "workspace_path_sha256": "4534bb6f12113d776bdd1b03c644309f274abbc5cf45f1499979ebb759187b0d"
+      }
+    },
+    {
+      "action": "status",
+      "report": {
+        "action": "status",
+        "timestamp": "2026-10-15T15:29:29.593Z",
+        "result": "FAIL",
+        "site": "fatwa-site-v1",
+        "url": "http://127.0.0.1:8000/fiqh",
+        "gates": "NOT_DEPLOYED / GATES_HOLD",
+        "source_import": "NOT_RUN",
+        "database_migrations": "NOT_RUN",
+        "django_postgresql_tests": "NOT_RUN",
+        "failure": {
+          "code": "DOCKER_PERMISSION_DENIED",
+          "message": "Access to the local Docker engine was denied. Run the button in the owner session with Docker Desktop access."
+        },
+        "health": {
+          "result": "PASS",
+          "http_behavior": "PASS",
+          "catalog_metadata": {
+            "result": "PASS",
+            "basis": "Live API metadata only; archive bytes and all stored rows are not verified.",
+            "observed_counts": {
+              "headings": 11397,
+              "roots": 32,
+              "max_depth": 5
+            },
+            "expected_counts": {
+              "headings": 11397,
+              "roots": 32,
+              "max_depth": 5
+            },
+            "archive_sha256_matches": true,
+            "input_sha256_matches": true
+          },
+          "source_archive_verification": "NOT_RUN",
+          "full_source_row_comparison": "NOT_RUN",
+          "django_postgresql_tests": "NOT_RUN",
+          "browser_mobile_keyboard": "NOT_RUN",
+          "method": "GET_ONLY",
+          "origin": "http://127.0.0.1:8000",
+          "checks": [
+            {
+              "check": "homepage",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 19
+            },
+            {
+              "check": "fiqh",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 15
+            },
+            {
+              "check": "fiqh_basic",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 14
+            },
+            {
+              "check": "liveness",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 2
+            },
+            {
+              "check": "readiness",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 8
+            },
+            {
+              "check": "public_status",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 8
+            },
+            {
+              "check": "books",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 7
+            },
+            {
+              "check": "roots",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 10
+            },
+            {
+              "check": "node",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 10
+            },
+            {
+              "check": "children",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 10
+            },
+            {
+              "check": "search_exact",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 9
+            },
+            {
+              "check": "search_literal",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 17
+            },
+            {
+              "check": "search_normalized",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 18
+            },
+            {
+              "check": "invalid_limit_rejected",
+              "result": "PASS",
+              "status": 400,
+              "elapsed_ms": 2
+            }
+          ]
+        },
+        "code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+        "working_tree": "Includes local A6 edits; commit SHA alone does not identify uncommitted tooling.",
+        "workspace_path_sha256": "4534bb6f12113d776bdd1b03c644309f274abbc5cf45f1499979ebb759187b0d"
+      }
+    },
+    {
+      "action": "healthcheck",
+      "report": {
+        "action": "healthcheck",
+        "timestamp": "2026-10-15T15:29:29.322Z",
+        "result": "PASS",
+        "site": "fatwa-site-v1",
+        "url": "http://127.0.0.1:8000/fiqh",
+        "gates": "NOT_DEPLOYED / GATES_HOLD",
+        "source_import": "NOT_RUN",
+        "database_migrations": "NOT_RUN",
+        "django_postgresql_tests": "NOT_RUN",
+        "health": {
+          "result": "PASS",
+          "http_behavior": "PASS",
+          "catalog_metadata": {
+            "result": "PASS",
+            "basis": "Live API metadata only; archive bytes and all stored rows are not verified.",
+            "observed_counts": {
+              "headings": 11397,
+              "roots": 32,
+              "max_depth": 5
+            },
+            "expected_counts": {
+              "headings": 11397,
+              "roots": 32,
+              "max_depth": 5
+            },
+            "archive_sha256_matches": true,
+            "input_sha256_matches": true
+          },
+          "source_archive_verification": "NOT_RUN",
+          "full_source_row_comparison": "NOT_RUN",
+          "django_postgresql_tests": "NOT_RUN",
+          "browser_mobile_keyboard": "NOT_RUN",
+          "method": "GET_ONLY",
+          "origin": "http://127.0.0.1:8000",
+          "checks": [
+            {
+              "check": "homepage",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 21
+            },
+            {
+              "check": "fiqh",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 15
+            },
+            {
+              "check": "fiqh_basic",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 15
+            },
+            {
+              "check": "liveness",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 2
+            },
+            {
+              "check": "readiness",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 7
+            },
+            {
+              "check": "public_status",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 7
+            },
+            {
+              "check": "books",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 7
+            },
+            {
+              "check": "roots",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 9
+            },
+            {
+              "check": "node",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 8
+            },
+            {
+              "check": "children",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 10
+            },
+            {
+              "check": "search_exact",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 9
+            },
+            {
+              "check": "search_literal",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 16
+            },
+            {
+              "check": "search_normalized",
+              "result": "PASS",
+              "status": 200,
+              "elapsed_ms": 17
+            },
+            {
+              "check": "invalid_limit_rejected",
+              "result": "PASS",
+              "status": 400,
+              "elapsed_ms": 2
+            }
+          ]
+        },
+        "code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+        "working_tree": "Includes local A6 edits; commit SHA alone does not identify uncommitted tooling.",
+        "workspace_path_sha256": "4534bb6f12113d776bdd1b03c644309f274abbc5cf45f1499979ebb759187b0d"
+      }
+    },
+    {
+      "action": "test",
+      "report": {
+        "action": "test",
+        "timestamp": "2026-10-15T15:30:55.958Z",
+        "result": "PASS",
+        "scope": "Node launcher regressions, synthetic/mock tests; no live DB acceptance.",
+        "totals": {
+          "tests": 55,
+          "pass": 53,
+          "fail": 0,
+          "skipped": 2
+        },
+        "django_postgresql_tests": "NOT_RUN",
+        "code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+        "working_tree": "Includes local A6 edits; commit SHA alone does not identify uncommitted tooling.",
+        "workspace_path_sha256": "4534bb6f12113d776bdd1b03c644309f274abbc5cf45f1499979ebb759187b0d"
+      }
+    },
+    {
+      "action": "test-db",
+      "report": {
+        "action": "test-db",
+        "timestamp": "2026-10-15T15:30:56.253Z",
+        "result": "NOT_RUN",
+        "code": "DATABASE_ISOLATION_NOT_PROVEN",
+        "django_postgresql_tests": "NOT_RUN",
+        "message": "Django database tests are disabled. A separate database name and --keepdb do not prove isolation. See docs/operations/A6_LOCAL_OPERATION.md and tools/dev/db_test_guard.py.",
+        "source_import": "NOT_RUN",
+        "database_migrations": "NOT_RUN",
+        "code_sha": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+        "working_tree": "Includes local A6 edits; commit SHA alone does not identify uncommitted tooling.",
+        "workspace_path_sha256": "4534bb6f12113d776bdd1b03c644309f274abbc5cf45f1499979ebb759187b0d"
+      }
+    }
+  ],
+  "python_guard_tests": {
+    "result": "NOT_RUN",
+    "exit": 112,
+    "reason": "No installed Python found"
+  },
+  "django_postgresql_tests": "NOT_RUN",
+  "real_container_start_restart": "UNVERIFIED_DOCKER_PERMISSION_DENIED",
+  "source_acceptance": "HTTP_METADATA_ONLY_NOT_ARCHIVE_OR_FULL_ROW_VERIFICATION",
+  "direct_a6_text_whitespace_scan": {
+    "result": "PASS",
+    "files": 18
+  },
+  "files_sha256": {
+    "tools/dev/START_LOCAL.cmd": "7481f607e823eafe9f2ef8aab71eed9e4e3f594f66c6ccb8adfe84b443d0ee62",
+    "tools/dev/RESTART_LOCAL.cmd": "c0e56d032f0e313d3c2874e01fa12c64058fb2d84e8144a4fb4643c98336264f",
+    "tools/dev/STATUS_LOCAL.cmd": "d89a76bbfd433be2643521137b229ed7983a1eaade2e99fb82906bb72c6a7adf",
+    "tools/dev/HEALTHCHECK_LOCAL.cmd": "25e8d059a5c168660b23640efb31faa67908342680ebc08a8437ef115ca3b297",
+    "tools/dev/TEST_LOCAL.cmd": "73c6f4832e50afdec37112a7252cc3e1ce1f5ae1b45328bfa330fdc78525a874",
+    "tools/dev/TEST_DATABASE.cmd": "148cd55b9cfac1fdc282b7ec20652c64ee99de68f62a2a5d0f1e4ed1824dbace",
+    "tools/dev/host.mjs": "d45e6fd5db58cab6e9f7db65ff2bed20b83b2f233acae663dee127e63cbd67a2",
+    "tools/dev/local.mjs": "43fb7c6002df60e6d4fe99df85d6a6e1f3a36479ddfb601a38371eff2ddb19e4",
+    "tools/dev/health.mjs": "bb7e25653c41a4c35430a573f6ef8c6fc9a735567e914a79da8a293c392ecc9a",
+    "tools/dev/site.ps1": "af7424b683279c1e745ab2d3eae52b7a979d9f5c2615b627756b4f7c5108eda2",
+    "tools/dev/container_workflow.py": "7ebc4481621fa0a17ec6fceab3141083b41a6b60bf53a29eddc950372bf3b141",
+    "tools/dev/db_test_guard.py": "58aa460f79763a1c08481956a80c3b6afcdafd3b0ca50b132b2382f6ca1c99d4",
+    "tests/dev/host.test.mjs": "f883d1f468a034da005347e8c5ee6801820c7aa1f8a184e19ce8afa0e5275a2e",
+    "tests/dev/local.test.mjs": "7979a04d033ece30ef1cb79645d11681a511c9ad14b0ba205bd21b7fdd15e906",
+    "tests/dev/health.test.mjs": "9060b9f201ab551641ccb70067ab8728ce51e18ac6a11a8fd35fccc4281c3bb2",
+    "tests/dev/test_db_guard.py": "2b2f94f61670c313dd850346bcc634505c09acfdf77b3bed9696dc6b7a7117aa",
+    "docs/operations/A6_LOCAL_OPERATION.md": "f60d73b378cb235200fe294984ce9a14bd32e6680a5e655a84f9b5bbcf243ca1",
+    "docs/dev/a6/RESULT.md": "7af27851235675e01e74bbdebb3c3930f6e16e71f9582e001429db80ed95a086"
+  }
+}
