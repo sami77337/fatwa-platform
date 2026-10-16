@@ -1,0 +1,108 @@
+{
+  "recorded_at_utc": "2026-10-15T15:26:04.482Z",
+  "base_commit": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "base_worktree": "Owner integrated dirty snapshot, including pre-existing changes to services.py and views.py.",
+  "candidate_files": [
+    {
+      "file": "apps/reference/query.py",
+      "before_sha256": "c835a89bcb124575f70180dcad5baa72dcd088ecb7dc96c8d8bf16d178d62ec6",
+      "after_sha256": "b91bf2658afe1dc90c284eba8a17dbfe43408bd8f3cb47b6d9d6f3ab801ea7da"
+    },
+    {
+      "file": "apps/reference/services.py",
+      "before_sha256": "3add097eea2f8ba4e9e33a3afa3b1093332e06b6435d72eb10121a71a8434b9b",
+      "after_sha256": "b54943d128beeba3fe51c1cd48f61e023a2b8e28c31c386e3ba90986549c3d38"
+    },
+    {
+      "file": "apps/reference/views.py",
+      "before_sha256": "85e54b8b4e4f21516192490aa25b94ff82596723a49e6f273a8125dfc81747d0",
+      "after_sha256": "ed47cc039b196642202debcfec0243f30e9b370e63d895c3f43b5b2b8ed34df0"
+    }
+  ],
+  "source": {
+    "archive_file": "FATWA_622_FIQH_COMPLETE_TOC_11397_20261011.zip",
+    "archive_sha256": "82a797806430635350decdde27d07fe41fb1278838c8173dc4080f9d109957ce",
+    "input_member": "FATWA_622_FIQH_COMPLETE/622_الفهرس_كامل_11397.jsonl",
+    "input_sha256": "37544f6122ef72fb6bd908556ffb41821b235be28bcbd1413752042dbac01d14",
+    "records": 11397,
+    "roots": 32,
+    "max_depth": 5,
+    "source_archive_unchanged": true
+  },
+  "checks": {
+    "ruff_check": {
+      "result": "PASS",
+      "files": 6,
+      "cache": false
+    },
+    "ruff_format": {
+      "result": "PASS",
+      "files": 6
+    },
+    "git_diff_check": {
+      "result": "PASS",
+      "scope": "Three A2-owned Python files; pre-existing modifications retained."
+    },
+    "node_syntax": {
+      "result": "PASS",
+      "file": "tests/integration/api/live_read.test.mjs"
+    },
+    "existing_frontend_adapter": {
+      "result": "PASS",
+      "passed": 11,
+      "kind": "Mocked HTTP; unchanged existing adapter tests."
+    },
+    "live_http": {
+      "result": "PASS",
+      "origin": "http://127.0.0.1:8000",
+      "passed": 5,
+      "skipped": 1,
+      "candidate_code_verified": false,
+      "scope": "Untouched existing source server. Source-pinned GET/HEAD probes only.",
+      "all_roots_original_field_comparison": {
+        "rows": 32,
+        "mismatches": 0
+      },
+      "deep_node_ids": [
+        8668,
+        9709
+      ],
+      "late_anchor": {
+        "parent": 2214,
+        "anchor": 2255,
+        "offset": 40
+      }
+    },
+    "new_isolated_orm_suite": {
+      "result": "NOT_RUN",
+      "reason": "Python venv launcher exits 103: its Python313 base executable is access denied. No database was connected by the new suite."
+    },
+    "candidate_http": {
+      "result": "NOT_RUN",
+      "reason": "A2 code was not started. The source server was not changed or restarted."
+    },
+    "postgresql_candidate_execution": {
+      "result": "NOT_RUN",
+      "reason": "No disposable PostgreSQL database was created or touched."
+    }
+  },
+  "baseline_regressions": {
+    "empty_search_unknown_root": {
+      "route": "/api/v1/fiqh/search?q=&root=999999",
+      "actual_status": 200,
+      "candidate_expected_status": 404
+    },
+    "basic_anchor": {
+      "route": "/fiqh/nodes/2214?basic=1&limit=20&anchor=2255",
+      "actual_status": 400,
+      "candidate_expected_status": 200
+    }
+  },
+  "scope": {
+    "database_mutations_performed": false,
+    "imports_or_migrations_performed": false,
+    "source_site_modified": false,
+    "commits_pushes_prs_deployments": false,
+    "gates": "NOT_DEPLOYED / GATES_HOLD"
+  }
+}

@@ -1,4 +1,5 @@
 """Pure validation shared by HTML and JSON endpoints."""
+
 import re
 from dataclasses import dataclass
 
@@ -25,8 +26,17 @@ class Page:
     offset: int = 0
 
     def __post_init__(self) -> None:
-        if not 1 <= self.limit <= 100 or not 0 <= self.offset <= MAX_OFFSET:
+        if (
+            type(self.limit) is not int
+            or type(self.offset) is not int
+            or not 1 <= self.limit <= 100
+            or not 0 <= self.offset <= MAX_OFFSET
+        ):
             raise InvalidQuery("Invalid pagination")
+
+    def next_offset(self, total: int) -> int | None:
+        candidate = self.offset + self.limit
+        return candidate if candidate < total and candidate <= MAX_OFFSET else None
 
 
 def validate_search(text: str, mode: str) -> None:

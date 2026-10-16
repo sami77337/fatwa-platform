@@ -5,6 +5,7 @@ from functools import wraps
 from django.db import DatabaseError, connection
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.views.decorators.http import require_safe
 from django.views.decorators.vary import vary_on_headers
 
 from . import services
@@ -28,6 +29,13 @@ def _page(request: HttpRequest) -> Page:
     )
 
 
+def _anchor_id(request: HttpRequest) -> int | None:
+    if "anchor" in request.GET and "offset" in request.GET:
+        raise InvalidQuery("Anchor and offset are mutually exclusive")
+    value = request.GET.get("anchor")
+    return bounded_int(value, 1, MAX_SOURCE_ID) if value is not None else None
+
+
 def _json(data: dict, status: int = 200) -> JsonResponse:
     return JsonResponse(
         {"kind": services.KIND, **data},
@@ -41,6 +49,10 @@ def _json(data: dict, status: int = 200) -> JsonResponse:
 def api_guard(view):
     @wraps(view)
     def guarded(request, *args, **kwargs):
+        if request.method not in {"GET", "HEAD"}:
+            response = _json({"error": "method_not_allowed"}, 405)
+            response["Allow"] = "GET, HEAD"
+            return response
         try:
             return view(request, *args, **kwargs)
         except InvalidQuery:
@@ -62,10 +74,11 @@ def api_books(request: HttpRequest) -> JsonResponse:
 @api_guard
 def api_roots(request: HttpRequest) -> JsonResponse:
     _parameters(request, {"edition", "limit", "offset"})
-    edition = services.resolve_edition(_edition_id(request))
+    page, requested = _page(request), _edition_id(request)
+    edition = services.resolve_edition(requested)
     return _json(
         {
-            **services.roots(edition, _page(request)).as_dict(),
+            **services.roots(edition, page).as_dict(),
             "edition": services.edition_data(edition) if edition else None,
         }
     )
@@ -88,15 +101,12 @@ def api_node(request: HttpRequest, ident: int) -> JsonResponse:
 @api_guard
 def api_children(request: HttpRequest, ident: int) -> JsonResponse:
     _parameters(request, {"edition", "limit", "offset", "anchor"})
-    if "anchor" in request.GET and "offset" in request.GET:
-        raise InvalidQuery("Anchor and offset are mutually exclusive")
-    anchor = request.GET.get("anchor")
-    anchor_id = bounded_int(anchor, 1, MAX_SOURCE_ID) if anchor is not None else None
-    edition = services.resolve_edition(_edition_id(request))
+    page, requested, anchor_id = _page(request), _edition_id(request), _anchor_id(request)
+    edition = services.resolve_edition(requested)
     heading = services.node(edition, ident)
     return _json(
         {
-            **services.child_page(edition, heading, _page(request), anchor_id).as_dict(),
+            **services.child_page(edition, heading, page, anchor_id).as_dict(),
             "parent": ident,
             "edition": services.edition_data(edition),
         }
@@ -108,12 +118,13 @@ def api_search(request: HttpRequest) -> JsonResponse:
     _parameters(request, {"edition", "q", "mode", "limit", "offset", "root"})
     text, mode = request.GET.get("q", ""), request.GET.get("mode", "normalized")
     validate_search(text, mode)
-    edition = services.resolve_edition(_edition_id(request))
+    page, requested = _page(request), _edition_id(request)
     root = request.GET.get("root")
     root_id = bounded_int(root, 1, MAX_SOURCE_ID) if root is not None else None
+    edition = services.resolve_edition(requested)
     return _json(
         {
-            **services.search(edition, text, mode, _page(request), root_id).as_dict(),
+            **services.search(edition, text, mode, page, root_id).as_dict(),
             "query": text,
             "mode": mode,
             "edition": services.edition_data(edition) if edition else None,
@@ -121,7 +132,9 @@ def api_search(request: HttpRequest) -> JsonResponse:
     )
 
 
+@api_guard
 def health(request: HttpRequest) -> JsonResponse:
+    _parameters(request, set())
     # Liveness only: no database readiness or gate acceptance is implied.
     return _json({"alive": True, "read_only": True})
 
@@ -141,31 +154,38 @@ def status(request: HttpRequest) -> JsonResponse:
     )
 
 
+@api_guard
 def ready(request: HttpRequest) -> JsonResponse:
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-        # Also verify that the required migrated schema is reachable.
-        services.list_books(Page(1))
-        return _json({"database_reachable": True})
-    except DatabaseError:
-        return _json({"error": "catalog_unavailable"}, 503)
+    _parameters(request, set())
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
+    # Also verify that the required migrated schema is reachable.
+    services.list_books(Page(1))
+    return _json({"database_reachable": True})
 
 
 def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
     allowed = {"edition", "q", "mode", "limit", "offset", "basic"}
+    if ident is not None:
+        allowed.add("anchor")
     _parameters(request, allowed)
+    anchor_id = _anchor_id(request)
     if request.GET.get("basic", "1") != "1":
         raise InvalidQuery("Invalid basic navigation flag")
     text, mode = request.GET.get("q", ""), request.GET.get("mode", "normalized")
     validate_search(text, mode)
     page = _page(request)
-    books = services.list_books(Page(100))
     requested = _edition_id(request)
-    # An ambiguous catalog presents an edition chooser before querying headings.
-    edition = services.resolve_edition(requested) if requested or books.total <= 1 else None
+    books = services.list_books(Page(100))
+    # A single edition needs no user choice; ambiguous content requests fail closed.
+    selection_required = books.total > 1 and requested is None
+    if selection_required and (ident is not None or text.strip() or page.offset):
+        raise InvalidQuery("Select an edition explicitly")
+    edition = services.resolve_edition(requested) if not selection_required else None
     context = {
         "books": books.items,
+        "edition_selection_required": books.total > 1,
+        "single_source": books.total == 1,
         "edition": services.edition_data(edition) if edition else None,
         "query": text,
         "mode": mode,
@@ -173,21 +193,26 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         "node": None,
         "ancestors": [],
         "pagination_url": request.path,
-        "basic": "basic" in request.GET or bool(text.strip()) or page.offset > 0,
+        "basic": (
+            "basic" in request.GET or bool(text.strip()) or page.offset > 0 or anchor_id is not None
+        ),
     }
     if ident is not None:
         heading = services.node(edition, ident)
         context["node"] = services.heading_data(heading)
         context["ancestors"] = services.heading_path(edition, heading)
-        context["results"] = services.children(edition, heading, page)
+        context["results"] = services.child_page(edition, heading, page, anchor_id)
     elif text.strip():
         context["results"] = services.search(edition, text, mode, page)
     else:
         context["results"] = services.roots(edition, page)
-    context["previous_offset"] = max(0, page.offset - page.limit) if page.offset else None
+    results = context["results"]
+    context["page"] = Page(results.limit, results.offset)
+    context["previous_offset"] = max(0, results.offset - results.limit) if results.offset else None
     return context
 
 
+@require_safe
 @vary_on_headers("HX-Request")
 def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
     try:
@@ -202,7 +227,7 @@ def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
         return render(
             request,
             "reference/error.html",
-            {"message": "تحقق من معلمات البحث واختر الطبعة."},
+            {"message": "تحقق من معلمات البحث؛ يلزم تحديد الطبعة عند توفر أكثر من طبعة."},
             status=400,
         )
     except services.HeadingNotFound as error:
@@ -213,6 +238,7 @@ def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
         )
 
 
+@require_safe
 @vary_on_headers("HX-Request")
 def branch(request: HttpRequest, ident: int) -> HttpResponse:
     # Normal navigation always includes title/citation/breadcrumb context.
@@ -229,6 +255,7 @@ def branch(request: HttpRequest, ident: int) -> HttpResponse:
         return HttpResponse("الفهرس غير متاح", status=503)
 
 
+@require_safe
 def public_asset(request: HttpRequest, asset: str) -> FileResponse:
     from django.contrib.staticfiles import finders
 
