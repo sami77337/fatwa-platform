@@ -12,7 +12,7 @@
   {% else %}<a href="{% url 'heading' item.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}{{ search_detail_query }}">{{ item.title }}</a>{% endif %}
     <small>الجزء: {{ item.part }}، الصفحة المطبوعة: {{ item.page }}</small>
   </li>
-{% empty %}<li>{% if searching or query %}لم نعثر على عناوين تطابق البحث.{% else %}لا توجد عناوين فرعية في هذه القائمة.{% endif %}</li>{% endfor %}
+{% empty %}<li>{% if node %}لا توجد عناوين فرعية في هذه القائمة.{% elif searching or query %}لم نعثر على عناوين تطابق البحث.{% else %}لا توجد عناوين فرعية في هذه القائمة.{% endif %}</li>{% endfor %}
 </ul>
 {% if previous_offset != None or results.next_offset != None %}
 <nav aria-label="صفحات القائمة">

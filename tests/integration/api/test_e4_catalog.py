@@ -112,11 +112,15 @@ class E4CatalogTests(SimpleTestCase):
             self.assertEqual(detail_params.get("q"), [params["q"]])
             self.assertEqual(detail_params.get("search_offset"), ["20"])
             with (patch.object(services, "node", return_value=row),
-                  patch.object(services, "heading_path", return_value=[services.heading_data(row)]),
+                  patch.object(services, "heading_path", return_value=[services.heading_data(heading()), services.heading_data(row)]),
                   patch.object(services, "child_page", return_value=services.CatalogPage([], 0, 20, 0, None))):
                 detail = self.client.get(detail_url)
             self.assertEqual(detail.status_code, 200)
             self.assertContains(detail, "العودة إلى نتائج البحث")
+            self.assertContains(detail, "لا توجد عناوين فرعية في هذه القائمة")
+            ancestor_url = next(href for href in Links(detail.content.decode()).hrefs
+                                if urlsplit(href).path == "/fiqh/nodes/1")
+            self.assertEqual(parse_qs(urlsplit(ancestor_url).query).get("search_offset"), ["20"])
             back_url = next(href for href in Links(detail.content.decode()).hrefs
                             if urlsplit(href).path == "/fiqh" and "offset=20" in href)
             self.assertEqual(parse_qs(urlsplit(back_url).query), {k: [str(v)] for k, v in params.items()})

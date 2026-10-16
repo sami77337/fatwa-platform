@@ -25,6 +25,7 @@ Tests were written and executed before their corresponding fixes:
 | Failed search lacked bookmark/retry after navigation | Node run: 26 tests, 25 pass, 1 fail | Full suites below |
 | Explicit empty SSR search unexpectedly browsed roots | focused test: 1 fail | Full suites below |
 | 503 lacked native retry; late search could replace newer root URL | focused Python/Node runs: 1 failure each | Full suites below |
+| Search-context leaf message and ancestor links lost useful detail/return semantics | focused detail test: 1 failure for each observed defect before fixes | Full suites below |
 
 Two existing expectations were updated for the intended change: valid root-only search now executes its predicate, and a pager restores its submitted controls before a new edited submission. All other existing regressions remain.
 
@@ -68,7 +69,7 @@ Sanitized command logs are retained under `/tmp/e4-*.log` in this Cloud environm
 
 E5: no shared-root changes needed. Existing B6 `tests/integration/api` and `tests/integration/ui` discover these additions. New no-DB label: `tests.integration.api.test_e4_catalog` (8 tests). Real-PG-only label: `tests.integration.ui.test_e4_postgres` (3 tests); never add it to C6/D6's port-1 runner. Existing D4 label remains unchanged. Final combined matrix is coordinator-owned.
 
-E6: use its own isolated synthetic service. Stable hooks remain `#search-form`, `#search-query`, `#search-mode`, `#search-scope`, `#search-depth`, `#search-has_children`, `#clear-search`, `#search-results`, `#basic-link`, `#error`, `#status`, `#tree`, `[role=treeitem]`, `#reference-content`. Native SSR form uses `#query`, `#mode`, `#basic-depth`, `#basic-has_children`; details return link text is `العودة إلى نتائج البحث`, retry is `إعادة المحاولة`, clear is `مسح البحث والمرشحات`. SSR search/filter reloads intentionally remain native fallback pages. Node fixtures are not browser evidence.
+E6: PR52 fixture/test at `fa2b123e967e0550e4c2570d6770e8577aa16e95` was inspected read-only. Its exact `q=&depth=2&has_children=false&limit=20` API/SSR inconsistency is covered by the E4 regression and real-PG filter-only/pagination matrix. No E6 files merged or modified. E6 reports its browser sandbox blocked; this lane does not bypass it. Use its own isolated synthetic service. Stable hooks remain `#search-form`, `#search-query`, `#search-mode`, `#search-scope`, `#search-depth`, `#search-has_children`, `#clear-search`, `#search-results`, `#basic-link`, `#error`, `#status`, `#tree`, `[role=treeitem]`, `#reference-content`. Native SSR form uses `#query`, `#mode`, `#basic-depth`, `#basic-has_children`; details return link text is `العودة إلى نتائج البحث`, retry is `إعادة المحاولة`, clear is `مسح البحث والمرشحات`. SSR search/filter reloads intentionally remain native fallback pages. Node fixtures are not browser evidence.
 
 NOT_RUN: real desktop/mobile browser, Windows execution, combined E1–E6 SHA, real-source acceptance/performance, full importer acceptance (E5), independent review. Browser sandbox/security was not altered. CLI GraphQL PR lookup returned Forbidden; the already connected GitHub connector successfully checked for duplicate PRs without a new credential grant.
 

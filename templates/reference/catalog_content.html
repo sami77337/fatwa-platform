@@ -34,7 +34,7 @@
 </form>
   <nav aria-label="مسار العنوان"><ol class="breadcrumbs">
     <li><a href="{% url 'catalog' %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">جذور الفهرس</a></li>
-    {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
+    {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}{{ search_detail_query }}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
   </ol></nav>
   {% if node and search_return_url %}<p><a href="{{ search_return_url }}">العودة إلى نتائج البحث</a></p>{% endif %}
   {% if searching %}<p><a href="{% url 'catalog' %}?edition={{ edition.id }}&amp;basic=1">مسح البحث والمرشحات</a></p>{% endif %}
