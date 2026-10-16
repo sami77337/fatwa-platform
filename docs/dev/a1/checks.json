@@ -1,0 +1,57 @@
+{
+  "node_version": "24.16.0",
+  "syntax_command": "node --input-type=module --check (file bytes on stdin)",
+  "syntax": [
+    {
+      "file": "apps/reference/static/reference/catalog.js",
+      "result": "PASS"
+    },
+    {
+      "file": "apps/reference/static/reference/django-api.mjs",
+      "result": "PASS"
+    },
+    {
+      "file": "apps/reference/static/reference/tree.js",
+      "result": "PASS"
+    },
+    {
+      "file": "tests/integration/ui/adapter.test.mjs",
+      "result": "PASS"
+    },
+    {
+      "file": "tests/integration/ui/browser.mjs",
+      "result": "PASS"
+    },
+    {
+      "file": "tests/integration/ui/catalog.test.mjs",
+      "result": "PASS"
+    },
+    {
+      "file": "tests/integration/ui/dom-harness.mjs",
+      "result": "PASS"
+    },
+    {
+      "file": "tests/integration/ui/live.mjs",
+      "result": "PASS"
+    },
+    {
+      "file": "tests/integration/ui/tree.test.mjs",
+      "result": "PASS"
+    }
+  ],
+  "corrected_command_attempt": {
+    "result": "FAIL",
+    "command": "node --experimental-default-type=module --check FILE",
+    "reason": "Flag is unavailable in installed Node; replaced with supported stdin syntax check."
+  },
+  "git_diff_check": "PASS (existing CRLF normalization warnings only)",
+  "python": {
+    "result": "NOT_RUN",
+    "probe": "C:/Windows/py.exe --list-paths",
+    "output": "No installed Pythons found!"
+  },
+  "browser": {
+    "result": "NOT_RUN",
+    "reason": "Chrome 155 DevTools Page.enable timeout; 0 UI checks completed"
+  }
+}
