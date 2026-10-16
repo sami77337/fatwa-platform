@@ -58,3 +58,20 @@ a { color: #075681; overflow-wrap: anywhere; }
 #interactive-catalog aside { border-inline-end: 1px solid #b8c6d0; padding-inline-end: 1rem; }
 #search-query { inline-size: 100%; }
 @media (max-width: 42rem) { #interactive-catalog { padding: .75rem; } #interactive-catalog aside { border-inline-end: 0; } }
+
+/* The tree remains one tab stop; links and pagers are independent native controls. */
+body { max-width: none; padding: 0; }
+#books a, #introductions a { display: block; margin: 0; padding: .4rem .7rem; min-block-size: 2.75rem; border: 1px solid #718493; border-radius: .2rem; background: #fff; text-decoration: none; }
+#books a:hover, #introductions a:hover { text-decoration: underline; background: #e9f0f5; }
+#books a[aria-current], #introductions a[aria-current] { background: #e1eef6; border-color: #245675; font-weight: bold; }
+.catalog-actions { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+.catalog-actions a, .result-list a, #reference-content a { display: inline-block; min-block-size: 2.75rem; padding-block: .3rem; }
+#breadcrumbs a { margin: 0; padding: .3rem; }
+#tree-pagination .pagination { border-block-end: 1px solid #b8c6d0; padding-block: .5rem; }
+#tree-pagination .pagination > span { flex: 1 1 100%; overflow-wrap: anywhere; }
+.selected-title { font-weight: bold; }
+#tree-region[aria-busy="true"] { border-inline-start: .25rem solid #075681; }
+#tree-region:empty { display: none; }
+#request-status:empty { display: none; }
+#catalog-content, #catalog-panel { scroll-margin-block-start: 1rem; }
+@media (forced-colors: active) { .tree-item[aria-selected="true"] > .tree-row { outline: 2px solid Highlight; } }

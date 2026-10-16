@@ -1,14 +1,19 @@
 "use strict";
-// Native details/summary keeps keyboard operation available before htmx loads.
-document.addEventListener("htmx:responseError", () => {
+// Native details/summary and heading links work before htmx is available.
+document.addEventListener("htmx:beforeRequest", event => {
+  event.detail.target?.setAttribute("aria-busy", "true");
   const status = document.getElementById("request-status");
-  if (status) status.textContent = "تعذر تحميل الفروع. استخدم رابط عرض العناوين الفرعية للمحاولة.";
+  if (status) status.textContent = "جارٍ تحميل العناوين الفرعية…";
 });
-document.addEventListener("htmx:sendError", () => {
+document.addEventListener("htmx:afterRequest", event => {
+  event.detail.target?.setAttribute("aria-busy", "false");
   const status = document.getElementById("request-status");
-  if (status) status.textContent = "تعذر الاتصال بالفهرس. استخدم رابط عرض العناوين الفرعية.";
+  if (status && event.detail.successful) status.textContent = "تم تحميل العناوين الفرعية.";
 });
-document.addEventListener("htmx:afterSwap", () => {
-  const status = document.getElementById("request-status");
-  if (status) status.textContent = "تم تحميل العناوين الفرعية.";
-});
+for (const type of ["htmx:responseError", "htmx:sendError", "htmx:timeout"]) {
+  document.addEventListener(type, event => {
+    event.detail.target?.setAttribute("aria-busy", "false");
+    const status = document.getElementById("request-status");
+    if (status) status.textContent = "تعذر تحميل الفروع. استخدم رابط عرض العناوين الفرعية للمحاولة.";
+  });
+}
