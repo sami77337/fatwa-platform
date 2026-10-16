@@ -93,6 +93,12 @@ jobs:
               print("DIRECT_API", label, handler.__wrapped__(req).status_code, flush=True)
               print("CLIENT_API", label, Client().get(route).status_code, flush=True)
           PY
+      - name: Isolate legacy catalog test failures
+        run: >-
+          python manage.py test
+          reference.test_catalog.CatalogTests.test_read_query_budgets_are_measured_by_django
+          reference.test_catalog.CatalogTests.test_search_exact_normalized_and_literal_wildcards
+          --noinput --verbosity=2 --settings=config.settings.test
       - name: Django PostgreSQL integration tests
         run: >-
           python manage.py test
