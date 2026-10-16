@@ -1,6 +1,12 @@
 """Standard-library unittest discovery with a fail-closed zero-test guard."""
 import sys
 import unittest
+from pathlib import Path
+
+# Python script entry points in tools/dev do not otherwise see project-root apps.
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 
 def main():
