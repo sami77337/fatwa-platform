@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinned fixture identity and completeness expectations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dataset_id",
+    "source_kind",
+    "book_id",
+    "edition",
+    "provenance",
+    "input_sha256",
+    "expected_nodes",
+    "expected_roots",
+    "expected_max_depth"
+  ],
+  "properties": {
+    "dataset_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "source_kind": {
+      "enum": [
+        "synthetic",
+        "owner_supplied"
+      ]
+    },
+    "book_id": {
+      "const": "622"
+    },
+    "edition": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "input_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "expected_nodes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "expected_roots": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    },
+    "expected_max_depth": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000
+    }
+  }
+}

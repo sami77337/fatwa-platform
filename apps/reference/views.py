@@ -1,4 +1,5 @@
 """Public GET/HEAD interfaces. Method enforcement also covers missing URLs."""
+
 from functools import wraps
 
 from django.db import DatabaseError, connection
@@ -28,9 +29,13 @@ def _page(request: HttpRequest) -> Page:
 
 
 def _json(data: dict, status: int = 200) -> JsonResponse:
-    return JsonResponse({"kind": services.KIND, **data}, status=status, json_dumps_params={
-        "ensure_ascii": False,
-    })
+    return JsonResponse(
+        {"kind": services.KIND, **data},
+        status=status,
+        json_dumps_params={
+            "ensure_ascii": False,
+        },
+    )
 
 
 def api_guard(view):
@@ -44,6 +49,7 @@ def api_guard(view):
             return _json({"error": "not_found"}, 404)
         except (DatabaseError, services.CatalogUnavailable):
             return _json({"error": "catalog_unavailable"}, 503)
+
     return guarded
 
 
@@ -57,8 +63,12 @@ def api_books(request: HttpRequest) -> JsonResponse:
 def api_roots(request: HttpRequest) -> JsonResponse:
     _parameters(request, {"edition", "limit", "offset"})
     edition = services.resolve_edition(_edition_id(request))
-    return _json({**services.roots(edition, _page(request)).as_dict(),
-                  "edition": services.edition_data(edition) if edition else None})
+    return _json(
+        {
+            **services.roots(edition, _page(request)).as_dict(),
+            "edition": services.edition_data(edition) if edition else None,
+        }
+    )
 
 
 @api_guard
@@ -66,29 +76,49 @@ def api_node(request: HttpRequest, ident: int) -> JsonResponse:
     _parameters(request, {"edition"})
     edition = services.resolve_edition(_edition_id(request))
     heading = services.node(edition, ident)
-    return _json({"node": services.heading_data(heading),
-                  "ancestors": services.heading_path(edition, heading),
-                  "edition": services.edition_data(edition)})
+    return _json(
+        {
+            "node": services.heading_data(heading),
+            "ancestors": services.heading_path(edition, heading),
+            "edition": services.edition_data(edition),
+        }
+    )
 
 
 @api_guard
 def api_children(request: HttpRequest, ident: int) -> JsonResponse:
-    _parameters(request, {"edition", "limit", "offset"})
+    _parameters(request, {"edition", "limit", "offset", "anchor"})
+    if "anchor" in request.GET and "offset" in request.GET:
+        raise InvalidQuery("Anchor and offset are mutually exclusive")
+    anchor = request.GET.get("anchor")
+    anchor_id = bounded_int(anchor, 1, MAX_SOURCE_ID) if anchor is not None else None
     edition = services.resolve_edition(_edition_id(request))
     heading = services.node(edition, ident)
-    return _json({**services.children(edition, heading, _page(request)).as_dict(),
-                  "parent": ident, "edition": services.edition_data(edition)})
+    return _json(
+        {
+            **services.child_page(edition, heading, _page(request), anchor_id).as_dict(),
+            "parent": ident,
+            "edition": services.edition_data(edition),
+        }
+    )
 
 
 @api_guard
 def api_search(request: HttpRequest) -> JsonResponse:
-    _parameters(request, {"edition", "q", "mode", "limit", "offset"})
+    _parameters(request, {"edition", "q", "mode", "limit", "offset", "root"})
     text, mode = request.GET.get("q", ""), request.GET.get("mode", "normalized")
     validate_search(text, mode)
     edition = services.resolve_edition(_edition_id(request))
-    return _json({**services.search(edition, text, mode, _page(request)).as_dict(),
-                  "query": text, "mode": mode,
-                  "edition": services.edition_data(edition) if edition else None})
+    root = request.GET.get("root")
+    root_id = bounded_int(root, 1, MAX_SOURCE_ID) if root is not None else None
+    return _json(
+        {
+            **services.search(edition, text, mode, _page(request), root_id).as_dict(),
+            "query": text,
+            "mode": mode,
+            "edition": services.edition_data(edition) if edition else None,
+        }
+    )
 
 
 def health(request: HttpRequest) -> JsonResponse:
@@ -99,9 +129,16 @@ def health(request: HttpRequest) -> JsonResponse:
 @api_guard
 def status(request: HttpRequest) -> JsonResponse:
     _parameters(request, set())
-    return _json({"read_only": True, "sensitive_write_routes_enabled": False,
-                  "fatwa_publications_available": False, "deployment": "NOT_DEPLOYED",
-                  "gates": "GATES_HOLD", "editions": services.list_books(Page(100)).as_dict()})
+    return _json(
+        {
+            "read_only": True,
+            "sensitive_write_routes_enabled": False,
+            "fatwa_publications_available": False,
+            "deployment": "NOT_DEPLOYED",
+            "gates": "GATES_HOLD",
+            "editions": services.list_books(Page(100)).as_dict(),
+        }
+    )
 
 
 def ready(request: HttpRequest) -> JsonResponse:
@@ -116,8 +153,10 @@ def ready(request: HttpRequest) -> JsonResponse:
 
 
 def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
-    allowed = {"edition", "q", "mode", "limit", "offset"}
+    allowed = {"edition", "q", "mode", "limit", "offset", "basic"}
     _parameters(request, allowed)
+    if request.GET.get("basic", "1") != "1":
+        raise InvalidQuery("Invalid basic navigation flag")
     text, mode = request.GET.get("q", ""), request.GET.get("mode", "normalized")
     validate_search(text, mode)
     page = _page(request)
@@ -126,9 +165,15 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
     # An ambiguous catalog presents an edition chooser before querying headings.
     edition = services.resolve_edition(requested) if requested or books.total <= 1 else None
     context = {
-        "books": books.items, "edition": services.edition_data(edition) if edition else None,
-        "query": text, "mode": mode, "page": page, "node": None, "ancestors": [],
+        "books": books.items,
+        "edition": services.edition_data(edition) if edition else None,
+        "query": text,
+        "mode": mode,
+        "page": page,
+        "node": None,
+        "ancestors": [],
         "pagination_url": request.path,
+        "basic": "basic" in request.GET or bool(text.strip()) or page.offset > 0,
     }
     if ident is not None:
         heading = services.node(edition, ident)
@@ -147,14 +192,25 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
 def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
     try:
         context = _html_context(request, ident)
-        template = "reference/catalog_content.html" if request.headers.get("HX-Request") == "true" else "reference/catalog.html"
+        template = (
+            "reference/catalog_content.html"
+            if request.headers.get("HX-Request") == "true"
+            else "reference/catalog.html"
+        )
         return render(request, template, context)
     except InvalidQuery:
-        return render(request, "reference/error.html", {"message": "تحقق من معلمات البحث واختر الطبعة."}, status=400)
+        return render(
+            request,
+            "reference/error.html",
+            {"message": "تحقق من معلمات البحث واختر الطبعة."},
+            status=400,
+        )
     except services.HeadingNotFound as error:
         raise Http404("Unknown reference heading") from error
     except (DatabaseError, services.CatalogUnavailable):
-        return render(request, "reference/error.html", {"message": "فهرس المرجع غير متاح حاليًا."}, status=503)
+        return render(
+            request, "reference/error.html", {"message": "فهرس المرجع غير متاح حاليًا."}, status=503
+        )
 
 
 @vary_on_headers("HX-Request")
@@ -176,14 +232,24 @@ def branch(request: HttpRequest, ident: int) -> HttpResponse:
 def public_asset(request: HttpRequest, asset: str) -> FileResponse:
     from django.contrib.staticfiles import finders
 
-    allowed = asset in {"reference/style.css", "reference/tree.js"} or (
-        asset.startswith("django_htmx/") and asset.endswith(".js")
-        and ".." not in asset and "\\" not in asset
+    allowed = asset in {
+        "reference/style.css",
+        "reference/tree.js",
+        "reference/catalog.css",
+        "reference/catalog.js",
+        "reference/django-api.mjs",
+    } or (
+        asset.startswith("django_htmx/")
+        and asset.endswith(".js")
+        and ".." not in asset
+        and "\\" not in asset
     )
     if not allowed:
         raise Http404("Unknown asset")
     filename = finders.find(asset)
     if not filename:
         raise Http404("Missing installed asset")
-    content_type = "text/css; charset=utf-8" if asset.endswith(".css") else "text/javascript; charset=utf-8"
+    content_type = (
+        "text/css; charset=utf-8" if asset.endswith(".css") else "text/javascript; charset=utf-8"
+    )
     return FileResponse(open(filename, "rb"), content_type=content_type)

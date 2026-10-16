@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>فهرس مرجعي فقهي — نموذج تجريبي</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#catalog-panel">انتقل إلى الفهرس</a>
+  <header>
+    <h1>فهرس مرجعي فقهي</h1>
+    <p>عناوين من مرجع حنبلي واحد؛ ليست فتاوى منشورة أو تصنيفًا عامًا للفتاوى.</p>
+    <p class="notice">نموذج تطوير ببيانات مصطنعة للتجربة فقط. أسماء العناوين والجزء والصفحة تجريبية.</p>
+  </header>
+  <main>
+    <section aria-labelledby="search-heading">
+      <h2 id="search-heading">البحث في العناوين</h2>
+      <form id="search-form" role="search" novalidate>
+        <label for="query">عنوان أو كلمة من العنوان</label>
+        <div class="search-controls">
+          <input id="query" name="q" type="search" minlength="2" maxlength="120" aria-describedby="search-help" aria-errormessage="error" autocomplete="off">
+          <button type="submit">ابحث</button>
+          <button id="clear-search" type="button">مسح البحث</button>
+        </div>
+        <p id="search-help">من حرفين إلى ١٢٠ حرفًا. البحث في العناوين المرجعية فقط.</p>
+        <label for="search-scope">نطاق البحث</label>
+        <select id="search-scope"><option value="">جميع الكتب والمقدمتين</option></select>
+      </form>
+      <div id="search-results" aria-busy="false"></div>
+    </section>
+    <div class="catalog-layout">
+      <aside aria-labelledby="books-heading">
+        <h2 id="books-heading">الكتب الثلاثون</h2>
+        <nav id="books" aria-label="اختيار كتاب"></nav>
+        <h2 id="intro-heading">المقدمتان</h2>
+        <nav id="introductions" aria-label="اختيار مقدمة"></nav>
+      </aside>
+      <section id="catalog-panel" tabindex="-1" aria-labelledby="tree-heading">
+        <h2 id="tree-heading">شجرة العناوين المرجعية</h2>
+        <nav id="breadcrumbs" aria-label="مسار العنوان"></nav>
+        <p id="tree-help">تنقّل بالسهمين لأعلى ولأسفل. افتح باليسار وأغلق باليمين. البداية والنهاية لأول وآخر عنوان. اضغط إدخال أو مسافة للتوسيع.</p>
+        <div id="tree-region" aria-busy="false">
+          <div id="tree" role="tree" aria-label="شجرة عناوين الكتاب" aria-describedby="tree-help"></div>
+        </div>
+        <div id="tree-pagination"></div>
+        <section id="reference" aria-labelledby="reference-heading">
+          <h3 id="reference-heading">بيانات العنوان المرجعي</h3>
+          <div id="reference-content">اختر عنوانًا لعرض مرجعه.</div>
+        </section>
+      </section>
+    </div>
+    <p id="status" role="status" aria-live="polite" aria-atomic="true"></p>
+    <div id="error" role="alert"></div>
+  </main>
+  <footer>غير منشور للإنتاج. القبول والسياسات ما زالت معلّقة. بيانات الحالات والمستخدمين والفتاوى خارج هذا النموذج.</footer>
+  <noscript>يلزم تفعيل جافاسكربت لتجربة الشجرة والبحث في هذا النموذج المحلي.</noscript>
+</body>
+</html>

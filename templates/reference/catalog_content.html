@@ -2,6 +2,7 @@
   <h1 tabindex="-1">{% if node %}{{ node.title }}{% else %}فهرس المرجع{% endif %}</h1>
   {% if books %}
   <form method="get" action="{% url 'catalog' %}">
+    {% if basic %}<input type="hidden" name="basic" value="1">{% endif %}
     <label for="edition">المرجع والطبعة</label>
     <select id="edition" name="edition" required>
       {% if not edition %}<option value="" disabled selected>اختر الطبعة</option>{% endif %}
@@ -20,10 +21,10 @@
   {% endif %}
   {% if edition %}
   <p class="attribution">{{ edition.work.title_original }} — {{ edition.title }}؛ {{ edition.publisher }}؛ المذهب: {{ edition.work.madhhab }}؛ معرّف المصدر: {{ edition.work.source_namespace }}/{{ edition.work.source_book_id }}.</p>
-  <p><a href="{% url 'catalog' %}?edition={{ edition.id }}">جذور فهرس هذه الطبعة</a></p>
+  <p><a href="{% url 'catalog' %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">جذور فهرس هذه الطبعة</a></p>
   {% if ancestors %}
   <nav aria-label="مسار العنوان"><ol class="breadcrumbs">
-    {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
+    {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
   </ol></nav>
   {% endif %}
   {% if node %}<p>موضع العنوان في الطبعة: {{ node.part }}، صفحة {{ node.page }}؛ معرّف صفحة المصدر {{ node.page_id }}؛ معرّف العنوان {{ node.source_id }}.</p>{% endif %}

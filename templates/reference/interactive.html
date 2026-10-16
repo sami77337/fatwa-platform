@@ -1,0 +1,55 @@
+<main id="interactive-catalog" data-edition="{{ edition.id }}" data-node="{% if node %}{{ node.id }}{% endif %}" hidden>
+    <p id="source-summary" class="attribution"></p>
+    <form action="{% url 'catalog' %}" method="get">
+      <label for="interactive-edition">المرجع والطبعة</label>
+      <select id="interactive-edition" name="edition">
+        {% for book in books %}<option value="{{ book.id }}"{% if book.id == edition.id %} selected{% endif %}>{{ book.work.title_original }} — {{ book.title }}</option>{% endfor %}
+      </select>
+      <button type="submit">عرض الطبعة</button>
+    </form>
+    <p><a href="{% if node %}{% url 'heading' node.id %}{% else %}{% url 'catalog' %}{% endif %}?edition={{ edition.id }}&amp;basic=1">التصفح الأساسي دون الواجهة التفاعلية</a></p>
+    <section aria-labelledby="search-heading">
+      <h2 id="search-heading">البحث في العناوين</h2>
+      <form id="search-form" role="search" novalidate>
+        <label for="search-query">عنوان أو كلمة من العنوان</label>
+        <div class="search-controls">
+          <input id="search-query" name="q" type="search" maxlength="160" aria-describedby="search-help" aria-errormessage="error" autocomplete="off">
+          <button type="submit">ابحث</button>
+          <button id="clear-search" type="button">مسح البحث</button>
+        </div>
+        <p id="search-help">حتى ١٦٠ حرفًا وعشر كلمات. البحث في العناوين المرجعية فقط.</p>
+        <label for="search-scope">نطاق البحث</label>
+        <select id="search-scope"><option value="">جميع جذور هذه الطبعة</option></select>
+        <label for="search-mode">طريقة البحث</label>
+        <select id="search-mode">
+          <option value="normalized">بحث عربي مبسّط</option>
+          <option value="literal">كلمات كما كُتبت</option>
+          <option value="exact">مطابقة العنوان كاملًا</option>
+        </select>
+      </form>
+      <div id="search-results" aria-busy="false"></div>
+    </section>
+    <div class="catalog-layout">
+      <aside aria-labelledby="books-heading">
+        <h2 id="books-heading">جذور الفهرس</h2>
+        <nav id="books" aria-label="اختيار كتاب"></nav>
+        <h2 id="intro-heading">المقدمات</h2>
+        <nav id="introductions" aria-label="اختيار مقدمة"></nav>
+      </aside>
+      <section id="catalog-panel" tabindex="-1" aria-labelledby="tree-heading">
+        <h2 id="tree-heading">شجرة العناوين المرجعية</h2>
+        <nav id="breadcrumbs" aria-label="مسار العنوان"></nav>
+        <p id="tree-help">تنقّل بالسهمين لأعلى ولأسفل. افتح باليسار وأغلق باليمين. البداية والنهاية لأول وآخر عنوان. اضغط إدخال أو مسافة للتوسيع.</p>
+        <div id="tree-region" aria-busy="false">
+          <div id="tree" role="tree" aria-label="شجرة عناوين الكتاب" aria-describedby="tree-help"></div>
+        </div>
+        <div id="tree-pagination"></div>
+        <section id="reference" aria-labelledby="reference-heading">
+          <h3 id="reference-heading">بيانات العنوان المرجعي</h3>
+          <div id="reference-content">اختر عنوانًا لعرض مرجعه.</div>
+        </section>
+      </section>
+    </div>
+    <p id="status" role="status" aria-live="polite" aria-atomic="true"></p>
+    <div id="error" role="alert"></div>
+  </main>
