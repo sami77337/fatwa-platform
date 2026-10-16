@@ -23,13 +23,13 @@ INPUT_PINS = {
     "jsonl": "37544f6122ef72fb6bd908556ffb41821b235be28bcbd1413752042dbac01d14",
     "json": "05f76f0230ec5cff7b6955a9c9d7e6c2c0190bdcc2e9fbae36945cde970bd80f",
 }
-INTRODUCTION_IDS = {"1", "23"}
-FIQH_BOOK_IDS = {
+INTRODUCTION_IDS = frozenset({"1", "23"})
+FIQH_BOOK_IDS = frozenset({
     "25", "69", "1321", "1752", "2214", "2618", "3452", "3956",
     "5568", "6833", "7194", "7464", "7877", "8053", "8550", "8898",
     "9241", "9306", "9370", "9474", "9532", "9693", "9873", "10131",
     "10510", "10593", "10649", "10818", "11142", "11289",
-}
+})
 
 
 def flatten_tree(value: Any) -> list[dict[str, Any]]:

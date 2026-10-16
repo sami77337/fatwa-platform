@@ -12,7 +12,7 @@ from pathlib import Path
 
 from apps.reference.records import CatalogSpec, HeadingRecord, PreparedCatalog, prepare_catalog
 from tools.fiqh_import import ingest, load_manifest
-from tools.fiqh_import.ingest import IngestError
+from tools.fiqh_import.ingest import IngestError, _read_bounded
 
 ARCHIVE_SHA256 = "82a797806430635350decdde27d07fe41fb1278838c8173dc4080f9d109957ce"
 PREFIX = "FATWA_622_FIQH_COMPLETE/"
@@ -20,29 +20,42 @@ INPUT_MEMBER = PREFIX + "622_الفهرس_كامل_11397.jsonl"
 ORIGINAL_MEMBER = PREFIX + "622_العناوين_الأصلية_ID_title.csv"
 ORIGINAL_SHA256 = "13edc878f0b81d178c104bc976c4fe0d3970d8a1ef8bae26d6101f22ebbcd1a9"
 MANIFEST = Path(__file__).resolve().parents[2] / "docs/data-ingest/owner-622-r1-jsonl.manifest.json"
+EDITION_KEY = "622-moj-owner-r1-20261011"
+# Historical integrated mapping pin; changing the mapper requires a reviewed edition.
+MAPPED_CHECKSUM = "b8c69e5f0a7c6b3e7d8b2283bb3e24d89399d646c199c3dc48f19168b8595bf7"
 MAX_ARCHIVE_BYTES = 16 * 1024 * 1024
 MAX_MEMBER_BYTES = 16 * 1024 * 1024
 
 
+def _read_source_members(raw_archive: bytes) -> dict[str, bytes]:
+    """Read only the two required members, in memory, with bounded decompression."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw_archive)) as archive:
+            names = archive.namelist()
+            if len(names) != len(set(names)):
+                raise IngestError("Duplicate ZIP member identity")
+            members = {}
+            for name in (INPUT_MEMBER, ORIGINAL_MEMBER):
+                info = archive.getinfo(name)
+                if info.file_size > MAX_MEMBER_BYTES or info.flag_bits & 1:
+                    raise IngestError("Oversized or encrypted source member")
+                with archive.open(info) as stream:
+                    raw = stream.read(MAX_MEMBER_BYTES + 1)
+                if len(raw) > MAX_MEMBER_BYTES or len(raw) != info.file_size:
+                    raise IngestError("Source member exceeds its bounded size")
+                members[name] = raw
+            return members
+    except (zipfile.BadZipFile, KeyError, RuntimeError, NotImplementedError) as error:
+        raise IngestError("Invalid or incomplete owner ZIP") from error
+
+
 def validate_book622(archive_path: str | Path) -> tuple[PreparedCatalog, dict]:
     """Validate exact ZIP/member pins and every original title before ORM access."""
-    archive_path = Path(archive_path)
-    if archive_path.stat().st_size > MAX_ARCHIVE_BYTES:
-        raise IngestError("Owner ZIP exceeds the input limit")
-    raw_archive = archive_path.read_bytes()
+    raw_archive = _read_bounded(Path(archive_path), MAX_ARCHIVE_BYTES)
     if hashlib.sha256(raw_archive).hexdigest() != ARCHIVE_SHA256:
         raise IngestError("Owner ZIP SHA256 does not match the reviewed source")
     manifest = load_manifest(MANIFEST)
-    with zipfile.ZipFile(io.BytesIO(raw_archive)) as archive:
-        names = archive.namelist()
-        if len(names) != len(set(names)):
-            raise IngestError("Duplicate ZIP member identity")
-        members = {}
-        for name in (INPUT_MEMBER, ORIGINAL_MEMBER):
-            info = archive.getinfo(name)
-            if info.file_size > MAX_MEMBER_BYTES or info.flag_bits & 1:
-                raise IngestError("Oversized or encrypted source member")
-            members[name] = archive.read(name)
+    members = _read_source_members(raw_archive)
     original_raw = members[ORIGINAL_MEMBER]
     if hashlib.sha256(original_raw).hexdigest() != ORIGINAL_SHA256:
         raise IngestError("Original-title CSV SHA256 mismatch")
@@ -83,7 +96,7 @@ def validate_book622(archive_path: str | Path) -> tuple[PreparedCatalog, dict]:
         source_book_id="622",
         work_title="كشاف القناع عن متن الإقناع",
         madhhab="حنبلي",
-        edition_key="622-moj-owner-r1-20261011",
+        edition_key=EDITION_KEY,
         edition_title=manifest.edition,
         publisher="وزارة العدل السعودية",
         source_archive_sha256=ARCHIVE_SHA256,
@@ -94,6 +107,8 @@ def validate_book622(archive_path: str | Path) -> tuple[PreparedCatalog, dict]:
         expected_max_depth=5,
     )
     prepared = prepare_catalog(spec, records)
+    if prepared.checksum != MAPPED_CHECKSUM:
+        raise IngestError("Mapped historical snapshot differs from the reviewed checksum")
     return prepared, {
         **validated.report,
         "source_archive_sha256": ARCHIVE_SHA256,
