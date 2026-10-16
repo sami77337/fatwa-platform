@@ -1,0 +1,27 @@
+name: C6 Wave3 integrated standalone QA
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  standalone:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Dispatcher regressions
+        run: python -m unittest discover -s tests/dev -p 'test_*.py' -v
+      - name: Require integrated C1 C2 C3 tests from this checkout
+        run: python tools/dev/wave3_qa.py --standalone --require-integrated
