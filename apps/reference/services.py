@@ -2,7 +2,8 @@
 
 from dataclasses import dataclass
 
-from django.db.models import Count, F, Q, QuerySet
+from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery
+from django.db.models.functions import Coalesce
 
 from .models import ReferenceEdition, ReferenceHeading
 from .normalization import normalize_title
@@ -88,9 +89,18 @@ def resolve_edition(edition_id: int | None) -> ReferenceEdition | None:
 
 
 def _headings(edition: ReferenceEdition) -> QuerySet:
+    # Keep child aggregation off the outer query: COUNT/paging must operate on
+    # headings, not on a grouped join of every matching heading and its children.
+    child_counts = (
+        ReferenceHeading.objects.filter(edition=edition, parent_id=OuterRef("pk"))
+        .order_by()
+        .values("parent_id")
+        .annotate(total=Count("pk"))
+        .values("total")
+    )
     return ReferenceHeading.objects.filter(edition=edition).annotate(
         parent_source_row_id=F("parent__source_row_id"),
-        children_count=Count("children", filter=Q(children__edition=edition)),
+        children_count=Coalesce(Subquery(child_counts), 0),
     )
 
 
@@ -113,7 +123,11 @@ def heading_data(heading: ReferenceHeading) -> dict:
 
 def _paginate(queryset: QuerySet, page: Page) -> CatalogPage:
     total = queryset.count()
-    items = [heading_data(row) for row in queryset[page.offset : page.offset + page.limit]]
+    items = (
+        [heading_data(row) for row in queryset[page.offset : page.offset + page.limit]]
+        if page.offset < total
+        else []
+    )
     return CatalogPage(
         items,
         total,
@@ -212,13 +226,16 @@ def search(
         scope = Q(pk=root.pk)
         for depth in range(1, 5):
             ancestors = {"parent__" * level + "edition": edition for level in range(1, depth + 1)}
-            scope |= Q(**{"parent__" * depth + "pk": root.pk, **ancestors})
+            ancestors.update(
+                {"parent__" * level + "depth": depth + 1 - level for level in range(1, depth)}
+            )
+            scope |= Q(**{"depth": depth + 1, "parent__" * depth + "pk": root.pk, **ancestors})
         queryset = queryset.filter(scope)
     if mode == "exact":
         queryset = queryset.filter(title_original=value)
     else:
         field = "title_normalized" if mode == "normalized" else "title_original"
-        for token in value.split():
+        for token in dict.fromkeys(value.split()):
             # Django escapes LIKE wildcards and binds all values, including % and _.
             queryset = queryset.filter(**{f"{field}__contains": token})
     return _paginate(queryset.order_by("source_order", "source_row_id"), page)
