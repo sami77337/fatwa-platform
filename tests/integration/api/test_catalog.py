@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-from django.db import OperationalError, connection
+from django.db import OperationalError, connections
 from django.test import RequestFactory, SimpleTestCase
 
 from apps.reference import services, views
@@ -115,7 +115,9 @@ class CursorRows:
 @contextmanager
 def cursor_rows(*batches):
     fake = CursorRows(batches)
-    with patch.object(connection, "cursor", fake.cursor):
+    # Patch the concrete wrapper, not Django's proxy: proxy restoration can
+    # discard SimpleTestCase's database-access guard during class teardown.
+    with patch.object(connections["default"], "cursor", fake.cursor):
         yield fake
     if fake.batches:
         raise AssertionError("Unused cursor result sets")
@@ -239,7 +241,7 @@ class ORMReadTests(SimpleTestCase):
                     self.assertIn("%كتاب%", params)
                     self.assertIn("%ابواب%", params)
                 self.assertNotIn(text, sql)
-        with cursor_rows([(0,)], []):
+        with cursor_rows([(0,)]):
             self.assertEqual(services.search(self.edition, "absent", "literal", Page()).items, [])
 
     def test_anchored_children_count_preceding_rows_not_source_positions(self):
