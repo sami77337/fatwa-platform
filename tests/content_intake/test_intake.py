@@ -17,9 +17,13 @@ def record(**changes):
 class IntakeTests(unittest.TestCase):
     def test_committed_synthetic_expected_bundle(self):
         root = Path(__file__).resolve().parents[2] / "docs/dev/c1"
-        outputs, manifest = artifacts((root / "sample.csv").read_bytes(), ".csv")
+        # Git for Windows may check out synthetic text fixtures with CRLF.
+        # Canonicalize only these checked-in test bytes, not user input.
+        fixture_bytes = (root / "sample.csv").read_bytes().replace(b"\r\n", b"\n")
+        outputs, manifest = artifacts(fixture_bytes, ".csv")
         for name, data in outputs.items():
-            self.assertEqual((root / "expected" / name).read_bytes(), data)
+            expected_bytes = (root / "expected" / name).read_bytes().replace(b"\r\n", b"\n")
+            self.assertEqual(expected_bytes, data)
         self.assertEqual(json.loads((root / "expected/manifest.json").read_bytes()), manifest)
 
     def test_validate_preview_and_invalid_export(self):
