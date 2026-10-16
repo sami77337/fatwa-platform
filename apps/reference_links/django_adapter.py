@@ -1,10 +1,12 @@
 """Optional Django service adapter. Instantiation performs no I/O; lookup only reads."""
 
-from .resolution import CatalogReadError, Heading
+from .resolution import CatalogReadError, Heading, _positive
 
 
 class DjangoCatalog:
     def lookup(self, edition_id: int, source_row_id: int) -> tuple[Heading, ...]:
+        if not _positive(edition_id) or not _positive(source_row_id):
+            raise CatalogReadError("Explicit numeric edition and row required")
         from django.db import DatabaseError
 
         from apps.reference import services
@@ -25,6 +27,8 @@ class DjangoCatalog:
                     source_namespace=edition.work.source_namespace,
                     source_book_id=edition.work.source_book_id,
                     source_input_sha256=edition.source_input_sha256,
+                    edition_key=edition.edition_key,
+                    source_archive_sha256=edition.source_archive_sha256,
                 ),
             )
         except services.HeadingNotFound:

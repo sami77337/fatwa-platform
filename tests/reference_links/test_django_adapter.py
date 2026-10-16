@@ -26,6 +26,8 @@ class AdapterTests(unittest.TestCase):
                 title_original="مرجع", source_namespace="synthetic", source_book_id="fixture"
             ),
             source_input_sha256="b" * 64,
+            edition_key="synthetic-edition",
+            source_archive_sha256="a" * 64,
         )
         heading = SimpleNamespace(
             source_row_id=8, title_original="باب", source_part="1", source_page_number=20
@@ -40,6 +42,8 @@ class AdapterTests(unittest.TestCase):
         nodes.assert_called_once_with(edition, 8)
         self.assertEqual(rows[0].path, ("باب",))
         self.assertEqual(rows[0].edition_id, 2)
+        self.assertEqual(rows[0].edition_key, "synthetic-edition")
+        self.assertEqual(rows[0].source_archive_sha256, "a" * 64)
 
     def test_missing_and_unavailable(self):
         from apps.reference import services
