@@ -11,7 +11,7 @@ from types import MappingProxyType
 from apps.fatwa_drafts.intake import ReferenceLink, ValidationError, clip_url
 from apps.prepared_pipeline import C1Pointer, ExplicitMapping, prepare_batch
 from apps.reference_links.bridge import (
-    BridgeConfig, EditionMap, HeadingMap, SourceIdentity, resolve_prepared_pointers,
+    BridgeConfig, EditionMap, HeadingMap, SourceIdentity, exact_text, resolve_prepared_pointers,
 )
 from apps.reference_links.resolution import Heading, SnapshotCatalog
 from tools.content_intake.cli import parse_json
@@ -144,7 +144,7 @@ def _synthetic_dependencies():
     return d1_map, bridge, catalog
 
 
-def _reference(expected: dict, item: dict, pointer, bridge: BridgeConfig) -> PreviewReference:
+def _reference(expected: dict, item: dict, pointer, bridge: BridgeConfig, heading_index) -> PreviewReference:
     mismatch = PreviewReference("unverified", None, "reference_mismatch")
     if (
         item.get("original") != expected
@@ -155,9 +155,7 @@ def _reference(expected: dict, item: dict, pointer, bridge: BridgeConfig) -> Pre
     if item.get("outcome") != "verified" or pointer.status.value != "verified":
         return PreviewReference("unverified", None, "reference_unverified")
     evidence = pointer.evidence
-    mapping = next((row for row in bridge.headings if
-                    (row.c1_source_id, row.c1_heading_id) ==
-                    (expected.get("source_id"), expected.get("heading_id"))), None)
+    mapping = heading_index.get((expected.get("source_id"), expected.get("heading_id")))
     if type(evidence) is not Heading or mapping is None:
         return mismatch
     pin = asdict(bridge.edition.identity)
@@ -181,16 +179,16 @@ def _reference(expected: dict, item: dict, pointer, bridge: BridgeConfig) -> Pre
     return PreviewReference("verified", citation)
 
 
-def _row_references(original: dict, report: dict, resolved, bridge, blocked: bool):
+def _row_references(original: dict, report: dict, resolved, bridge, heading_index):
     expected = original.get("reference_links", [])
-    if blocked:
-        # D1 may omit normalized references for a blocked row. Keep the row visible
-        # but never attach verified evidence to it or fail the whole batch for it.
+    if resolved is None:
+        # D1-blocked rows and D3-incompatible IDs stay visible. No verified
+        # evidence is attached, and neither case can hide valid siblings.
         return tuple(PreviewReference("unverified", None, "invalid_input")
                      for _ in expected) if isinstance(expected, list) else ()
     if len(expected) != len(report["references"]) or len(expected) != len(resolved.reference_links):
         return tuple(PreviewReference("unverified", None, "reference_mismatch") for _ in expected)
-    return tuple(_reference(source, item, pointer, bridge) for source, item, pointer in
+    return tuple(_reference(source, item, pointer, bridge, heading_index) for source, item, pointer in
                  zip(expected, report["references"], resolved.reference_links, strict=True))
 
 
@@ -230,17 +228,35 @@ def compose_synthetic_batch(raw: bytes, *, synthetic_fixtures_only: bool = False
         raise ValueError("synthetic_pipeline_alignment_failed")
     # D1 owns row validation. D3's envelope intentionally rejects duplicates and
     # malformed links: never feed it blocked rows or drop those rows from display.
-    eligible = [original for original, report in zip(originals, reports, strict=True)
-                if "blocked-invalid" not in report["statuses"]]
+    eligible_positions = set()
+    for position, (original, report) in enumerate(zip(originals, reports, strict=True)):
+        if "blocked-invalid" in report["statuses"]:
+            continue
+        # C2 permits internal tab/newline/DEL in an opaque external ID; D3's
+        # exact-text contract is stricter. Retain the original receipt and require
+        # review for that row, without renaming its ID or losing its siblings.
+        try:
+            exact_text(original.get("external_id"))
+        except ValueError:
+            continue
+        eligible_positions.add(position)
+    eligible = [originals[position] for position in sorted(eligible_positions)]
+    # Compact serialization preserves the 1 MB bound instead of adding separators
+    # to an otherwise eligible near-limit original envelope.
+    resolution_raw = json.dumps({"schema": SCHEMA, "items": eligible}, ensure_ascii=False,
+                                separators=(",", ":"), allow_nan=False).encode("utf-8")
+    if len(resolution_raw) > 1_000_000:
+        raise ValidationError("json: invalid_size_or_type")
     resolved_rows = resolve_prepared_pointers(
-        json.dumps({"schema": SCHEMA, "items": eligible}, ensure_ascii=False).encode("utf-8"),
-        bridge, catalog,
+        resolution_raw, bridge, catalog,
     ) if eligible else ()
     if len(resolved_rows) != len(eligible):
         raise ValueError("synthetic_pipeline_alignment_failed")
     resolutions = iter(resolved_rows)
+    # One local index per composition, never a global cache or per-pointer scan.
+    heading_index = {(row.c1_source_id, row.c1_heading_id): row for row in bridge.headings}
     rendered = []
-    for original, report in zip(originals, reports, strict=True):
+    for position, (original, report) in enumerate(zip(originals, reports, strict=True)):
         if report["original"] != original:
             raise ValueError("synthetic_pipeline_identity_mismatch")
         flags = set(report["statuses"])
@@ -248,7 +264,7 @@ def compose_synthetic_batch(raw: bytes, *, synthetic_fixtures_only: bool = False
             raise ValueError("synthetic_pipeline_invalid_status")
         blocked = "blocked-invalid" in flags
         source = original if isinstance(original, dict) else {}
-        resolved = None if blocked else next(resolutions)
+        resolved = next(resolutions) if position in eligible_positions else None
         if resolved is not None and source.get("external_id") != resolved.external_id:
             raise ValueError("synthetic_pipeline_identity_mismatch")
         draft = report["draft"]
@@ -257,14 +273,14 @@ def compose_synthetic_batch(raw: bytes, *, synthetic_fixtures_only: bool = False
         if draft is not None:
             intake, revisions = draft.get("intake", {}), draft.get("history", [])
             if (
-                intake.get("external_id") != resolved.external_id
+                intake.get("external_id") != source.get("external_id")
                 or intake.get("question") != original.get("question", original.get("title", ""))
                 or intake.get("prepared_clip_url") != original.get("prepared_clip_url", "")
                 or len(revisions) != 1 or revisions[0].get("answer") != ""
                 or revisions[0].get("action") != "received"
             ):
                 raise ValueError("synthetic_pipeline_draft_identity_mismatch")
-        refs = _row_references(source, report, resolved, bridge, blocked)
+        refs = _row_references(source, report, resolved, bridge, heading_index)
         issues = []
         media_issue = _media_issue(source.get("prepared_clip_url", ""))
         if media_issue:
@@ -272,7 +288,7 @@ def compose_synthetic_batch(raw: bytes, *, synthetic_fixtures_only: bool = False
         if not source.get("reference_links"):
             issues.append("references_missing")
         issues.extend(ref.issue_code for ref in refs if ref.issue_code)
-        if blocked:
+        if blocked or resolved is None:
             issues.append("invalid_input")
         issue_codes = tuple(dict.fromkeys(issues))
         if blocked:

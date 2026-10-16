@@ -1,5 +1,8 @@
 # Wave6 E2: reusable synthetic worklist composition
 
+Initial-increment evidence below; see [independent-review fixes](REVIEW_FIXES.md)
+for the current follow-up behavior, extra regression label and compatibility checks.
+
 Base: `codex/20261017-wave5-review-worklist` at
 `b5de539237de0cd12b91b0705a3cb92014bfe98b`.
 Only E2 files change. The lane PR records the exact published head.

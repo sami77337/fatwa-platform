@@ -113,9 +113,9 @@
       <a href="{% url 'editorial_pipeline' %}?batch={{ batch|urlencode }}">مسح التصفية</a>
     </form>
     <p role="status">مطابق للتصفية: {{ matched_count }}؛ معروض في الصفحة: {{ rows|length }}.</p>
-    {% for item in rows %}
+    {% for entry in display_rows %}{% with item=entry.item %}
       <article>
-        <h2>{% if item.external_id %}<a href="{% url 'editorial_pipeline_detail' ident=item.external_id %}?{{ filter_query }}">{{ item.external_id }}</a>{% else %}سجل محجوب دون معرّف صالح{% endif %}</h2>
+        <h2><a href="{{ entry.detail_url }}">{% if item.external_id %}{{ item.external_id }}{% else %}سجل محجوب دون معرّف صالح{% endif %}</a></h2>
         <p>{{ item.status_label }} — غير منشورة</p>
         <p class="original-text">{{ item.question }}</p>
         <p>{{ item.media_status }}</p>
@@ -125,7 +125,7 @@
         {% if item.draft_created %}<p>سجل الاستلام في الذاكرة فقط</p>
         {% else %}<p>لم يُنشأ سجل مسودة</p>{% endif %}
       </article>
-    {% empty %}<p>لا توجد سجلات مطابقة</p>{% endfor %}
+    {% endwith %}{% empty %}<p>لا توجد سجلات مطابقة</p>{% endfor %}
     <nav aria-label="صفحات سجلات المراجعة">
       {% if previous_url %}<a href="{{ previous_url }}" rel="prev">الصفحة السابقة</a>{% endif %}
       <span aria-current="page">الصفحة {{ page }} من {{ page_count }}</span>
