@@ -214,3 +214,33 @@ test("late clipboard rejection does not move focus from newly selected heading",
   assert.equal(doc.activeElement, focused);
   assert.equal(get(doc, "reference-content").querySelector("textarea"), null); app.destroy();
 });
+
+
+test("D4 native filters retain submitted values across paging, history and retry", async () => {
+  const { doc, calls, adapter, app } = await setup();
+  get(doc, "search-query").value = "  عنوان  ";
+  get(doc, "search-depth").value = "2"; get(doc, "search-has_children").value = "false";
+  get(doc, "search-depth").focus();
+  assert.equal(get(doc, "search-depth").key("ArrowDown").defaultPrevented, false);
+  get(doc, "search-form").dispatch("submit"); await settle();
+  let url = doc.defaultView.location;
+  assert.equal(url.searchParams.get("depth"), "2"); assert.equal(url.searchParams.get("has_children"), "false");
+  assert.equal(url.searchParams.get("q"), "  عنوان  ");
+  get(doc, "search-depth").value = "5"; get(doc, "search-has_children").value = "true";
+  get(doc, "search-results").querySelector("button").click(); await settle();
+  let call = calls.filter(call => call.query).at(-1);
+  assert.equal(call.depth, 2); assert.equal(call.hasChildren, false); assert.equal(call.cursor, "20");
+  get(doc, "search-form").dispatch("submit"); await settle();
+  call = calls.filter(call => call.query).at(-1);
+  assert.equal(call.depth, 5); assert.equal(call.hasChildren, true); assert.equal(call.cursor, null);
+  await doc.defaultView.history.back();
+  assert.equal(doc.defaultView.location.searchParams.get("depth"), "2");
+  await doc.defaultView.history.forward(); assert.equal(get(doc, "search-depth").value, "5");
+  const original = adapter.search; adapter.search = async () => { throw Error("offline"); };
+  get(doc, "search-form").dispatch("submit"); await settle();
+  assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false");
+  adapter.search = original; get(doc, "error").querySelector("button").click(); await settle();
+  assert.equal(calls.filter(call => call.query).at(-1).depth, 5);
+  get(doc, "clear-search").click();
+  assert.equal(doc.defaultView.location.searchParams.has("depth"), false); app.destroy();
+});

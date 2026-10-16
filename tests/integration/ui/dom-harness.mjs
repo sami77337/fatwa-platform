@@ -49,7 +49,7 @@ export function documentHarness(url = "http://localhost/fiqh") {
   };
   const doc = { defaultView: view, activeElement: null, title: "فهرس المرجع", createElement(tag) { return new Element(tag, doc); }, getElementById(id) { return ids.get(id) ?? null; } };
   const ids = new Map();
-  for (const id of ["tree", "tree-region", "tree-pagination", "status", "error", "request-status", "breadcrumbs", "reference-content", "basic-link", "catalog-home", "books", "introductions", "intro-heading", "search-form", "search-query", "search-mode", "search-scope", "search-results", "clear-search"]) ids.set(id, doc.createElement(id.includes("link") || id === "catalog-home" ? "a" : id === "search-query" ? "input" : "div"));
+  for (const id of ["tree", "tree-region", "tree-pagination", "status", "error", "request-status", "breadcrumbs", "reference-content", "basic-link", "catalog-home", "books", "introductions", "intro-heading", "search-form", "search-query", "search-mode", "search-scope", "search-depth", "search-has_children", "search-results", "clear-search"]) ids.set(id, doc.createElement(id.includes("link") || id === "catalog-home" ? "a" : id === "search-query" ? "input" : "div"));
   doc.getElementById("search-mode").value = "normalized";
   doc.getElementById("tree").setAttribute("role", "tree");
   return doc;

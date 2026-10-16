@@ -16,7 +16,7 @@
 </ul>
 {% if previous_offset != None or results.next_offset != None %}
 <nav aria-label="صفحات القائمة">
-  {% if previous_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ previous_offset }}{% if query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% endif %}">السابق</a>{% endif %}
-  {% if results.next_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ results.next_offset }}{% if query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% endif %}">التالي</a>{% endif %}
+  {% if previous_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ previous_offset }}{% if query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% if depth %}&amp;depth={{ depth }}{% endif %}{% if has_children %}&amp;has_children={{ has_children }}{% endif %}{% if root %}&amp;root={{ root }}{% endif %}{% endif %}">السابق</a>{% endif %}
+  {% if results.next_offset != None %}<a href="{{ pagination_url }}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}&amp;limit={{ results.limit }}&amp;offset={{ results.next_offset }}{% if query %}&amp;q={{ query|urlencode }}&amp;mode={{ mode }}{% if depth %}&amp;depth={{ depth }}{% endif %}{% if has_children %}&amp;has_children={{ has_children }}{% endif %}{% if root %}&amp;root={{ root }}{% endif %}{% endif %}">التالي</a>{% endif %}
 </nav>
 {% endif %}

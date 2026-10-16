@@ -141,12 +141,14 @@ export function createDjangoAdapter({ editionId = null, origin = globalThis.loca
       for (let i = 1; i < breadcrumbs.length; i++) check(breadcrumbs[i].parent_id === breadcrumbs[i - 1].id);
       return { node, breadcrumbs };
     },
-    async search(query, { rootId = null, cursor = null, mode = "normalized", signal } = {}) {
+    async search(query, { rootId = null, cursor = null, mode = "normalized", depth = null, hasChildren = null, signal } = {}) {
       if (typeof query !== "string" || query.length > 160 || query.split(/\s+/).filter(Boolean).length > 10 || /[\x00-\x1f\x7f]/.test(query)) throw new CatalogError("INVALID_QUERY");
       if (!["normalized", "literal", "exact"].includes(mode)) throw new CatalogError("INVALID_QUERY");
+      if (depth !== null && (!Number.isInteger(depth) || depth < 1 || depth > 5)) throw new CatalogError("INVALID_QUERY");
+      if (hasChildren !== null && typeof hasChildren !== "boolean") throw new CatalogError("INVALID_QUERY");
       check(edition !== null);
       return page(await request("search", { edition: editionId, q: query, mode, limit: PAGE_SIZE,
-        offset: cursorOffset(cursor), root: rootId === null ? null : ident(rootId) }, signal));
+        offset: cursorOffset(cursor), root: rootId === null ? null : ident(rootId), depth, has_children: hasChildren }, signal));
     },
   };
 }
