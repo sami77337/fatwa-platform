@@ -25,6 +25,10 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   const current = (lane, request) => state[lane] === request && !state.disposed;
   const cancel = lane => { state[lane]?.abort(); state[lane] = null; };
   const begin = lane => {
+    // Search and tree operations share one navigation target. The latest
+    // interaction invalidates the other lane, even if transport ignores abort.
+    if (lane === "treeRequest") stopSearch();
+    if (lane === "searchRequest") stopTree();
     cancel(lane);
     const request = new AbortController();
     state[lane] = request;
@@ -166,8 +170,8 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     if (focus) items.find(item => item.dataset.id === id)?.focus();
   }
   function collapse(node, { activate = false } = {}) {
-    cancel("treeRequest");
-    busy("tree-region", false);
+    stopSearch();
+    stopTree();
     const index = state.expanded.indexOf(node.id);
     if (index >= 0) {
       state.expanded.splice(index);
@@ -201,7 +205,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       item.addEventListener("focus", () => setFocus(node.id, false));
       const activate = () => {
         if (node.has_children) void (expanded ? collapse(node, { activate: true }) : expand(node));
-        else { stopSearch(); showSelection(node); remember("push", node.id); announce("تم اختيار العنوان المرجعي."); }
+        else { stopSearch(); stopTree(); showSelection(node); remember("push", node.id); announce("تم اختيار العنوان المرجعي."); }
       };
       item.addEventListener("click", event => {
         if (event.target.closest('[role="treeitem"]') !== item) return;
@@ -284,7 +288,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   }
   async function chooseRoot(root, { focus = true, navigate = true } = {}) {
     if (navigate) stopSearch();
-    cancel("treeRequest");
+    stopTree();
     state.root = root; state.focusId = root.id; state.expanded = []; state.groups.clear();
     markRoot(); showSelection(root, [root]); renderTree(focus);
     if (navigate) remember("push", root.id);
@@ -316,6 +320,9 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       if (current("treeRequest", request) && error.name !== "AbortError") failure(() => void openResult(id, { focus, navigate }), error.code === "NOT_FOUND" ? "لم يعد هذا العنوان متاحًا. يمكنك العودة إلى جذور الفهرس." : undefined);
       return false;
     } finally { if (current("treeRequest", request)) busy("tree-region", false); }
+  }
+  function stopTree() {
+    cancel("treeRequest"); busy("tree-region", false);
   }
   function stopSearch() {
     if (!state.searchRequest) return;
@@ -373,6 +380,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       hasChildren: get("search-has_children").value === "" ? null : get("search-has_children").value === "true" });
   };
   const clearSearch = () => {
+    stopTree();
     cancel("searchRequest"); state.searchPage = null; state.searchOptions = null;
     searchControls(); get("search-query").removeAttribute("aria-invalid");
     get("search-results").replaceChildren(); busy("search-results", false); clearError(); remember("push", undefined, true);

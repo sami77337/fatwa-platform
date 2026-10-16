@@ -42,8 +42,8 @@ Python below means `/workspace/e4-venv/bin/python` (the explicit Python 3.13 ven
 | `python manage.py test tests/integration/api tests.integration.ui.test_templates tests.integration.ui.test_discovery --noinput --settings=config.settings.test` | 47 pass, 0 fail, 0 skip |
 | `python -B tests/integration/api/run_isolated.py` | 41 pass, 0 fail, 0 skip; database connection creation forbidden by runner |
 | `python -B tests/integration/api/run_c4_synthetic.py` | 5 pass; supplementary in-memory predicate logic, not PostgreSQL acceptance |
-| `node --test tests/integration/ui/adapter.test.mjs tests/integration/ui/catalog.test.mjs tests/integration/ui/tree.test.mjs tests/integration/django-api.test.mjs` | 44 pass, 0 fail, 0 skip; DOM/event and adapter tests, not browser acceptance |
-| `python tools/dev/qa.py node` | 99 discovered, 90 pass, 0 fail, 9 skip: owner archive unavailable (1), actual Windows CMD/PowerShell invocation/parser checks unavailable on Linux (8) |
+| `node --test tests/integration/ui/adapter.test.mjs tests/integration/ui/catalog.test.mjs tests/integration/ui/tree.test.mjs tests/integration/django-api.test.mjs` | 47 pass, 0 fail, 0 skip; DOM/event and adapter tests, not browser acceptance |
+| `python tools/dev/qa.py node` | 102 discovered, 93 pass, 0 fail, 9 skip: owner archive unavailable (1), actual Windows CMD/PowerShell invocation/parser checks unavailable on Linux (8) |
 | `python tools/dev/qa.py system` | PASS, no system-check issues |
 | Full existing B6 command below, PG18.6 and PG17.11 separately | 146 pass, 0 fail, 0 skip on each version |
 | `git diff --check` | PASS |
@@ -71,6 +71,35 @@ E5: no shared-root changes needed. Existing B6 `tests/integration/api` and `test
 
 E6: PR52 fixture/test at `fa2b123e967e0550e4c2570d6770e8577aa16e95` was inspected read-only. Its exact `q=&depth=2&has_children=false&limit=20` API/SSR inconsistency is covered by the E4 regression and real-PG filter-only/pagination matrix. No E6 files merged or modified. E6 reports its browser sandbox blocked; this lane does not bypass it. Use its own isolated synthetic service. Stable hooks remain `#search-form`, `#search-query`, `#search-mode`, `#search-scope`, `#search-depth`, `#search-has_children`, `#clear-search`, `#search-results`, `#basic-link`, `#error`, `#status`, `#tree`, `[role=treeitem]`, `#reference-content`. Native SSR form uses `#query`, `#mode`, `#basic-depth`, `#basic-has_children`; details return link text is `العودة إلى نتائج البحث`, retry is `إعادة المحاولة`, clear is `مسح البحث والمرشحات`. SSR search/filter reloads intentionally remain native fallback pages. Node fixtures are not browser evidence.
 
-NOT_RUN: real desktop/mobile browser, Windows execution, combined E1–E6 SHA, real-source acceptance/performance, full importer acceptance (E5), independent review. Browser sandbox/security was not altered. CLI GraphQL PR lookup returned Forbidden; the already connected GitHub connector successfully checked for duplicate PRs without a new credential grant.
+NOT_RUN: real desktop/mobile browser, Windows execution, combined E1–E6 SHA, real-source acceptance/performance, full importer acceptance (E5), fresh independent review of the race follow-up. Browser sandbox/security was not altered. CLI GraphQL PR lookup returned Forbidden; the already connected GitHub connector successfully checked for duplicate PRs without a new credential grant.
 
-Environment ready ID: `ccarenv_b64_Y2NhcmVudl81MjI1MTE2ZDg4MjQ4MTkxYjU4OGZkMDYyYTJiYTIzZQ`; environment publication/name metadata, task URL/ID and subscription usage are not exposed here. Actual E4 process active; no child agents launched. `USAGE_NOT_OBSERVED / NOT_DEPLOYED / GATES_HOLD`. No independent product/source acceptance is claimed.
+Environment ready ID: `ccarenv_b64_Y2NhcmVudl81MjI1MTE2ZDg4MjQ4MTkxYjU4OGZkMDYyYTJiYTIzZQ`; environment publication/name metadata, task URL/ID and subscription usage are not exposed here. Actual E4 process active; no child agents launched. `USAGE_NOT_OBSERVED / NOT_DEPLOYED / GATES_HOLD`. No independent product/source acceptance is claimed. Independent review of the earlier head returned FIXES_REQUIRED; the follow-up awaits independent re-review.
+
+## Independent review follow-up: navigation races
+
+The coordinator supplied an independent Astra FIXES_REQUIRED review of
+`411965fc94329e0c206101144a788351b63e245e`: a delayed search could override
+Enter activation of a branch, and a delayed detail could override a newer search.
+Both were reproduced locally with deterministic deferred promises before changes:
+`node --test --test-name-pattern='E4 review R[12]' tests/integration/ui/catalog.test.mjs`
+reported 2 tests, 0 pass, 2 fail, with the wrong URLs explicitly asserted.
+
+Search/tree requests now invalidate each other at request creation, using the
+existing AbortController identity checks to reject late successes and errors even
+when transport ignores abort. Synchronous collapse/leaf/clear actions also cancel
+outstanding work and reset busy state. No keyboard mappings or history format
+changed. Complementary leaf-selection and clear-during-detail cases each failed
+before their cancellation calls were added.
+
+`node --test --test-name-pattern='E4 review' tests/integration/ui/catalog.test.mjs`
+now passes 3 tests (8 deterministic completion schedules: branch expand/collapse
+with late success/failure; new search with late detail success/failure; synchronous
+leaf and clear with late detail). They assert URL, history snapshot, selected
+node, focus, busy state and absence of stale errors. Existing error/retry,
+history/reload, native keyboard and PR47 cases remain in the full suite.
+
+Follow-up changes are only `apps/reference/static/reference/catalog.js`,
+`tests/integration/ui/catalog.test.mjs`, and this evidence file. Same branch/PR55;
+no amend/force-push, no other lane changes, no browser-security changes. The
+original independent review is acknowledged; these fixes are author-verified and
+require fresh independent re-review. Final commit/CI/counts are in the PR/handoff.
