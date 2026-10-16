@@ -1,6 +1,7 @@
 """Public GET/HEAD interfaces. Method enforcement also covers missing URLs."""
 
 from functools import wraps
+from urllib.parse import urlencode
 
 from django.core.exceptions import TooManyFieldsSent
 from django.db import DatabaseError, connection
@@ -184,7 +185,7 @@ def ready(request: HttpRequest) -> JsonResponse:
 def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
     allowed = {"edition", "q", "mode", "limit", "offset", "basic", "root", "depth", "has_children"}
     if ident is not None:
-        allowed.add("anchor")
+        allowed.update({"anchor", "search_offset"})
     _parameters(request, allowed)
     anchor_id = _anchor_id(request)
     if request.GET.get("basic", "1") != "1":
@@ -198,11 +199,18 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
     has_children = strict_bool(children_value) if children_value else None
     root_id = bounded_int(root_value, 1, MAX_SOURCE_ID) if root_value else None
     page = _page(request)
+    search_offset = (
+        bounded_int(request.GET["search_offset"], 0, MAX_OFFSET)
+        if "search_offset" in request.GET else None
+    )
     requested = _edition_id(request)
     books = services.list_books(Page(100))
     # A single edition needs no user choice; ambiguous content requests fail closed.
     selection_required = books.total > 1 and requested is None
-    if selection_required and (ident is not None or text.strip() or page.offset):
+    searching = "q" in request.GET or any(
+        value is not None for value in (root_id, depth, has_children)
+    )
+    if selection_required and (ident is not None or searching or page.offset):
         raise InvalidQuery("Select an edition explicitly")
     edition = services.resolve_edition(requested) if not selection_required else None
     context = {
@@ -211,6 +219,7 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         "single_source": books.total == 1,
         "edition": services.edition_data(edition) if edition else None,
         "query": text,
+        "searching": searching,
         "depth": depth_value,
         "depth_choices": range(1, 6),
         "has_children": children_value,
@@ -221,7 +230,7 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         "ancestors": [],
         "pagination_url": request.path,
         "basic": (
-            "basic" in request.GET or bool(text.strip()) or page.offset > 0 or anchor_id is not None
+            "basic" in request.GET or searching or page.offset > 0 or anchor_id is not None
         ),
     }
     if ident is not None:
@@ -229,7 +238,7 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         context["node"] = services.heading_data(heading)
         context["ancestors"] = services.heading_path(edition, heading)
         context["results"] = services.child_page(edition, heading, page, anchor_id)
-    elif text.strip():
+    elif searching:
         context["results"] = services.search(
             edition, text, mode, page, root_id, depth=depth, has_children=has_children
         )
@@ -238,6 +247,22 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
     results = context["results"]
     context["page"] = Page(results.limit, results.offset)
     context["previous_offset"] = max(0, results.offset - results.limit) if results.offset else None
+    # Carry only validated search state through native detail/return links.
+    # Child offsets and the search offset are independent.
+    if searching and edition is not None:
+        params = {"edition": edition.pk, "basic": "1", "q": text, "mode": mode}
+        for key, value in (("root", root_value), ("depth", depth_value),
+                           ("has_children", children_value)):
+            if value:
+                params[key] = value
+        params["limit"] = page.limit
+        params["offset"] = search_offset if search_offset is not None else page.offset
+        context["search_return_url"] = "/fiqh?" + urlencode(params)
+        context["search_offset"] = params.pop("offset")
+        params.pop("edition")
+        params.pop("basic")
+        params["search_offset"] = context["search_offset"]
+        context["search_detail_query"] = "&" + urlencode(params)
     return context
 
 
@@ -263,7 +288,8 @@ def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
         raise Http404("Unknown reference heading") from error
     except (DatabaseError, services.CatalogUnavailable):
         return render(
-            request, "reference/error.html", {"message": "فهرس المرجع غير متاح حاليًا."}, status=503
+            request, "reference/error.html",
+            {"retry_url": request.get_full_path()}, status=503
         )
 
 

@@ -230,6 +230,8 @@ test("D4 native filters retain submitted values across paging, history and retry
   get(doc, "search-results").querySelector("button").click(); await settle();
   let call = calls.filter(call => call.query).at(-1);
   assert.equal(call.depth, 2); assert.equal(call.hasChildren, false); assert.equal(call.cursor, "20");
+  assert.equal(get(doc, "search-depth").value, "2");
+  get(doc, "search-depth").value = "5"; get(doc, "search-has_children").value = "true";
   get(doc, "search-form").dispatch("submit"); await settle();
   call = calls.filter(call => call.query).at(-1);
   assert.equal(call.depth, 5); assert.equal(call.hasChildren, true); assert.equal(call.cursor, null);
@@ -267,4 +269,59 @@ test("D4 clear search keeps the SSR basic link valid with and without existing q
     assert.equal(basic.searchParams.has("q"), false);
     app.destroy();
   }
+});
+
+test("E4 clear resets every visible search control, and history restores submitted filters", async () => {
+  const { doc, app } = await setup();
+  get(doc, "search-query").value = ""; get(doc, "search-mode").value = "exact";
+  get(doc, "search-depth").value = "2"; get(doc, "search-has_children").value = "false"; get(doc, "search-scope").value = "1";
+  get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "clear-search").click();
+  for (const id of ["search-query", "search-depth", "search-has_children", "search-scope"]) assert.equal(get(doc, id).value, "", id);
+  assert.equal(get(doc, "search-mode").value, "normalized");
+  for (const key of ["q", "mode", "depth", "has_children", "root", "offset"]) assert.equal(doc.defaultView.location.searchParams.has(key), false);
+  await doc.defaultView.history.back();
+  assert.equal(get(doc, "search-depth").value, "2"); assert.equal(get(doc, "search-has_children").value, "false");
+  await doc.defaultView.history.forward(); assert.equal(get(doc, "search-depth").value, ""); app.destroy();
+});
+
+test("E4 paging aligns controls and history with the query actually used", async () => {
+  const { doc, app } = await setup();
+  get(doc, "search-query").value = "  عنوان  "; get(doc, "search-mode").value = "exact";
+  get(doc, "search-depth").value = "2"; get(doc, "search-has_children").value = "false"; get(doc, "search-scope").value = "1";
+  get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "search-query").value = "تعديل لم يرسل"; get(doc, "search-mode").value = "literal";
+  get(doc, "search-depth").value = "5"; get(doc, "search-has_children").value = "true";
+  get(doc, "search-results").querySelector("button").click(); await settle();
+  assert.equal(get(doc, "search-query").value, "  عنوان  "); assert.equal(get(doc, "search-mode").value, "exact");
+  assert.equal(get(doc, "search-depth").value, "2"); assert.equal(get(doc, "search-has_children").value, "false");
+  assert.equal(doc.defaultView.history.state.fatwaCatalog.snapshot.depth, "2"); app.destroy();
+});
+
+test("E4 failed search has a bookmark and restores a retryable state after navigation", async () => {
+  const { doc, adapter, app } = await setup();
+  const original = adapter.search;
+  adapter.search = async () => { throw Error("offline"); };
+  get(doc, "search-query").value = "فارغ"; get(doc, "search-depth").value = "3";
+  get(doc, "search-form").dispatch("submit"); await settle();
+  assert.equal(doc.defaultView.location.searchParams.get("q"), "فارغ");
+  assert.equal(doc.defaultView.location.searchParams.get("depth"), "3");
+  get(doc, "introductions").querySelector("a").click(); await settle();
+  await doc.defaultView.history.back();
+  assert.match(get(doc, "error").textContent, /تعذّر البحث/);
+  adapter.search = original; get(doc, "error").querySelector("button").click(); await settle();
+  assert.match(get(doc, "search-results").textContent, /لم نعثر/);
+  assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false"); app.destroy();
+});
+
+test("E4 a late search cannot replace a newer root URL or leave busy results", async () => {
+  const { doc, adapter, app } = await setup(), pending = deferred();
+  let signal;
+  adapter.search = (_query, options) => { signal = options.signal; return pending.promise; };
+  get(doc, "search-query").value = "عنوان"; get(doc, "search-form").dispatch("submit");
+  get(doc, "introductions").querySelector("a").click(); await settle();
+  assert.equal(signal.aborted, true);
+  pending.resolve({ items: [], total: 0, offset: 0, next_cursor: null, previous_cursor: null }); await settle();
+  assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/90");
+  assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false"); app.destroy();
 });

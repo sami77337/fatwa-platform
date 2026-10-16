@@ -1,5 +1,5 @@
 <main id="catalog-content" tabindex="-1">
-  <h1 tabindex="-1">{% if node %}{{ node.title }}{% elif query %}نتائج البحث في العناوين{% else %}فهرس المرجع{% endif %}</h1>
+  <h1 tabindex="-1">{% if node %}{{ node.title }}{% elif searching or query %}نتائج البحث في العناوين{% else %}فهرس المرجع{% endif %}</h1>
   {% if edition %}
   <p class="attribution">{{ edition.work.title_original }}.</p>
   <form method="get" action="{% url 'catalog' %}" role="search">
@@ -36,6 +36,8 @@
     <li><a href="{% url 'catalog' %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">جذور الفهرس</a></li>
     {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
   </ol></nav>
+  {% if node and search_return_url %}<p><a href="{{ search_return_url }}">العودة إلى نتائج البحث</a></p>{% endif %}
+  {% if searching %}<p><a href="{% url 'catalog' %}?edition={{ edition.id }}&amp;basic=1">مسح البحث والمرشحات</a></p>{% endif %}
   {% if node %}
   <section class="basic-reference" aria-label="الاستشهاد المرجعي">
     <p class="selected-title">{{ node.title }}</p>
@@ -45,7 +47,7 @@
     <p class="basic-reading-help">يمكنك تحديد بيانات المرجع ونسخها يدويًا، أو استخدام أمر الطباعة في المتصفح.</p>
   </section>
   {% endif %}
-  <h2>{% if query %}العناوين المطابقة{% elif node %}العناوين الفرعية{% else %}جذور الفهرس{% endif %}</h2>
+  <h2>{% if node %}العناوين الفرعية{% elif searching or query %}العناوين المطابقة{% else %}جذور الفهرس{% endif %}</h2>
   <p>عدد العناوين في هذه القائمة: {{ results.total }}</p>
   <div class="branch-contents">{% include 'reference/heading_list.html' %}</div>
   {% elif books %}<p role="status">الفهرس غير متاح للتصفح حاليًا.</p>
