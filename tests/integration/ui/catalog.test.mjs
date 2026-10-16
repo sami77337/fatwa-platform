@@ -244,3 +244,27 @@ test("D4 native filters retain submitted values across paging, history and retry
   get(doc, "clear-search").click();
   assert.equal(doc.defaultView.location.searchParams.has("depth"), false); app.destroy();
 });
+
+test("D4 clear search keeps the SSR basic link valid with and without existing query parameters", async () => {
+  for (const [url, expected] of [
+    ["http://localhost/fiqh", "/fiqh?basic=1"],
+    ["http://localhost/fiqh?edition=7", "/fiqh?edition=7&basic=1"],
+  ]) {
+    const { doc, app } = await setup({ url });
+    get(doc, "search-query").value = "عنوان";
+    get(doc, "search-form").dispatch("submit"); await settle();
+
+    let basic = new URL(get(doc, "basic-link").getAttribute("href"), doc.defaultView.location);
+    assert.equal(basic.pathname, "/fiqh");
+    assert.equal(basic.searchParams.get("basic"), "1");
+    assert.equal(basic.searchParams.get("q"), "عنوان");
+
+    get(doc, "clear-search").click();
+    assert.equal(get(doc, "basic-link").getAttribute("href"), expected);
+    basic = new URL(get(doc, "basic-link").getAttribute("href"), doc.defaultView.location);
+    assert.equal(basic.pathname, "/fiqh");
+    assert.equal(basic.searchParams.get("basic"), "1");
+    assert.equal(basic.searchParams.has("q"), false);
+    app.destroy();
+  }
+});
