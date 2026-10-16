@@ -17,7 +17,8 @@
     "python": [],
     "django": [
       "tests.editorial_demo.test_preview",
-      "tests.editorial_demo.test_pipeline_preview"
+      "tests.editorial_demo.test_pipeline_preview",
+      "tests.editorial_demo.test_worklist"
     ],
     "node": []
   },
