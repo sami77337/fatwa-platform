@@ -12,7 +12,7 @@ from pathlib import Path
 ARCHIVE = Path("/source/book622.zip")
 MAPPED = "b8c69e5f0a7c6b3e7d8b2283bb3e24d89399d646c199c3dc48f19168b8595bf7"
 INPUT_SHA = "37544f6122ef72fb6bd908556ffb41821b235be28bcbd1413752042dbac01d14"
-REPORT = {"REAL_SOURCE_DATABASE_IMPORT": "NOT_RUN", "tests": {}}
+REPORT = {"REAL_SOURCE_DATABASE_IMPORT": "NOT_RUN", "EXISTING_SOURCE_DATABASE_COMPARISON": "NOT_RUN", "tests": {}}
 
 
 def require(condition, message):
@@ -61,6 +61,7 @@ def bootstrap():
 
 
 def command_json(**options):
+    require("apply" not in options and "expected_checksum" not in options, "Source apply is disabled in A6")
     from django.core.management import call_command
 
     output = io.StringIO()
@@ -160,7 +161,6 @@ def accept_source():
 
     output = io.StringIO()
     call_command("check", databases=["default"], stdout=output)
-    call_command("migrate", check_unapplied=True, stdout=output)
     validation = command_json(validate_only=True)
     validate_report(validation)
     prepared, _ = validate_book622(ARCHIVE)
@@ -176,17 +176,13 @@ def accept_source():
     }
     before = read_state(prepared)
     REPORT["before"] = before
-    if before["preview"]["unchanged"]:
-        REPORT["import_action"] = "ALREADY_COMPLETE_READ_ONLY"
-    else:
-        applied = command_json(apply=True, expected_checksum=before["preview"]["checksum"])
-        validate_report(applied)
-        require(applied["database_import"] in ("IMPORTED", "UNCHANGED"), "Import did not complete")
-        REPORT["import_action"] = applied["database_import"]
+    # A6 protects the imported live catalog: absent/conflicting snapshots stop here.
+    require(before["preview"]["unchanged"], "Source apply is disabled in A6; existing snapshot must already match")
+    REPORT["import_action"] = "ALREADY_COMPLETE_READ_ONLY"
     after = read_state(prepared)
     require(after["preview"]["unchanged"], "Read-only post-import comparison failed")
     REPORT["after"] = after
-    REPORT["REAL_SOURCE_DATABASE_IMPORT"] = "PASS"
+    REPORT["EXISTING_SOURCE_DATABASE_COMPARISON"] = "PASS"
     # Only a few public headings go to the host for HTTP comparison; no source export.
     samples = [next(row for row in prepared.records if row.depth == depth) for depth in (1, 2, 5)]
     by_id = {row.source_row_id: row for row in prepared.records}
@@ -229,8 +225,6 @@ def run_suite(label, arguments, cwd="/site"):
 
 
 def tests():
-    import psycopg
-
     # S1 uses scratch paths beside its fixtures. Copy only code/test resources into tmpfs.
     scratch = Path("/tmp/fiqh-suite")
     for relative in ("tools/fiqh_import", "tests/fiqh_import", "docs/data-ingest"):
@@ -244,67 +238,22 @@ def tests():
         ["-m", "unittest", "discover", "-s", "tests/fiqh_import", "-v"],
         str(scratch),
     )
-    # Never create, drop, reset, or run tests against fatwa_reference.
-    test_db = "test_fatwa_reference_dev"
-    try:
-        with psycopg.connect(
-            dbname=test_db,
-            user="fatwa_app",
-            password=os.environ["PGPASSWORD"],
-            host=os.environ["PGHOST"],
-            port=5432,
-            connect_timeout=5,
-            options="-c default_transaction_read_only=on -c statement_timeout=3000",
-        ) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT current_database(), current_user")
-                require(cursor.fetchone() == (test_db, "fatwa_app"), "Wrong test database")
-                cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-                tables = {row[0] for row in cursor.fetchall()}
-                allowed = {
-                    "django_migrations",
-                    "reference_referencework",
-                    "reference_referenceedition",
-                    "reference_referenceheading",
-                }
-                require(tables <= allowed, "Test DB has unexpected tables")
-                for table in tables - {"django_migrations"}:
-                    # Table comes from the explicit allowlist above, never user input.
-                    cursor.execute('SELECT count(*) FROM "' + table + '"')
-                    require(cursor.fetchone()[0] == 0, "Test DB is not empty; refusing to touch it")
-    except (psycopg.Error, RuntimeError):
-        REPORT["tests"]["Django_PostgreSQL"] = {
-            "result": "NOT_RUN",
-            "blocker": "An accessible empty dedicated test_fatwa_reference_dev database is required; none was created or reset",
-        }
-        return
-    os.environ["PGTESTDATABASE"] = test_db
-    run_suite(
-        "Django_PostgreSQL",
-        [
-            "manage.py",
-            "test",
-            "tests/reference",
-            "tests/integration",
-            "--settings=config.settings.test",
-            "--keepdb",
-            "--noinput",
-            "--verbosity=2",
-        ],
-    )
+    REPORT["tests"]["Django_PostgreSQL"] = {
+        "result": "NOT_RUN",
+        "blocker": "A6 disables database test execution until isolation is independently proven; --keepdb is insufficient",
+    }
 
 
 def main():
     phase = "bootstrap"
     try:
+        require(sys.argv[1:] == ["--verify-source"], "Use --verify-source for read-only source comparison only")
         bootstrap()
-        phase = "source_preview_apply_verify"
+        phase = "source_preview_verify_read_only"
         accept_source()
-        phase = "tests"
-        tests()
+        REPORT["tests"]["Django_PostgreSQL"] = {"result": "NOT_RUN", "blocker": "Disabled by A6 isolation policy"}
     except (Exception, SystemExit) as error:
-        if REPORT["REAL_SOURCE_DATABASE_IMPORT"] != "PASS":
-            REPORT["REAL_SOURCE_DATABASE_IMPORT"] = "FAIL"
+        REPORT["EXISTING_SOURCE_DATABASE_COMPARISON"] = "FAIL"
         message = str(error)
         secret = os.environ.get("PGPASSWORD")
         if secret:
@@ -321,7 +270,7 @@ def main():
         if secret:
             output = output.replace(secret, "[REDACTED]")
         print(output)
-    return 0 if REPORT["REAL_SOURCE_DATABASE_IMPORT"] == "PASS" and "blocker" not in REPORT else 1
+    return 0 if REPORT["EXISTING_SOURCE_DATABASE_COMPARISON"] == "PASS" and "blocker" not in REPORT else 1
 
 
 if __name__ == "__main__":
