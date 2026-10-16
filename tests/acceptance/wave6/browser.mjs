@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {CDP, loopbackOrigin, permittedRequest} from "./cdp.mjs";
+import {reviewBatchCase} from "./review_batches.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const origin = loopbackOrigin(process.argv[2]);
@@ -21,11 +22,13 @@ const report = {
   environment:{node:process.version, platform:os.platform(), release:os.release(), architecture:os.arch()},
   tests:[], requests:[], console_errors:[], exceptions:[], unwanted_requests:[],
   source_acceptance:"NOT_RUN", assembled_acceptance:"NOT_RUN", screenshots:[],
+  review_batch_acceptance:"NOT_RUN", asset_preflight:[],
 };
 try { report.environment.browser = execFileSync(executable, ["--version"], {encoding:"utf8"}).trim(); }
 catch { report.environment.browser = "unavailable"; }
 
 let browser, socket, cdp, stderr = "", injectSearchFailure = false, documentsLoaded = 0;
+let phase = "service-preflight";
 const profile = await mkdtemp(path.join(os.tmpdir(), "fatwa-e6-browser-"));
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(check, label, milliseconds=12000) {
@@ -184,6 +187,9 @@ const cases = [
     assert.ok(report.requests.every(r=>!/[.](mp4|mp3|webm|ogg)(?:[?]|$)/i.test(r.path)));
   }],
 ];
+if (process.env.E6_REVIEW_BATCHES === "required") {
+  cases.splice(-1, 0, reviewBatchCase({navigate, wait, evaluate, click, key, reload, history, text}));
+}
 report.tests=cases.map(([name])=>({name,result:"NOT_RUN"}));
 
 try {
@@ -192,7 +198,16 @@ try {
   assert.equal(inventory.items.length,1);
   assert.equal(inventory.items[0].work.source_namespace,"wave6-e6-synthetic");
   assert.equal(inventory.items[0].heading_count,47);
+  for (const name of ["catalog.js","django-api.mjs","tree.js","style.css","catalog.css"]) {
+    const response=await fetch(origin+"/assets/reference/"+name,{redirect:"error",signal:AbortSignal.timeout(10000)});
+    assert.equal(response.status,200,"Asset HTTP status: "+name);
+    const mime=(response.headers.get("content-type")??"").split(";")[0];
+    assert.ok((name.endsWith(".css")?["text/css"]:["text/javascript","application/javascript"]).includes(mime),"Asset MIME: "+name);
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()),await readFile(path.join(root,"apps/reference/static/reference",name)),"Asset bytes: "+name);
+    report.asset_preflight.push({path:"/assets/reference/"+name,status:200,mime,result:"PASS"});
+  }
   // Keep Chromium's sandbox enabled. No user overrides can add bypass flags.
+  phase="browser-startup";
   browser=spawn(executable,["--headless=new","--no-first-run","--no-default-browser-check","--disable-background-networking","--disable-component-update","--disable-sync","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:["ignore","ignore","pipe"]});
   let launchError;
   browser.on("error",error=>{launchError=error;});
@@ -227,6 +242,7 @@ try {
     }
   });
   report.browser=await cdp.send("Browser.getVersion");
+  phase="browser-interactions";
   for(const domain of ["Page","Runtime","Network"]) await cdp.send(domain+".enable");
   await cdp.send("Fetch.enable",{patterns:[{urlPattern:"*"}]});
   await cdp.send("Emulation.setDeviceMetricsOverride",{width:1280,height:900,deviceScaleFactor:1,mobile:false});
@@ -240,7 +256,8 @@ try {
     }
   }
   report.result=report.tests.some(t=>t.result==="FAIL")?"FAIL":"PASS";
-}catch(error){report.result="BLOCKED";report.blocker=error.message;report.browser_stderr=stderr.replaceAll(profile,"<temporary-profile>").slice(-2000);}
+  report.review_batch_acceptance=report.tests.find(t=>t.name.startsWith("PR51 "))?.result??"NOT_RUN";
+}catch(error){report.result=phase==="browser-startup"?"BLOCKED":"FAIL";report.blocker=error.message;report.phase=phase;report.browser_stderr=stderr.replaceAll(profile,"<temporary-profile>").slice(-2000);}
 finally {
   socket?.close();cdp?.close();
   if(browser && browser.exitCode===null && browser.signalCode===null) {

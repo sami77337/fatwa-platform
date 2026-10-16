@@ -3,15 +3,13 @@ import os
 from pathlib import Path
 import subprocess
 
-from django.test import LiveServerTestCase
-
+from .live_server import SyntheticLiveServerTestCase
 from .support import require_disposable_database, seed_catalog
 
 require_disposable_database()
 
 
-class BrowserAcceptanceTests(LiveServerTestCase):
-    host = "127.0.0.1"
+class BrowserAcceptanceTests(SyntheticLiveServerTestCase):
 
     def test_desktop_and_mobile_journeys(self):
         seed_catalog()

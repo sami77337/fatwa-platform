@@ -5,7 +5,9 @@ root dependencies, routes, source snapshots, or catalog production code changed.
 
 The runner creates/destroys a Django TEST database, migrates the actual PostgreSQL
 schema, and seeds 47 fabricated headings (two roots and 45 children). The browser
-uses the actual Django LiveServer, SSR templates, static assets and JSON API.
+uses Django's static-files-aware `StaticLiveServerTestCase`, SSR templates,
+installed static assets and JSON API. It does not require `STATIC_ROOT` or
+`collectstatic`; the shared E6 server is also exercised by HTTP asset regressions.
 There is no HTML overlay. Editorial rows come from the actual no-argument
 `build_preview_rows()` wrapper. No clip is fetched, clicked or played.
 
@@ -24,6 +26,7 @@ export PGUSER=e6_synthetic PGPASSWORD=e6_disposable_only
 node --test tests/acceptance/wave6/cdp.test.mjs
 .venv/bin/python -m unittest tests.acceptance.wave6.test_guard -v
 .venv/bin/python tests/acceptance/wave6/run.py
+.venv/bin/python tests/acceptance/wave6/run.py --assets
 .venv/bin/python tests/acceptance/wave6/run.py --regressions
 E6_BROWSER=/usr/bin/chromium E6_ARTIFACTS=/tmp/e6-browser-results .venv/bin/python tests/acceptance/wave6/run.py --browser
 docker stop fatwa-e6-synthetic
@@ -45,6 +48,10 @@ No automatic fallback converts unavailable Chromium into acceptance.
 
 - `run.py`: eight service/fixture tests, real Django/PostgreSQL; these are **not**
   browser interactions.
+- `run.py --assets`: two real loopback live-server tests. Five catalog assets
+  must return 200, executable JavaScript/CSS MIME and exact original file bytes;
+  a nonexistent asset must return 404. The browser performs the same five-asset
+  preflight before launching; bad assets fail the gate before engine startup.
 - `run.py --regressions`: one API/SSR consistency regression, RED on baseline.
   This is an open E4 defect, not an expected failure or a passing waiver.
 - `run.py --browser`: one mandatory Django browser gate, executing nine named
@@ -64,12 +71,27 @@ and unresolved references, 390/320 CSS-pixel viewports, and network/console audi
 Fault injection affects only the intercepted synthetic browser request. Actual
 HTTP 400 error pages are deliberate and do not count as JS console exceptions.
 
-This first increment targets the pinned baseline only. Browser interaction code
+This lane targets the pinned baseline. Browser interaction code
 is **unverified in a working engine** until the environment sandbox gate clears.
 It contains strict assertions and is not an acceptance claim. The assembled-SHA
-run must wait for E1–E4 integration. E2's new batch selector hooks and batch
-identity journey remain an integration dependency; the current tests exercise
-the existing wrapper and worklist. E5/coordinator must wire these exact commands
+run must wait for E1–E4 integration. PR51 hooks are now prepared from actual head
+`feb70f0fe9d0fe71765044045bc5924aa175f676`: `#batch`, allowlisted `default/mixed`,
+`.original-text`, repeated `SYN-P01`, blocked `SYN-M03` and the actual GET links.
+After integration, the required commands are:
+
+```sh
+.venv/bin/python tests/acceptance/wave6/run.py --review-batches
+E6_ARTIFACTS=/tmp/e6-assembled .venv/bin/python tests/acceptance/wave6/run.py --browser --review-batches
+```
+
+The first command runs three actual loopback HTTP batch tests. It was verified
+against an untouched PR51 code snapshot with only E6 test files overlaid; this
+is not the final combined-SHA test. The second adds a tenth mandatory browser
+journey for batch switching, exact whitespace, duplicate-ID isolation, filter/
+page/detail/return/history/reload and clear retaining the chosen batch.
+Missing E2 selectors fail; there is no optional fallback. Without this explicit
+integration mode the report keeps `review_batch_acceptance: NOT_RUN`.
+E5/coordinator must wire these exact commands
 and capture `E6_ARTIFACTS` from the guarded synthetic service job; no root runner
 or workflow edits are included here. Do not feed these DB tests to port-1 D6.
 
