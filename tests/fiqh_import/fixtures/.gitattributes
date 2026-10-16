@@ -1,0 +1,2 @@
+# Hash-pinned synthetic data must retain its committed bytes on every platform.
+*.json -text
