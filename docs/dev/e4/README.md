@@ -42,8 +42,8 @@ Python below means `/workspace/e4-venv/bin/python` (the explicit Python 3.13 ven
 | `python manage.py test tests/integration/api tests.integration.ui.test_templates tests.integration.ui.test_discovery --noinput --settings=config.settings.test` | 47 pass, 0 fail, 0 skip |
 | `python -B tests/integration/api/run_isolated.py` | 41 pass, 0 fail, 0 skip; database connection creation forbidden by runner |
 | `python -B tests/integration/api/run_c4_synthetic.py` | 5 pass; supplementary in-memory predicate logic, not PostgreSQL acceptance |
-| `node --test tests/integration/ui/adapter.test.mjs tests/integration/ui/catalog.test.mjs tests/integration/ui/tree.test.mjs tests/integration/django-api.test.mjs` | 47 pass, 0 fail, 0 skip; DOM/event and adapter tests, not browser acceptance |
-| `python tools/dev/qa.py node` | 102 discovered, 93 pass, 0 fail, 9 skip: owner archive unavailable (1), actual Windows CMD/PowerShell invocation/parser checks unavailable on Linux (8) |
+| `node --test tests/integration/ui/adapter.test.mjs tests/integration/ui/catalog.test.mjs tests/integration/ui/tree.test.mjs tests/integration/django-api.test.mjs` | 62 pass, 0 fail, 0 skip; DOM/event and adapter tests, not browser acceptance |
+| `python tools/dev/qa.py node` | 117 discovered, 108 pass, 0 fail, 9 skip: owner archive unavailable (1), actual Windows CMD/PowerShell invocation/parser checks unavailable on Linux (8) |
 | `python tools/dev/qa.py system` | PASS, no system-check issues |
 | Full existing B6 command below, PG18.6 and PG17.11 separately | 146 pass, 0 fail, 0 skip on each version |
 | `git diff --check` | PASS |
@@ -103,3 +103,46 @@ Follow-up changes are only `apps/reference/static/reference/catalog.js`,
 no amend/force-push, no other lane changes, no browser-security changes. The
 original independent review is acknowledged; these fixes are author-verified and
 require fresh independent re-review. Final commit/CI/counts are in the PR/handoff.
+
+## Independent re-review follow-up: Home await continuation
+
+The coordinator reported that independent re-review of
+`c21bebbd9e1cd7d97646ca19f6f2d6fab304f990` closed the original two races but
+found a remaining P2 in `homeCatalog`: its caller continued after an unsuccessful
+or superseded `chooseRoot`, changing URL/basic-link/focus after newer actions.
+The new follow-up remains author-verified and requires independent re-review.
+
+Deterministic RED/GREEN command:
+
+```sh
+node --test --test-name-pattern='E4 (Home|current Home)' tests/integration/ui/catalog.test.mjs
+```
+
+The initial 14-case run had 1 pass / 13 fail: Home followed by each of search,
+root selection, clear and Back, with delayed success, delayed failure or immediate
+abort-aware AbortError (12 cases); a microtask-ordered case where child loading
+succeeds before a newer root action (1); and an unaffected successful Home (1).
+A separate current-Home failure/retry test also failed RED. Checking success alone
+made 13/15 pass, but still failed the successful-child/late-caller case and retry.
+The final 15/15 pass with zero fail/skip, alongside all prior tests.
+
+Home now checks successful completion, disposal and a captured navigation version
+before changing history, the fallback link or focus. Cancelling tree work advances
+the version even for synchronous actions with no active transport. This protects
+the outer caller as well as the adapter await. A current failure keeps its retry
+button; retry restarts the complete Home action so successful retry can navigate
+and focus normally. The internal retry callback is passed only by Home; other
+branch retry behavior is preserved.
+
+Narrow async-continuation audit: expand/search/openResult check request identity
+after awaited adapter work; chooseRoot returns expand directly without later DOM
+mutations; pop's awaited branches have no subsequent navigation mutations; start
+checks child success and its catalog request before initialization. The existing
+clipboard selection/disposal guard remains unchanged. No global cache, external
+request, security setting, public route, source identity or other-lane edit.
+
+Assertions cover URL/query, history snapshot/length, selected node, native fallback
+link, focus, busy/status/error state, immediate AbortError, successful Home and
+current failure/retry. Follow-up changes remain limited to catalog.js,
+catalog.test.mjs and this E4 evidence file. Exact final head/CI/counts are in PR55
+and the coordinator handoff.

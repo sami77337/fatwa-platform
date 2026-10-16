@@ -7,7 +7,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   const view = doc.defaultView;
   const state = { catalog: null, root: null, selected: null, focusId: null, expanded: [],
     groups: new Map(), searchPage: null, searchOptions: null, initialized: false,
-    treeRequest: null, searchRequest: null, catalogRequest: null, disposed: false };
+    treeRequest: null, searchRequest: null, catalogRequest: null, navigationVersion: 0, disposed: false };
   const element = (tag, text, attributes = {}) => {
     const node = doc.createElement(tag);
     if (text !== null) node.textContent = text;
@@ -23,7 +23,11 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   const clearError = () => get("error").replaceChildren();
   const busy = (id, value) => get(id).setAttribute("aria-busy", String(value));
   const current = (lane, request) => state[lane] === request && !state.disposed;
-  const cancel = lane => { state[lane]?.abort(); state[lane] = null; };
+  const cancel = lane => {
+    // Also invalidate outer await continuations and synchronous navigation.
+    if (lane === "treeRequest") state.navigationVersion++;
+    state[lane]?.abort(); state[lane] = null;
+  };
   const begin = lane => {
     // Search and tree operations share one navigation target. The latest
     // interaction invalidates the other lane, even if transport ignores abort.
@@ -260,7 +264,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       get("tree-pagination").append(wrapper);
     }
   }
-  async function expand(node, { cursor = null, focus = true, navigate = true } = {}) {
+  async function expand(node, { cursor = null, focus = true, navigate = true, retry = null } = {}) {
     const request = begin("treeRequest"), trail = lineage(node);
     busy("tree-region", true); announce("جارٍ تحميل العناوين الفرعية…");
     try {
@@ -276,7 +280,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       announce(group.items.length ? "تم تحميل " + number.format(group.items.length) + " عنوانًا فرعيًا." : "لا توجد عناوين فرعية.");
       return true;
     } catch (error) {
-      if (current("treeRequest", request) && error.name !== "AbortError") failure(() => void expand(node, { cursor, focus, navigate }));
+      if (current("treeRequest", request) && error.name !== "AbortError") failure(retry ?? (() => void expand(node, { cursor, focus, navigate })));
       return false;
     } finally { if (current("treeRequest", request)) busy("tree-region", false); }
   }
@@ -286,13 +290,13 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       else control.removeAttribute("aria-current");
     }
   }
-  async function chooseRoot(root, { focus = true, navigate = true } = {}) {
+  async function chooseRoot(root, { focus = true, navigate = true, retry = null } = {}) {
     if (navigate) stopSearch();
     stopTree();
     state.root = root; state.focusId = root.id; state.expanded = []; state.groups.clear();
     markRoot(); showSelection(root, [root]); renderTree(focus);
     if (navigate) remember("push", root.id);
-    if (root.has_children) return expand(root, { focus, navigate: false });
+    if (root.has_children) return expand(root, { focus, navigate: false, retry });
     busy("tree-region", false); announce("هذا العنوان بلا عناوين فرعية.");
     return true;
   }
@@ -390,10 +394,15 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     if (navigate) stopSearch();
     const first = state.catalog.books[0] ?? state.catalog.introductions[0];
     if (!first) return;
-    await chooseRoot(first, { focus: false, navigate: false });
+    const selection = chooseRoot(first, { focus: false, navigate: false,
+      retry: () => void homeCatalog({ navigate, focus }) });
+    const version = state.navigationVersion;
+    const success = await selection;
+    if (!success || state.disposed || version !== state.navigationVersion) return false;
     if (navigate) remember("push", null);
     get("basic-link")?.setAttribute("href", href(null, true));
     if (focus) get("books").querySelector("a")?.focus();
+    return true;
   }
   const homeClick = event => {
     if (event.button > 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
