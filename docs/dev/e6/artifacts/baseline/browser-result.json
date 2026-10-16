@@ -1,0 +1,76 @@
+{
+  "schema": "fatwa.e6.browser.v1",
+  "timestamp": "2026-10-16T23:03:41.257Z",
+  "scope": "synthetic Django/PostgreSQL only; not owner/source acceptance",
+  "result": "BLOCKED",
+  "sha": "b5de539237de0cd12b91b0705a3cb92014bfe98b",
+  "dirty_paths": [
+    "?? docs/dev/e6/",
+    "?? tests/acceptance/"
+  ],
+  "command": [
+    "node",
+    "tests/acceptance/wave6/browser.mjs",
+    "http://127.0.0.1:39577"
+  ],
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "linux",
+    "release": "6.18.44",
+    "architecture": "x64",
+    "browser": "Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie)"
+  },
+  "tests": [
+    {
+      "name": "catalog actual SSR and desktop keyboard",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "catalog three Arabic search modes preserve original marks",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "catalog filters, page, detail, history, reload and clear",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "catalog empty-query filters are applied",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "catalog empty results and recoverable service error",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "review filter, pagination, detail, return and browser history",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "review missing/invalid media, unresolved references, empty and invalid queries",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "narrow mobile catalog and connected review without horizontal overflow",
+      "result": "NOT_RUN"
+    },
+    {
+      "name": "no runtime exceptions, console errors, external/media requests or writes",
+      "result": "NOT_RUN"
+    }
+  ],
+  "requests": [],
+  "console_errors": [],
+  "exceptions": [],
+  "unwanted_requests": [],
+  "source_acceptance": "NOT_RUN",
+  "assembled_acceptance": "NOT_RUN",
+  "screenshots": [],
+  "blocker": "Browser exited before DevTools: sandbox/startup gate blocked",
+  "browser_stderr": "[1345:1345:1017/020341.530177:ERROR:third_party/crashpad/crashpad/util/file/filesystem_posix.cc:63] mkdir : No such file or directory (2)\nchrome_crashpad_handler: --database is required\nTry 'chrome_crashpad_handler --help' for more information.\n[1345:1345:1017/020341.534562:FATAL:sandbox/linux/suid/client/setuid_sandbox_host.cc:172] The SUID sandbox helper binary was found, but is not configured correctly. Rather than run without sandboxing I'm aborting now. You need to make sure that /usr/lib/chromium/chrome-sandbox is owned by root and has mode 4755.\n[1363:1363:0100/000000.569313:ERROR:content/zygote/zygote_linux.cc:662] write: Broken pipe (32)\n",
+  "counts": {
+    "PASS": 0,
+    "FAIL": 0,
+    "NOT_RUN": 9,
+    "SKIP": 0
+  }
+}
