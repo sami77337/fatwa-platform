@@ -4,6 +4,7 @@ on:
   pull_request:
 permissions:
   contents: read
+
 jobs:
   django-system:
     runs-on: ubuntu-latest
@@ -16,12 +17,37 @@ jobs:
           python-version: '3.13'
       - run: python -m pip install -r requirements.txt
       - run: python tools/dev/qa.py system
+
   postgresql:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
         postgres: [18, 17]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}-bookworm
+        env:
+          POSTGRES_USER: fatwa_ci
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: b6_ephemeral
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fatwa_ci -d b6_ephemeral"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: fatwa_ci
+      PGPASSWORD: ci_only_password
+      PGDATABASE: b6_ephemeral
+      PGTESTDATABASE: test_b6_ephemeral
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      FATWA_PRODUCTION: '0'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +55,37 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python tools/dev/qa.py postgres --postgres ${{ matrix.postgres }}
+      - run: python -m pip install -r requirements.txt
+      - name: Confirm isolated PostgreSQL version
+        env:
+          EXPECTED_PG_MAJOR: ${{ matrix.postgres }}
+        run: |
+          python - <<'PY'
+          import os
+          import psycopg
+          with psycopg.connect() as connection:
+              major = connection.info.server_version // 10000
+              assert major == int(os.environ["EXPECTED_PG_MAJOR"]), (major, "unexpected version")
+              with connection.cursor() as cursor:
+                  cursor.execute("SELECT current_database()")
+                  assert cursor.fetchone()[0] == "b6_ephemeral"
+          PY
+      - run: python manage.py check --database default --settings=config.settings.test
+      - run: python manage.py makemigrations --check --dry-run --settings=config.settings.test
+      - run: python manage.py migrate --noinput --settings=config.settings.test
+      - run: python manage.py migrate --check --settings=config.settings.test
+      - name: Django PostgreSQL integration tests
+        run: >-
+          python manage.py test
+          tests/reference
+          tests/public_site
+          tests/security
+          tests/integration/api
+          tests/integration/ui
+          tests.integration.source.test_read_only_commands
+          tests.integration.test_site
+          --noinput --settings=config.settings.test
+
   node-tooling:
     runs-on: ubuntu-latest
     steps:
