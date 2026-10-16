@@ -1,0 +1,24 @@
+# Local runtimes, credentials, raw owner sources and generated artifacts.
+.local/
+.venv/
+_codex_input/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+*.zip
+*.7z
+*.tar
+*.gz
+*.sql
+*.dump
+*.sqlite3
+.env
+exports/
+node_modules/
+tests/integration/artifacts/
+*.jsonl
+*.ndjson
+ui_drafts/fiqh/artifacts/

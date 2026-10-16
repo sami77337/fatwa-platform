@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="{% static 'reference/style.css' %}">
   {% htmx_script %}
   <script src="{% static 'reference/tree.js' %}" defer></script>
+  <link rel="stylesheet" href="{% static 'reference/catalog.css' %}">
 </head>
 <body>
   <a class="skip-link" href="#catalog-content">انتقل إلى الفهرس</a>
@@ -16,5 +17,7 @@
   <p class="scope-note">عناوين من فهرس مرجع فقهي، وليست فتاوى منشورة أو أحكامًا معتمدة. هذا فهرس مصدر واحد، وليس تصنيفًا عامًا للفتاوى.</p>
   <p id="request-status" role="status" aria-live="polite"></p>
   {% block content %}{% endblock %}
+  <footer>نسخة تطوير محلية للقراءة فقط. لم يُنشر الموقع للإنتاج، وقبول المصدر والسياسات يخضع للتحقق والمراجعة.</footer>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

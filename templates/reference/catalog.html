@@ -1,2 +1,7 @@
 {% extends 'reference/base.html' %}
-{% block content %}{% include 'reference/catalog_content.html' %}{% endblock %}
+{% load static %}
+{% block content %}
+<div id="server-catalog">{% include 'reference/catalog_content.html' %}</div>
+{% if edition and not basic %}{% include 'reference/interactive.html' %}{% endif %}
+{% endblock %}
+{% block scripts %}{% if edition and not basic %}<script type="module" src="{% static 'reference/catalog.js' %}"></script>{% endif %}{% endblock %}
