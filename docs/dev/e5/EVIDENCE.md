@@ -99,3 +99,27 @@ disposable copy; JSON D2 label, APP_TESTS AST label, B6/C6/D6 YAML, shell syntax
 and embedded Python compilation passed. This is static/configuration evidence,
 not cross-lane test execution. Validator and temporary Cloud-PG adaptation are
 retained with the final artifact pack for reproducibility.
+
+## Observed hosted matrix for published code
+
+GitHub logs were independently read by this producer (not independent review):
+branch head `7b8ec66dde9a55d8fa518cb03af602b1a79dbaa1`, actual PR merge checkout
+`4f093ec2f4071461e0693b8bb12ad7ceeea18926`, working tree CLEAN. All three
+workflow runs completed successfully; these are lane CI, **not assembled E1–E6**.
+
+- [B6 run 38980007343](https://github.com/sami77337/fatwa-platform/actions/runs/38980007343): PG18 job 117238389415 and PG17 job 117238389729 each ran **135 tests, OK**, zero skips. Real version check and four migration/system steps passed. The two other B6 jobs (system/Node tooling) also succeeded.
+- [C6 run 38980007334](https://github.com/sami77337/fatwa-platform/actions/runs/38980007334): Ubuntu job 117238389560 ran dispatcher **49/47 pass/2 Windows skips**, then intake **11**, drafts **17**, links **37**, importer **84/80 pass/4 source skips**. Windows job 117238389933 ran dispatcher **49/49 pass**, then the same pure/importer counts. Both uploaded artifacts successfully.
+- [D6 run 38980007403](https://github.com/sami77337/fatwa-platform/actions/runs/38980007403): Ubuntu job 117238389936 and Windows job 117238390256 both passed functional acceptance and uploaded artifacts. Dispatcher counts are **49/47+2 skips** on Ubuntu and **49/49** on Windows. D6's actual summary retains the existing suite counts and nested importer evidence.
+
+Earlier first-head CI also passed at `a82aba4322ff02115b9c1c6fdf57b7c7b80d0a07`
+(PR merge checkout `fe663ff3b00ea5b8b74212cc7b713876d9f58efb`). Its run IDs were
+B6 38979765623, C6 38979765630, D6 38979765618. These are historical head-specific
+results, not a claim about a later commit until its fresh checks complete.
+
+Actual final local PG17 and PG18 reruns at clean `7b8ec66...` each printed
+**Ran 135 tests / OK**, zero skips. Both used the documented temporary
+Cloud-only package/code-copy adaptation and removed their unique resources.
+The final handoff records subsequent documentation/E4-label patch commit and
+its actual fresh CI state. E4's actual no-DB label was verified after PR55
+publication and is now supplied as a third integration-only patch; E4 DB tests
+remain confined to B6 discovery.

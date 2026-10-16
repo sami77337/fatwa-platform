@@ -1,0 +1,8 @@
+--- a/tools/dev/wave4_suites.json
++++ b/tools/dev/wave4_suites.json
+@@ -40,3 +40,4 @@
+     "django": [
+-      "tests.integration.api.test_d4_filter_ui"
++      "tests.integration.api.test_d4_filter_ui",
++      "tests.integration.api.test_e4_catalog"
+     ],
