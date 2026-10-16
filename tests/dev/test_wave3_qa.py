@@ -43,7 +43,7 @@ class DispatcherTests(unittest.TestCase):
         with patch.object(wave3.qa, "run") as run:
             code, report = wave3.dispatch(standalone=True, require_integrated=True)
         self.assertEqual(code, 0)
-        self.assertEqual(run.call_count, 3)
+        self.assertEqual(run.call_count, len(wave3.PACKAGES))
         self.assertEqual(run.call_args_list[0].args[0], [sys.executable,
                          "tools/dev/wave3_discover.py", "tests/content_intake"])
         self.assertEqual(report["reference_links"], "PASS")
@@ -53,7 +53,7 @@ class DispatcherTests(unittest.TestCase):
         for error in (FileNotFoundError(), subprocess.CalledProcessError(7, "python"),
                       subprocess.TimeoutExpired("python", 1)):
             with self.subTest(error=type(error).__name__), patch.object(
-                    wave3.qa, "run", side_effect=[error, None, None]):
+                    wave3.qa, "run", side_effect=[error] + [None] * (len(wave3.PACKAGES) - 1)):
                 code, report = wave3.dispatch(standalone=True)
                 self.assertEqual(code, 1)
                 self.assertTrue(report["content_intake"].startswith("FAIL"))

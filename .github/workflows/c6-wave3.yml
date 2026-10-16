@@ -1,4 +1,4 @@
-name: C6 Wave3 integrated standalone QA
+name: C6 integrated pure and full importer QA
 on:
   push:
   pull_request:
@@ -21,8 +21,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - run: python -m pip install -r requirements.txt
       - name: Dispatcher regressions
         run: python -m unittest discover -s tests/dev -p 'test_*.py' -v
-      - name: Require integrated C1 C2 C3 tests from this checkout
-        run: python tools/dev/wave3_qa.py --standalone --require-integrated
+      - name: Require C1 C2 C3 and complete importer collection
+        run: python tools/dev/wave3_qa.py --standalone --require-integrated --reports .local/qa/c6
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c6-${{ matrix.os }}
+          path: .local/qa/c6/*.json
+          include-hidden-files: true
+          if-no-files-found: error
