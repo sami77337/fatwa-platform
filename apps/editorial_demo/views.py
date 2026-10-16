@@ -13,7 +13,9 @@ from django.shortcuts import render
 from django.views.decorators.http import require_safe
 
 from .fixtures import ROWS, SCHEMA, STATUSES
-from .integration import ISSUE_LABELS, STATUS_LABELS, build_preview_rows
+from .integration import (
+    ISSUE_LABELS, STATUS_LABELS, SYNTHETIC_BATCHES, build_batch_preview_rows, build_preview_rows,
+)
 
 
 def local_only(request: HttpRequest) -> None:
@@ -104,19 +106,22 @@ def _positive_query(value: str, maximum: int) -> int:
 
 def _worklist_query(request: HttpRequest):
     query = request.GET
-    if set(query) - {"q", "status", "issue", "page", "page_size"} or any(
+    if set(query) - {"batch", "row", "q", "status", "issue", "page", "page_size"} or any(
         len(query.getlist(key)) != 1 for key in query
     ):
         raise ValueError("invalid_query")
     q, status, issue = query.get("q", ""), query.get("status", ""), query.get("issue", "")
+    batch = query.get("batch", "default")
     if (
         len(q) > 80 or any(ord(char) < 32 or ord(char) == 127 for char in q)
         or status not in {"", *STATUS_LABELS} or issue not in {"", *ISSUE_LABELS}
+        or batch not in SYNTHETIC_BATCHES
     ):
         raise ValueError("invalid_query")
-    return q, status, issue, _positive_query(query.get("page", "1"), 10000), _positive_query(
-        query.get("page_size", "20"), 50
-    )
+    selection = _positive_query(query["row"], 1000) if "row" in query else None
+    return batch, selection, q, status, issue, _positive_query(
+        query.get("page", "1"), 10000
+    ), _positive_query(query.get("page_size", "20"), 50)
 
 
 @require_safe
@@ -124,21 +129,29 @@ def pipeline_preview(request: HttpRequest, ident: str | None = None) -> HttpResp
     """Worklist over fixed fixtures; query parameters never supply records or source pins."""
     local_only(request)
     try:
-        q, status, issue, page, page_size = _worklist_query(request)
+        batch, selection, q, status, issue, page, page_size = _worklist_query(request)
+        if ident is not None and selection is not None:
+            raise ValueError("conflicting_row_selection")
     except (ValueError, TooManyFieldsSent):
         return _failure("معايير تصفية غير صالحة", 400)
     try:
-        rows = build_preview_rows()
+        rows = build_preview_rows() if batch == "default" else build_batch_preview_rows(batch)
     except (ValueError, TypeError, KeyError, IndexError, AttributeError):
         return _failure("المعاينة الاصطناعية غير متاحة", 503)
-    row = next((candidate for candidate in rows if candidate.external_id == ident), None)
+    matches = tuple(candidate for candidate in rows if candidate.external_id == ident)
+    row = matches[0] if len(matches) == 1 else None
+    if selection is not None:
+        if selection > len(rows):
+            return _failure("السجل غير موجود", 404)
+        row = rows[selection - 1]
     if ident is not None and row is None:
         return _failure("السجل غير موجود", 404)
     term = q.strip().casefold()
-    filtered = tuple(candidate for candidate in rows if
+    filtered_entries = tuple((number, candidate) for number, candidate in enumerate(rows, 1) if
                      (not status or candidate.status == status)
                      and (not issue or issue in candidate.issue_codes)
                      and (not term or term in (candidate.external_id + candidate.question).casefold()))
+    filtered = tuple(candidate for _, candidate in filtered_entries)
     matched_count = len(filtered)
     page_count = max(1, (matched_count + page_size - 1) // page_size)
     if page > page_count:
@@ -155,14 +168,24 @@ def pipeline_preview(request: HttpRequest, ident: str | None = None) -> HttpResp
         "unverified_references": sum(ref.status != "verified" for ref in references),
     }
     params = {"q": q, "status": status, "issue": issue, "page_size": page_size, "page": page}
+    if batch != "default" or "batch" in request.GET:
+        params["batch"] = batch
     # Build list links from the named route, never from a detail URL or user input.
     from django.urls import reverse
 
     list_url = reverse("editorial_pipeline")
     previous_url = list_url + "?" + urlencode({**params, "page": page - 1}) if page > 1 else None
     next_url = list_url + "?" + urlencode({**params, "page": page + 1}) if page < page_count else None
+    # Stable batch-local input ordinals address every retained row, including
+    # duplicate, missing and slash-containing opaque IDs, without new routes.
+    display_rows = tuple({
+        "item": candidate,
+        "detail_url": list_url + "?" + urlencode({**params, "batch": batch, "row": number}),
+    } for number, candidate in filtered_entries[start:start + page_size])
     response = render(request, "editorial_demo/pipeline.html", {
         "row": row, "rows": filtered[start:start + page_size],
+        "display_rows": display_rows,
+        "batch": batch, "batches": SYNTHETIC_BATCHES, "batch_label": SYNTHETIC_BATCHES[batch],
         "q": q, "status": status, "issue": issue,
         "statuses": STATUS_LABELS, "issues": ISSUE_LABELS,
         "summary": summary, "matched_count": matched_count,
