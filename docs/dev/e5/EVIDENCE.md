@@ -64,16 +64,19 @@ The two Python dispatcher skips are Windows CMD execution cases.
   synthetic checkout. The reporter now records Git identity without that new
   project dependency. All 49 cases subsequently passed/skipped as above.
 
-## Publication blocker
+## Publication observation and recovery
 
 Git fetch and authorized push dry-run initially succeeded. Later remote Git
 read failed: `fatal: could not read Username for 'https://github.com': No such
 device or address`. Read-only `gh auth status` confirmed the existing `GH_TOKEN`
 is invalid. No new credentials, token grant, authentication changes or security
-settings were requested or applied. Remote Git publication and Draft PR creation
-are blocked pending the coordinator's authorized recovery of existing access.
-A local commit, patch/bundle and sanitized evidence are preserved; do not call
-this increment PUBLISHED without the actual remote branch and Draft PR.
+settings were requested or applied. The actual authorized branch push then succeeded via the already configured Git
+transport, without any credential change. Git CLI push and the connected GitHub
+PR tool published Draft PR56 against the required development base. Thus invalid
+gh status was not proof that the existing Git transport lacked push access.
+First published/tested clean head: `a82aba4322ff02115b9c1c6fdf57b7c7b80d0a07`.
+PR: https://github.com/sami77337/fatwa-platform/pull/56 . No publication blocker
+remains. The final handoff identifies subsequent evidence/patch commits exactly.
 
 BOOTSTRAP_STATUS handoff:
 https://github.com/sami77337/fatwa-platform/issues/50#issuecomment-6226328246
@@ -82,3 +85,17 @@ E2 label source: PR51 at `feb70f0fe9d0fe71765044045bc5924aa175f676`.
 The integration-only patch does not modify the active D6 manifest in this lane.
 E1/E3/E6 combined execution, fresh independent review and source/owner acceptance
 remain pending. NOT_DEPLOYED / GATES_HOLD.
+
+
+Actual E3 `26dba43149129e3f0cbd5689247cc3da9fe5d3c2` and E6
+`fa2b123e967e0550e4c2570d6770e8577aa16e95` files were subsequently fetched and
+read without merging. Their integration-only patch is documented in the handoff.
+A standard protected Ubuntu Chrome invocation is prepared; combined execution
+and browser interaction remain NOT_RUN until assembly/CI. No protection bypass.
+
+Integration patch validation used a separate temporary Python 3.13 uv venv with
+PyYAML==6.0.3 from PyPI (no shared dependency changes). Both patches applied in a
+disposable copy; JSON D2 label, APP_TESTS AST label, B6/C6/D6 YAML, shell syntax
+and embedded Python compilation passed. This is static/configuration evidence,
+not cross-lane test execution. Validator and temporary Cloud-PG adaptation are
+retained with the final artifact pack for reproducibility.

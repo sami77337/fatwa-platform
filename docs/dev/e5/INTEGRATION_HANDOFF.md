@@ -52,3 +52,49 @@ inferred from Linux regression tests or Node DOM tests.
 
 Independent review is pending the designated reviewer. No next wave is
 requested or dispatched. `NOT_DEPLOYED / GATES_HOLD`.
+
+## Actual E3/E6 files now verified: integration-only patch
+
+After the first E5 increment, actual E3 and E6 branches became available and
+were fetched/inspected read-only, without integrating any lane code into E5:
+
+- E3: `26dba43149129e3f0cbd5689247cc3da9fe5d3c2`, actual
+  `tests/reference_links_db/test_catalog_adapter.py` and package initializer.
+  DB-only label: `tests.reference_links_db.test_catalog_adapter`.
+- E6 PR52: `fa2b123e967e0550e4c2570d6770e8577aa16e95`, actual `run.py`,
+  service/regression/browser tests and README under the E6 paths.
+
+`e3-e6-actual.integration.patch` adds E3's DB label to APP_TESTS and the existing
+B6 PG17/18 invocation. It adds E6 to those disposable CI services using its
+explicit acknowledgement, a separate `e6_synthetic` / `test_e6_synthetic`
+database, Python 3.13 and Node 24. It first checks for the standard Ubuntu
+runner's existing `/usr/bin/google-chrome` and runs the six exact Python guard
+and six Node transport cases. There is no automatic engine fallback, no browser
+installation or security/permission change, and no sandbox-disabling flag.
+Missing Chrome fails; its version is logged. The actual protected engine's
+availability and execution remain NOT_RUN until CI runs this assembled patch.
+
+E6 uses its own guarded `run.py`, `run.py --regressions` and `run.py --browser`;
+logs must contain a nonzero unittest case count. Pipe failures propagate.
+A regression failure remains a job failure while the browser can still execute
+if the synthetic service check passed. Browser/console/network traces and
+screenshots (only if produced by real interaction) are captured from
+`.local/qa/e6/` by the existing always-uploaded B6 artifact. No E6 DB module is
+fed to C6/D6 or the unguarded B6 Django discoverer.
+
+Apply after all actual lane files and E4's empty-query fix are assembled:
+
+```text
+git apply --check docs/dev/e5/e2-actual-label.integration.patch
+git apply docs/dev/e5/e2-actual-label.integration.patch
+git apply --check docs/dev/e5/e3-e6-actual.integration.patch
+git apply docs/dev/e5/e3-e6-actual.integration.patch
+```
+
+Both patches pass applicability checks on the E5 manifest/workflow state. This
+is patch evidence only: E3/E6 tests, protected Chrome and full combined matrix
+are NOT_RUN in E5. E6 reports its baseline filter-only regression FAIL and its
+Cloud Chromium startup BLOCKED (nine browser journeys NOT_RUN); neither result
+is optionalized. The coordinator must rerun against the assembled SHA and fix
+actual failures in the owning lane. New E2 batch-selector journeys remain an
+E6 integration dependency. A fresh independent review is still required.
