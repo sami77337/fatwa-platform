@@ -61,11 +61,6 @@ def api_guard(view):
         except services.HeadingNotFound:
             return _json({"error": "not_found"}, 404)
         except (DatabaseError, services.CatalogUnavailable):
-            # Temporary CI-only diagnostic for the draft PostgreSQL integration run.
-            import os
-            if os.environ.get("CI") == "true":
-                import traceback
-                traceback.print_exc()
             return _json({"error": "catalog_unavailable"}, 503)
 
     return guarded

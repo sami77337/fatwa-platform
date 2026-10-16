@@ -172,7 +172,9 @@ class CatalogTests(TestCase):
             self.assertEqual(response.json()["edition"]["id"], edition_id)
             self.assertEqual(response.json()["total"], 2)
         response = self.client.get("/fiqh")
-        self.assertContains(response, "اختر الطبعة")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "اختر الطبعة")
+        self.assertContains(response, "الفهرس غير متاح للتصفح")
 
     def test_all_unsafe_methods_are_denied_without_queries(self):
         client = Client(enforce_csrf_checks=True)
