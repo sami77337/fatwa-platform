@@ -7,6 +7,12 @@ from apps.reference import views
 urlpatterns = [
     path("dev/editorial-preview", editorial_views.preview, name="editorial_demo"),
     path("dev/editorial-preview/style.css", editorial_views.stylesheet, name="editorial_demo_style"),
+    path("dev/editorial-preview/pipeline", editorial_views.pipeline_preview, name="editorial_pipeline"),
+    path(
+        "dev/editorial-preview/pipeline/<str:ident>",
+        editorial_views.pipeline_preview,
+        name="editorial_pipeline_detail",
+    ),
     path("dev/editorial-preview/<str:ident>", editorial_views.preview, name="editorial_demo_detail"),
     path("", public_views.home, name="home"),
     path("help", public_views.help_page, name="public_help"),
