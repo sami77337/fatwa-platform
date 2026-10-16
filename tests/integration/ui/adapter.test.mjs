@@ -18,3 +18,24 @@ test("same hash with changed scholarly attribution is rejected", async () => {
   const adapter = adapterWith((value, url) => url.pathname.endsWith("children") ? { ...value, edition: { ...edition, work: { ...edition.work, source_book_id: "different" } } } : value);
   await adapter.catalog(); await assert.rejects(adapter.children("1"), error => error.code === "INVALID_PAYLOAD");
 });
+
+
+test("D4 serializes only selected typed filters and preserves exact whitespace", async () => {
+  const requests = [];
+  const adapter = adapterWith((payload, url) => { requests.push(url); return payload; });
+  await adapter.catalog();
+  await adapter.search("  عنوان عربي  ", { mode: "exact" });
+  assert.equal(requests.at(-1).searchParams.has("depth"), false);
+  assert.equal(requests.at(-1).searchParams.has("has_children"), false);
+  for (const depth of [1, 2, 3, 4, 5]) for (const hasChildren of [true, false]) {
+    await adapter.search("  عنوان عربي  ", { depth, hasChildren });
+    assert.equal(requests.at(-1).searchParams.get("depth"), String(depth));
+    assert.equal(requests.at(-1).searchParams.get("has_children"), String(hasChildren));
+    assert.equal(requests.at(-1).searchParams.get("q"), "  عنوان عربي  ");
+  }
+  for (const options of [{ depth: 0 }, { depth: 6 }, { depth: "2" }, { hasChildren: "false" }]) {
+    const count = requests.length;
+    await assert.rejects(adapter.search("عنوان", options), error => error.code === "INVALID_QUERY");
+    assert.equal(requests.length, count);
+  }
+});

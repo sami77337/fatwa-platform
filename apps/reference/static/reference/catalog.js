@@ -69,8 +69,9 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   const snapshot = () => ({ root: state.root, selected: state.selected, focusId: state.focusId,
     expanded: [...state.expanded], groups: [...state.groups], searchPage: state.searchPage,
     searchOptions: state.searchOptions, query: get("search-query").value,
+    depth: get("search-depth").value, hasChildren: get("search-has_children").value,
     scope: get("search-scope").value, mode: get("search-mode").value });
-  function remember(mode = "replace", id = undefined) {
+  function remember(mode = "replace", id = undefined, searchUrl = false) {
     if (!state.initialized || !view?.history || !state.catalog.source) return;
     const url = id === undefined ? view.location.href : href(id);
     const previous = view.history.state;
@@ -78,6 +79,19 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       fatwaCatalog: { version: 1, edition: state.catalog.source.id, snapshot: snapshot() } };
     try {
       const target = new URL(url, view.location.href);
+      if (searchUrl) {
+        target.pathname = "/fiqh";
+        for (const key of ["q", "root", "mode", "offset", "depth", "has_children", "basic"]) target.searchParams.delete(key);
+        const options = state.searchOptions;
+        if (options) {
+          for (const [key, value] of Object.entries({ q: options.query, mode: options.mode,
+            root: options.rootId, offset: options.cursor, depth: options.depth, has_children: options.hasChildren })) {
+            if (value !== null && value !== undefined) target.searchParams.set(key, String(value));
+          }
+          target.searchParams.set("limit", "20");
+        } else target.searchParams.delete("limit");
+        get("basic-link")?.setAttribute("href", target.pathname + target.search + "&basic=1");
+      }
       const method = mode === "push" && target.href !== view.location.href ? "pushState" : "replaceState";
       view.history[method](data, "", target.href);
     } catch { /* Links and SSR remain usable if history storage is unavailable. */ }
@@ -322,9 +336,9 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     busy("search-results", true); get("search-query").removeAttribute("aria-invalid");
     get("search-results").replaceChildren(element("p", "جارٍ البحث في العناوين…")); announce("جارٍ البحث…");
     try {
-      const result = await adapter.search(options.query, { rootId: options.rootId, cursor: options.cursor, mode: options.mode, signal: request.signal });
+      const result = await adapter.search(options.query, { rootId: options.rootId, cursor: options.cursor, mode: options.mode, depth: options.depth ?? null, hasChildren: options.hasChildren ?? null, signal: request.signal });
       if (!current("searchRequest", request)) return;
-      state.searchPage = result; state.searchOptions = options; renderSearch(focus); remember();
+      state.searchPage = result; state.searchOptions = options; renderSearch(focus); remember("push", undefined, true);
       announce("اكتمل البحث. عدد النتائج: " + number.format(result.total));
     } catch (error) {
       if (current("searchRequest", request) && error.name !== "AbortError") {
@@ -337,12 +351,14 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   }
   const submit = event => {
     event.preventDefault();
-    void search({ query: get("search-query").value, rootId: get("search-scope").value || null, cursor: null, mode: get("search-mode").value });
+    void search({ query: get("search-query").value, rootId: get("search-scope").value || null, cursor: null, mode: get("search-mode").value,
+      depth: get("search-depth").value ? Number(get("search-depth").value) : null,
+      hasChildren: get("search-has_children").value === "" ? null : get("search-has_children").value === "true" });
   };
   const clearSearch = () => {
     cancel("searchRequest"); state.searchPage = null; state.searchOptions = null;
     get("search-query").value = ""; get("search-query").removeAttribute("aria-invalid");
-    get("search-results").replaceChildren(); busy("search-results", false); clearError(); remember();
+    get("search-results").replaceChildren(); busy("search-results", false); clearError(); remember("push", undefined, true);
     announce("تم مسح البحث."); get("search-query").focus();
   };
   async function homeCatalog({ navigate = true, focus = true } = {}) {
@@ -366,6 +382,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       state.root = data.root; state.selected = data.selected; state.focusId = data.focusId;
       state.groups = new Map(data.groups); state.expanded = [...data.expanded];
       state.searchPage = data.searchPage; state.searchOptions = data.searchOptions;
+      get("search-depth").value = data.depth ?? ""; get("search-has_children").value = data.hasChildren ?? "";
       get("search-query").value = data.query; get("search-scope").value = data.scope; get("search-mode").value = data.mode;
       get("search-query").removeAttribute("aria-invalid");
       markRoot(); showSelection(state.selected); renderTree(event.restore !== true); renderSearch();

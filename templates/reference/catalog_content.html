@@ -15,7 +15,23 @@
       <option value="exact"{% if mode == 'exact' %} selected{% endif %}>مطابقة العنوان كاملًا</option>
     </select>
     <button type="submit">بحث</button>
-  </form>
+  <label for="basic-depth">عمق العنوان</label>
+<select id="basic-depth" name="depth">
+<option value=""{% if depth == '' %} selected{% endif %}>جميع المستويات</option>
+<option value="1"{% if depth == '1' %} selected{% endif %}>المستوى 1</option>
+<option value="2"{% if depth == '2' %} selected{% endif %}>المستوى 2</option>
+<option value="3"{% if depth == '3' %} selected{% endif %}>المستوى 3</option>
+<option value="4"{% if depth == '4' %} selected{% endif %}>المستوى 4</option>
+<option value="5"{% if depth == '5' %} selected{% endif %}>المستوى 5</option>
+</select>
+<label for="basic-has_children">العناوين الفرعية</label>
+<select id="basic-has_children" name="has_children">
+<option value=""{% if has_children == '' %} selected{% endif %}>جميع العناوين</option>
+<option value="true"{% if has_children == 'true' %} selected{% endif %}>له عناوين فرعية</option>
+<option value="false"{% if has_children == 'false' %} selected{% endif %}>بلا عناوين فرعية</option>
+</select>
+{% if root %}<input type="hidden" name="root" value="{{ root }}">{% endif %}
+</form>
   <nav aria-label="مسار العنوان"><ol class="breadcrumbs">
     <li><a href="{% url 'catalog' %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">جذور الفهرس</a></li>
     {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}

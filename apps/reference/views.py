@@ -182,7 +182,7 @@ def ready(request: HttpRequest) -> JsonResponse:
 
 
 def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
-    allowed = {"edition", "q", "mode", "limit", "offset", "basic"}
+    allowed = {"edition", "q", "mode", "limit", "offset", "basic", "root", "depth", "has_children"}
     if ident is not None:
         allowed.add("anchor")
     _parameters(request, allowed)
@@ -191,6 +191,12 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         raise InvalidQuery("Invalid basic navigation flag")
     text, mode = request.GET.get("q", ""), request.GET.get("mode", "normalized")
     validate_search(text, mode)
+    depth_value = request.GET.get("depth", "")
+    children_value = request.GET.get("has_children", "")
+    root_value = request.GET.get("root", "")
+    depth = bounded_int(depth_value, 1, 5) if depth_value else None
+    has_children = strict_bool(children_value) if children_value else None
+    root_id = bounded_int(root_value, 1, MAX_SOURCE_ID) if root_value else None
     page = _page(request)
     requested = _edition_id(request)
     books = services.list_books(Page(100))
@@ -205,6 +211,10 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         "single_source": books.total == 1,
         "edition": services.edition_data(edition) if edition else None,
         "query": text,
+        "depth": depth_value,
+        "depth_choices": range(1, 6),
+        "has_children": children_value,
+        "root": root_value,
         "mode": mode,
         "page": page,
         "node": None,
@@ -220,7 +230,9 @@ def _html_context(request: HttpRequest, ident: int | None = None) -> dict:
         context["ancestors"] = services.heading_path(edition, heading)
         context["results"] = services.child_page(edition, heading, page, anchor_id)
     elif text.strip():
-        context["results"] = services.search(edition, text, mode, page)
+        context["results"] = services.search(
+            edition, text, mode, page, root_id, depth=depth, has_children=has_children
+        )
     else:
         context["results"] = services.roots(edition, page)
     results = context["results"]
@@ -240,7 +252,7 @@ def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
             else "reference/catalog.html"
         )
         return render(request, template, context)
-    except InvalidQuery:
+    except (InvalidQuery, TooManyFieldsSent):
         return render(
             request,
             "reference/error.html",
