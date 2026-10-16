@@ -8,7 +8,7 @@ import { readFile, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
-const artifacts = path.join(root, "docs/dev/a1");
+const artifacts = path.join(root, "docs/dev/b1");
 const upstream = process.argv[2] ?? "http://127.0.0.1:8000";
 const executable = process.argv[3] ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 assert.ok(["127.0.0.1", "localhost"].includes(new URL(upstream).hostname));

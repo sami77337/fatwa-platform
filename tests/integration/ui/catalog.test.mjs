@@ -34,8 +34,8 @@ test("initial real-UI code renders nested links, one tab stop, citation and no i
   assert.equal(shown(), 1); assert.equal(items(doc).length, 21); assert.equal(items(doc).filter(node => node.tabIndex === 0).length, 1);
   assert.equal(get(doc, "books").querySelector("a").getAttribute("href"), "/fiqh/nodes/1?edition=7");
   assert.equal(doc.defaultView.location.pathname, "/fiqh"); assert.equal(doc.activeElement, null);
-  assert.match(get(doc, "reference-content").textContent, /طبعة اختبار.*ناشر اختبار.*المقدمة/);
-  assert.doesNotMatch(get(doc, "reference-content").textContent, /INTERNAL-SOURCE-KEY|7654321|معرّف/);
+  assert.match(get(doc, "reference-content").textContent, /مرجع اصطناعي للاختبار.*المقدمة/);
+  assert.doesNotMatch(get(doc, "reference-content").textContent, /INTERNAL-SOURCE-KEY|7654321|معرّف|طبعة اختبار|ناشر اختبار/);
   app.destroy();
 });
 test("RTL hierarchical keyboard moves focus independently of selection, expands, collapses and activates", async () => {
@@ -150,4 +150,24 @@ test("history storage failure leaves native links and tree navigation usable", a
   const { adapter } = fixture(), doc = documentHarness(); doc.defaultView.history.replaceState = () => { throw Error("history unavailable"); }; doc.defaultView.history.pushState = () => { throw Error("history unavailable"); };
   const app = mount(adapter, doc); await app.ready; assert.equal(items(doc).length, 21);
   get(doc, "introductions").querySelector("a").click(); await settle(); assert.equal(items(doc).length, 1); assert.equal(get(doc, "reference-content").querySelector("a").getAttribute("href"), "/fiqh/nodes/90?edition=7"); app.destroy();
+});
+
+
+test("copy link falls back to a selectable absolute reference URL", async () => {
+  const { doc, app } = await setup({ initialNode: "29" });
+  get(doc, "reference-content").querySelector("button").click(); await settle();
+  const field = get(doc, "reference-content").querySelector("input");
+  assert.equal(field.value, "http://localhost/fiqh/nodes/29?edition=7");
+  assert.equal(field.getAttribute("readonly"), ""); assert.equal(doc.activeElement, field);
+  app.destroy();
+});
+
+test("reload recovers saved search and deep branch without stealing focus", async () => {
+  const { doc, adapter, app } = await setup();
+  get(doc, "search-query").value = "عميق"; get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "search-results").querySelector("a").click(); await settle();
+  app.destroy(); doc.activeElement = null;
+  const reloaded = mount(adapter, doc, { initialNode: "29" }); await reloaded.ready;
+  assert.equal(get(doc, "search-query").value, "عميق"); assert.ok(get(doc, "search-results").querySelector("a"));
+  assert.ok(item(doc, "29")); assert.equal(doc.activeElement, null); reloaded.destroy();
 });
