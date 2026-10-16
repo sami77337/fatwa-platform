@@ -1,0 +1,122 @@
+{
+  "timestamp": "2026-10-15T15:32:23.138Z",
+  "base_head": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "result": "PASS",
+  "comparison": "Initial session file SHA256 versus final files. Existing inherited dirty files preserved unless inside A1 ownership. Audit file itself excluded.",
+  "allowed": [
+    "templates/reference/",
+    "apps/reference/static/reference/",
+    "tests/integration/ui/",
+    "docs/dev/a1/"
+  ],
+  "changed_files": [
+    {
+      "path": "apps/reference/static/reference/catalog.css",
+      "before": "70acbba0463f56c449463fe3bfcad184ede815e69a39867151d0c539c19a9253",
+      "after": "57a44b0bd3d2b8041b97e8ce48ed3ae82b164eb29e1fd37fb9cf2d9f120b6e1a"
+    },
+    {
+      "path": "apps/reference/static/reference/catalog.js",
+      "before": "dc3358ae99091458b7c07d05d2c2dca901e2088db04b372c605be73f5a7ea286",
+      "after": "839130a16c4975996d46fb41381d23ee5f04cb390395eab4d1387f311a8790a7"
+    },
+    {
+      "path": "apps/reference/static/reference/django-api.mjs",
+      "before": "e760e882ec6481151600cc42a84a125af93a27862a532ba36879ab65a5cb9e08",
+      "after": "4971db7c7b5b032ce9fc313e49b8265104f3ce5c01573fe7fdbc58df13a6859b"
+    },
+    {
+      "path": "apps/reference/static/reference/tree.js",
+      "before": "d9044ced5398cbbcb8c84c86ee3a7bc67cca574ce621d16aafeac2ac0db18661",
+      "after": "9463a1cb27e922d7e54941aeec090a843d2f3dff3f62915e8398331a2fe4f173"
+    },
+    {
+      "path": "templates/reference/base.html",
+      "before": "e67236227a5517aee9d2eb9e10935c1489e2be9a2bcf1cc366d3c6c45db14c29",
+      "after": "d03efc9bb39f9da8cd5bd0a33ed1ab689180e78cd4821f9d7e293f5ac83cac20"
+    },
+    {
+      "path": "templates/reference/catalog_content.html",
+      "before": "73bb1bb819cb05bb81b910c6a4aa9214714e77fe2dcef7e2a40e19e808b39d09",
+      "after": "f455a7191ecf86960bf39fe97525459608d906fbd747f1a31d3b64d2da7080c2"
+    },
+    {
+      "path": "templates/reference/error.html",
+      "before": "22d5fac46ed5e8cbef8bdf395a4332b9b28ec9439692b3727f7c74e4f2d16916",
+      "after": "59f1226d84bc044f47ea42c45135c20cb06bfbd1fa9bc257a0559d00b3f2f361"
+    },
+    {
+      "path": "templates/reference/heading_list.html",
+      "before": "30d352348f71e0a01368e01eef81c91171f5912745e46c896299c8edc4e8d88c",
+      "after": "675f8edfd79f6fd9788f7378eea61bd7f55f00e6ca8029ed5619e542eb8b2900"
+    },
+    {
+      "path": "templates/reference/interactive.html",
+      "before": "42cb364b5ad73abf5bdb10eb4ab842c4c0bd242507b7e9ec9631cd4d33973e77",
+      "after": "b0e322e95259a87623b816c5df7704c95a986ab5fb47ba661965b43e507a4ac9"
+    },
+    {
+      "path": "docs/dev/a1/browser-result.json",
+      "before": null,
+      "after": "c3916fd9d1256485bf9e04c4ac2685a12411eaec9b4a7be3c81b1deb39302974"
+    },
+    {
+      "path": "docs/dev/a1/checks.json",
+      "before": null,
+      "after": "96616494aa911bcfd0fea010716e4adf3358d97daa84a8f94f4dad16a168510f"
+    },
+    {
+      "path": "docs/dev/a1/live-result.json",
+      "before": null,
+      "after": "57c2c3daeb27c63772a7da26c2500dbdcf0cb630d76a90b02b6bb13fa3fda71d"
+    },
+    {
+      "path": "docs/dev/a1/node-tests.txt",
+      "before": null,
+      "after": "0a482914cd6df7d4009af7ac3d12c65382eba90440fb324e5ec211c9fa84d615"
+    },
+    {
+      "path": "docs/dev/a1/README.md",
+      "before": null,
+      "after": "b3c0f106a9101d812e2fec50478fb49a8794fc12d3e138b3d00c7aa99a2c6c78"
+    },
+    {
+      "path": "tests/integration/ui/adapter.test.mjs",
+      "before": null,
+      "after": "cee50cba5db078c0539afd7edd86072e76c6d4be2f4e4488f86f2c668121ba05"
+    },
+    {
+      "path": "tests/integration/ui/browser.mjs",
+      "before": null,
+      "after": "515c8499c4b046af85b8111110df8c819bff76be7b0428990f07c5f2f00ccc2e"
+    },
+    {
+      "path": "tests/integration/ui/catalog.test.mjs",
+      "before": null,
+      "after": "f3b185f7e68fc3a5886ce47a1d56c5b105946dcc127f089cf5a169fb6e0314d9"
+    },
+    {
+      "path": "tests/integration/ui/dom-harness.mjs",
+      "before": null,
+      "after": "cfba33d13f6f9ac9c610d9c0662b063249d00eec6d16011200480d9a06fd677a"
+    },
+    {
+      "path": "tests/integration/ui/live.mjs",
+      "before": null,
+      "after": "1eb2997f5e589e0bcf2697eb4ccb0e54ff8e56959a3ced2808859498ebf595a3"
+    },
+    {
+      "path": "tests/integration/ui/test_templates.py",
+      "before": null,
+      "after": "fe28677bfd363b4be5a82b4947b375f30f2b84c4337277e0850d816af081dbec"
+    },
+    {
+      "path": "tests/integration/ui/tree.test.mjs",
+      "before": null,
+      "after": "623383285b75a2058c838a2bc1cd070f08f55b705e8aea601580801e1f3c91cd"
+    }
+  ],
+  "outside_scope_changes": [],
+  "trailing_whitespace": [],
+  "temporary_browser_profiles_remaining": []
+}
