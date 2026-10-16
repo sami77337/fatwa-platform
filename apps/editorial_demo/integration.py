@@ -1,19 +1,16 @@
-"""Wave5 local demonstration: compose D1 and D3 on fixed synthetic bytes only.
+"""Compose the existing D1/D3 pipeline on fixed synthetic bytes, without I/O.
 
-No request payload, filesystem, database, network, AI, or production side effects.
-D1's eligibility and D3's exact source identity must both agree before display.
+This is not an input endpoint or a source acceptance. Rendering uses matching
+original pointers, full mapped source identity and matching evidence, not flags.
 """
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import hashlib
 import json
 
-from apps.fatwa_drafts.intake import ReferenceLink
+from apps.fatwa_drafts.intake import ReferenceLink, ValidationError, clip_url
 from apps.prepared_pipeline import C1Pointer, ExplicitMapping, prepare_batch
 from apps.reference_links.bridge import (
-    BridgeConfig,
-    EditionMap,
-    HeadingMap,
-    SourceIdentity,
-    resolve_prepared_pointers,
+    BridgeConfig, EditionMap, HeadingMap, SourceIdentity, resolve_prepared_pointers,
 )
 from apps.reference_links.resolution import Heading, SnapshotCatalog
 
@@ -24,8 +21,16 @@ STATUS_LABELS = {
     "needs-editor-review": "يحتاج مراجعة بشرية؛ المراجع غير محسومة أو المقطع ناقص",
     "blocked-invalid": "مدخل مرفوض بسبب بيانات غير صالحة",
 }
+ISSUE_LABELS = {
+    "media_missing": "رابط المقطع غير مرفق",
+    "media_invalid": "رابط المقطع غير صالح",
+    "references_missing": "لم تُرفق إحالات مرجعية",
+    "reference_unverified": "الإحالة غير محسومة وتحتاج مراجعة",
+    "reference_mismatch": "بيانات الإحالة غير متطابقة بين المسارين",
+    "invalid_input": "توجد بيانات إدخال غير صالحة",
+}
 
-# These labels/sha strings are fabricated test identities, NOT owner data.
+# Fabricated test identities only; never owner source data.
 _SYNTHETIC_ROWS = (
     {
         "external_id": "SYN-P01",
@@ -54,10 +59,21 @@ _SYNTHETIC_ROWS = (
 )
 
 
+def _media_issue(value: str) -> str:
+    if not value:
+        return "media_missing"
+    try:
+        clip_url(value)
+    except ValidationError:
+        return "media_invalid"
+    return ""
+
+
 @dataclass(frozen=True, slots=True)
 class PreviewReference:
     status: str
     citation: str | None
+    issue_code: str = ""
 
     @property
     def status_label(self) -> str:
@@ -73,22 +89,27 @@ class IntegratedPreviewRow:
     draft_created: bool
     references: tuple[PreviewReference, ...]
     input_findings: int
+    issue_codes: tuple[str, ...] = ()
 
     @property
     def status_label(self) -> str:
         return STATUS_LABELS[self.status]
 
     @property
+    def issue_labels(self) -> tuple[str, ...]:
+        return tuple(ISSUE_LABELS[code] for code in self.issue_codes)
+
+    @property
     def media_status(self) -> str:
-        if not self.prepared_clip_url:
+        issue = _media_issue(self.prepared_clip_url)
+        if issue == "media_missing":
             return "رابط المقطع ناقص"
-        if self.status == "blocked-invalid":
+        if issue == "media_invalid":
             return "رابط المقطع غير صالح"
         return "رابط المقطع الجاهز (مثال غير قابل للفتح)"
 
 
 def _synthetic_dependencies():
-    # Only the explicit mapping for SYN-P01 may verify; never infer from text.
     identity = SourceIdentity("synthetic-only", "622", "demo-edition", "a" * 64, "b" * 64)
     mapping = HeadingMap("synthetic-source", "synthetic-heading", "synthetic-row", 73)
     bridge = BridgeConfig(EditionMap(identity, 41), (mapping,))
@@ -99,14 +120,7 @@ def _synthetic_dependencies():
             identity.source_namespace, identity.source_book_id, identity.source_input_sha256,
         ),
     ))
-    c2 = ReferenceLink(
-        identity.source_namespace,
-        identity.source_book_id,
-        identity.edition_key,
-        identity.source_archive_sha256,
-        identity.source_input_sha256,
-        mapping.c2_source_id,
-    )
+    c2 = ReferenceLink(**asdict(identity), source_id=mapping.c2_source_id)
     d1_map = {
         C1Pointer(mapping.c1_source_id, mapping.c1_heading_id): ExplicitMapping(
             c2, bridge.edition.edition_id, mapping.source_row_id, "synthetic-wave5-only"
@@ -115,71 +129,112 @@ def _synthetic_dependencies():
     return d1_map, bridge, catalog
 
 
+def _reference(expected: dict, item: dict, pointer, bridge: BridgeConfig) -> PreviewReference:
+    mismatch = PreviewReference("unverified", None, "reference_mismatch")
+    if (
+        item.get("original") != expected
+        or len(pointer.original_pointer) != len(expected)
+        or dict(pointer.original_pointer) != expected
+    ):
+        return mismatch
+    if item.get("outcome") != "verified" or pointer.status.value != "verified":
+        return PreviewReference("unverified", None, "reference_unverified")
+    evidence = pointer.evidence
+    mapping = next((row for row in bridge.headings if
+                    (row.c1_source_id, row.c1_heading_id) ==
+                    (expected.get("source_id"), expected.get("heading_id"))), None)
+    if type(evidence) is not Heading or mapping is None:
+        return mismatch
+    pin = asdict(bridge.edition.identity)
+    mapped = item.get("mapping", {})
+    if (
+        mapped.get("c2") != {**pin, "source_id": mapping.c2_source_id}
+        or mapped.get("edition_id") != bridge.edition.edition_id
+        or mapped.get("source_row_id") != mapping.source_row_id
+        or evidence.edition_id != bridge.edition.edition_id
+        or evidence.source_row_id != mapping.source_row_id
+        or item.get("provenance") != asdict(evidence)
+        or any(getattr(evidence, key) != pin[key] for key in
+               ("source_namespace", "source_book_id", "source_input_sha256"))
+    ):
+        return mismatch
+    # Plain text only: Django escapes once. Never trust/mark-safe adapter markup.
+    citation = (
+        f"إحالة إلى عنوان في فهرس {evidence.work_title}: {' / '.join(evidence.path)}"
+        f"، ج {evidence.printed_part}، ص {evidence.printed_page} (عنوان فهرس، وليس نص فتوى)."
+    )
+    return PreviewReference("verified", citation)
+
+
+def _row_references(original: dict, report: dict, resolved, bridge, blocked: bool):
+    expected = original.get("reference_links", [])
+    if blocked:
+        # D1 may omit normalized references for a blocked row. Keep the row visible
+        # but never attach verified evidence to it or fail the whole batch for it.
+        return tuple(PreviewReference("unverified", None, "invalid_input") for _ in expected)
+    if len(expected) != len(report["references"]) or len(expected) != len(resolved.reference_links):
+        return tuple(PreviewReference("unverified", None, "reference_mismatch") for _ in expected)
+    return tuple(_reference(source, item, pointer, bridge) for source, item, pointer in
+                 zip(expected, report["references"], resolved.reference_links, strict=True))
+
+
 def build_preview_rows() -> tuple[IntegratedPreviewRow, ...]:
-    """Create a deterministic per-request in-memory preview; never accept real input."""
-    raw = json.dumps(
-        {"schema": SCHEMA, "items": _SYNTHETIC_ROWS},
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
+    """Deterministic, in-memory processing of fixed synthetic fixtures only."""
+    raw = json.dumps({"schema": SCHEMA, "items": _SYNTHETIC_ROWS}, ensure_ascii=False,
+                     sort_keys=True, separators=(",", ":")).encode("utf-8")
+    originals = json.loads(raw)["items"]
     d1_map, bridge, catalog = _synthetic_dependencies()
     batch = prepare_batch(raw, synthetic_fixtures_only=True, reference_map=d1_map, catalog=catalog)
     resolved_rows = resolve_prepared_pointers(raw, bridge, catalog)
-    reported_rows = batch.report["items"]
-    if len(reported_rows) != len(resolved_rows):
+    reports = batch.report["items"]
+    if (
+        len(reports) != len(originals) or len(resolved_rows) != len(originals)
+        or batch.report.get("input_sha256") != hashlib.sha256(raw).hexdigest()
+        or batch.report.get("synthetic_only") is not True
+        or batch.report.get("human_editing_performed") is not False
+    ):
         raise ValueError("synthetic_pipeline_alignment_failed")
-
-    rendered: list[IntegratedPreviewRow] = []
-    for report, resolved in zip(reported_rows, resolved_rows, strict=True):
-        original = report["original"]
-        if not isinstance(original, dict) or original.get("external_id") != resolved.external_id:
+    rendered = []
+    for original, report, resolved in zip(originals, reports, resolved_rows, strict=True):
+        if report["original"] != original or original.get("external_id") != resolved.external_id:
             raise ValueError("synthetic_pipeline_identity_mismatch")
-        d1_references = report["references"]
-        if len(d1_references) != len(resolved.reference_links):
-            raise ValueError("synthetic_pipeline_reference_count_mismatch")
-        # Fail closed if a future adapter marks a pointer verified without both checks.
-        refs = tuple(
-            PreviewReference(
-                "verified" if item["outcome"] == "verified" and pointer.status.value == "verified" else "unverified",
-                pointer.citation if item["outcome"] == "verified" and pointer.status.value == "verified" else None,
-            )
-            for item, pointer in zip(d1_references, resolved.reference_links, strict=True)
-        )
+        flags = set(report["statuses"])
+        if flags - {*STATUS_LABELS, "references-unverified"} or len(flags & set(STATUS_LABELS)) != 1:
+            raise ValueError("synthetic_pipeline_invalid_status")
+        blocked = "blocked-invalid" in flags
         draft = report["draft"]
+        if blocked and draft is not None:
+            raise ValueError("synthetic_pipeline_blocked_draft")
         if draft is not None:
-            intake = draft.get("intake", {})
-            revisions = draft.get("history", [])
+            intake, revisions = draft.get("intake", {}), draft.get("history", [])
             if (
                 intake.get("external_id") != resolved.external_id
-                or intake.get("question") != original.get("question")
-                or len(revisions) != 1
-                or revisions[0].get("answer") != ""
+                or intake.get("question") != original.get("question", original.get("title", ""))
+                or intake.get("prepared_clip_url") != original.get("prepared_clip_url", "")
+                or len(revisions) != 1 or revisions[0].get("answer") != ""
                 or revisions[0].get("action") != "received"
             ):
                 raise ValueError("synthetic_pipeline_draft_identity_mismatch")
-        flags = set(report["statuses"])
-        if "blocked-invalid" in flags:
+        refs = _row_references(original, report, resolved, bridge, blocked)
+        issues = []
+        media_issue = _media_issue(original.get("prepared_clip_url", ""))
+        if media_issue:
+            issues.append(media_issue)
+        if not original.get("reference_links"):
+            issues.append("references_missing")
+        issues.extend(ref.issue_code for ref in refs if ref.issue_code)
+        if blocked:
+            issues.append("invalid_input")
+        issue_codes = tuple(dict.fromkeys(issues))
+        if blocked:
             status = "blocked-invalid"
-        elif (
-            draft is None
-            or "needs-editor-review" in flags
-            or "references-unverified" in flags
-            or not refs
-            or any(reference.status != "verified" for reference in refs)
-        ):
+        elif draft is None or "needs-editor-review" in flags or "references-unverified" in flags or issue_codes:
             status = "needs-editor-review"
         else:
             status = "ready-for-editor"
-        rendered.append(
-            IntegratedPreviewRow(
-                resolved.external_id,
-                original.get("question", original.get("title", "")),
-                original.get("prepared_clip_url", ""),
-                status,
-                draft is not None,
-                refs,
-                len(report["findings"]),
-            )
-        )
+        rendered.append(IntegratedPreviewRow(
+            resolved.external_id, original.get("question", original.get("title", "")),
+            original.get("prepared_clip_url", ""), status, draft is not None, refs,
+            len(report["findings"]), issue_codes,
+        ))
     return tuple(rendered)
