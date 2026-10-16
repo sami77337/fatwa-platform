@@ -1,8 +1,8 @@
 """Positive and fail-closed B6 orchestration checks, not app acceptance."""
 import importlib.util
 import os
-from pathlib import Path
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("b6qa", Path(__file__).resolve().parents[2] / "tools/dev/qa.py")

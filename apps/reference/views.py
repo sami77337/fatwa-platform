@@ -2,6 +2,7 @@
 
 from functools import wraps
 
+from django.core.exceptions import TooManyFieldsSent
 from django.db import DatabaseError, connection
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
@@ -55,7 +56,7 @@ def api_guard(view):
             return response
         try:
             return view(request, *args, **kwargs)
-        except InvalidQuery:
+        except (InvalidQuery, TooManyFieldsSent):
             return _json({"error": "invalid_query"}, 400)
         except services.HeadingNotFound:
             return _json({"error": "not_found"}, 404)

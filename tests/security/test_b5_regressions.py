@@ -1,7 +1,6 @@
 """B5: database-forbidden regressions; mocks are explicitly scoped per test."""
 
 from types import SimpleNamespace
-from unittest import expectedFailure
 from unittest.mock import patch
 
 from django.db import DatabaseError
@@ -14,10 +13,8 @@ from apps.reference.query import Page
 class B5PublicRegressionTests(SimpleTestCase):
     databases = set()
 
-    @expectedFailure
-    def test_known_gap_parameter_overflow_keeps_api_json_error_schema(self):
-        # Confirmed gap: Django raises TooManyFieldsSent before api_guard can
-        # normalize the error. Keep the desired schema visible until fixed.
+    def test_parameter_overflow_keeps_api_json_error_schema(self):
+        # Django's query-parser limit must preserve the public JSON error contract.
         query = "&".join(f"field{i}=x" for i in range(17))
         response = self.client.get("/api/v1/fiqh/books?" + query)
         self.assertEqual(response.status_code, 400)

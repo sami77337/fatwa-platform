@@ -12,7 +12,13 @@ import time
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
-APP_TESTS = ["tests.reference", "tests.public_site", "tests.security", "tests.integration.test_site"]
+# Directory labels avoid Python 3.13 unittest discovery on the namespace-only
+# tests package. Include the wave2 API, SSR and read-only command regressions.
+APP_TESTS = [
+    "tests/reference", "tests/public_site", "tests/security",
+    "tests/integration/api", "tests/integration/ui",
+    "tests.integration.source.test_read_only_commands", "tests.integration.test_site",
+]
 
 
 class DockerUnavailable(RuntimeError):
