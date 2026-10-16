@@ -1,0 +1,26 @@
+{
+  "findings": [
+    {
+      "code": "media_link_missing_review_required",
+      "field": "prepared_clip_url",
+      "row": 2,
+      "severity": "review"
+    }
+  ],
+  "input_format": ".csv",
+  "input_sha256": "e089ba93b6abbfff2addeacad224d2ec942b6aa593f5e7cfd2a5921afa0767d5",
+  "outputs": {
+    "intake.json": {
+      "bytes": 605,
+      "sha256": "40d6a857e3fb1307952760b9d9d5216539314d751626779c91ea5f205ed77d56"
+    },
+    "intake.jsonl": {
+      "bytes": 445,
+      "sha256": "11480daed55058d4666d3ef1b9a91cfa59531f09416f44b41abce24a251a07cd"
+    }
+  },
+  "row_count": 2,
+  "schema": "fatwa.prepared-intake.v1",
+  "status": "REVIEW_REQUIRED",
+  "valid_row_count": 2
+}
