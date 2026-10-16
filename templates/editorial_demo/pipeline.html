@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مسار الاستلام والمراجعة التجريبي</title>
+  <link rel="stylesheet" href="{% url 'editorial_demo_style' %}">
+</head>
+<body>
+<a class="skip" href="#main-content">انتقل إلى المحتوى</a>
+<header>
+  <p class="banner"><strong>بيانات اصطناعية فقط — لا تدخل بيانات حقيقية</strong></p>
+  <p>DEVELOPMENT ONLY · SYNTHETIC · NOT_DEPLOYED / GATES_HOLD</p>
+  <nav aria-label="التنقل">
+    <a href="{% url 'home' %}">الرئيسية</a>
+    <a href="{% url 'catalog' %}?basic=1">الفهرس المرجعي</a>
+    <a href="{% url 'editorial_pipeline' %}">سجلات المسار المتصل</a>
+    <a href="{% url 'editorial_demo' %}">الأمثلة التحريرية القديمة</a>
+  </nav>
+</header>
+<main id="main-content" tabindex="-1">
+  <h1>مسار الاستلام والفحص والمراجعة — بيانات اصطناعية</h1>
+  <p>الصفحة للقراءة فقط. تُعاد معالجة المدخلات الاصطناعية الثابتة في الذاكرة
+  عبر D1، ثم فحص هوية الإحالات عبر D3، ثم تُعرض حالة كل سجل.
+  لا توجد إجابة شرعية، ولا إقرار أو إرسال أو حفظ أو رفع أو قص مقاطع.</p>
+  {% if row %}
+    <a href="{% url 'editorial_pipeline' %}?{{ filter_query }}">العودة إلى القائمة المصفاة</a>
+    <article>
+      <h2>سجل {{ row.external_id }}</h2>
+      <p>{{ row.status_label }} — غير منشورة</p>
+      <h3>السؤال الاصطناعي الأصلي كما ورد</h3>
+      <p>{{ row.question }}</p>
+      <h3>رابط المقطع الجاهز</h3>
+      <p>{{ row.media_status }}</p>
+      {% if row.prepared_clip_url %}
+        <p><code dir="ltr">{{ row.prepared_clip_url }}</code></p>
+      {% endif %}
+      <p>روابط المقاطع تُعرض كنص غير قابل للنقر؛ لا تحميل ولا وصول إلى الإنترنت.</p>
+      <h3>إنشاء مسودة استلام</h3>
+      {% if row.draft_created %}
+        <p>أُنشئ سجل استلام اصطناعي مؤقت في الذاكرة، ولم تحدث أي مراجعة بشرية أو كتابة جواب.</p>
+      {% else %}
+        <p>لم يُنشأ سجل مسودة؛ يلزم تصحيح الإدخال أو استكمال رابط المقطع قبل المتابعة.</p>
+      {% endif %}
+      <h3>الإحالات إلى الفهرس المرجعي</h3>
+      {% for reference in row.references %}
+        <p>{{ reference.status_label }}</p>
+        {% if reference.citation %}
+          <p>{{ reference.citation }}</p>
+          <p>المطابقة تخص هوية عنوان في الفهرس الاصطناعي، وليست اعتمادًا لاستشهاد شرعي.</p>
+        {% else %}
+          <p>المراجع غير محسومة؛ لا يحق للمنصة استنتاج مصدر من السؤال.</p>
+        {% endif %}
+      {% empty %}
+        <p>المراجع غير محسومة؛ لم تُرفق إحالة مصدر قابلة للتحقق.</p>
+      {% endfor %}
+      <h3>الجواب</h3>
+      <p>لا توجد إجابة أو اعتماد شرعي أو نشر. جميع النتائج تركيبية للاختبار فقط.</p>
+    </article>
+  {% else %}
+    <form method="get" action="{% url 'editorial_pipeline' %}" role="search" aria-label="البحث في سجلات الاختبار">
+      <div>
+        <label for="q">بحث في السجلات الاصطناعية</label>
+        <input id="q" name="q" type="search" maxlength="80" autocomplete="off" value="{{ q }}">
+      </div>
+      <div>
+        <label for="status">حالة المعالجة</label>
+        <select id="status" name="status">
+          <option value="">جميع الحالات</option>
+          {% for key,label in statuses.items %}
+            <option value="{{ key }}"{% if status == key %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit">عرض النتائج</button>
+      <a href="{% url 'editorial_pipeline' %}">مسح التصفية</a>
+    </form>
+    <p role="status">عدد السجلات المعروضة: {{ rows|length }}</p>
+    {% for item in rows %}
+      <article>
+        <h2>
+          <a href="{% url 'editorial_pipeline_detail' ident=item.external_id %}?{{ filter_query }}">
+            {{ item.external_id }}
+          </a>
+        </h2>
+        <p>{{ item.status_label }} — غير منشورة</p>
+        <p>{{ item.question }}</p>
+        <p>{{ item.media_status }}</p>
+        {% if item.draft_created %}
+          <p>سجل الاستلام في الذاكرة فقط</p>
+        {% else %}
+          <p>لم يُنشأ سجل مسودة</p>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p>لا توجد سجلات مطابقة</p>
+    {% endfor %}
+  {% endif %}
+</main>
+<footer>
+  <p>فهرس المصدر التجريبي ليس فتوى منشورة. الهوية التقنية والطبعة تُحفظ للتحقق
+  الداخلي فقط ولا تُعرض للمستخدم.</p>
+  <p>Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · Figma مؤجل.</p>
+</footer>
+</body>
+</html>
