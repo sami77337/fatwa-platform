@@ -1,10 +1,11 @@
 """Explicit human-authored identity bridge; no I/O or implicit ID conversion."""
 
 import json
+from collections import Counter
 from dataclasses import asdict, dataclass
 
 from .resolution import (
-    Outcome, ReadOnlyCatalog, Heading, _positive, _text, _unique_object,
+    MAX_INPUT_BYTES, Outcome, ReadOnlyCatalog, Heading, _positive, _text, _unique_object,
     resolve, render_citation,
 )
 
@@ -80,6 +81,9 @@ class BridgeConfig:
 
 @dataclass(frozen=True, slots=True)
 class PointerResult:
+    # Object pointers retain their original key order and JSON values. A nonobject
+    # has no fields; its complete value is retained under the diagnostic sentinel
+    # "$invalid_pointer" and can never be resolved.
     original_pointer: tuple[tuple[str, object], ...]
     status: Outcome
     reasons: tuple[str, ...]
@@ -103,7 +107,7 @@ def resolve_prepared_pointers(
     """
     if type(config) is not BridgeConfig:
         raise ValueError("Explicit BridgeConfig required")
-    if not isinstance(raw, bytes) or len(raw) > 2_000_000:
+    if not isinstance(raw, bytes) or len(raw) > MAX_INPUT_BYTES:
         raise ValueError("Expected bounded UTF-8 JSON bytes")
     data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object)
     if (not isinstance(data, dict) or set(data) != {"schema", "items"}
@@ -126,17 +130,20 @@ def resolve_prepared_pointers(
         if not isinstance(links, list) or len(links) > 100:
             raise ValueError("Invalid reference list")
         results = []
-        originals = []
+        # Count exact textual pointers once. Malformed JSON values are retained
+        # as findings and never used as mapping keys (some are unhashable).
+        originals = Counter(
+            tuple(sorted(link.items())) for link in links
+            if isinstance(link, dict) and all(isinstance(v, str) for v in link.values())
+        )
         for link in links:
             if not isinstance(link, dict) or any(not isinstance(v, str) for v in link.values()):
-                raise ValueError("Pointer must contain string fields")
-            originals.append(tuple(sorted(link.items())))
-        for link in links:
-            if not isinstance(link, dict) or any(not isinstance(v, str) for v in link.values()):
-                raise ValueError("Pointer must contain string fields")
+                original = tuple(link.items()) if isinstance(link, dict) else (("$invalid_pointer", link),)
+                results.append(PointerResult(original, Outcome.UNVERIFIED, ("invalid_pointer",)))
+                continue
             original = tuple(link.items())
             canonical = tuple(sorted(original))
-            duplicate = originals.count(canonical) > 1
+            duplicate = originals[canonical] > 1
             reason, mapping = "explicit_mapping_missing", None
             try:
                 for value in link.values():
@@ -165,7 +172,10 @@ def resolve_prepared_pointers(
             if status == Outcome.VERIFIED and evidence is not None:
                 if type(evidence.path) is not tuple or any(getattr(evidence, key) != pin[key] for key in (
                     "source_namespace", "source_book_id", "source_input_sha256"
-                )):
+                )) or any(
+                    getattr(evidence, key) is not None and getattr(evidence, key) != pin[key]
+                    for key in ("edition_key", "source_archive_sha256")
+                ):
                     status, reasons = Outcome.UNVERIFIED, ("catalog_source_pin_mismatch",)
             verified = status == Outcome.VERIFIED
             results.append(PointerResult(
