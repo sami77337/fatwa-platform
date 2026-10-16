@@ -1,0 +1,58 @@
+{
+  "gates": "NOT_DEPLOYED / GATES_HOLD",
+  "source_acceptance": "NOT_RUN",
+  "postgres": "NOT_RUN: database access disabled",
+  "suites": {
+    "node_version": {
+      "status": "PASS",
+      "exit_code": 0,
+      "reason": "exit",
+      "output_tail": "v24.16.0\r\n",
+      "output_truncated": false
+    },
+    "django": {
+      "status": "PASS",
+      "exit_code": 0,
+      "reason": "exit",
+      "output_tail": "System check identified no issues (0 silenced).\r\n",
+      "output_truncated": false
+    },
+    "D1": {
+      "status": "NOT_RUN",
+      "missing": [
+        "tools/content_intake/wave4.py",
+        "tests/vertical/d1"
+      ]
+    },
+    "D2": {
+      "status": "NOT_RUN",
+      "missing": [
+        "apps/fatwa_drafts/wave4.py",
+        "tests/vertical/d2"
+      ]
+    },
+    "D3": {
+      "status": "NOT_RUN",
+      "missing": [
+        "apps/reference_links/wave4.py",
+        "tests/vertical/d3"
+      ]
+    },
+    "D4": {
+      "status": "NOT_RUN",
+      "missing": [
+        "ui_drafts/fiqh/wave4.mjs",
+        "tests/vertical/d4",
+        "tests/vertical/d4/functional.test.mjs"
+      ]
+    },
+    "D5": {
+      "status": "NOT_RUN",
+      "missing": [
+        "quality/security/wave4.py",
+        "tests/vertical/d5"
+      ]
+    }
+  },
+  "acceptance": "NOT_RUN"
+}
