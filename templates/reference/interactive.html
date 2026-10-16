@@ -24,7 +24,22 @@
           <option value="literal">كلمات كما كُتبت</option>
           <option value="exact">مطابقة العنوان كاملًا</option>
         </select>
-      </form>
+      <label for="search-depth">عمق العنوان</label>
+<select id="search-depth" name="depth">
+<option value="">جميع المستويات</option>
+<option value="1">المستوى 1</option>
+<option value="2">المستوى 2</option>
+<option value="3">المستوى 3</option>
+<option value="4">المستوى 4</option>
+<option value="5">المستوى 5</option>
+</select>
+<label for="search-has_children">العناوين الفرعية</label>
+<select id="search-has_children" name="has_children">
+<option value="">جميع العناوين</option>
+<option value="true">له عناوين فرعية</option>
+<option value="false">بلا عناوين فرعية</option>
+</select>
+</form>
       <div id="search-results" aria-busy="false"></div>
     </section>
     <div class="catalog-layout">
