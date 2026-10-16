@@ -1,12 +1,9 @@
 --- a/tools/dev/wave4_suites.json
 +++ b/tools/dev/wave4_suites.json
-@@ -18,7 +18,8 @@
-     "django": [
-       "tests.editorial_demo.test_preview",
+@@ -20,3 +20,5 @@
        "tests.editorial_demo.test_pipeline_preview",
 -      "tests.editorial_demo.test_worklist"
 +      "tests.editorial_demo.test_worklist",
-+      "tests.editorial_demo.test_synthetic_batch"
++      "tests.editorial_demo.test_synthetic_batch",
++      "tests.editorial_demo.test_review_fixes"
      ],
-     "node": []
-   },

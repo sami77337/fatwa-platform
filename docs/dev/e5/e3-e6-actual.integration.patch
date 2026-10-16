@@ -36,7 +36,7 @@
 +          assert suite.countTestCases() > 0, 'E3 missing/zero adapter cases fail'
 +          PYCODE
        - name: Django PostgreSQL integration tests
-@@ -90,3 +103,87 @@
+@@ -90,3 +103,125 @@
              tests.integration.test_site \
 +            tests.reference_links_db.test_catalog_adapter \
              --noinput --verbosity=2 --settings=config.settings.test 2>&1 | tee b6-postgres.log
@@ -85,6 +85,44 @@
 +          text = Path('.local/qa/e6/service.log').read_text(encoding='utf-8')
 +          assert re.search(r'(?m)^Ran ([1-9][0-9]*) tests? in ', text), 'E6 zero/unreported cases fail'
 +          PYCODE
++      - name: E6 actual assets gate
++        id: e6-assets
++        if: ${{ !cancelled() && steps.e6-service.outcome == 'success' }}
++        env:
++          E6_SYNTHETIC_ONLY: '1'
++          PGDATABASE: e6_synthetic
++          PGTESTDATABASE: test_e6_synthetic
++          E6_BROWSER: /usr/bin/google-chrome
++          E6_ARTIFACTS: ${{ github.workspace }}/.local/qa/e6
++        shell: bash
++        run: |
++          set -o pipefail
++          python tests/acceptance/wave6/run.py --assets 2>&1 | tee .local/qa/e6/assets.log
++          python - <<'PYCODE'
++          from pathlib import Path
++          import re
++          text = Path('.local/qa/e6/assets.log').read_text(encoding='utf-8')
++          assert re.search(r'(?m)^Ran ([1-9][0-9]*) tests? in ', text), 'E6 zero/unreported cases fail'
++          PYCODE
++      - name: E6 actual review-batches gate
++        id: e6-review-batches
++        if: ${{ !cancelled() && steps.e6-service.outcome == 'success' }}
++        env:
++          E6_SYNTHETIC_ONLY: '1'
++          PGDATABASE: e6_synthetic
++          PGTESTDATABASE: test_e6_synthetic
++          E6_BROWSER: /usr/bin/google-chrome
++          E6_ARTIFACTS: ${{ github.workspace }}/.local/qa/e6
++        shell: bash
++        run: |
++          set -o pipefail
++          python tests/acceptance/wave6/run.py --review-batches 2>&1 | tee .local/qa/e6/review-batches.log
++          python - <<'PYCODE'
++          from pathlib import Path
++          import re
++          text = Path('.local/qa/e6/review-batches.log').read_text(encoding='utf-8')
++          assert re.search(r'(?m)^Ran ([1-9][0-9]*) tests? in ', text), 'E6 zero/unreported cases fail'
++          PYCODE
 +      - name: E6 actual regressions gate
 +        id: e6-regressions
 +        if: ${{ !cancelled() && steps.e6-service.outcome == 'success' }}
@@ -116,7 +154,7 @@
 +        shell: bash
 +        run: |
 +          set -o pipefail
-+          python tests/acceptance/wave6/run.py --browser 2>&1 | tee .local/qa/e6/browser.log
++          python tests/acceptance/wave6/run.py --browser --review-batches 2>&1 | tee .local/qa/e6/browser.log
 +          python - <<'PYCODE'
 +          from pathlib import Path
 +          import re
@@ -124,7 +162,7 @@
 +          assert re.search(r'(?m)^Ran ([1-9][0-9]*) tests? in ', text), 'E6 zero/unreported cases fail'
 +          PYCODE
        - uses: actions/upload-artifact@v4
-@@ -98,2 +195,4 @@
+@@ -98,2 +233,4 @@
              b6-postgres.log
 +            .local/qa/e6/
 +          include-hidden-files: true

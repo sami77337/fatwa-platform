@@ -123,3 +123,43 @@ The final handoff records subsequent documentation/E4-label patch commit and
 its actual fresh CI state. E4's actual no-DB label was verified after PR55
 publication and is now supplied as a third integration-only patch; E4 DB tests
 remain confined to B6 discovery.
+
+
+## Precise review follow-up: corrected producer modules
+
+This follow-up changes integration-only patches and their documentation. It
+reuses the existing environment/dependencies and does not rerun old producer
+work, importer suites or browser execution. Previous green CI remains evidence
+only for its recorded SHA until the new E5 head's automatic checks complete.
+
+Read actual E2 `b1289215a8cc83a20a70caed553bf664dea7be40`:
+`docs/dev/e2/REVIEW_FIXES.md` and `tests/editorial_demo/test_review_fixes.py`.
+The latter declares two SimpleTestCase classes, six test methods. The patch now
+requires BOTH `tests.editorial_demo.test_synthetic_batch` and
+`tests.editorial_demo.test_review_fixes` in D2, preserving the original three
+labels. E2 reports 61 editorial passes; these tests were NOT_RUN by E5.
+
+A targeted configuration check first rejected the old patch because the second
+label was absent (AssertionError, exit 1). After the update, sequential checks
+of all three patches passed in a disposable copy: exact five-label D2 list,
+E4 no-DB label, E3 APP_TESTS/qa_worker syntax, exclusion of real E3 DB labels from
+D6, three workflow YAML parses, Bash syntax and embedded Python compilation.
+Actual command: `/tmp/fatwa-e5-yaml-venv/bin/python /tmp/fatwa-e5-validate-patches-review.py`.
+This is configuration RED/GREEN, not an editorial test result.
+
+Also inspected newly published E6 PR52 head
+`a541cd9b3693e034173242f44fdb33dbb7358e2b`: README, actual run.py,
+test_browser.py, test_assets.py and test_review_batches.py. Its shared live server
+is now static-files-aware. The integration-only workflow patch adds the actual
+`--assets` and `--review-batches` gates and invokes `--browser --review-batches`
+for the tenth mandatory journey. Each gate retains explicit isolated database
+acknowledgement, failure propagation, a nonzero-case check and artifact logging.
+Protected Chrome remains required; no security settings or bypass flags change.
+
+E6's new asset/review/browser commands are NOT_RUN in E5; final execution is
+coordinator-owned after assembling corrected E1/E2 and actual E3/E4/E6 modules.
+E6's README still cites the initial E2 snapshot for its own batch evidence; do
+not transfer that result to corrected E2 or the assembled SHA without execution.
+No neighboring code merged, shared-root dependency/route edit, source operation,
+product/source acceptance or independent re-review is claimed.
+`NOT_DEPLOYED / GATES_HOLD / USAGE_NOT_OBSERVED`.
