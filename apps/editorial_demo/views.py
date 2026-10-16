@@ -11,6 +11,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_safe
 
 from .fixtures import ROWS, SCHEMA, STATUSES
+from .integration import STATUS_LABELS, build_preview_rows
 
 
 def local_only(request: HttpRequest) -> None:
@@ -82,3 +83,53 @@ def stylesheet(request: HttpRequest) -> HttpResponse:
         Path(__file__).with_name("preview.css").read_text(encoding="utf-8"),
         content_type="text/css; charset=utf-8",
     )
+
+
+@require_safe
+def pipeline_preview(request: HttpRequest, ident: str | None = None) -> HttpResponse:
+    """Separate read-only D1+D3+D2 demonstration; never use request-supplied records."""
+    local_only(request)
+    query = request.GET
+    if (
+        set(query) - {"q", "status"}
+        or any(len(query.getlist(key)) != 1 for key in query)
+        or len(query.get("q", "")) > 80
+        or len(query.get("status", "")) > 32
+        or any(ord(char) < 32 or ord(char) == 127 for char in query.get("q", ""))
+        or query.get("status", "") not in {"", *STATUS_LABELS}
+    ):
+        response = HttpResponse("معايير تصفية غير صالحة", status=400)
+        response["Cache-Control"] = "no-store"
+        return response
+    q = query.get("q", "").strip()
+    status = query.get("status", "")
+    try:
+        rows = build_preview_rows()
+    except (ValueError, TypeError, KeyError, IndexError):
+        # Never leak source identity, fixture bytes, tracebacks or internal diagnostics.
+        response = HttpResponse("المعاينة الاصطناعية غير متاحة", status=503)
+        response["Cache-Control"] = "no-store"
+        return response
+    row = next((candidate for candidate in rows if candidate.external_id == ident), None)
+    if ident is not None and row is None:
+        raise Http404
+    filtered = tuple(
+        candidate
+        for candidate in rows
+        if (not status or candidate.status == status)
+        and (not q or q.casefold() in (candidate.external_id + candidate.question).casefold())
+    )
+    response = render(
+        request,
+        "editorial_demo/pipeline.html",
+        {
+            "row": row,
+            "rows": filtered,
+            "q": q,
+            "status": status,
+            "statuses": STATUS_LABELS,
+            "filter_query": urlencode({"q": q, "status": status}),
+        },
+    )
+    response["Cache-Control"] = "no-store"
+    return response
