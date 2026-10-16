@@ -66,7 +66,7 @@ def load_contract(root, manifest):
             raise ValueError("Expected bounded Django labels")
         for label in django_labels:
             if not isinstance(label, str) or not re.fullmatch(
-                r"tests(?:\\.[A-Za-z_][A-Za-z0-9_]*){2,}", label
+                r"tests(?:\.[A-Za-z_][A-Za-z0-9_]*){2,}", label
             ):
                 raise ValueError("Invalid Django test module")
             safe_path(root, label.replace(".", "/") + ".py")
