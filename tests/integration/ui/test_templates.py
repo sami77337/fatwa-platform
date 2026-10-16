@@ -62,3 +62,15 @@ class CatalogTemplateTests(SimpleTestCase):
             self.assertNotIn("<select", html)
             self.assertNotIn("اختر الطبعة", html)
             self.assertIn("الفهرس", html)
+
+    def test_basic_reading_metadata_and_manual_copy_print_help(self):
+        html = render_to_string("reference/catalog.html", self.context())
+        self.assertIn('class="basic-reference"', html)
+        self.assertIn('class="selected-title"', html)
+        self.assertIn("نسخها يدويًا", html)
+        self.assertIn("أمر الطباعة", html)
+        html = render_to_string("reference/catalog.html", self.context(
+            node={"id": 29, "title": "عنوان اصطناعي", "part": None, "page": None},
+        ))
+        self.assertIn("غير متاح", html)
+        self.assertNotIn("None", html)

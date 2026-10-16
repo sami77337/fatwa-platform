@@ -3,6 +3,7 @@
     <h1>فهرس المرجع</h1>
     <nav class="catalog-actions" aria-label="التنقل في الفهرس">
       <a id="catalog-home" href="{% url 'catalog' %}?edition={{ edition.id }}">جذور الفهرس</a>
+      <a href="#reference">قراءة بيانات العنوان</a>
       <a id="basic-link" href="{% if node %}{% url 'heading' node.id %}{% else %}{% url 'catalog' %}{% endif %}?edition={{ edition.id }}&amp;basic=1">التصفح بصفحات مستقلة</a>
     </nav>
     <section aria-labelledby="search-heading">

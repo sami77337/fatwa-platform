@@ -76,3 +76,19 @@ body { max-width: none; padding: 0; }
 #request-status:empty { display: none; }
 #catalog-content, #catalog-panel { scroll-margin-block-start: 1rem; }
 @media (forced-colors: active) { .tree-item[aria-selected="true"] > .tree-row { outline: 2px solid Highlight; } }
+.reference-tools { display: flex; flex-wrap: wrap; gap: .5rem; }
+.copy-fallback textarea { font: inherit; inline-size: 100%; max-inline-size: 100%; }
+#reference { scroll-margin-block-start: 1rem; }
+#books, #introductions { overscroll-behavior: contain; }
+@media print {
+  body { background: white; color: black; }
+  header, footer, .skip-link, .scope-note, #request-status { display: none !important; }
+  #interactive-catalog > :not(.catalog-layout),
+  #interactive-catalog aside, #catalog-panel > :not(#reference),
+  #reference-heading, .reference-tools, .copy-fallback, #reference-content > [role="status"] { display: none !important; }
+  .catalog-layout { display: block; margin: 0; }
+  #reference { border: 0; }
+  #server-catalog:has(.basic-reference) #catalog-content > :not(h1):not(.basic-reference),
+  .basic-reading-help { display: none !important; }
+  .selected-title, .basic-reference { overflow-wrap: anywhere; }
+}
