@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>مسار الاستلام والمراجعة التجريبي</title>
+  <title>قائمة الاستلام والمراجعة التجريبية</title>
   <link rel="stylesheet" href="{% url 'editorial_demo_style' %}">
 </head>
 <body>
@@ -19,26 +19,43 @@
   </nav>
 </header>
 <main id="main-content" tabindex="-1">
-  <h1>مسار الاستلام والفحص والمراجعة — بيانات اصطناعية</h1>
-  <p>الصفحة للقراءة فقط. تُعاد معالجة المدخلات الاصطناعية الثابتة في الذاكرة
-  عبر D1، ثم فحص هوية الإحالات عبر D3، ثم تُعرض حالة كل سجل.
-  لا توجد إجابة شرعية، ولا إقرار أو إرسال أو حفظ أو رفع أو قص مقاطع.</p>
+  <h1>قائمة الاستلام والفحص والمراجعة — بيانات اصطناعية</h1>
+  <p>الصفحة للقراءة فقط. تُعالج المدخلات الاصطناعية الثابتة في الذاكرة عبر D1،
+  وتطابق إحالاتها عبر D3. لا توجد إجابة شرعية ولا إقرار أو إرسال أو حفظ أو رفع أو قص مقاطع.</p>
+  <section aria-label="ملخص الدفعة">
+    <h2>ملخص الدفعة كاملة</h2>
+    <dl>
+      <dt>إجمالي سجلات الاستلام</dt><dd>{{ summary.total }}</dd>
+      <dt>جاهزة للعرض على المحرر، دون اعتماد</dt><dd>{{ summary.ready }}</dd>
+      <dt>تحتاج استكمالًا أو مراجعة</dt><dd>{{ summary.needs_review }}</dd>
+      <dt>مدخلات مرفوضة</dt><dd>{{ summary.blocked }}</dd>
+      <dt>سجلات مسودة مؤقتة في الذاكرة</dt><dd>{{ summary.drafts }}</dd>
+      <dt>إحالات متطابقة الهوية تجريبيًا</dt><dd>{{ summary.verified_references }}</dd>
+      <dt>إحالات مرفقة غير محسومة</dt><dd>{{ summary.unverified_references }}</dd>
+    </dl>
+    <p>هذه أعداد الدفعة كاملة؛ أعداد نتائج التصفية والصفحة تظهر بشكل منفصل.
+    تطابق هوية الإحالة ليس اعتمادًا شرعيًا.</p>
+  </section>
   {% if row %}
     <a href="{% url 'editorial_pipeline' %}?{{ filter_query }}">العودة إلى القائمة المصفاة</a>
     <article>
       <h2>سجل {{ row.external_id }}</h2>
       <p>{{ row.status_label }} — غير منشورة</p>
+      <h3>ما الذي يحتاج استكمالًا؟</h3>
+      {% if row.issue_labels %}
+        <ul>{% for label in row.issue_labels %}<li>{{ label }}</li>{% endfor %}</ul>
+      {% else %}
+        <p>لا نواقص آلية ظاهرة في هذا المثال؛ لا يعني ذلك حصوله على مراجعة أو اعتماد بشري.</p>
+      {% endif %}
       <h3>السؤال الاصطناعي الأصلي كما ورد</h3>
       <p>{{ row.question }}</p>
       <h3>رابط المقطع الجاهز</h3>
       <p>{{ row.media_status }}</p>
-      {% if row.prepared_clip_url %}
-        <p><code dir="ltr">{{ row.prepared_clip_url }}</code></p>
-      {% endif %}
-      <p>روابط المقاطع تُعرض كنص غير قابل للنقر؛ لا تحميل ولا وصول إلى الإنترنت.</p>
+      {% if row.prepared_clip_url %}<p><code dir="ltr">{{ row.prepared_clip_url }}</code></p>{% endif %}
+      <p>روابط المقاطع نص غير قابل للنقر؛ لا تحميل ولا وصول إلى الإنترنت.</p>
       <h3>إنشاء مسودة استلام</h3>
       {% if row.draft_created %}
-        <p>أُنشئ سجل استلام اصطناعي مؤقت في الذاكرة، ولم تحدث أي مراجعة بشرية أو كتابة جواب.</p>
+        <p>أُنشئ سجل استلام اصطناعي مؤقت في الذاكرة، ولم تحدث مراجعة بشرية أو كتابة جواب.</p>
       {% else %}
         <p>لم يُنشأ سجل مسودة؛ يلزم تصحيح الإدخال أو استكمال رابط المقطع قبل المتابعة.</p>
       {% endif %}
@@ -55,7 +72,7 @@
         <p>المراجع غير محسومة؛ لم تُرفق إحالة مصدر قابلة للتحقق.</p>
       {% endfor %}
       <h3>الجواب</h3>
-      <p>لا توجد إجابة أو اعتماد شرعي أو نشر. جميع النتائج تركيبية للاختبار فقط.</p>
+      <p>لا توجد إجابة أو اعتماد شرعي أو نشر. النتائج للاختبار فقط.</p>
     </article>
   {% else %}
     <form method="get" action="{% url 'editorial_pipeline' %}" role="search" aria-label="البحث في سجلات الاختبار">
@@ -65,41 +82,50 @@
       </div>
       <div>
         <label for="status">حالة المعالجة</label>
-        <select id="status" name="status">
-          <option value="">جميع الحالات</option>
+        <select id="status" name="status"><option value="">جميع الحالات</option>
           {% for key,label in statuses.items %}
             <option value="{{ key }}"{% if status == key %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
+      <div>
+        <label for="issue">سبب الاستكمال</label>
+        <select id="issue" name="issue"><option value="">جميع الأسباب</option>
+          {% for key,label in issues.items %}
+            <option value="{{ key }}"{% if issue == key %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="page-size">سجلات في كل صفحة (١–٥٠)</label>
+        <input id="page-size" name="page_size" type="number" min="1" max="50" step="1" value="{{ page_size }}">
+      </div>
       <button type="submit">عرض النتائج</button>
       <a href="{% url 'editorial_pipeline' %}">مسح التصفية</a>
     </form>
-    <p role="status">عدد السجلات المعروضة: {{ rows|length }}</p>
+    <p role="status">مطابق للتصفية: {{ matched_count }}؛ معروض في الصفحة: {{ rows|length }}.</p>
     {% for item in rows %}
       <article>
-        <h2>
-          <a href="{% url 'editorial_pipeline_detail' ident=item.external_id %}?{{ filter_query }}">
-            {{ item.external_id }}
-          </a>
-        </h2>
+        <h2><a href="{% url 'editorial_pipeline_detail' ident=item.external_id %}?{{ filter_query }}">{{ item.external_id }}</a></h2>
         <p>{{ item.status_label }} — غير منشورة</p>
         <p>{{ item.question }}</p>
         <p>{{ item.media_status }}</p>
-        {% if item.draft_created %}
-          <p>سجل الاستلام في الذاكرة فقط</p>
-        {% else %}
-          <p>لم يُنشأ سجل مسودة</p>
+        {% if item.issue_labels %}
+          <ul>{% for label in item.issue_labels %}<li>{{ label }}</li>{% endfor %}</ul>
         {% endif %}
+        {% if item.draft_created %}<p>سجل الاستلام في الذاكرة فقط</p>
+        {% else %}<p>لم يُنشأ سجل مسودة</p>{% endif %}
       </article>
-    {% empty %}
-      <p>لا توجد سجلات مطابقة</p>
-    {% endfor %}
+    {% empty %}<p>لا توجد سجلات مطابقة</p>{% endfor %}
+    <nav aria-label="صفحات سجلات المراجعة">
+      {% if previous_url %}<a href="{{ previous_url }}" rel="prev">الصفحة السابقة</a>{% endif %}
+      <span aria-current="page">الصفحة {{ page }} من {{ page_count }}</span>
+      {% if next_url %}<a href="{{ next_url }}" rel="next">الصفحة التالية</a>{% endif %}
+    </nav>
   {% endif %}
 </main>
 <footer>
-  <p>فهرس المصدر التجريبي ليس فتوى منشورة. الهوية التقنية والطبعة تُحفظ للتحقق
-  الداخلي فقط ولا تُعرض للمستخدم.</p>
+  <p>فهرس المصدر التجريبي ليس فتوى منشورة. تبقى بيانات الهوية التقنية والطبعة داخل التحقق فقط.</p>
   <p>Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · Figma مؤجل.</p>
 </footer>
 </body>
