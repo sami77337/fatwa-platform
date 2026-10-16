@@ -90,7 +90,9 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
           }
           target.searchParams.set("limit", "20");
         } else target.searchParams.delete("limit");
-        get("basic-link")?.setAttribute("href", target.pathname + target.search + "&basic=1");
+        const basicTarget = new URL(target);
+        basicTarget.searchParams.set("basic", "1");
+        get("basic-link")?.setAttribute("href", basicTarget.pathname + basicTarget.search);
       }
       const method = mode === "push" && target.href !== view.location.href ? "pushState" : "replaceState";
       view.history[method](data, "", target.href);
