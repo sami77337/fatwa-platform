@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -50,17 +51,29 @@ def load_contract(root, manifest):
     if set(data) != {"D1", "D2", "D3", "D4", "D5"}:
         raise ValueError("Exactly D1-D5 required")
     for lane, entry in data.items():
-        if set(entry) != {"implementation", "python", "node"}:
+        required = {"implementation", "python", "node"}
+        if not required <= set(entry) or set(entry) - (required | {"django"}):
             raise ValueError("Invalid contract fields")
-        for field in entry:
+        for field in required:
             if not isinstance(entry[field], list) or len(entry[field]) > 20:
                 raise ValueError("Expected bounded path lists")
             for value in entry[field]:
                 if not isinstance(value, str) or len(value) > 240:
                     raise ValueError("Expected path string")
                 safe_path(root, value)
-        if not entry["implementation"] or not entry["python"] or (lane == "D4" and not entry["node"]):
-            raise ValueError("Required implementation/Python/D4 Node entries missing")
+        django_labels = entry.get("django", [])
+        if not isinstance(django_labels, list) or len(django_labels) > 20:
+            raise ValueError("Expected bounded Django labels")
+        for label in django_labels:
+            if not isinstance(label, str) or not re.fullmatch(
+                r"tests(?:\\.[A-Za-z_][A-Za-z0-9_]*){2,}", label
+            ):
+                raise ValueError("Invalid Django test module")
+            safe_path(root, label.replace(".", "/") + ".py")
+        if not entry["implementation"] or not (entry["python"] or django_labels) or (
+            lane == "D4" and not entry["node"]
+        ):
+            raise ValueError("Required implementation/tests/D4 Node entries missing")
     return data
 
 
@@ -93,6 +106,9 @@ def dispatch(root=ROOT, manifest=None, isolated=False, wave3=False):
             path = safe_path(root, value)
             if not path.is_dir() or not any(path.rglob("test*.py")):
                 absent.append(value)
+        for label in entry.get("django", []):
+            if not safe_path(root, label.replace(".", "/") + ".py").is_file():
+                absent.append(label)
         for value in entry["node"]:
             if not safe_path(root, value).is_file():
                 absent.append(value)
@@ -102,6 +118,11 @@ def dispatch(root=ROOT, manifest=None, isolated=False, wave3=False):
             continue
         for index, value in enumerate(entry["python"]):
             run(f"{lane}.python.{index}", [sys.executable, str(root / "tools/dev/wave4_discover.py"), value])
+        for index, label in enumerate(entry.get("django", [])):
+            run(f"{lane}.django.{index}", [
+                sys.executable, "manage.py", "test", label, "--noinput",
+                "--settings=config.settings.test",
+            ])
         if entry["node"]:
             # Node treats files with no registered tests as successful; wrapper checks TAP count.
             run(f"{lane}.node", [sys.executable, str(root / "tools/dev/wave4_node.py"), *entry["node"]])

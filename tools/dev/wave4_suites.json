@@ -1,8 +1,56 @@
-﻿{
-  "D1": {"implementation": ["tools/content_intake/wave4.py"], "python": ["tests/vertical/d1"], "node": []},
-  "D2": {"implementation": ["apps/fatwa_drafts/wave4.py"], "python": ["tests/vertical/d2"], "node": []},
-  "D3": {"implementation": ["apps/reference_links/wave4.py"], "python": ["tests/vertical/d3"], "node": []},
-  "D4": {"implementation": ["ui_drafts/fiqh/wave4.mjs"], "python": ["tests/vertical/d4"], "node": ["tests/vertical/d4/functional.test.mjs"]},
-  "D5": {"implementation": ["quality/security/wave4.py"], "python": ["tests/vertical/d5"], "node": []}
+{
+  "D1": {
+    "implementation": [
+      "apps/prepared_pipeline/__init__.py"
+    ],
+    "python": [
+      "tests/prepared_pipeline"
+    ],
+    "node": []
+  },
+  "D2": {
+    "implementation": [
+      "apps/editorial_demo/views.py",
+      "config/urls.py"
+    ],
+    "python": [],
+    "django": [
+      "tests.editorial_demo.test_preview"
+    ],
+    "node": []
+  },
+  "D3": {
+    "implementation": [
+      "apps/reference_links/bridge.py"
+    ],
+    "python": [
+      "tests/reference_links"
+    ],
+    "node": []
+  },
+  "D4": {
+    "implementation": [
+      "apps/reference/static/reference/catalog.js",
+      "apps/reference/static/reference/django-api.mjs"
+    ],
+    "python": [],
+    "django": [
+      "tests.integration.api.test_d4_filter_ui"
+    ],
+    "node": [
+      "tests/integration/ui/adapter.test.mjs",
+      "tests/integration/ui/catalog.test.mjs"
+    ]
+  },
+  "D5": {
+    "implementation": [
+      "apps/public_site/views.py",
+      "templates/public_site/home.html"
+    ],
+    "python": [],
+    "django": [
+      "tests.public_site.test_landing"
+    ],
+    "node": []
+  }
 }
-
