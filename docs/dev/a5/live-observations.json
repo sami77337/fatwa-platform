@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-10-15T15:28:57.639Z",
+  "mode": "ACTUAL_LOOPBACK_HTTP_NO_DIRECT_DB",
+  "origin": "http://127.0.0.1:8000",
+  "requests": 458,
+  "status_counts": {
+    "200": 335,
+    "400": 38,
+    "404": 34,
+    "405": 50,
+    "414": 1
+  },
+  "maximum_inflight": 1,
+  "query_field_limit_error": {
+    "fields": 17,
+    "status": 400,
+    "content_type": "text/html; charset=utf-8",
+    "generic_error_without_diagnostics": true
+  },
+  "all_heading_records": 11397,
+  "tree_pages": 285,
+  "depth_counts": {
+    "1": 32,
+    "2": 475,
+    "3": 10673,
+    "4": 215,
+    "5": 2
+  },
+  "mapped_checksum": "b8c69e5f0a7c6b3e7d8b2283bb3e24d89399d646c199c3dc48f19168b8595bf7",
+  "identity_comparison": "REPOSITORY_PIN_NOT_ORIGINAL_ARCHIVE_REHASH",
+  "served_asset_sha256": {
+    "catalog.js": "dc3358ae99091458b7c07d05d2c2dca901e2088db04b372c605be73f5a7ea286",
+    "django-api.mjs": "e760e882ec6481151600cc42a84a125af93a27862a532ba36879ab65a5cb9e08",
+    "catalog.css": "70acbba0463f56c449463fe3bfcad184ede815e69a39867151d0c539c19a9253"
+  },
+  "public_snapshot_metadata_unchanged": true,
+  "edition": {
+    "id": 1,
+    "edition_key": "622-moj-owner-r1-20261011",
+    "title": "كشاف القناع عن متن الإقناع — طبعة وزارة العدل السعودية — الكتاب 622 في المكتبة الشاملة",
+    "publisher": "وزارة العدل السعودية",
+    "heading_count": 11397,
+    "root_count": 32,
+    "max_depth": 5,
+    "source_archive_sha256": "82a797806430635350decdde27d07fe41fb1278838c8173dc4080f9d109957ce",
+    "source_input_sha256": "37544f6122ef72fb6bd908556ffb41821b235be28bcbd1413752042dbac01d14",
+    "work": {
+      "source_namespace": "shamela",
+      "source_book_id": "622",
+      "title_original": "كشاف القناع عن متن الإقناع",
+      "madhhab": "حنبلي"
+    }
+  },
+  "source_zip_independently_rehashed": false,
+  "direct_database_tests": "NOT_RUN"
+}

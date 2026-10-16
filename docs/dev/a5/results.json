@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-10-15T15:28:49.395Z",
+  "head": "d7b6dc1e4d50b87a88cca036a6025352ecc0ccbe",
+  "branch": "codex/site-functions-20261015-181420-c415-a5",
+  "working_tree_modified": true,
+  "node": "v24.16.0",
+  "scope": "INDEPENDENT_QA_ONLY",
+  "gates": "B_NOT_PASSED_C_D_E_HOLD",
+  "suites": [
+    {
+      "group": "static",
+      "command": "node --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap quality/security/a5/static.test.mjs",
+      "exit_code": 0,
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "docs/dev/a5/static.tap"
+    },
+    {
+      "group": "adapter",
+      "command": "node --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap quality/security/a5/adapter.test.mjs",
+      "exit_code": 1,
+      "tests": 13,
+      "passed": 10,
+      "failed": 3,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "docs/dev/a5/adapter.tap"
+    },
+    {
+      "group": "http",
+      "command": "node --test --test-timeout=30000 --test-concurrency=1 --test-reporter=tap quality/security/a5/http.test.mjs",
+      "exit_code": 1,
+      "tests": 19,
+      "passed": 18,
+      "failed": 1,
+      "skipped": 0,
+      "cancelled": 0,
+      "evidence": "docs/dev/a5/http.tap"
+    }
+  ],
+  "direct_database_tests": "NOT_RUN",
+  "browser_execution": "NOT_RUN",
+  "source_archive_rehash": "NOT_RUN",
+  "totals": {
+    "tests": 41,
+    "passed": 37,
+    "failed": 4,
+    "skipped": 0,
+    "cancelled": 0
+  },
+  "implementation_changes": [],
+  "new_git_status_lines": [
+    "?? docs/dev/a5/adapter.tap",
+    "?? docs/dev/a5/baseline.json",
+    "?? docs/dev/a5/django-not-run.json",
+    "?? docs/dev/a5/environment.json",
+    "?? docs/dev/a5/http.tap",
+    "?? docs/dev/a5/initial-run.json",
+    "?? docs/dev/a5/live-observations.json",
+    "?? docs/dev/a5/results.json",
+    "?? docs/dev/a5/static.tap",
+    "?? docs/security-review/A5_FINDINGS.md",
+    "?? quality/security/a5/README.md",
+    "?? quality/security/a5/adapter.test.mjs",
+    "?? quality/security/a5/http.test.mjs",
+    "?? quality/security/a5/run.mjs",
+    "?? quality/security/a5/static.test.mjs",
+    "?? quality/security/a5/support.mjs",
+    "?? tests/security/__init__.py",
+    "?? tests/security/test_a5_public.py"
+  ],
+  "ownership_violations": []
+}
