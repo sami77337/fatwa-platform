@@ -1,7 +1,7 @@
 """Real PostgreSQL integration: explicit synthetic fixture, no development-site seeding."""
 
 from django.db import connection
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
 from apps.reference.ingest import ingest_catalog
 from apps.reference.records import CatalogSpec, HeadingRecord
@@ -109,7 +109,8 @@ class IntegratedSiteTests(TestCase):
         self.assertContains(response, 'data-node="202"')
         self.assertContains(response, "reference/catalog.js")
         self.assertContains(response, "المقدمة")
-        self.assertContains(response, "test-202")
+        self.assertNotContains(response, "test-202")
+        self.assertContains(response, "الصفحة المطبوعة")
         self.assertContains(response, 'id="server-catalog"')
         self.assertContains(response, 'lang="ar" dir="rtl"')
         basic = self.client.get("/fiqh/nodes/202?basic=1")
@@ -120,16 +121,6 @@ class IntegratedSiteTests(TestCase):
         self.assertContains(search, "التالي")
         self.assertNotContains(search, "reference/catalog.js")
 
-    def test_only_integrated_static_modules_are_served(self):
-        for name in ["catalog.js", "django-api.mjs", "catalog.css"]:
-            response = self.client.get("/assets/reference/" + name)
-            self.assertEqual(response.status_code, 200)
-            body = b"".join(response.streaming_content)
-            self.assertNotIn(b"createMockAdapter", body)
-            self.assertNotIn(b"fixture.js", body)
-            response.close()
-        for name in ["fixture.js", "../../AGENTS.md", "book622.py"]:
-            self.assertEqual(self.client.get("/assets/reference/" + name).status_code, 404)
 
     def test_new_get_parameters_do_not_open_write_methods(self):
         for route in [
@@ -152,3 +143,16 @@ class IntegratedSiteTests(TestCase):
         self.assertFalse(
             {row["id"] for row in first["items"]} & {row["id"] for row in last["items"]}
         )
+
+
+class IntegratedStaticAssetTests(SimpleTestCase):
+    def test_only_integrated_static_modules_are_served(self):
+        for name in ["catalog.js", "django-api.mjs", "catalog.css"]:
+            response = self.client.get("/assets/reference/" + name)
+            self.assertEqual(response.status_code, 200)
+            body = b"".join(response.streaming_content)
+            self.assertNotIn(b"createMockAdapter", body)
+            self.assertNotIn(b"fixture.js", body)
+            response.close()
+        for name in ["fixture.js", "../../AGENTS.md", "book622.py"]:
+            self.assertEqual(self.client.get("/assets/reference/" + name).status_code, 404)

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from django.apps import apps
 from django.db import IntegrityError, OperationalError, connection, transaction
-from django.test import Client, TestCase
+from django.test import Client, SimpleTestCase, TestCase
 from django.urls import resolve
 
 from apps.reference.ingest import CatalogConflict, ingest_catalog
@@ -172,7 +172,9 @@ class CatalogTests(TestCase):
             self.assertEqual(response.json()["edition"]["id"], edition_id)
             self.assertEqual(response.json()["total"], 2)
         response = self.client.get("/fiqh")
-        self.assertContains(response, "اختر الطبعة")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "اختر الطبعة")
+        self.assertContains(response, "الفهرس غير متاح للتصفح")
 
     def test_all_unsafe_methods_are_denied_without_queries(self):
         client = Client(enforce_csrf_checks=True)
@@ -224,12 +226,6 @@ class CatalogTests(TestCase):
         self.assertIn("HX-Request", fragment["Vary"])
         self.assertContains(self.client.get("/fiqh/nodes/1/children"), "<!doctype html>")
 
-    def test_public_assets_cannot_read_source_inputs(self):
-        response = self.client.get("/assets/reference/style.css")
-        self.assertEqual(response.status_code, 200)
-        response.close()
-        for asset in ["_codex_input/issue.md", "../AGENTS.md", "reference/../../AGENTS.md", "django_htmx/../../AGENTS.md"]:
-            self.assertEqual(self.client.get("/assets/" + asset).status_code, 404)
 
     def test_read_query_budgets_are_measured_by_django(self):
         # Small synthetic fixture only; this is not full-source performance evidence.
@@ -240,3 +236,12 @@ class CatalogTests(TestCase):
         with self.assertNumQueries(3):
             self.assertEqual(self.client.get("/api/v1/fiqh/search", {"q": "تجريبي"}).status_code, 200)
         self.assertEqual(resolve("/api/v1/fiqh/roots").url_name, "api_roots")
+
+
+class PublicAssetTests(SimpleTestCase):
+    def test_public_assets_cannot_read_source_inputs(self):
+        response = self.client.get("/assets/reference/style.css")
+        self.assertEqual(response.status_code, 200)
+        response.close()
+        for asset in ["_codex_input/issue.md", "../AGENTS.md", "reference/../../AGENTS.md", "django_htmx/../../AGENTS.md"]:
+            self.assertEqual(self.client.get("/assets/" + asset).status_code, 404)
