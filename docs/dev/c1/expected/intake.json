@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "external_id": "STAFF-001",
+      "prepared_clip_url": "https://example.invalid/finished-clip-001.mp4",
+      "question": "سؤال اصطناعي لاختبار التسليم فقط؟",
+      "reference_links": [],
+      "staff_notes": "بيانات اختبار وليست فتوى"
+    },
+    {
+      "external_id": "STAFF-002",
+      "prepared_clip_url": "",
+      "question": "عنوان اصطناعي بانتظار رابط الموظف؟",
+      "reference_links": [],
+      "staff_notes": "يحتاج مراجعة"
+    }
+  ],
+  "schema": "fatwa.prepared-intake.v1"
+}

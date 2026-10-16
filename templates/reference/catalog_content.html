@@ -21,9 +21,12 @@
     {% for ancestor in ancestors %}<li>{% if forloop.last %}<span aria-current="page">{{ ancestor.title }}</span>{% else %}<a href="{% url 'heading' ancestor.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">{{ ancestor.title }}</a>{% endif %}</li>{% endfor %}
   </ol></nav>
   {% if node %}
-  <section aria-label="الاستشهاد المرجعي">
-    <p>{{ edition.work.title_original }}؛ الجزء: {{ node.part }}، الصفحة المطبوعة: {{ node.page }}.</p>
+  <section class="basic-reference" aria-label="الاستشهاد المرجعي">
+    <p class="selected-title">{{ node.title }}</p>
+    <p>{{ edition.work.title_original }}؛ الجزء: {{ node.part|default_if_none:"غير متاح" }}، الصفحة المطبوعة: {{ node.page|default_if_none:"غير متاحة" }}.</p>
     <p><a href="{% url 'heading' node.id %}?edition={{ edition.id }}{% if basic %}&amp;basic=1{% endif %}">رابط هذا العنوان</a></p>
+    <p>عنوان أصلي من فهرس مرجع، وليس فتوى منشورة.</p>
+    <p class="basic-reading-help">يمكنك تحديد بيانات المرجع ونسخها يدويًا، أو استخدام أمر الطباعة في المتصفح.</p>
   </section>
   {% endif %}
   <h2>{% if query %}العناوين المطابقة{% elif node %}العناوين الفرعية{% else %}جذور الفهرس{% endif %}</h2>

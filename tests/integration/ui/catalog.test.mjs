@@ -171,3 +171,46 @@ test("reload recovers saved search and deep branch without stealing focus", asyn
   assert.equal(get(doc, "search-query").value, "عميق"); assert.ok(get(doc, "search-results").querySelector("a"));
   assert.ok(item(doc, "29")); assert.equal(doc.activeElement, null); reloaded.destroy();
 });
+
+test("reading tools copy exact synthetic heading metadata and print without changing tree/history", async () => {
+  const { doc, app, graph } = await setup({ initialNode: "29" });
+  const written = []; let printed = 0;
+  doc.defaultView.navigator = { clipboard: { async writeText(text) { written.push(text); } } };
+  doc.defaultView.print = () => { printed++; };
+  const content = get(doc, "reference-content"), controls = content.querySelectorAll("button");
+  const before = structuredClone(doc.defaultView.history.state);
+  controls[1].click(); await settle();
+  assert.equal(written[0], source.work_title + "\nالعنوان الأصلي: " + graph.get("29").title + "\nالجزء: " + source.printed_part + "، الصفحة المطبوعة: " + new Intl.NumberFormat("ar", { useGrouping: false }).format(4));
+  controls[0].click(); await settle();
+  assert.equal(written[1], "http://localhost/fiqh/nodes/29?edition=7");
+  assert.match(content.querySelector('[role="status"]').textContent, /تم نسخ/);
+  controls[2].click(); assert.equal(printed, 1);
+  assert.deepEqual(doc.defaultView.history.state, before);
+  assert.equal(item(doc, "29").getAttribute("aria-selected"), "true");
+  assert.equal(content.querySelectorAll("img").length, 0); app.destroy();
+});
+
+test("clipboard rejection provides one readonly manual field and print failure gives feedback", async () => {
+  const { doc, app } = await setup();
+  doc.defaultView.navigator = { clipboard: { async writeText() { throw Error("denied"); } } };
+  const content = get(doc, "reference-content"), controls = content.querySelectorAll("button");
+  controls[1].click(); await settle(); controls[1].click(); await settle();
+  assert.equal(content.querySelectorAll("textarea").length, 1);
+  const field = content.querySelector("textarea");
+  assert.equal(field.getAttribute("readonly"), ""); assert.equal(field.getAttribute("dir"), "rtl");
+  assert.equal(doc.activeElement, field); assert.match(field.value, /العنوان الأصلي/);
+  assert.match(content.querySelector('[role="status"]').textContent, /Tab/);
+  controls[2].click(); assert.match(content.querySelector('[role="status"]').textContent, /المتصفح/);
+  app.destroy();
+});
+
+test("late clipboard rejection does not move focus from newly selected heading", async () => {
+  const { doc, app } = await setup(); const pending = deferred();
+  doc.defaultView.navigator = { clipboard: { writeText() { return pending.promise; } } };
+  get(doc, "reference-content").querySelectorAll("button")[1].click();
+  get(doc, "introductions").querySelector("a").click(); await settle();
+  const focused = doc.activeElement;
+  pending.reject(Error("denied")); await settle();
+  assert.equal(doc.activeElement, focused);
+  assert.equal(get(doc, "reference-content").querySelector("textarea"), null); app.destroy();
+});
