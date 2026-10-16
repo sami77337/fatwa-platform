@@ -31,7 +31,9 @@ UI directory; never add it to C6/D6. New pure E1/E3 files are already covered
 by their existing directory discovery.
 
 The E3/E6 patch adds E3's DB label to **both** `qa.py:APP_TESTS` (qa_worker)
-and the B6 PG17/18 workflow. E6 DB modules are invoked only by its guarded
+and the B6 PG17/18 workflow. Both qa_worker and CI also require nonzero
+collection of that exact E3 adapter module before the combined run, so an empty
+adapter module cannot hide among existing B6 cases. E6 DB modules are invoked only by its guarded
 `run.py`, never by C6/D6 or the unguarded B6 Django discoverer. B6 creates a
 separate `e6_synthetic` / `test_e6_synthetic` database on its own disposable CI
 service. E6 acknowledgement is explicit. An occupied E6 database fails.

@@ -4,6 +4,17 @@
      "tests.integration.source.test_read_only_commands", "tests.integration.test_site",
 +    "tests.reference_links_db.test_catalog_adapter",
  ]
+--- a/tools/dev/qa_worker.py
++++ b/tools/dev/qa_worker.py
+@@ -25,2 +25,8 @@
+                 raise RuntimeError("Cluster is not empty and disposable")
++    import django
++    django.setup()
++    from django.test.runner import DiscoverRunner
++    suite = DiscoverRunner().build_suite(["tests.reference_links_db.test_catalog_adapter"])
++    if suite.countTestCases() == 0:
++        raise RuntimeError("E3 missing/zero adapter cases fail")
+     for command in [["check", "--database", "default"], ["makemigrations", "--check", "--dry-run"],
 --- a/.github/workflows/b6-integration.yml
 +++ b/.github/workflows/b6-integration.yml
 @@ -57,2 +57,5 @@
@@ -12,10 +23,20 @@
 +        with:
 +          node-version: '24'
        - run: python -m pip install -r requirements.txt
-@@ -90,3 +93,87 @@
+@@ -90,3 +93,97 @@
              tests.integration.test_site \
 +            tests.reference_links_db.test_catalog_adapter \
              --noinput --verbosity=2 --settings=config.settings.test 2>&1 | tee b6-postgres.log
++      - name: Require nonzero actual E3 adapter collection
++        if: ${{ !cancelled() }}
++        run: |
++          python - <<'PYCODE'
++          import django
++          django.setup()
++          from django.test.runner import DiscoverRunner
++          suite = DiscoverRunner().build_suite(['tests.reference_links_db.test_catalog_adapter'])
++          assert suite.countTestCases() > 0, 'E3 missing/zero adapter cases fail'
++          PYCODE
 +      - name: Verify protected browser and E6 pure guards
 +        id: e6-preflight
 +        if: ${{ !cancelled() }}
@@ -100,7 +121,7 @@
 +          assert re.search(r'(?m)^Ran ([1-9][0-9]*) tests? in ', text), 'E6 zero/unreported cases fail'
 +          PYCODE
        - uses: actions/upload-artifact@v4
-@@ -98,2 +185,4 @@
+@@ -98,2 +195,4 @@
              b6-postgres.log
 +            .local/qa/e6/
 +          include-hidden-files: true
