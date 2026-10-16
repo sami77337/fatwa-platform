@@ -11,6 +11,9 @@ import unicodedata
 from urllib.parse import urlsplit
 
 SCHEMA = "fatwa.prepared-intake.v1"
+MAX_BYTES = 1_000_000
+MAX_ROWS = 1000
+MAX_REFERENCES = 100
 FIELDS = {"external_id", "question", "title", "prepared_clip_url", "staff_notes", "reference_links"}
 LINK_FIELDS = {"source_id", "heading_id"}
 
@@ -33,20 +36,39 @@ def unique_object(pairs):
 
 
 def parse_json(text):
-    return json.loads(text, object_pairs_hook=unique_object,
-                      parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+    try:
+        value = json.loads(text, object_pairs_hook=unique_object,
+                           parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+        # Escaped lone surrogates can decode successfully, including in blocked rows.
+        json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8", errors="strict")
+    except RecursionError as exc:
+        raise ValueError("JSON nesting exceeds parser bounds") from exc
+    return value
+
+
+def bounded_rows(rows):
+    result = []
+    for number, row in enumerate(rows, 1):
+        if number > MAX_ROWS:
+            raise ValueError("items: expected_at_most_1000")
+        result.append(row)
+    return result
 
 
 def load(raw, suffix):
+    if not isinstance(raw, bytes) or len(raw) > MAX_BYTES:
+        raise ValueError("input: invalid_size_or_type")
     text = raw.decode("utf-8-sig", errors="strict")
     if suffix == ".csv":
         reader = csv.DictReader(io.StringIO(text, newline=""), strict=True)
         headers = reader.fieldnames
         if not headers or len(headers) != len(set(headers)) or set(headers) - FIELDS:
             raise ValueError("missing, duplicate or unknown CSV columns")
-        return list(reader)
+        return bounded_rows(reader)
     if suffix == ".jsonl":
-        return [parse_json(line) for line in text.splitlines() if line.strip()]
+        # Only physical CR/LF delimit records. Unicode separators inside JSON
+        # strings are original question text, not JSONL record boundaries.
+        return bounded_rows(parse_json(line) for line in io.StringIO(text, newline="") if line.strip())
     if suffix != ".json":
         raise ValueError("input extension must be .csv, .json or .jsonl")
     value = parse_json(text)
@@ -56,7 +78,7 @@ def load(raw, suffix):
         value = value["items"]
     if not isinstance(value, list):
         raise ValueError("JSON input must be an array or prepared-intake envelope")
-    return value
+    return bounded_rows(value)
 
 
 def valid_url(value):
@@ -72,6 +94,8 @@ def valid_url(value):
 
 
 def normalize(rows):
+    """Validate C1 rows; canonical original strings are never trimmed or searched."""
+    rows = bounded_rows(rows)
     items, findings, seen = [], [], set()
 
     def finding(row, field, code, severity="error"):
@@ -92,18 +116,22 @@ def normalize(rows):
             if not isinstance(value, str):
                 finding(number, field, "must_be_string")
                 value = ""
-            if any(unicodedata.category(c) == "Cs" or (ord(c) < 32 and c not in "\n\r\t") for c in value):
+            # Prepared text keeps tabs/newlines; IDs follow D3's strict control rule.
+            invalid_id_control = field == "external_id" and any(
+                ord(c) < 32 or ord(c) == 127 for c in value)
+            if invalid_id_control or any(
+                    unicodedata.category(c) == "Cs" or (ord(c) < 32 and c not in "\n\r\t") for c in value):
                 finding(number, field, "invalid_unicode_or_control")
-            item[field] = value.strip()
+            item[field] = value
             if field == "external_id" and value != value.strip():
                 finding(number, field, "id_whitespace_not_allowed")
         if "title" in row:
             if not isinstance(row["title"], str) or not row["title"].strip():
                 finding(number, "title", "blank_or_invalid_title")
-            elif "question" in row and row["title"].strip() != item["question"]:
+            elif "question" in row and row["title"].strip() != item["question"].strip():
                 finding(number, "title", "ambiguous_title_question")
         for field in ("external_id", "question"):
-            if not item[field]:
+            if not item[field].strip():
                 finding(number, field, "required")
         identity = item["external_id"]
         if identity in seen:
@@ -120,7 +148,10 @@ def normalize(rows):
                 links = parse_json(links) if links.strip() else []
             except ValueError:
                 links = None
-        if not isinstance(links, list) or any(
+        if isinstance(links, list) and len(links) > MAX_REFERENCES:
+            finding(number, "reference_links", "expected_list_at_most_100")
+            links = []
+        elif not isinstance(links, list) or any(
             not isinstance(link, dict) or set(link) != LINK_FIELDS
             or any(not isinstance(v, str) or not v.strip() or v != v.strip()
                    or any(unicodedata.category(c).startswith("C") for c in v)
@@ -161,7 +192,9 @@ def main(argv=None):
             command.add_argument("--bundle", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        outputs, manifest = artifacts(args.input.read_bytes(), args.input.suffix.lower())
+        with args.input.open("rb") as stream:
+            raw = stream.read(MAX_BYTES + 1)
+        outputs, manifest = artifacts(raw, args.input.suffix.lower())
         if args.command == "check":
             expected = {**outputs, "manifest.json": encoded(manifest)}
             if any((args.bundle / name).read_bytes() != data for name, data in expected.items()):
