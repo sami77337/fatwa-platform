@@ -46,3 +46,16 @@ def validate_search(text: str, mode: str) -> None:
         raise InvalidQuery("Search exceeds limits")
     if any(ord(char) < 32 or ord(char) == 127 for char in text):
         raise InvalidQuery("Control characters are not supported")
+
+
+def strict_bool(value: str) -> bool:
+    if value not in {"true", "false"}:
+        raise InvalidQuery("Expected true or false")
+    return value == "true"
+
+
+def validate_search_filters(depth: int | None, has_children: bool | None) -> None:
+    if depth is not None and (type(depth) is not int or not 1 <= depth <= 5):
+        raise InvalidQuery("Invalid heading depth")
+    if has_children is not None and type(has_children) is not bool:
+        raise InvalidQuery("Invalid child filter")

@@ -2,12 +2,12 @@
 
 from dataclasses import dataclass
 
-from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery
+from django.db.models import Count, Exists, F, OuterRef, Q, QuerySet, Subquery
 from django.db.models.functions import Coalesce
 
 from .models import ReferenceEdition, ReferenceHeading
 from .normalization import normalize_title
-from .query import MAX_SOURCE_ID, InvalidQuery, Page, validate_search
+from .query import MAX_SOURCE_ID, InvalidQuery, Page, validate_search, validate_search_filters
 
 KIND = "SOURCE_BOOK_TOC_NOT_FATWAS"
 
@@ -208,8 +208,12 @@ def search(
     mode: str,
     page: Page,
     root_id: int | None = None,
+    *,
+    depth: int | None = None,
+    has_children: bool | None = None,
 ) -> CatalogPage:
     validate_search(text, mode)
+    validate_search_filters(depth, has_children)
     value = normalize_title(text) if mode == "normalized" else text
     # Scope validity is independent of whether the search text has any matches.
     root = None
@@ -220,6 +224,13 @@ def search(
     if edition is None or not value.strip():
         return CatalogPage([], 0, page.limit, page.offset, None)
     queryset = _headings(edition)
+    if depth is not None:
+        queryset = queryset.filter(depth=depth)
+    if has_children is not None:
+        child_exists = Exists(
+            ReferenceHeading.objects.filter(edition=edition, parent_id=OuterRef("pk"))
+        )
+        queryset = queryset.filter(child_exists if has_children else ~child_exists)
     if root is not None:
         # Fixed-depth ORM joins, with source identity checked at every ancestor.
         # Use database PKs internally; source row IDs may repeat across editions.

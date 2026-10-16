@@ -10,7 +10,15 @@ from django.views.decorators.http import require_safe
 from django.views.decorators.vary import vary_on_headers
 
 from . import services
-from .query import MAX_OFFSET, MAX_SOURCE_ID, InvalidQuery, Page, bounded_int, validate_search
+from .query import (
+    MAX_OFFSET,
+    MAX_SOURCE_ID,
+    InvalidQuery,
+    Page,
+    bounded_int,
+    strict_bool,
+    validate_search,
+)
 
 
 def _parameters(request: HttpRequest, allowed: set[str]) -> None:
@@ -116,16 +124,24 @@ def api_children(request: HttpRequest, ident: int) -> JsonResponse:
 
 @api_guard
 def api_search(request: HttpRequest) -> JsonResponse:
-    _parameters(request, {"edition", "q", "mode", "limit", "offset", "root"})
+    _parameters(
+        request, {"edition", "q", "mode", "limit", "offset", "root", "depth", "has_children"}
+    )
     text, mode = request.GET.get("q", ""), request.GET.get("mode", "normalized")
     validate_search(text, mode)
     page, requested = _page(request), _edition_id(request)
     root = request.GET.get("root")
     root_id = bounded_int(root, 1, MAX_SOURCE_ID) if root is not None else None
+    depth = bounded_int(request.GET["depth"], 1, 5) if "depth" in request.GET else None
+    has_children = (
+        strict_bool(request.GET["has_children"]) if "has_children" in request.GET else None
+    )
     edition = services.resolve_edition(requested)
     return _json(
         {
-            **services.search(edition, text, mode, page, root_id).as_dict(),
+            **services.search(
+                edition, text, mode, page, root_id, depth=depth, has_children=has_children
+            ).as_dict(),
             "query": text,
             "mode": mode,
             "edition": services.edition_data(edition) if edition else None,
