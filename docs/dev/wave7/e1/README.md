@@ -98,24 +98,26 @@ opt-in and works with an unreachable port and writes disabled:
 
 ```sh
 .venv/bin/python -m tools.content_intake wave7-check synthetic.json --synthetic-fixtures-only
-.venv/bin/python manage.py wave7_intake check synthetic.json --synthetic-fixtures-only --settings=config.settings.wave7_test
+.venv/bin/python manage.py wave7_intake check --input synthetic.json --synthetic-fixtures-only --settings=config.settings.wave7_test
 ```
 
 Import uses only separate Wave7 dev/test settings and a correctly initialized
 owned synthetic DB; it never creates/claims/migrates a database implicitly:
 
 ```sh
-.venv/bin/python manage.py wave7_intake import synthetic.json --synthetic-fixtures-only --idempotency-key E1-demo-001 --settings=config.settings.wave7_development
+.venv/bin/python manage.py wave7_intake import --input synthetic.json --synthetic-fixtures-only --idempotency-key E1-demo-001 --settings=config.settings.wave7_development
 ```
 
 Success writes one JSON report. Contract/guard/read/persistence failure exits
 nonzero with sanitized fixed codes; conflict reports status_code 409. No DSN,
 submitted question, raw source, input filename or traceback is echoed by the
-command's failure handler. Existing C1 commands and bundle behavior are unchanged.
+command's failure handler. A positional path remains a compatibility alias;
+missing input or supplying both forms is rejected. Existing C1 commands and
+bundle behavior are unchanged.
 
 ## Test labels and integration handoff
 
-Pure Windows/Linux labels (14 methods, no DB):
+Pure Windows/Linux labels (15 methods, no DB):
 
 ```sh
 .venv/bin/python -m unittest tests.intake_workflow.test_check tests.intake_workflow.test_cli -v

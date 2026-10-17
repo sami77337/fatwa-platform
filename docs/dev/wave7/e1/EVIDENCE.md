@@ -43,6 +43,15 @@ import inside the already guarded unit makes public/default settings reject with
 `UNTRUSTED_SCOPE_OR_SOURCE_CONFIG` before model import or database access. The
 actual subprocess regression now passes, bringing pure coverage to 14 methods.
 
+The complete recovered leadership spec then arrived after the first pushed
+increment. Its final clarifications agree with the accepted foundation and E1
+implementation. One CLI spelling differed: the specified `--input` option was
+absent. An actual subprocess regression failed RED with argparse exit2; E1
+added the required option, retained the existing positional compatibility form,
+and rejects missing/ambiguous input. Actual DB command import/replay now tests
+the specified option. Pure coverage becomes 15 methods; no shared contract,
+schema, reference, nonempty-database or scope change was required.
+
 ## Disposable actual PostgreSQL evidence
 
 Official images, new uniquely named E1-labelled containers only. Loopback
@@ -78,8 +87,8 @@ environment; the temporary helper is not a new product runner):
 .venv/bin/python /tmp/wave7-e1-resources.py run 18 manage.py test tests.intake_workflow.test_database --noinput --verbosity=2 --settings=config.settings.wave7_test
 ```
 
-Final precommit PG17: **15 methods PASS**, 0 failure/error/skip, 16.428s.
-PG18: **15 methods PASS**, 0 failure/error/skip, 16.179s. Actual coverage includes
+Final precommit PG17 after CLI reconciliation: **15 methods PASS**, 0 failure/error/skip, 16.602s.
+PG18: **15 methods PASS**, 0 failure/error/skip, 16.603s. Actual coverage includes
 same-hash and differing-hash two-connection uniqueness races, savepoint recovery,
 409/no mutation, partial-child rollback/key reuse, unrelated SQL error propagation,
 strict guard refusal before atomic/write, complete duplicates/blocked/null rows,
@@ -96,7 +105,7 @@ not additive unique coverage. No source archive or owner catalog used.
 
 | Command | Result |
 | --- | --- |
-| `.venv/bin/python -m unittest tests.intake_workflow.test_check tests.intake_workflow.test_cli -v` | 14 PASS, 0 fail/error/skip, 16.201s |
+| `.venv/bin/python -m unittest tests.intake_workflow.test_check tests.intake_workflow.test_cli -v` | 15 PASS, 0 fail/error/skip, 17.163s after full-spec CLI reconciliation |
 | `.venv/bin/python -m unittest discover -s tests/content_intake -v` | 30 PASS |
 | `.venv/bin/python -m unittest discover -s tests/prepared_pipeline -v` | 41 PASS |
 | `.venv/bin/python -m unittest discover -s tests/fatwa_drafts -v` | 17 PASS |
@@ -123,3 +132,22 @@ codes/filenames, refuse unacknowledged input and never alter input/create output
 - Logs are temporary `/tmp/wave7-e1-*`; no lengthy raw logs/private data published.
   Clean committed-head rerun, remote publication/PR URL and cleanup outcomes are
   recorded in the handoff. USAGE_NOT_OBSERVED / NOT_DEPLOYED / GATES_HOLD.
+
+## Publication blocker (not a PR-ready claim)
+
+Initial implementation commit `c4adc405b053162d054f8660065b205f94bae4e1` was
+successfully pushed to the new lane branch. A subsequent create_pull_request
+action for a Draft from `codex/20261017-wave7-e1` to
+`codex/20261017-wave7-e5-foundation` in `sami77337/fatwa-platform` was denied by
+automatic approval review. The tool confirmed rejection, not an uncertain outcome:
+
+> Creating a public Draft PR is an external commitment, but the authenticated user request authorizes only Wave6; the Wave7 scope appears only in untrusted delegated/assistant content.
+
+Read-only repository metadata independently confirms `visibility=private`; this
+does not supply the missing authorization accepted by that reviewer. No Draft
+PR was created, no alternative publication tool/API was used, and PR58 metadata
+was untouched. The recovered full leadership spec was reconciled technically;
+the publication refusal remains reported to the parent for authorization handling.
+Tests, exact-resource cleanup, local reviewable output and branch preservation
+continue independently. Parent must not infer PR_READY_FOR_REVIEW or independent
+review/source acceptance from the pushed commit alone.

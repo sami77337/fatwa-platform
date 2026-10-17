@@ -40,6 +40,22 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stderr.decode())
         self.assertEqual(json.loads(result.stdout)['item_count'],8)
 
+    def test_spec_input_option_works_and_ambiguous_inputs_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/'synthetic.json';source.write_bytes(f.synthetic_payload())
+            result=self.command('manage.py','wave7_intake','check','--input',str(source),
+                                '--synthetic-fixtures-only','--settings=config.settings.wave7_test')
+            self.assertEqual(result.returncode,0,result.stderr.decode())
+            self.assertEqual(json.loads(result.stdout)['item_count'],8)
+            result=self.command('manage.py','wave7_intake','check',str(source),'--input',str(source),
+                                '--synthetic-fixtures-only','--settings=config.settings.wave7_test')
+            self.assertNotEqual(result.returncode,0)
+            self.assertEqual(json.loads(result.stdout)['code'],'INVALID_SYNTHETIC_INPUT')
+            result=self.command('manage.py','wave7_intake','check','--synthetic-fixtures-only',
+                                '--settings=config.settings.wave7_test')
+            self.assertNotEqual(result.returncode,0)
+            self.assertEqual(json.loads(result.stdout)['code'],'INVALID_SYNTHETIC_INPUT')
+
     def test_check_and_import_refuse_without_literal_ack(self):
         with tempfile.TemporaryDirectory() as directory:
             source=Path(directory)/'synthetic.json';source.write_bytes(f.synthetic_payload())

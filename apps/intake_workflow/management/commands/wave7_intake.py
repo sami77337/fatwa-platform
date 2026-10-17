@@ -14,7 +14,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('action', choices=('check','import'))
-        parser.add_argument('input',type=Path)
+        parser.add_argument('input',type=Path,nargs='?',help='Compatibility positional input')
+        parser.add_argument('--input',dest='input_option',type=Path,help='Synthetic input file')
         parser.add_argument('--synthetic-fixtures-only',action='store_true')
         parser.add_argument('--idempotency-key')
 
@@ -22,8 +23,12 @@ class Command(BaseCommand):
         try:
             if options['synthetic_fixtures_only'] is not True:
                 raise ContractError('synthetic_acknowledgement_required')
+            paths = [options['input'], options['input_option']]
+            if sum(path is not None for path in paths) != 1:
+                raise ContractError('input: exactly_one_path_required')
+            source = next(path for path in paths if path is not None)
             try:
-                with options['input'].open('rb') as stream:
+                with source.open('rb') as stream:
                     raw = stream.read(MAX_INPUT_BYTES+1)
             except OSError:
                 self.fail('SOURCE_READ_FAILED',400)

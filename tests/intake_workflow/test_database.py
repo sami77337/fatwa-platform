@@ -224,7 +224,7 @@ class IntakeDatabaseTests(TransactionTestCase):
             reports=[]
             for _ in range(2):
                 out=io.StringIO()
-                call_command('wave7_intake','import',str(source),'--synthetic-fixtures-only',
+                call_command('wave7_intake','import','--input',str(source),'--synthetic-fixtures-only',
                              '--idempotency-key','CLI-key',stdout=out)
                 reports.append(json.loads(out.getvalue()))
             self.assertEqual([r['decision'] for r in reports],['CREATE','REPLAY'])
