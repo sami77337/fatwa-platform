@@ -19,6 +19,65 @@
   </nav>
 </header>
 <main id="main-content" tabindex="-1">
+{% if stored %}
+  <section id="wave7-persisted" aria-label="المراجعة الاصطناعية المحفوظة">
+    <h1>مراجعة سجلات اصطناعية محفوظة</h1>
+    <p>قراءة فقط. تتغير حالة المراجعة الداخلية من أمر التطوير المخصص؛ لا توجد إجابة أو اعتماد شرعي أو نشر.</p>
+    <p>جاهزية الاستلام ومطابقة المرجع والمراجعة الداخلية حالات منفصلة، ولا تمنح أي منها اعتمادًا شرعيًا.</p>
+    {% if stored.row %}
+      <a href="{{ stored_return_url }}">العودة إلى القائمة المصفاة</a>
+      <article>
+        <h2>سجل {{ stored.row.external_id|default_if_none:"دون معرّف صالح" }}</h2>
+        <p>جاهزية الاستلام: {{ stored.row.intake_status }}؛ المراجعة الداخلية: {{ stored.row.review_status }}</p>
+        <h3>السؤال الأصلي</h3>
+        <p class="original-text">{{ stored.row.question|default_if_none:"لا يوجد سؤال نصي صالح" }}</p>
+        <h3>النص الأصلي للسجل كما ورد</h3>
+        <pre class="original-text">{{ stored.row.original_row }}</pre>
+        <h3>رابط المقطع الجاهز — نص فقط، دون تحميل</h3>
+        <code dir="ltr">{{ stored.row.prepared_clip_url|default_if_none:"غير مرفق" }}</code>
+        <h3>الإحالات المحفوظة</h3>
+        {% for reference in stored.row.references %}
+          <p>حالة التحقق: {{ reference.reference_status }} — فهرس اصطناعي فقط</p>
+          <pre class="original-text">{{ reference.original_pointer }}</pre>
+          {% if reference.citation_text %}<p>{{ reference.citation_text }}</p>
+          {% else %}<p>إحالة غير محسومة؛ لا يوجد استشهاد موثق.</p>{% endif %}
+        {% empty %}<p>لا توجد إحالات مرفقة.</p>{% endfor %}
+        <h3>سجل المراجعة الداخلية</h3>
+        {% for event in stored.row.events %}
+          <p>{{ event.from_status }} → {{ event.to_status }} — {{ event.created_at }}</p>
+          <p class="original-text">{{ event.reason }}</p>
+        {% empty %}<p>لم تبدأ المراجعة الداخلية.</p>{% endfor %}
+        {% if stored.row.events_truncated %}<p>تُعرض آخر ١٠٠ واقعة فقط؛ الوقائع الأقدم محفوظة.</p>{% endif %}
+      </article>
+    {% else %}
+      <form method="get" action="{{ stored_list_url }}" role="search" aria-label="تصفية السجلات المحفوظة">
+        <div><label for="stored-batch">دفعة اصطناعية محفوظة</label><select id="stored-batch" name="batch">
+          {% for option in stored.batches %}<option value="{{ option.id }}"{% if option.id == stored.batch_id %} selected{% endif %}>دفعة {{ option.created_at }}</option>{% endfor %}
+        </select></div>
+        <div><label for="stored-q">بحث في السؤال أو المعرّف الأصلي</label><input id="stored-q" name="q" maxlength="80" value="{{ stored.q }}"></div>
+        <div><label for="stored-intake">جاهزية الاستلام</label><select id="stored-intake" name="intake_status"><option value="">الجميع</option>
+          {% for key,label in stored_intake_statuses.items %}<option value="{{ key }}"{% if key == stored.intake_status %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></div>
+        <div><label for="stored-review">المراجعة الداخلية</label><select id="stored-review" name="review_status"><option value="">الجميع</option>
+          {% for key,label in stored_review_statuses.items %}<option value="{{ key }}"{% if key == stored.review_status %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></div>
+        <div><label for="stored-page-size">سجلات في الصفحة</label><input id="stored-page-size" name="page_size" type="number" min="1" max="50" value="{{ stored.page_size }}"></div>
+        <button type="submit">عرض النتائج</button>
+      </form>
+      <p role="status">إجمالي الدفعة: {{ stored.total_count }}؛ مطابق للتصفية: {{ stored.matched_count }}.</p>
+      {% for entry in stored_display_rows %}<article>
+        <h2><a href="{{ entry.detail_url }}">{{ entry.item.external_id|default_if_none:"سجل دون معرّف صالح" }}</a></h2>
+        <p class="original-text">{{ entry.item.question|default_if_none:"لا يوجد سؤال نصي صالح" }}</p>
+        <p>جاهزية الاستلام: {{ entry.item.intake_status }}؛ المراجعة الداخلية: {{ entry.item.review_status }}</p>
+      </article>{% empty %}<p>لا توجد سجلات مطابقة</p>{% endfor %}
+      <nav aria-label="صفحات السجلات المحفوظة">
+        {% if stored_previous_url %}<a href="{{ stored_previous_url }}" rel="prev">الصفحة السابقة</a>{% endif %}
+        <span aria-current="page">الصفحة {{ stored.page }} من {{ stored.page_count }}</span>
+        {% if stored_next_url %}<a href="{{ stored_next_url }}" rel="next">الصفحة التالية</a>{% endif %}
+      </nav>
+    {% endif %}
+  </section>
+{% else %}
   <h1>قائمة الاستلام والفحص والمراجعة — بيانات اصطناعية</h1>
   <p>{{ batch_label }}</p>
   <p>الصفحة للقراءة فقط. تُعالج المدخلات الاصطناعية الثابتة في الذاكرة عبر D1،
@@ -132,6 +191,7 @@
       {% if next_url %}<a href="{{ next_url }}" rel="next">الصفحة التالية</a>{% endif %}
     </nav>
   {% endif %}
+{% endif %}
 </main>
 <footer>
   <p>فهرس المصدر التجريبي ليس فتوى منشورة. تبقى بيانات الهوية التقنية والطبعة داخل التحقق فقط.</p>
