@@ -335,3 +335,116 @@ def public_asset(request: HttpRequest, asset: str) -> FileResponse:
         "text/css; charset=utf-8" if asset.endswith(".css") else "text/javascript; charset=utf-8"
     )
     return FileResponse(open(filename, "rb"), content_type=content_type)
+
+
+# Wave7 endpoints are exported for E5's opt-in URLConf only. No legacy route is
+# changed, and E2 owns the single workflow SSR screen consuming this context.
+WORKFLOW_READ_KIND = 'WAVE7_SYNTHETIC_WORKFLOW'
+
+
+def _workflow_json(data: dict, status=200):
+    response = JsonResponse({'kind': WORKFLOW_READ_KIND, **data}, status=status,
+                            json_dumps_params={'ensure_ascii': False})
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+def _workflow_local_request(request):
+    if not services._workflow_reads_enabled():
+        raise services.WorkflowReadsDisabled()
+    # Reuse the established development host+peer gate; no auth/session route.
+    from apps.editorial_demo.views import local_only
+    local_only(request)
+
+
+def workflow_api_guard(view):
+    @wraps(view)
+    def guarded(request, *args, **kwargs):
+        if request.method not in {'GET', 'HEAD'}:
+            response = _workflow_json({'error': 'method_not_allowed'}, 405)
+            response['Allow'] = 'GET, HEAD'
+            return response
+        try:
+            _workflow_local_request(request)
+            return view(request, *args, **kwargs)
+        except services.WorkflowSearchScopeRequired:
+            return _workflow_json({'error': 'search_scope_required'}, 400)
+        except (InvalidQuery, TooManyFieldsSent):
+            return _workflow_json({'error': 'invalid_query'}, 400)
+        except (services.WorkflowReadsDisabled, services.WorkflowItemNotFound, Http404):
+            return _workflow_json({'error': 'not_found'}, 404)
+        except (services.WorkflowReadUnavailable, DatabaseError):
+            return _workflow_json({'error': 'workflow_unavailable'}, 503)
+    return guarded
+
+
+def _workflow_read_query(request, *, batches=False):
+    allowed = {'q', 'mode', 'intake_status', 'review_status', 'limit', 'offset'}
+    if not batches:
+        allowed.add('batch')
+    _parameters(request, allowed)
+    batch = request.GET.get('batch') or None
+    text, mode = request.GET.get('q', ''), request.GET.get('mode', 'normalized')
+    intake_status = request.GET.get('intake_status') or None
+    review_status = request.GET.get('review_status') or None
+    page = Page(bounded_int(request.GET.get('limit', '20'), 1, 100),
+                bounded_int(request.GET.get('offset', '0'), 0, MAX_OFFSET))
+    batch = services._workflow_filters(text, mode, intake_status, review_status, page, batch)
+    return {'batch_id': batch, 'text': text, 'mode': mode,
+            'intake_status': intake_status, 'review_status': review_status, 'page': page}
+
+
+@workflow_api_guard
+def api_workflow_items(request):
+    result = services.workflow_items(**_workflow_read_query(request), synthetic_fixtures_only=True)
+    return _workflow_json(result.as_dict())
+
+
+@workflow_api_guard
+def api_workflow_batches(request):
+    query = _workflow_read_query(request, batches=True)
+    query.pop('batch_id')
+    result = services.workflow_batches(**query, synthetic_fixtures_only=True)
+    return _workflow_json(result.as_dict())
+
+
+@workflow_api_guard
+def api_workflow_item(request, ident):
+    _parameters(request, {'batch'})
+    batch = request.GET.get('batch') or None
+    result = services.workflow_item(ident, batch_id=batch, synthetic_fixtures_only=True)
+    return _workflow_json(result.as_dict())
+
+
+def workflow_read_context(request, *, item_id=None) -> dict:
+    """E2 SSR data/return state using the JSON reader's exact query contract.
+
+    No template, duplicate UI, route or arbitrary return URL here. E2 combines
+    the returned query strings with its own named list/detail routes.
+    """
+    if request.method not in {'GET', 'HEAD'}:
+        raise Http404
+    _workflow_local_request(request)
+    query = _workflow_read_query(request)
+    params = {'q': query['text'], 'mode': query['mode'],
+              'limit': query['page'].limit, 'offset': query['page'].offset}
+    for key, value in (('batch', query['batch_id']), ('intake_status', query['intake_status']),
+                       ('review_status', query['review_status'])):
+        if value is not None:
+            params[key] = str(value)
+    result, detail = None, None
+    if item_id is None:
+        result = services.workflow_items(**query, synthetic_fixtures_only=True)
+    else:
+        detail = services.workflow_item(item_id, batch_id=query['batch_id'], synthetic_fixtures_only=True)
+    previous = (max(0, result.offset-result.limit) if result is not None and result.offset else None)
+    following = result.next_offset if result is not None else None
+    return {'workflow_page': result, 'workflow_item': detail,
+            'workflow_query': query['text'], 'workflow_mode': query['mode'],
+            'workflow_batch': str(query['batch_id']) if query['batch_id'] is not None else '',
+            'workflow_intake_status': query['intake_status'] or '',
+            'workflow_review_status': query['review_status'] or '',
+            'workflow_limit': query['page'].limit, 'workflow_offset': query['page'].offset,
+            'workflow_filter_query': urlencode(params), 'workflow_return_query': urlencode(params),
+            'workflow_previous_query': urlencode({**params, 'offset': previous}) if previous is not None else None,
+            'workflow_next_query': urlencode({**params, 'offset': following}) if following is not None else None}

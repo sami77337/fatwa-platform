@@ -1,4 +1,4 @@
-"""Read-only local development screens. No database, uploads or workflow calls."""
+"""Loopback synthetic previews and an opt-in Wave7 persisted read-only adapter."""
 
 import ipaddress
 import os
@@ -194,4 +194,50 @@ def pipeline_preview(request: HttpRequest, ident: str | None = None) -> HttpResp
         "filter_query": urlencode(params),
     })
     response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_safe
+def persisted_review(request: HttpRequest) -> HttpResponse:
+    """Wave7-only persisted synthetic GET/HEAD adapter; shared routes opt in separately."""
+    local_only(request)
+    from django.apps import apps
+    if (getattr(settings, 'WAVE7_READS_ENABLED', False) is not True
+            or not apps.is_installed('apps.intake_workflow')):
+        return _failure('المعاينة المحفوظة غير متاحة', 404)
+    from apps.reference import services
+    if not services._workflow_reads_enabled():
+        return _failure('المعاينة المحفوظة غير متاحة', 404)
+    from django.db import DatabaseError
+    from django.urls import reverse
+    from apps.intake_workflow import contracts as c, guards, review
+    try:
+        query = request.GET
+        if set(query) - {'batch','row','q','mode','intake_status','review_status','page','page_size'} or any(
+                len(query.getlist(key)) != 1 for key in query):
+            raise c.ContractError('review: invalid_query')
+        stored = review.load_review_worklist(batch_id=query.get('batch'),row_id=query.get('row'),
+            q=query.get('q',''),mode=query.get('mode','normalized'),intake_status=query.get('intake_status',''),review_status=query.get('review_status',''),
+            page=_positive_query(query.get('page','1'),10000),
+            page_size=_positive_query(query.get('page_size','20'),50),synthetic_fixtures_only=True)
+    except (ValueError, TooManyFieldsSent) as exc:
+        return _failure('معايير أو سجل غير صالح', getattr(exc,'status_code',400))
+    except (guards.SyntheticWriteDenied, DatabaseError):
+        return _failure('المعاينة المحفوظة غير متاحة',503)
+    base = reverse('wave7_editorial_review')
+    params = {'q':stored.q,'mode':stored.mode,'intake_status':stored.intake_status,'review_status':stored.review_status,
+              'page':stored.page,'page_size':stored.page_size}
+    if stored.batch_id:
+        params['batch'] = str(stored.batch_id)
+    response = render(request,'editorial_demo/pipeline.html',{
+        'stored':stored,'stored_return_url':base+'?'+urlencode(params),
+        'stored_list_url':base,
+        'stored_display_rows':tuple({'item':row,'detail_url':base+'?'+urlencode({**params,'row':str(row.id)})}
+                                   for row in stored.rows),
+        'stored_previous_url':base+'?'+urlencode({**params,'page':stored.page-1}) if stored.page>1 else None,
+        'stored_next_url':base+'?'+urlencode({**params,'page':stored.page+1}) if stored.page<stored.page_count else None,
+        'stored_intake_statuses':{'RECEIVED':'مستلم','READY_FOR_EDITOR':'جاهز للمحرر','NEEDS_REVIEW':'يحتاج مراجعة','BLOCKED_INVALID':'مدخل محجوب'},
+        'stored_review_statuses':{'UNREVIEWED':'لم تبدأ المراجعة','IN_REVIEW':'قيد المراجعة','NEEDS_CHANGES':'يحتاج تعديلًا','REVIEWED_INTERNAL':'مراجعة داخلية فقط'},
+    })
+    response['Cache-Control']='no-store'
     return response
