@@ -25,10 +25,15 @@ in order, after all actual lane files existed. The corrected E4 head retains
 its no-DB `test_e4_catalog` label. Corrected E6 requires service, assets,
 review-batches, regressions, and real browser with the tenth review-batches
 journey. Missing/zero suites remain failures. E3 DB tests are only in B6 and
-qa_worker, outside port-1 C6/D6. Added explicit Node24 setup to B6 PostgreSQL
-jobs; the handoff patch otherwise relied on the runner's default Node.
+qa_worker, outside port-1 C6/D6. The E5 patch includes explicit Node24 setup for B6 PostgreSQL jobs.
+All three workflows now check out the exact PR head (or push SHA), rather than
+the temporary PR merge commit, so reported test SHAs identify the candidate.
+The initial run checked merge5c82fe5b1252fd71a687fa1ad6d8309d57e097a0,
+whose tree exactly equals head6424e52e6e0e80781e84392b1545d38e7f1729fd.
+Removed a redundant second Node setup added during initial integration.
 
 Integration changes: `.github/workflows/b6-integration.yml`,
+`.github/workflows/c6-wave3.yml`, `.github/workflows/d6-wave4.yml`,
 `tools/dev/qa.py`, `tools/dev/qa_worker.py`, `tools/dev/wave4_suites.json`,
 and this record. No producer implementation or contracts changed.
 
@@ -39,7 +44,7 @@ requirements pins installed. Node24.19.0. Git remote verified.
 Initial combined D6 `python tools/dev/wave4_qa.py --wave3 --reports
 .local/qa/integration/d6 --json .local/qa/integration/wave4-summary.json`
 passed with the integration wiring uncommitted: D1 37; D2 16+9+19+11+6;
-D3 50; D4 Django4+8 and Node38; D5 18. Nested C6 intake30,drafts17,links50,
+D3 50; D4 Django4+8 and Node49; D5 18. Nested C6 intake30,drafts17,links50,
 importer84 (80 pass,4 source skips,7 modules,zero uncollected). These
 prepublication results are not exact final-head CI evidence. Final evidence
 will be attached to the same Draft PR after committed-head CI completes.
