@@ -23,6 +23,12 @@ def main():
             cursor.execute("SELECT datname FROM pg_database WHERE NOT datistemplate")
             if {row[0] for row in cursor.fetchall()} != {"postgres", "b6_ephemeral"}:
                 raise RuntimeError("Cluster is not empty and disposable")
+    import django
+    django.setup()
+    from django.test.runner import DiscoverRunner
+    suite = DiscoverRunner().build_suite(["tests.reference_links_db.test_catalog_adapter"])
+    if suite.countTestCases() == 0:
+        raise RuntimeError("E3 missing/zero adapter cases fail")
     for command in [["check", "--database", "default"], ["makemigrations", "--check", "--dry-run"],
                     ["migrate", "--noinput"], ["migrate", "--check"],
                     ["test", *APP_TESTS, "--noinput", "--verbosity=2"]]:

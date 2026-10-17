@@ -221,7 +221,13 @@ def search(
         root = node(edition, root_id)
         if root.parent_id is not None or root.depth != 1:
             raise InvalidQuery("Search scope must be a root")
-    if edition is None or not value.strip():
+    # An explicitly selected filter is useful without search text. A nonblank
+    # query reduced to nothing by normalization (marks/tatweel) still matches
+    # nothing, and an unfiltered blank search keeps its existing empty contract.
+    filter_only = not text.strip() and (
+        root_id is not None or depth is not None or has_children is not None
+    )
+    if edition is None or (not value.strip() and not filter_only):
         return CatalogPage([], 0, page.limit, page.offset, None)
     queryset = _headings(edition)
     if depth is not None:
@@ -242,9 +248,9 @@ def search(
             )
             scope |= Q(**{"depth": depth + 1, "parent__" * depth + "pk": root.pk, **ancestors})
         queryset = queryset.filter(scope)
-    if mode == "exact":
+    if mode == "exact" and not filter_only:
         queryset = queryset.filter(title_original=value)
-    else:
+    elif not filter_only:
         field = "title_normalized" if mode == "normalized" else "title_original"
         for token in dict.fromkeys(value.split()):
             # Django escapes LIKE wildcards and binds all values, including % and _.

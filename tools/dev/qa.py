@@ -18,6 +18,7 @@ APP_TESTS = [
     "tests/reference", "tests/public_site", "tests/security",
     "tests/integration/api", "tests/integration/ui",
     "tests.integration.source.test_read_only_commands", "tests.integration.test_site",
+    "tests.reference_links_db.test_catalog_adapter",
 ]
 
 

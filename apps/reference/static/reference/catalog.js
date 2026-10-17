@@ -7,7 +7,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   const view = doc.defaultView;
   const state = { catalog: null, root: null, selected: null, focusId: null, expanded: [],
     groups: new Map(), searchPage: null, searchOptions: null, initialized: false,
-    treeRequest: null, searchRequest: null, catalogRequest: null, disposed: false };
+    treeRequest: null, searchRequest: null, catalogRequest: null, navigationVersion: 0, disposed: false };
   const element = (tag, text, attributes = {}) => {
     const node = doc.createElement(tag);
     if (text !== null) node.textContent = text;
@@ -23,8 +23,16 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
   const clearError = () => get("error").replaceChildren();
   const busy = (id, value) => get(id).setAttribute("aria-busy", String(value));
   const current = (lane, request) => state[lane] === request && !state.disposed;
-  const cancel = lane => { state[lane]?.abort(); state[lane] = null; };
+  const cancel = lane => {
+    // Also invalidate outer await continuations and synchronous navigation.
+    if (lane === "treeRequest") state.navigationVersion++;
+    state[lane]?.abort(); state[lane] = null;
+  };
   const begin = lane => {
+    // Search and tree operations share one navigation target. The latest
+    // interaction invalidates the other lane, even if transport ignores abort.
+    if (lane === "treeRequest") stopSearch();
+    if (lane === "searchRequest") stopTree();
     cancel(lane);
     const request = new AbortController();
     state[lane] = request;
@@ -166,8 +174,8 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     if (focus) items.find(item => item.dataset.id === id)?.focus();
   }
   function collapse(node, { activate = false } = {}) {
-    cancel("treeRequest");
-    busy("tree-region", false);
+    stopSearch();
+    stopTree();
     const index = state.expanded.indexOf(node.id);
     if (index >= 0) {
       state.expanded.splice(index);
@@ -201,7 +209,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       item.addEventListener("focus", () => setFocus(node.id, false));
       const activate = () => {
         if (node.has_children) void (expanded ? collapse(node, { activate: true }) : expand(node));
-        else { showSelection(node); remember("push", node.id); announce("تم اختيار العنوان المرجعي."); }
+        else { stopSearch(); stopTree(); showSelection(node); remember("push", node.id); announce("تم اختيار العنوان المرجعي."); }
       };
       item.addEventListener("click", event => {
         if (event.target.closest('[role="treeitem"]') !== item) return;
@@ -256,7 +264,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       get("tree-pagination").append(wrapper);
     }
   }
-  async function expand(node, { cursor = null, focus = true, navigate = true } = {}) {
+  async function expand(node, { cursor = null, focus = true, navigate = true, retry = null } = {}) {
     const request = begin("treeRequest"), trail = lineage(node);
     busy("tree-region", true); announce("جارٍ تحميل العناوين الفرعية…");
     try {
@@ -272,7 +280,7 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       announce(group.items.length ? "تم تحميل " + number.format(group.items.length) + " عنوانًا فرعيًا." : "لا توجد عناوين فرعية.");
       return true;
     } catch (error) {
-      if (current("treeRequest", request) && error.name !== "AbortError") failure(() => void expand(node, { cursor, focus, navigate }));
+      if (current("treeRequest", request) && error.name !== "AbortError") failure(retry ?? (() => void expand(node, { cursor, focus, navigate })));
       return false;
     } finally { if (current("treeRequest", request)) busy("tree-region", false); }
   }
@@ -282,16 +290,18 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       else control.removeAttribute("aria-current");
     }
   }
-  async function chooseRoot(root, { focus = true, navigate = true } = {}) {
-    cancel("treeRequest");
+  async function chooseRoot(root, { focus = true, navigate = true, retry = null } = {}) {
+    if (navigate) stopSearch();
+    stopTree();
     state.root = root; state.focusId = root.id; state.expanded = []; state.groups.clear();
     markRoot(); showSelection(root, [root]); renderTree(focus);
     if (navigate) remember("push", root.id);
-    if (root.has_children) return expand(root, { focus, navigate: false });
+    if (root.has_children) return expand(root, { focus, navigate: false, retry });
     busy("tree-region", false); announce("هذا العنوان بلا عناوين فرعية.");
     return true;
   }
   async function openResult(id, { focus = true, navigate = true } = {}) {
+    if (navigate) stopSearch();
     const request = begin("treeRequest");
     busy("tree-region", true); announce("جارٍ فتح مسار العنوان…");
     try {
@@ -315,6 +325,13 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       return false;
     } finally { if (current("treeRequest", request)) busy("tree-region", false); }
   }
+  function stopTree() {
+    cancel("treeRequest"); busy("tree-region", false);
+  }
+  function stopSearch() {
+    if (!state.searchRequest) return;
+    cancel("searchRequest"); busy("search-results", false); renderSearch();
+  }
   function renderSearch(focus = false) {
     const result = state.searchPage, options = state.searchOptions;
     if (!result) { get("search-results").replaceChildren(); return; }
@@ -333,21 +350,30 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
     get("search-results").replaceChildren(heading, result.items.length ? list : element("p", "لم نعثر على عناوين تطابق البحث."), pager);
     if (focus) heading.focus();
   }
-  async function search(options, focus = true) {
+  function searchControls(options = null) {
+    get("search-query").value = options?.query ?? "";
+    get("search-mode").value = options?.mode ?? "normalized";
+    get("search-scope").value = options?.rootId ?? "";
+    get("search-depth").value = options?.depth == null ? "" : String(options.depth);
+    get("search-has_children").value = options?.hasChildren == null ? "" : String(options.hasChildren);
+  }
+  async function search(options, focus = true, historyMode = "push") {
+    // A pager/retry belongs to its submitted query, even after unsent edits.
+    searchControls(options);
     const request = begin("searchRequest");
     busy("search-results", true); get("search-query").removeAttribute("aria-invalid");
     get("search-results").replaceChildren(element("p", "جارٍ البحث في العناوين…")); announce("جارٍ البحث…");
     try {
       const result = await adapter.search(options.query, { rootId: options.rootId, cursor: options.cursor, mode: options.mode, depth: options.depth ?? null, hasChildren: options.hasChildren ?? null, signal: request.signal });
       if (!current("searchRequest", request)) return;
-      state.searchPage = result; state.searchOptions = options; renderSearch(focus); remember("push", undefined, true);
+      state.searchPage = result; state.searchOptions = options; renderSearch(focus); remember(historyMode, undefined, true);
       announce("اكتمل البحث. عدد النتائج: " + number.format(result.total));
     } catch (error) {
       if (current("searchRequest", request) && error.name !== "AbortError") {
-        state.searchPage = null; state.searchOptions = null; get("search-results").replaceChildren();
+        state.searchPage = null; state.searchOptions = options; get("search-results").replaceChildren();
         if (error.code === "INVALID_QUERY") get("search-query").setAttribute("aria-invalid", "true");
         failure(() => void search(options, focus), error.code === "INVALID_QUERY" ? "أدخل حتى ١٦٠ حرفًا وعشر كلمات، دون محارف تحكم." : "تعذّر البحث في العناوين. حاول مرة أخرى.");
-        remember();
+        remember(historyMode, undefined, true);
       }
     } finally { if (current("searchRequest", request)) busy("search-results", false); }
   }
@@ -358,18 +384,25 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       hasChildren: get("search-has_children").value === "" ? null : get("search-has_children").value === "true" });
   };
   const clearSearch = () => {
+    stopTree();
     cancel("searchRequest"); state.searchPage = null; state.searchOptions = null;
-    get("search-query").value = ""; get("search-query").removeAttribute("aria-invalid");
+    searchControls(); get("search-query").removeAttribute("aria-invalid");
     get("search-results").replaceChildren(); busy("search-results", false); clearError(); remember("push", undefined, true);
     announce("تم مسح البحث."); get("search-query").focus();
   };
   async function homeCatalog({ navigate = true, focus = true } = {}) {
+    if (navigate) stopSearch();
     const first = state.catalog.books[0] ?? state.catalog.introductions[0];
     if (!first) return;
-    await chooseRoot(first, { focus: false, navigate: false });
+    const selection = chooseRoot(first, { focus: false, navigate: false,
+      retry: () => void homeCatalog({ navigate, focus }) });
+    const version = state.navigationVersion;
+    const success = await selection;
+    if (!success || state.disposed || version !== state.navigationVersion) return false;
     if (navigate) remember("push", null);
     get("basic-link")?.setAttribute("href", href(null, true));
     if (focus) get("books").querySelector("a")?.focus();
+    return true;
   }
   const homeClick = event => {
     if (event.button > 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -388,7 +421,11 @@ export function mount(adapter, doc = document, { initialNode = null, onCatalog =
       get("search-query").value = data.query; get("search-scope").value = data.scope; get("search-mode").value = data.mode;
       get("search-query").removeAttribute("aria-invalid");
       markRoot(); showSelection(state.selected); renderTree(event.restore !== true); renderSearch();
-      announce("تمت استعادة موضعك في الفهرس.");
+      const basicTarget = new URL(view.location.href);
+      basicTarget.searchParams.set("basic", "1");
+      get("basic-link")?.setAttribute("href", basicTarget.pathname + basicTarget.search);
+      if (!state.searchPage && state.searchOptions) await search(state.searchOptions, false, "replace");
+      else announce("تمت استعادة موضعك في الفهرس.");
     } else {
       const match = view.location.pathname.match(new RegExp("^/fiqh/nodes/([1-9][0-9]*)$"));
       if (match) await openResult(match[1], { navigate: false });

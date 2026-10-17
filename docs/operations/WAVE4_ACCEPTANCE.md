@@ -29,3 +29,14 @@ Child results retain actual exit codes, including 124 timeout and 127 unavailabl
 Django `check` runs using test settings. All children receive sanitized environment, project-root PYTHONPATH and UTF-8 mode, and PostgreSQL port 1 with no inherited connection credentials. No Docker, migrations, database suites, source import, media processing or publication is dispatched. PostgreSQL acceptance remains NOT_RUN here. Existing B6 PostgreSQL 17/18 ephemeral GitHub service workflow is unchanged. D6 CI runs the dispatcher regressions plus required combined Wave4 and optional legacy suites on both Ubuntu and Windows, installs requirements and Node, and uploads JSON even after a failure. Missing lanes intentionally fail CI until integration; failures are never disabled.
 
 NOT_DEPLOYED / GATES_HOLD.
+
+## Wave6 E5 increment
+
+`--wave3` also requires the complete importer suite. Add `--reports .local/qa/d6`
+to save C6/importer collection artifacts alongside the existing D6 JSON summary.
+The summary now includes the actual checkout SHA/working-tree state and Django
+case totals. Exit-zero Django test commands with zero/unreported cases fail.
+CI uploads these reports on both platforms and treats absent artifacts as an
+error. Real E3 database labels remain in B6 only, pending their actual files;
+E2/E6 final wiring awaits actual producer modules. See
+[the integration handoff](../dev/e5/INTEGRATION_HANDOFF.md).

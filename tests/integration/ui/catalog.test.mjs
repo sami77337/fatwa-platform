@@ -230,6 +230,8 @@ test("D4 native filters retain submitted values across paging, history and retry
   get(doc, "search-results").querySelector("button").click(); await settle();
   let call = calls.filter(call => call.query).at(-1);
   assert.equal(call.depth, 2); assert.equal(call.hasChildren, false); assert.equal(call.cursor, "20");
+  assert.equal(get(doc, "search-depth").value, "2");
+  get(doc, "search-depth").value = "5"; get(doc, "search-has_children").value = "true";
   get(doc, "search-form").dispatch("submit"); await settle();
   call = calls.filter(call => call.query).at(-1);
   assert.equal(call.depth, 5); assert.equal(call.hasChildren, true); assert.equal(call.cursor, null);
@@ -267,4 +269,254 @@ test("D4 clear search keeps the SSR basic link valid with and without existing q
     assert.equal(basic.searchParams.has("q"), false);
     app.destroy();
   }
+});
+
+test("E4 clear resets every visible search control, and history restores submitted filters", async () => {
+  const { doc, app } = await setup();
+  get(doc, "search-query").value = ""; get(doc, "search-mode").value = "exact";
+  get(doc, "search-depth").value = "2"; get(doc, "search-has_children").value = "false"; get(doc, "search-scope").value = "1";
+  get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "clear-search").click();
+  for (const id of ["search-query", "search-depth", "search-has_children", "search-scope"]) assert.equal(get(doc, id).value, "", id);
+  assert.equal(get(doc, "search-mode").value, "normalized");
+  for (const key of ["q", "mode", "depth", "has_children", "root", "offset"]) assert.equal(doc.defaultView.location.searchParams.has(key), false);
+  await doc.defaultView.history.back();
+  assert.equal(get(doc, "search-depth").value, "2"); assert.equal(get(doc, "search-has_children").value, "false");
+  await doc.defaultView.history.forward(); assert.equal(get(doc, "search-depth").value, ""); app.destroy();
+});
+
+test("E4 paging aligns controls and history with the query actually used", async () => {
+  const { doc, app } = await setup();
+  get(doc, "search-query").value = "  عنوان  "; get(doc, "search-mode").value = "exact";
+  get(doc, "search-depth").value = "2"; get(doc, "search-has_children").value = "false"; get(doc, "search-scope").value = "1";
+  get(doc, "search-form").dispatch("submit"); await settle();
+  get(doc, "search-query").value = "تعديل لم يرسل"; get(doc, "search-mode").value = "literal";
+  get(doc, "search-depth").value = "5"; get(doc, "search-has_children").value = "true";
+  get(doc, "search-results").querySelector("button").click(); await settle();
+  assert.equal(get(doc, "search-query").value, "  عنوان  "); assert.equal(get(doc, "search-mode").value, "exact");
+  assert.equal(get(doc, "search-depth").value, "2"); assert.equal(get(doc, "search-has_children").value, "false");
+  assert.equal(doc.defaultView.history.state.fatwaCatalog.snapshot.depth, "2"); app.destroy();
+});
+
+test("E4 failed search has a bookmark and restores a retryable state after navigation", async () => {
+  const { doc, adapter, app } = await setup();
+  const original = adapter.search;
+  adapter.search = async () => { throw Error("offline"); };
+  get(doc, "search-query").value = "فارغ"; get(doc, "search-depth").value = "3";
+  get(doc, "search-form").dispatch("submit"); await settle();
+  assert.equal(doc.defaultView.location.searchParams.get("q"), "فارغ");
+  assert.equal(doc.defaultView.location.searchParams.get("depth"), "3");
+  get(doc, "introductions").querySelector("a").click(); await settle();
+  await doc.defaultView.history.back();
+  assert.match(get(doc, "error").textContent, /تعذّر البحث/);
+  adapter.search = original; get(doc, "error").querySelector("button").click(); await settle();
+  assert.match(get(doc, "search-results").textContent, /لم نعثر/);
+  assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false"); app.destroy();
+});
+
+test("E4 a late search cannot replace a newer root URL or leave busy results", async () => {
+  const { doc, adapter, app } = await setup(), pending = deferred();
+  let signal;
+  adapter.search = (_query, options) => { signal = options.signal; return pending.promise; };
+  get(doc, "search-query").value = "عنوان"; get(doc, "search-form").dispatch("submit");
+  get(doc, "introductions").querySelector("a").click(); await settle();
+  assert.equal(signal.aborted, true);
+  pending.resolve({ items: [], total: 0, offset: 0, next_cursor: null, previous_cursor: null }); await settle();
+  assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/90");
+  assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false"); app.destroy();
+});
+
+test("E4 review R1 branch Enter supersedes pending search success and failure", async () => {
+  for (const action of ["collapse", "expand"]) for (const outcome of ["resolve", "reject"]) {
+    const { doc, adapter, app } = await setup(), pending = deferred();
+    try {
+      if (action === "expand") item(doc, "1").key("ArrowRight");
+      const original = adapter.search;
+      let signal;
+      adapter.search = (_query, options) => { signal = options.signal; return pending.promise; };
+      get(doc, "search-query").value = "عنوان متأخر";
+      get(doc, "search-form").dispatch("submit");
+      item(doc, "1").focus(); item(doc, "1").key("Enter"); await settle();
+      const selectedURL = doc.defaultView.location.href;
+      assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/1");
+      const selectedHistory = structuredClone(doc.defaultView.history.state);
+      const selectedFocus = doc.activeElement;
+      if (outcome === "resolve") pending.resolve(await original("عنوان", {}));
+      else pending.reject(Error("stale search unavailable"));
+      await settle();
+      assert.equal(doc.defaultView.location.href, selectedURL, action + "/" + outcome);
+      assert.deepEqual(doc.defaultView.history.state, selectedHistory);
+      assert.equal(doc.activeElement, selectedFocus);
+      assert.equal(item(doc, "1").getAttribute("aria-selected"), "true");
+      assert.equal(item(doc, "1").getAttribute("aria-expanded"), String(action === "expand"));
+      assert.equal(get(doc, "search-results").getAttribute("aria-busy"), "false");
+      assert.equal(get(doc, "error").textContent, "");
+      assert.equal(signal.aborted, true);
+    } finally { app.destroy(); }
+  }
+});
+
+test("E4 review R2 new search supersedes pending detail success and failure", async () => {
+  for (const outcome of ["resolve", "reject"]) {
+    const { doc, adapter, app } = await setup(), pending = deferred();
+    try {
+      get(doc, "search-query").value = "عميق";
+      get(doc, "search-form").dispatch("submit"); await settle();
+      const original = adapter.node;
+      let signal;
+      adapter.node = (_id, options) => { signal = options.signal; return pending.promise; };
+      get(doc, "search-results").querySelector("a").click();
+      get(doc, "search-query").value = "فارغ";
+      get(doc, "search-form").dispatch("submit"); await settle();
+      const searchURL = doc.defaultView.location.href;
+      const searchHistory = structuredClone(doc.defaultView.history.state);
+      const searchFocus = doc.activeElement;
+      assert.equal(doc.defaultView.location.searchParams.get("q"), "فارغ");
+      if (outcome === "resolve") pending.resolve(await original("29"));
+      else pending.reject(Error("stale detail unavailable"));
+      await settle();
+      assert.equal(doc.defaultView.location.href, searchURL, outcome);
+      assert.deepEqual(doc.defaultView.history.state, searchHistory);
+      assert.equal(doc.activeElement, searchFocus);
+      assert.equal(item(doc, "1").getAttribute("aria-selected"), "true");
+      assert.equal(item(doc, "29"), undefined);
+      assert.match(get(doc, "search-results").textContent, /لم نعثر/);
+      assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false");
+      assert.equal(get(doc, "error").textContent, "");
+      assert.equal(signal.aborted, true);
+    } finally { app.destroy(); }
+  }
+});
+
+test("E4 review synchronous leaf selection and clear supersede a pending detail", async () => {
+  for (const action of ["leaf", "clear"]) {
+    const { doc, adapter, app } = await setup(), pending = deferred();
+    try {
+      get(doc, "search-query").value = "عميق";
+      get(doc, "search-form").dispatch("submit"); await settle();
+      const original = adapter.node;
+      adapter.node = () => pending.promise;
+      get(doc, "search-results").querySelector("a").click();
+      if (action === "leaf") { item(doc, "2").focus(); item(doc, "2").key("Enter"); }
+      else get(doc, "clear-search").click();
+      const wantedURL = doc.defaultView.location.href;
+      const wantedHistory = structuredClone(doc.defaultView.history.state);
+      const wantedFocus = doc.activeElement;
+      pending.resolve(await original("29")); await settle();
+      assert.equal(doc.defaultView.location.href, wantedURL, action);
+      assert.deepEqual(doc.defaultView.history.state, wantedHistory);
+      assert.equal(doc.activeElement, wantedFocus);
+      assert.equal(item(doc, "29"), undefined);
+      assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false");
+      if (action === "leaf") assert.equal(item(doc, "2").getAttribute("aria-selected"), "true");
+      else assert.equal(get(doc, "search-results").textContent, "");
+    } finally { app.destroy(); }
+  }
+});
+
+for (const action of ["search", "root", "clear", "Back"]) {
+  for (const outcome of ["resolve", "reject", "abort-aware"]) {
+    test(`E4 Home continuation yields to ${action} with ${outcome}`, async () => {
+      const { doc, adapter, app } = await setup(), pending = deferred();
+      try {
+        get(doc, "introductions").querySelector("a").click(); await settle();
+        const original = adapter.children;
+        const group = await original("1");
+        let signal;
+        adapter.children = (_id, options) => {
+          signal = options.signal;
+          if (outcome === "abort-aware") signal.addEventListener("abort", () =>
+            pending.reject(Object.assign(Error("cancelled immediately"), { name: "AbortError" })), { once: true });
+          return pending.promise;
+        };
+        get(doc, "catalog-home").click();
+        assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "true");
+        if (action === "search") {
+          get(doc, "search-query").value = "فارغ"; get(doc, "search-form").dispatch("submit");
+        } else if (action === "root") get(doc, "introductions").querySelector("a").click();
+        else if (action === "clear") get(doc, "clear-search").click();
+        else await doc.defaultView.history.back();
+        await settle();
+        const assertLatest = () => {
+          assert.equal(doc.defaultView.location.pathname, action === "root" ? "/fiqh/nodes/90" : "/fiqh");
+          assert.equal(doc.defaultView.location.searchParams.get("q"), action === "search" ? "فارغ" : null);
+          if (action === "Back") assert.equal(doc.defaultView.location.search, "");
+          assert.equal(item(doc, action === "root" ? "90" : "1").getAttribute("aria-selected"), "true");
+          const focus = action === "search" ? get(doc, "search-results").querySelector("h3") :
+            action === "clear" ? get(doc, "search-query") : item(doc, action === "root" ? "90" : "1");
+          assert.equal(doc.activeElement, focus);
+          assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false");
+          assert.equal(get(doc, "error").textContent, "");
+          assert.equal(signal.aborted, true);
+        };
+        assertLatest();
+        const url = doc.defaultView.location.href, basic = get(doc, "basic-link").getAttribute("href");
+        const history = structuredClone(doc.defaultView.history.state), length = doc.defaultView.history.length;
+        const status = get(doc, "status").textContent;
+        if (outcome === "resolve") pending.resolve(group);
+        else if (outcome === "reject") pending.reject(Error("stale Home failure"));
+        await settle();
+        assertLatest();
+        assert.equal(doc.defaultView.location.href, url);
+        assert.equal(get(doc, "basic-link").getAttribute("href"), basic);
+        assert.deepEqual(doc.defaultView.history.state, history);
+        assert.equal(doc.defaultView.history.length, length);
+        assert.equal(get(doc, "status").textContent, status);
+      } finally { app.destroy(); }
+    });
+  }
+}
+
+test("E4 Home checks freshness even after its child operation succeeds", async () => {
+  const { doc, adapter, app } = await setup(), pending = deferred();
+  try {
+    get(doc, "introductions").querySelector("a").click(); await settle();
+    const group = await adapter.children("1");
+    adapter.children = () => pending.promise;
+    get(doc, "catalog-home").click();
+    let completedBeforeNewAction = false;
+    pending.resolve(group);
+    queueMicrotask(() => {
+      completedBeforeNewAction = item(doc, "1").getAttribute("aria-expanded") === "true" && !!item(doc, "2");
+      get(doc, "introductions").querySelector("a").click();
+    });
+    await settle();
+    assert.equal(completedBeforeNewAction, true);
+    assert.equal(doc.defaultView.location.pathname, "/fiqh/nodes/90");
+    assert.equal(doc.activeElement, item(doc, "90"));
+    assert.equal(get(doc, "basic-link").getAttribute("href"), "/fiqh/nodes/90?edition=7&basic=1");
+  } finally { app.destroy(); }
+});
+
+test("E4 current Home succeeds and retains keyboard focus and native fallback", async () => {
+  const { doc, app } = await setup();
+  try {
+    get(doc, "introductions").querySelector("a").click(); await settle();
+    get(doc, "catalog-home").click(); await settle();
+    assert.equal(doc.defaultView.location.pathname, "/fiqh");
+    assert.equal(item(doc, "1").getAttribute("aria-expanded"), "true");
+    assert.equal(doc.activeElement, get(doc, "books").querySelector("a"));
+    assert.equal(get(doc, "basic-link").getAttribute("href"), "/fiqh?edition=7&basic=1");
+    assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false");
+    assert.equal(get(doc, "error").textContent, "");
+  } finally { app.destroy(); }
+});
+
+test("E4 current Home failure remains retryable without claiming successful navigation", async () => {
+  const { doc, adapter, app } = await setup();
+  try {
+    get(doc, "introductions").querySelector("a").click(); await settle();
+    const previousURL = doc.defaultView.location.href, original = adapter.children;
+    adapter.children = async () => { throw Error("current Home unavailable"); };
+    get(doc, "catalog-home").click(); await settle();
+    assert.equal(doc.defaultView.location.href, previousURL);
+    assert.match(get(doc, "error").textContent, /إعادة المحاولة/);
+    assert.equal(get(doc, "tree-region").getAttribute("aria-busy"), "false");
+    adapter.children = original;
+    get(doc, "error").querySelector("button").click(); await settle();
+    assert.equal(doc.defaultView.location.pathname, "/fiqh");
+    assert.equal(doc.activeElement, get(doc, "books").querySelector("a"));
+    assert.equal(get(doc, "basic-link").getAttribute("href"), "/fiqh?edition=7&basic=1");
+    assert.equal(get(doc, "error").textContent, "");
+  } finally { app.destroy(); }
 });

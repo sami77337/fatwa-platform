@@ -8,6 +8,7 @@ from typing import Mapping, Protocol, Sequence, TypeGuard
 
 MAX_ID = 2**63 - 1
 MAX_SNAPSHOT = 20_000
+MAX_INPUT_BYTES = 1_000_000
 KIND = "SOURCE_BOOK_TOC_NOT_FATWAS"
 
 
@@ -37,6 +38,11 @@ def _text(value: object) -> bool:
     return not any(ord(c) < 32 or ord(c) == 127 for c in value)
 
 
+def _sha256(value: object) -> bool:
+    return (isinstance(value, str) and len(value) == 64
+            and all(c in "0123456789abcdef" for c in value))
+
+
 @dataclass(frozen=True, slots=True)
 class Heading:
     edition_id: int
@@ -50,6 +56,10 @@ class Heading:
     source_namespace: str
     source_book_id: str
     source_input_sha256: str
+    # Older snapshots assert these via trusted caller configuration. Adapters
+    # that read edition metadata supply it so the bridge can compare every pin.
+    edition_key: str | None = None
+    source_archive_sha256: str | None = None
 
 
 class ReadOnlyCatalog(Protocol):
@@ -130,18 +140,23 @@ def resolve(link: Mapping[str, object], catalog: ReadOnlyCatalog) -> Resolution:
     if len(candidates) != 1:
         return Resolution(Outcome.AMBIGUOUS, ("multiple_exact_candidates",))
     evidence = candidates[0]
+    if type(evidence) is not Heading:
+        return Resolution(Outcome.UNVERIFIED, ("incomplete_source_evidence",))
     if evidence.edition_id != edition or evidence.source_row_id != row:
         return Resolution(Outcome.UNVERIFIED, ("adapter_identity_violation",))
     if (
         not _text(evidence.work_title)
         or not _text(evidence.heading_title)
+        or type(evidence.path) is not tuple
         or not 1 <= len(evidence.path) <= 5
         or not all(_text(title) for title in evidence.path)
         or evidence.path[-1] != evidence.heading_title
         or not _text(evidence.source_namespace)
         or not _text(evidence.source_book_id)
-        or len(evidence.source_input_sha256) != 64
-        or any(c not in "0123456789abcdef" for c in evidence.source_input_sha256)
+        or not _sha256(evidence.source_input_sha256)
+        or (evidence.edition_key is not None and not _text(evidence.edition_key))
+        or (evidence.source_archive_sha256 is not None
+            and not _sha256(evidence.source_archive_sha256))
     ):
         return Resolution(Outcome.UNVERIFIED, ("incomplete_source_evidence",))
     mismatches = tuple(
@@ -182,7 +197,7 @@ def resolve_intake(raw: bytes, catalog: ReadOnlyCatalog) -> list[dict[str, objec
 
     Raises ValueError for malformed envelopes. No URL fetching or media operations.
     """
-    if not isinstance(raw, bytes) or len(raw) > 2_000_000:
+    if not isinstance(raw, bytes) or len(raw) > MAX_INPUT_BYTES:
         raise ValueError("Expected bounded UTF-8 JSON bytes")
     envelope = json.loads(raw.decode("utf-8", errors="strict"), object_pairs_hook=_unique_object)
     if not isinstance(envelope, dict) or envelope.get("schema") != "fatwa.prepared-intake.v1":

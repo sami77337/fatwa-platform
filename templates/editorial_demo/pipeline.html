@@ -20,6 +20,7 @@
 </header>
 <main id="main-content" tabindex="-1">
   <h1>قائمة الاستلام والفحص والمراجعة — بيانات اصطناعية</h1>
+  <p>{{ batch_label }}</p>
   <p>الصفحة للقراءة فقط. تُعالج المدخلات الاصطناعية الثابتة في الذاكرة عبر D1،
   وتطابق إحالاتها عبر D3. لا توجد إجابة شرعية ولا إقرار أو إرسال أو حفظ أو رفع أو قص مقاطع.</p>
   <section aria-label="ملخص الدفعة">
@@ -48,7 +49,7 @@
         <p>لا نواقص آلية ظاهرة في هذا المثال؛ لا يعني ذلك حصوله على مراجعة أو اعتماد بشري.</p>
       {% endif %}
       <h3>السؤال الاصطناعي الأصلي كما ورد</h3>
-      <p>{{ row.question }}</p>
+      <p class="original-text">{{ row.question }}</p>
       <h3>رابط المقطع الجاهز</h3>
       <p>{{ row.media_status }}</p>
       {% if row.prepared_clip_url %}<p><code dir="ltr">{{ row.prepared_clip_url }}</code></p>{% endif %}
@@ -77,6 +78,14 @@
   {% else %}
     <form method="get" action="{% url 'editorial_pipeline' %}" role="search" aria-label="البحث في سجلات الاختبار">
       <div>
+        <label for="batch">دفعة الاختبار</label>
+        <select id="batch" name="batch">
+          {% for key,label in batches.items %}
+            <option value="{{ key }}"{% if batch == key %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
         <label for="q">بحث في السجلات الاصطناعية</label>
         <input id="q" name="q" type="search" maxlength="80" autocomplete="off" value="{{ q }}">
       </div>
@@ -101,14 +110,14 @@
         <input id="page-size" name="page_size" type="number" min="1" max="50" step="1" value="{{ page_size }}">
       </div>
       <button type="submit">عرض النتائج</button>
-      <a href="{% url 'editorial_pipeline' %}">مسح التصفية</a>
+      <a href="{% url 'editorial_pipeline' %}?batch={{ batch|urlencode }}">مسح التصفية</a>
     </form>
     <p role="status">مطابق للتصفية: {{ matched_count }}؛ معروض في الصفحة: {{ rows|length }}.</p>
-    {% for item in rows %}
+    {% for entry in display_rows %}{% with item=entry.item %}
       <article>
-        <h2><a href="{% url 'editorial_pipeline_detail' ident=item.external_id %}?{{ filter_query }}">{{ item.external_id }}</a></h2>
+        <h2><a href="{{ entry.detail_url }}">{% if item.external_id %}{{ item.external_id }}{% else %}سجل محجوب دون معرّف صالح{% endif %}</a></h2>
         <p>{{ item.status_label }} — غير منشورة</p>
-        <p>{{ item.question }}</p>
+        <p class="original-text">{{ item.question }}</p>
         <p>{{ item.media_status }}</p>
         {% if item.issue_labels %}
           <ul>{% for label in item.issue_labels %}<li>{{ label }}</li>{% endfor %}</ul>
@@ -116,7 +125,7 @@
         {% if item.draft_created %}<p>سجل الاستلام في الذاكرة فقط</p>
         {% else %}<p>لم يُنشأ سجل مسودة</p>{% endif %}
       </article>
-    {% empty %}<p>لا توجد سجلات مطابقة</p>{% endfor %}
+    {% endwith %}{% empty %}<p>لا توجد سجلات مطابقة</p>{% endfor %}
     <nav aria-label="صفحات سجلات المراجعة">
       {% if previous_url %}<a href="{{ previous_url }}" rel="prev">الصفحة السابقة</a>{% endif %}
       <span aria-current="page">الصفحة {{ page }} من {{ page_count }}</span>

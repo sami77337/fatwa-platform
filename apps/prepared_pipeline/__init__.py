@@ -4,7 +4,7 @@ import hashlib
 import json
 from typing import Mapping
 
-from tools.content_intake.cli import SCHEMA, normalize, parse_json
+from tools.content_intake.cli import SCHEMA, MAX_BYTES, MAX_ROWS, MAX_REFERENCES, normalize, parse_json
 from apps.fatwa_drafts.intake import IntakeItem, ReferenceLink, ValidationError, text
 from apps.fatwa_drafts.domain import DraftRecord, create_draft
 from apps.reference_links.resolution import ReadOnlyCatalog, resolve, MAX_ID
@@ -71,7 +71,7 @@ def prepare_batch(raw: bytes, *, synthetic_fixtures_only: bool = False,
     """
     if synthetic_fixtures_only is not True:
         raise ValidationError('pipeline: synthetic_fixture_acknowledgement_required')
-    if not isinstance(raw, bytes) or len(raw) > 1_000_000:
+    if not isinstance(raw, bytes) or len(raw) > MAX_BYTES:
         raise ValidationError('json: invalid_size_or_type')
     try:
         envelope = parse_json(raw.decode('utf-8', errors='strict'))
@@ -81,7 +81,7 @@ def prepare_batch(raw: bytes, *, synthetic_fixtures_only: bool = False,
             or envelope['schema'] != SCHEMA):
         raise ValidationError('envelope: invalid')
     rows = envelope['items']
-    if not isinstance(rows, list) or not 1 <= len(rows) <= 1000:
+    if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_ROWS:
         raise ValidationError('items: expected_1_to_1000')
     # Reject escaped lone surrogates even in rejected rows, before producing UTF-8 reports.
     try:
@@ -99,15 +99,19 @@ def prepare_batch(raw: bytes, *, synthetic_fixtures_only: bool = False,
         findings, references, refs = [], [], []
         def finding(field, code, severity='error'):
             findings.append(dict(field=field, code=code, severity=severity))
-        normalized, c1_findings = normalize([source])
-        findings.extend({k: v for k, v in f.items() if k != 'row'} for f in c1_findings)
+        links = source.get('reference_links', []) if isinstance(source, dict) else []
+        if not isinstance(links, list) or len(links) > MAX_REFERENCES:
+            # Canonical D1 links must be actual bounded lists. Reject before C1
+            # parses a CSV-style string or traverses an oversized reference list.
+            normalized = []
+            finding('reference_links', 'expected_list_at_most_100')
+        else:
+            normalized, c1_findings = normalize([source])
+            findings.extend({k: v for k, v in f.items() if k != 'row'} for f in c1_findings)
         if isinstance(source, dict):
             if isinstance(source.get('external_id'), str) and source['external_id'] in duplicates:
                 finding('external_id', 'duplicate_id')
-            links = source.get('reference_links', [])
-            if not isinstance(links, list) or len(links) > 100:
-                finding('reference_links', 'expected_list_at_most_100')
-            elif normalized:
+            if normalized:
                 seen = set()
                 for link in normalized[0]['reference_links']:
                     try:
@@ -133,9 +137,12 @@ def prepare_batch(raw: bytes, *, synthetic_fixtures_only: bool = False,
                                                   'source_row_id': mapped.source_row_id}, catalog)
                             result.update(resolution.internal_payload())
                             result['resolver_outcome'] = resolution.outcome.value
-                            if resolution.evidence is not None and any(
-                                getattr(resolution.evidence, key) != getattr(mapped.c2, key)
-                                for key in ('source_namespace', 'source_book_id', 'source_input_sha256')
+                            if resolution.evidence is not None and (
+                                any(getattr(resolution.evidence, key) != getattr(mapped.c2, key)
+                                    for key in ('source_namespace', 'source_book_id', 'source_input_sha256'))
+                                or any(getattr(resolution.evidence, key) is not None
+                                       and getattr(resolution.evidence, key) != getattr(mapped.c2, key)
+                                       for key in ('edition_key', 'source_archive_sha256'))
                             ):
                                 result.update(outcome='mismatched', reasons=['C2_source_identity_mismatch'])
                             elif result['outcome'] == 'mismatched_metadata':
