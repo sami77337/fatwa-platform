@@ -6,6 +6,13 @@ Lane: `codex/20261017-wave7-e6`, separate Cloud worktree
 `tests/acceptance/wave7/**` and `docs/dev/wave7/e6/**` files are owned here.
 No shared model, migration, fixture, guard, settings, route or CI edit.
 
+The complete recovered leadership spec is now reconciled; the prior missing-spec
+transfer issue is resolved. It does not require restarting/refactoring this work.
+Scope stays fixed configuration; reference ordinals belong within each item;
+known owned nonempty databases remain reusable without reset. E6 resource
+selection adds only a narrower test-lane prefix/opt-in before the sole shared
+application guard, and does not duplicate its ownership/write policy.
+
 This increment provides guarded test-resource selection, cross-process storage
 probes, actual HTTP asset checks, and a protected-engine catalog baseline.
 It does **not** implement E1 intake/replay, E2 review, E3 resolution or E4 views.
@@ -52,7 +59,8 @@ these labels explicitly; the existing CI foundation labels do not discover E6.
 | Command/label | Expected collection and scope |
 | --- | --- |
 | `python -m unittest tests.acceptance.wave7.test_target -v` | 4 pure preflight tests; safe for no-DB runner |
-| `node --test tests/acceptance/wave7/cdp.test.mjs` | 6 transport/request-policy tests; not browser acceptance |
+| `node --test tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs` | 8 transport/request-policy/native-key tests; not browser acceptance |
+| `python -m unittest tests.acceptance.wave7.test_entrypoints -v` | 1 explicit E1 pure integration regression; currently FAIL on E1 c4adc40 because approved --input is absent; missing command also fails on foundation-only lane |
 | `run.py --suite service` | `tests.acceptance.wave7.test_storage` (4) + `tests.acceptance.wave7.test_assets` (2), actual PG only |
 | `run.py --suite browser-baseline` | `tests.acceptance.wave7.test_browser.BrowserBaselineTests` (1), four actual engine cases |
 | `run.py --suite browser` | `tests.acceptance.wave7.test_browser.PersistedWorkflowBrowserTests` (1), mandatory full-workflow gate; currently FAIL/pending |
@@ -65,7 +73,12 @@ the later separate opt-in read-only GET integration settings/route registration.
 
 - Accepted foundation pure labels: 25 PASS (retained compatibility evidence,
   not new acceptance of unchanged foundation).
-- E6 pure preflight: 4 PASS; Node CDP/policy: 6 PASS, no skips.
+- E6 pure preflight: 4 PASS; original Node CDP/policy: 6 PASS, no skips.
+  Leadership P2 Enter correction adds two transport regressions: combined Node
+  suite now 8 PASS. RED: Enter lacked code/text/unmodifiedText (1 FAIL/1 PASS);
+  GREEN: keyDown includes code=Enter and both text fields CR; keyUp includes code
+  without a second text injection. Actual native-form browser execution is still
+  NOT_RUN while protected engine startup is blocked, not inferred from transport.
 - E6 service/storage/live-assets: 6 PASS on PG18.6, 6 PASS on PG17.11.
 - RED/GREEN lane-target regression: with shared validation alone, the sibling
   `wave7_synthetic_e5_sibling` target was accepted and the rejection test failed.

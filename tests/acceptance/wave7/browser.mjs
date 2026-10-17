@@ -6,6 +6,7 @@ import {fileURLToPath} from "node:url";
 import path from "node:path";
 import os from "node:os";
 import {CDP,loopbackOrigin,permittedRequest} from "./cdp.mjs";
+import {dispatchKey} from "./keyboard.mjs";
 
 const root=fileURLToPath(new URL("../../../",import.meta.url));
 const origin=loopbackOrigin(process.argv[2]);
@@ -30,7 +31,7 @@ const evaluate=expression=>cdp.evaluate(expression);
 const wait=expression=>until(()=>evaluate(expression),expression);
 async function navigate(route){const before=loads;await cdp.send("Page.navigate",{url:origin+route});await until(()=>loads>before,"document load");await wait("document.readyState==='complete'");}
 const ready=()=>wait("document.querySelector('#interactive-catalog')?.hidden===false && document.querySelector('#tree-region').getAttribute('aria-busy')==='false' && !!document.querySelector('[role=treeitem]')");
-async function key(key,code){for(const type of ["keyDown","keyUp"])await cdp.send("Input.dispatchKeyEvent",{type,key,windowsVirtualKeyCode:code});}
+const key=(key,code)=>dispatchKey(cdp,key,code);
 async function screenshot(name){const result=await cdp.send("Page.captureScreenshot",{format:"png",captureBeyondViewport:true});await writeFile(path.join(artifacts,name),Buffer.from(result.data,"base64"));report.screenshots.push(name);}
 const cases=[
   ["desktop actual catalog and native RTL keyboard",async()=>{
