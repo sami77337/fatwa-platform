@@ -63,7 +63,10 @@ class IntakeItem(models.Model):
             models.CheckConstraint(condition=Q(intake_status__in=list(c.IntakeStatus)),name='w7_item_intake_status'),
             models.CheckConstraint(condition=Q(review_status__in=list(c.ReviewStatus)),name='w7_item_review_status'),
             models.CheckConstraint(condition=Q(external_id__isnull=True)|(
-                Q(external_id__regex=r'^[^[:cntrl:]]+$')&_length_between('external_id',1,100)),name='w7_item_valid_external_id'),
+                Q(external_id__regex='^[^\x01-\x1f\x7f-\x9f]+$') &
+                _length_between('external_id',1,100) &
+                Exact(F('external_id'),Func(F('external_id'),Value(c.EXTERNAL_ID_EDGE_WHITESPACE),
+                    function='btrim',output_field=models.CharField()))),name='w7_item_valid_external_id'),
         ]
 
 

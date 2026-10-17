@@ -1,5 +1,12 @@
 # Wave7 E5 foundation freeze
 
+**FIXES_REQUIRED — freeze withdrawn pending numeric contract decision and fresh
+independent review.** PR58's first review found four defects at `8eebb1c97f79f2eb5cbe4f4930a493e0c8ed1241`.
+The corrective increment fixes ownership inventory, duplicate-key storage and
+external-ID integrity. Numeric precision remains an acknowledged blocker;
+the earlier FREEZE_READY handoff is superseded. No dependent-lane write dispatch.
+See [REVIEW_FIXES.md](REVIEW_FIXES.md) and [NUMERIC_DECISION.md](NUMERIC_DECISION.md).
+
 Development-only base: `8a362b0ff69dadbac288d05a7cf33d5fdd36951e` on
 `codex/20261017-wave6-integrated-candidate`. The PR/handoff records the exact
 frozen head. Original Wave6 worktree/head `79149964...` was not changed.
@@ -72,7 +79,10 @@ Migration `0001_initial` defines fields and native constraints; `0002_synthetic_
 adds the server-derived snapshot, stricter pointer/evidence constraint and SQL
 write/original/event guards. It depends on existing reference migration 0002,
 without changing that app. Use the two migrations together; the guard refuses
-workflow writes until all four DB write triggers are present/enabled.
+workflow writes until all four DB write triggers and the `0003_review_integrity`
+original-text duplicate-key trigger are present/enabled. Migration 0003 also
+aligns the external-ID constraint with Python 3.13 strip/control semantics.
+Previously published migrations 0001/0002 remain unchanged.
 
 The database checks original payload length and SHA256 with PostgreSQL built-ins
 (no extensions/grants), fixed configuration and bounded ordinals/statuses.
@@ -159,9 +169,10 @@ occupied mismatches and never repairs imported/source records. All media uses
 example.invalid and is never fetched.
 
 Pure labels (no DB):
-`tests.wave7_foundation.test_contracts` (10),
+`tests.wave7_foundation.test_contracts` (11),
 `tests.wave7_foundation.test_guard_config` (8).
-DB-only label: `tests.wave7_foundation.test_database` (21), selected exclusively
+DB-only labels: `tests.wave7_foundation.test_database` (21) and
+`tests.wave7_foundation.test_review_regressions` (4), selected exclusively
 with wave7_test settings and disposable PG17/18. E1 owns its own tests/intake_workflow
 path; this distinct E5 package avoids cross-lane writes or accidental port-1 DB discovery.
 

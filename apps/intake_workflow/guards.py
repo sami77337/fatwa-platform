@@ -121,6 +121,11 @@ def require_synthetic_write(*, synthetic_fixtures_only: bool = False,
                        "AND t.tgenabled IN ('O','A') AND c.relname = ANY(%s)",
                        [['intake_workflow_'+name for name in ('intakebatch','intakeitem','intakereference','reviewevent')]])
         _require(cursor.fetchone()[0] == 4, 'WORKFLOW_SCHEMA_NOT_READY')
+        cursor.execute("SELECT EXISTS (SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid "
+                       "JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' "
+                       "AND c.relname='intake_workflow_intakebatch' AND NOT t.tgisinternal "
+                       "AND t.tgname='w7_15_unique_json_keys' AND t.tgenabled IN ('O','A'))")
+        _require(cursor.fetchone()[0], 'WORKFLOW_SCHEMA_NOT_READY')
     return context
 
 
@@ -139,16 +144,28 @@ def initialize_synthetic_database(*, synthetic_fixtures_only: bool = False,
             cursor.execute("SELECT to_regclass('public.wave7_synthetic_ownership')")
             if cursor.fetchone()[0] is not None:
                 return _owned_context(connection, target, oid)
-            cursor.execute("SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
-                           "WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'")
-            objects = cursor.fetchone()[0]
-            cursor.execute("SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace "
-                           "WHERE n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'")
-            objects += cursor.fetchone()[0]
-            cursor.execute("SELECT count(*) FROM pg_namespace WHERE nspname NOT LIKE 'pg_%' "
-                           "AND nspname NOT IN ('public','information_schema')")
-            objects += cursor.fetchone()[0]
-        _require(objects == 0, 'UNKNOWN_NONEMPTY_DATABASE')
+            # Only PostgreSQL's actual system/temporary schemas are exempt. LIKE
+            # 'pg_%' also hides ordinary names such as pgxforeign ('_' is a wildcard).
+            cursor.execute("SELECT oid,nspname FROM pg_namespace WHERE nspname NOT IN "
+                           "('pg_catalog','pg_toast','information_schema') "
+                           "AND nspname !~ '^pg_(toast_)?temp_[0-9]+$'")
+            namespaces = cursor.fetchall()
+            _require(all(name == 'public' for _,name in namespaces), 'UNKNOWN_NONEMPTY_DATABASE')
+            user_oids = [oid for oid,_ in namespaces]
+            # Relations/functions alone miss standalone enum/domain types and
+            # other user metadata. These fixed catalog/column names are internal.
+            for catalog,column in (
+                ('pg_class','relnamespace'), ('pg_proc','pronamespace'),
+                ('pg_type','typnamespace'), ('pg_collation','collnamespace'),
+                ('pg_conversion','connamespace'), ('pg_operator','oprnamespace'),
+                ('pg_opclass','opcnamespace'), ('pg_opfamily','opfnamespace'),
+                ('pg_ts_config','cfgnamespace'), ('pg_ts_dict','dictnamespace'),
+                ('pg_ts_parser','prsnamespace'), ('pg_ts_template','tmplnamespace'),
+                ('pg_statistic_ext','stxnamespace'), ('pg_extension','extnamespace'),
+            ):
+                cursor.execute(f'SELECT EXISTS (SELECT 1 FROM pg_catalog.{catalog} '
+                               f'WHERE {column} = ANY(%s))', [user_oids])
+                _require(not cursor.fetchone()[0], 'UNKNOWN_NONEMPTY_DATABASE')
         # All rejecting preflight checks above run before atomic()/DDL.
         with transaction.atomic(using=using):
             with connection.cursor() as cursor:

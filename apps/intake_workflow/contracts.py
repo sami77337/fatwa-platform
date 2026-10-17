@@ -17,6 +17,11 @@ MAX_ITEMS = 1000
 MAX_REFERENCES_PER_ITEM = 100
 ROW_ORDINAL_START = REFERENCE_ORDINAL_START = 1
 MAX_REASON_CHARS = 2000
+# Python 3.13 str.strip() whitespace, explicitly mirrored at the DB boundary.
+EXTERNAL_ID_EDGE_WHITESPACE = ''.join(map(chr, (
+    *range(9,14), *range(28,33), 0x85, 0xa0, 0x1680, *range(0x2000,0x200b),
+    0x2028, 0x2029, 0x202f, 0x205f, 0x3000,
+)))
 
 
 class ContractError(ValueError):

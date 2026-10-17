@@ -91,3 +91,7 @@ class ContractTests(unittest.TestCase):
         for value in (None, 4, '', ' padded ', 'x\t', 'x\n', 'x\x7f', 'x' * 101):
             with self.subTest(value=value):
                 self.assertIsNone(c.valid_external_id(value))
+
+    def test_database_edge_whitespace_matches_python313_id_contract(self):
+        expected = ''.join(chr(code) for code in range(0x110000) if chr(code).isspace())
+        self.assertEqual(c.EXTERNAL_ID_EDGE_WHITESPACE,expected)
