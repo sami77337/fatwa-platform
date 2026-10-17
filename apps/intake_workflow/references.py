@@ -118,6 +118,7 @@ def _plan(parsed: c.ParsedPayload, catalog_rows: tuple[Heading, ...], *,
     except ValueError as error:
         raise c.ContractError('reference: invalid_heading_snapshot') from error
     config = _configuration()
+    complete_configuration = all(status is None for status, _ in config.values())
     items = []
     for ordinal, (item, source, sources) in enumerate(zip(
             parsed.items, parsed.item_sources, parsed.reference_sources, strict=True), 1):
@@ -150,10 +151,13 @@ def _plan(parsed: c.ParsedPayload, catalog_rows: tuple[Heading, ...], *,
                         # Legacy Heading constructors omit just these optional
                         # fields. Complete explicit fixed bindings above remain
                         # mandatory; an explicit conflicting value never passes.
+                        legacy = any(actual[field] is None for field in ('edition_key', 'source_archive_sha256'))
                         for field in ('edition_key', 'source_archive_sha256'):
                             if actual[field] is None:
                                 actual[field] = expected[field]
-                        if actual != expected:
+                        if legacy and not complete_configuration:
+                            status, reason = c.ReferenceStatus.UNVERIFIED, 'trusted_configuration_incomplete'
+                        elif actual != expected:
                             status, reason = c.ReferenceStatus.MISMATCHED, 'catalog_metadata_mismatch'
                         else:
                             status, reason = c.ReferenceStatus.VERIFIED, ''

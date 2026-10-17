@@ -105,6 +105,13 @@ class Wave7ReferencePlans(unittest.TestCase):
             result = self.plan(rows=(legacy,))[0].references[0]
         self.assertEqual(result.status, c.ReferenceStatus.UNVERIFIED)
         self.assertEqual(result.citation_text, '')
+        # Compatibility for absent optional pins requires the complete fixed
+        # configuration, even if this particular pointer has a surviving map.
+        partial = dict(list(f.trusted_reference_map().items())[:1])
+        with patch.object(f, 'trusted_reference_map', return_value=partial):
+            result = self.plan(rows=(legacy,))[0].references[0]
+        self.assertEqual(result.status, c.ReferenceStatus.UNVERIFIED)
+        self.assertEqual(result.citation_text, '')
 
     def test_duplicate_pointers_retain_distinct_original_byte_slices(self):
         raw = ('{"schema":"'+c.PAYLOAD_SCHEMA+'","synthetic_fixtures_only":true,"items":['

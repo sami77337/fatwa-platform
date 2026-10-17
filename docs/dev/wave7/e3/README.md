@@ -118,6 +118,9 @@ Deterministic RED/GREEN:
    with the exact same title as allowed root row 1. Before the projection fix the
    stored result was VERIFIED (assertion RED); after the fix the same retained
    records became MISMATCHED/empty identity/citation. Added pure projection regression.
+5. A post-publication legacy-compatibility subcase reproduced partial fixed maps
+   passing omitted Heading pins. A 17-method run reported one failure; compatibility
+   now requires every fixed binding to be complete, including unused mappings.
 
 Final commands (`PY=/tmp/e3-venv/bin/python`), counts and limits:
 
