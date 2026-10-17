@@ -190,7 +190,26 @@ def main(argv=None):
         command.add_argument("input", type=Path)
         if name in {"export", "check"}:
             command.add_argument("--bundle", type=Path, required=True)
+    synthetic_check = sub.add_parser("wave7-check", help="Pure check of an acknowledged Wave7 synthetic batch")
+    synthetic_check.add_argument("input",type=Path)
+    synthetic_check.add_argument("--synthetic-fixtures-only",action="store_true")
     args = parser.parse_args(argv)
+    if args.command == "wave7-check":
+        # Lazy pure-only import: legacy C1 remains usable without Django setup.
+        from apps.intake_workflow.contracts import ContractError
+        from apps.intake_workflow.intake import check_intake
+        try:
+            if args.synthetic_fixtures_only is not True:
+                raise ContractError('synthetic_acknowledgement_required')
+            with args.input.open("rb") as stream:
+                raw = stream.read(MAX_BYTES+1)
+            report = check_intake(raw,synthetic_fixtures_only=True).report()
+        except ContractError as exc:
+            report = dict(status="ERROR",code=exc.code,status_code=exc.status_code)
+        except OSError:
+            report = dict(status="ERROR",code="SOURCE_READ_FAILED",status_code=400)
+        sys.stdout.buffer.write(encoded(report))
+        return 1 if report["status"] == "ERROR" else 0
     try:
         with args.input.open("rb") as stream:
             raw = stream.read(MAX_BYTES + 1)
