@@ -22,6 +22,7 @@ SUITES = {
         'tests.acceptance.wave7.test_entrypoints',
     ),
     'editorial-off': ('tests.editorial_demo.test_wave7_review_off',),
+    'workflow-off': ('tests.integration.api.test_wave7_workflow_reads',),
     'database': (
         'tests.wave7_foundation.test_database',
         'tests.wave7_foundation.test_review_regressions',
@@ -31,6 +32,7 @@ SUITES = {
         'tests.intake_workflow.test_database',
         'tests.editorial_demo.test_wave7_review_db',
         'tests.editorial_demo.test_wave7_read_db',
+        'tests.integration.ui.wave7_workflow_reads_db',
     ),
 }
 
@@ -58,7 +60,7 @@ def main(argv=None):
                 raise RuntimeError('Explicit Wave7 test profile required')
         else:
             clean = environment()
-            clean['DJANGO_SETTINGS_MODULE'] = ('config.settings.test' if args.suite == 'editorial-off'
+            clean['DJANGO_SETTINGS_MODULE'] = ('config.settings.test' if args.suite in ('editorial-off', 'workflow-off')
                                                else 'config.settings.wave7_test')
             os.environ.clear()
             os.environ.update(clean)

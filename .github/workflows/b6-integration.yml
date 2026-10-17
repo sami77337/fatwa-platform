@@ -277,7 +277,7 @@ jobs:
     env:
       FATWA_PRODUCTION: '0'
       FATWA_WAVE7_SYNTHETIC_WRITES: '1'
-      FATWA_WAVE7_REVIEW_READ: '1'
+      FATWA_WAVE7_SYNTHETIC_READS: '1'
       DJANGO_SETTINGS_MODULE: config.settings.wave7_test
       PGHOST: 127.0.0.1
       PGPORT: '5432'
@@ -364,7 +364,7 @@ jobs:
     env:
       FATWA_PRODUCTION: '0'
       FATWA_WAVE7_SYNTHETIC_WRITES: '1'
-      FATWA_WAVE7_REVIEW_READ: '1'
+      FATWA_WAVE7_SYNTHETIC_READS: '1'
       FATWA_WAVE7_E6_ACCEPTANCE: '1'
       DJANGO_SETTINGS_MODULE: config.settings.wave7_test
       PGHOST: 127.0.0.1

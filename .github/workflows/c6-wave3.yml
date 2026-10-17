@@ -32,6 +32,8 @@ jobs:
         run: python -B tools/dev/wave7_qa.py --suite pure --json .local/qa/c6/wave7-pure.json
       - name: E2 default-off boundary with unreachable database
         run: python -B tools/dev/wave7_qa.py --suite editorial-off --json .local/qa/c6/wave7-editorial-off.json
+      - name: E4 default-off API and service contracts with unreachable database
+        run: python -B tools/dev/wave7_qa.py --suite workflow-off --json .local/qa/c6/wave7-workflow-off.json
       - name: E6 actual CDP and native keyboard regressions
         run: python tools/dev/wave4_node.py tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs
       - name: Require nonzero E6 exact reference negative regressions

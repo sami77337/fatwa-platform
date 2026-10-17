@@ -1,17 +1,22 @@
 # Wave7 available-producer QA integration
 
-This is local integration of the accepted foundation and the published E1/E2/E3/E6
-files. Publication remains on owner hold. E4 is unavailable: no Wave7 E4 module,
-route, settings flag, label or substitute is installed. This increment does not
-constitute assembled Wave7 acceptance or independent review.
+This is local integration of the accepted foundation, published E1/E2/E3/E6 files,
+and the coordinator's hash-verified internal E4 patch. Publication remains on
+owner hold. E4 APIs/context are wired; E2's actual loader adaptation is still
+awaited from its producer. This increment does not constitute assembled Wave7
+browser acceptance or independent review. Patch provenance is recorded in
+`docs/dev/wave7/e5/E4_PATCH_INTEGRATION.md`; no unpublished producer commit is
+claimed as remote ancestry.
 
 Use Python 3.13, Node 24, the existing pinned requirements, and the separate
 `config.settings.wave7_test` profile only on an owned disposable synthetic service.
 The default/public profile is unchanged. The available E2 route is
 `/dev/editorial-preview/persisted`, named `wave7_editorial_review`; it precedes the
 legacy generic preview identifier in `config.wave7_urls`. Only the separate Wave7
-profile registers it, and `FATWA_WAVE7_REVIEW_READ=1` explicitly enables reads.
-Other strings leave reads disabled. GET/HEAD use the actual E2 reader; unsafe
+profile registers it. `FATWA_WAVE7_SYNTHETIC_READS=1` explicitly enables the common
+`WAVE7_READS_ENABLED` and aliased `WAVE7_REVIEW_READ_ENABLED` settings. Other strings
+leave both disabled; the former review-only environment flag alone enables
+neither. GET/HEAD use the actual E2 reader; unsafe
 methods cannot invoke the reference verifier, intake writer or review transition.
 
 ## Pure collection on Ubuntu and Windows
@@ -22,15 +27,16 @@ full C1/C2/C3/importer discovery:
 ```sh
 python -B tools/dev/wave7_qa.py --suite pure --json .local/qa/c6/wave7-pure.json
 python -B tools/dev/wave7_qa.py --suite editorial-off --json .local/qa/c6/wave7-editorial-off.json
+python -B tools/dev/wave7_qa.py --suite workflow-off --json .local/qa/c6/wave7-workflow-off.json
 python tools/dev/wave4_node.py tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs
 python tools/dev/wave4_node.py tests/acceptance/wave7/reference_assertions.test.mjs
 python tools/dev/wave3_qa.py --standalone --require-integrated --reports .local/qa/c6
 ```
 
-The first two commands sanitize inherited credentials/connection overrides and
+The first three commands sanitize inherited credentials/connection overrides and
 force `PGPORT=1`. They use Django's ordinary runner with no DB-using labels. The
 actual E1 CLI check is registered under the separate Wave7 app profile, and never
-opens a database. The E2 default-off suite uses ordinary test settings. Each
+opens a database. E2's six and E4's eight default-off cases use ordinary test settings. Each
 required module must import and collect at least one case before any execution;
 another module's green cases cannot mask zero collection. Missing modules,
 execution/count mismatches, skips and expected failures fail the new Wave7 gate.
@@ -53,7 +59,7 @@ and cleanup policy. It now runs:
 python tools/dev/wave7_qa.py --suite database --json .local/qa/wave7-foundation/tests.json
 ```
 
-Actual required labels (94 cases at the assembled producer heads):
+Actual required labels (106 cases before the E2 loader adaptation):
 
 | Module under `tests.` | Cases |
 | --- | ---: |
@@ -61,10 +67,11 @@ Actual required labels (94 cases at the assembled producer heads):
 | `wave7_foundation.test_review_regressions` | 4 |
 | `wave7_foundation.test_lossless_db` | 9 |
 | `wave7_foundation.test_reference_service` | 15 |
-| `wave7_foundation.test_service_integration` | 2 |
+| `wave7_foundation.test_service_integration` | 4 |
 | `intake_workflow.test_database` | 15 |
 | `editorial_demo.test_wave7_review_db` | 16 |
 | `editorial_demo.test_wave7_read_db` | 12 |
+| `integration.ui.wave7_workflow_reads_db` | 10 |
 
 The permanent E3 module implements the producer's DB proposal, including exact
 original text/byte offsets, six conflicting C2 fields, malformed/numeric/null
@@ -75,10 +82,19 @@ back after an injected failure. Identical replay issues zero UPDATEs. No source
 trigger is disabled; negative catalog records are inserted before standard seed
 and never repaired or overwritten.
 
-The two shared integration cases use E1 import, commit, E3 verification, E2
+The shared integration cases use E1 import, commit, E3 verification, E2
 transition/read and the actual shared GET route. They verify historical intake
 findings remain unchanged, current reference state is read, batch UUID isolation,
 GET filter/page/detail/return state, default-off and unsafe method boundaries.
+The new E4 cases compare actual shared API results to the SSR read context,
+preserve source text and current citations, and check disabled/HEAD/invalid/unsafe
+requests through the real registered URLs. They do not replace E2's pending loader.
+
+The same separate URLconf registers `wave7_api_batches` at
+`/dev/wave7/api/batches`, `wave7_api_items` at `/dev/wave7/api/items`, and
+`wave7_api_item` at `/dev/wave7/api/items/<str:ident>`, before legacy patterns.
+String identifiers reach the actual JSON UUID validator. Disabled Wave7 handlers
+return their fixed JSON 404; the public/default URLconf registers none of them.
 
 ## Mandatory actual E6 invocation
 
@@ -109,16 +125,15 @@ browser commands therefore exit nonzero, with 4 and 8 browser cases NOT_RUN.
 Do not change system security or disable sandbox protections. Actual supported
 browser execution and a fresh independent combined review remain required.
 
-## Pending E4 integration and gates
+## Pending E2 adaptation and gates
 
-The locally reported E4 head is not fetchable/published, so its proposed
-`tests.integration.api.test_wave7_workflow_reads` and
-`tests.integration.ui.wave7_workflow_reads_db` labels are not wired. After actual
-files are provided, review their APIs and append the real labels to the correct
-pure/DB group; add their routes to this same Wave7 URLconf only with the actual
-E4 functions. Do not substitute empty modules, guessed implementations, optional
-imports, a second conflicting URLconf or fabricated acceptance. E2-to-E4 reader
-adaptation belongs to the relevant producers/coordinator.
+The actual E4 patch files and eight no-DB / ten DB labels are now wired. Its DB
+label is explicit only in the owned Wave7 PG17/18 group; it is never sent to
+port-1 C6/D6 discovery. The producer's deliberate DB filename remains unchanged.
+E2-to-E4 reader adaptation, including search mode, is assigned to E2 and awaits
+that producer's actual patch. E5 does not edit the loader ahead of it. Full E6
+browser reruns on this assembled increment wait for that patch. Existing earlier
+browser artifacts remain attributed to their exact preceding SHA.
 
 Windows CI and GitHub Actions are NOT_RUN while publication is held. Real-source
 read-only checks, independent combined review and source/product acceptance are

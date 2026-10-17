@@ -1,5 +1,9 @@
 # E5 local available-producer increment
 
+This document preserves the first increment's inputs/results. Later reviewed
+patches are recorded in [`E6_REFERENCE_P2.md`](E6_REFERENCE_P2.md) and
+[`E4_PATCH_INTEGRATION.md`](E4_PATCH_INTEGRATION.md).
+
 Owner instruction: local implementation and tests only; no push, PR, PR58
 metadata update, merge to main or deployment. The accepted foundation/producer
 heads are preserved as merge ancestors in a new isolated worktree:
