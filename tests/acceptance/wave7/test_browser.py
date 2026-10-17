@@ -1,4 +1,5 @@
 """Separate baseline vs mandatory persisted browser gates; never optional PASS."""
+from dataclasses import asdict
 import json
 import os
 from pathlib import Path
@@ -27,11 +28,18 @@ class PersistedWorkflowBrowserTests(E6LiveServer):
         artifacts = Path(os.environ.get("E6_WAVE7_ARTIFACTS", "/tmp/e6-wave7-browser"))
         artifacts.mkdir(parents=True, exist_ok=True)
         try:
-            prepare_workflow_scenario()
+            scenario = prepare_workflow_scenario()
         except WorkflowIntegrationPending as error:
             (artifacts/"workflow-result.json").write_text(json.dumps({
                 "result":"NOT_RUN", "blocker":str(error), "pass":0,"fail":0,"skip":0,
+                "browser_cases_not_run":8,
                 "scope":"No persisted browser acceptance claimed; integration gate remains failing"
             }, indent=2)+"\n")
             self.fail(str(error))
-        self.fail("ACTUAL_PERSISTED_BROWSER_JOURNEYS_NOT_YET_INTEGRATED")
+        manifest = artifacts / "scenario.json"
+        manifest.write_text(json.dumps(asdict(scenario), ensure_ascii=False) + "\n")
+        environment = os.environ.copy()
+        environment["E6_PYTHON"] = __import__("sys").executable
+        result = subprocess.run(["node", str(Path(__file__).with_name("persisted_browser.mjs")),
+            self.live_server_url, str(manifest)], env=environment, timeout=240, check=False)
+        self.assertEqual(result.returncode, 0, "Actual persisted browser gate FAIL/BLOCKED; no fallback")

@@ -13,6 +13,7 @@ LABELS = {
     "service": ["tests.acceptance.wave7.test_storage", "tests.acceptance.wave7.test_assets"],
     "browser-baseline": ["tests.acceptance.wave7.test_browser.BrowserBaselineTests"],
     "browser": ["tests.acceptance.wave7.test_browser.PersistedWorkflowBrowserTests"],
+    "workflow-service": ["tests.acceptance.wave7.test_workflow_services"],
 }
 
 

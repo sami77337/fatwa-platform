@@ -17,41 +17,43 @@ There is no production stub, second importer, migration or alternate source map.
 
 Required from root/owners:
 
-1. **E1:** actual command/service contracts were read at
-   `c4adc405b053162d054f8660065b205f94bae4e1`:
+1. **E1:** final command/service contracts are at
+   `2678b91a7c7f2e210a7585e6997725432782aa72`:
    `apps.intake_workflow.intake.check_intake(raw, *, synthetic_fixtures_only=False)`
    and `import_intake(raw, *, idempotency_key, synthetic_fixtures_only=False,
    using='default') -> IntakeResult`. Receipt fields: batch_id, decision,
    payload_sha256, item_count, reference_count, summary; report() serializes them.
-   Complete import/replay behavior is not yet tested by E6. E6 must
+   E6 now exercises import/replay/conflict from the actual API in its component
+   harness; this is not final combined-SHA acceptance. E6 must
    create two batches (same external ID, different exact original question),
    replay without duplicate items/refs, reject changed bytes and inspect from a
    new process. Commands/services run outside HTTP and own their guarded unit.
-   **Confirmed CLI defect:** the approved `wave7_intake check --input <file>`
-   syntax exits2 on this E1 head: `unrecognized arguments: --input`. The command
-   currently requires a positional input. This is not a rule E6 may silently
-   reinterpret. New explicit pure regression `tests.acceptance.wave7.test_entrypoints`
-   requires the approved named flag; command/flag absence fails without DB access.
-   Root must route this finding to E1; E6 does not edit the command.
-2. **E2:** root supplied the implemented signatures (local head
-   `6ef2e705058752de154e612c31b6b673462cd685`, publication pending; not an
-   integration base or an independently fetched code review):
+   **CLI defect resolved:** the named --input regression failed on historical
+   c4adc40, then passed 1/1 without DB access on final2678b91. E6 requests no E1
+   rework for this issue. Keep the explicit integration regression in CI once
+   E1 is assembled; missing command/flag is never an optional PASS.
+2. **E2:** actual published PR61 was fetched/read at
+   `b55c4596506aafd3c3d5c3a3c0fee1450fc2d2c2`:
    `transition_review(item_id, *, operation_id, action, expected_status, reason,
    synthetic_fixtures_only=False, using='default')` and
    `load_review_worklist(*, batch_id=None, row_id=None, q='', intake_status='',
    review_status='', page=1, page_size=20, synthetic_fixtures_only=False,
-   using='default')`. Need published PR/code plus operation replay/conflict and
-   stale-state/concurrent-call error details before running adapters.
+   using='default')`. ReviewConflict is code REVIEW_CONFLICT/status409; exact
+   operation replay includes action/from status/reason. Actual template hooks:
+   #stored-batch, #stored-q, #stored-intake, #stored-review, #stored-page-size;
+   persisted section #wave7-persisted, p.original-text and pre.original-text.
    The approved wave7_review command delegates to that shared service.
    E6 must start/request changes/start/
    complete internal review, verify persisted synchronized state/events and retry
    after process restart without duplicating events. No answer/approval action.
-3. **E3:** module `apps/intake_workflow/references.py` was read at
-   `01d96e477424d3c0de909c0ad5ae9ac7e5c9c98f`; actual write entrypoint is
+3. **E3:** published PR60 module `apps/intake_workflow/references.py` is pinned at
+   `5f4e66facfb672e610faed9cb7d154bed44c9510`; actual write entrypoint is
    `verify_batch_references(batch_id: UUID, *, synthetic_fixtures_only=False,
    using='default') -> BatchReferenceVerification`. Results carry batch_id,
    payload_sha256, items, each row's source and per-reference verification.
-   E6 has not executed this service yet. Need combined receipt/hook integration.
+   E6's temporary component harness executes it after each E1 commit, outside
+   the prior transaction. Current reference state is IntakeReference.reference_status,
+   never E1.validation_results (a historical intake snapshot).
    Include verified vs unverified/mismatched/invalid original pointers, exact
    SourceSlice provenance and citation escaping; readiness is separate from source
    verification. Fixture seeding must remain outside another guarded transaction.
@@ -81,9 +83,16 @@ Approved command syntax is now known: `wave7_intake check --input <synthetic-fil
 `wave7_review transition --item <uuid> --action <allowed-action>`. Preserve explicit
 synthetic acknowledgements/guard flags; the syntax does not authorize HTTP writes.
 
-These full workflow journeys are NOT_IMPLEMENTED/NOT_RUN in this baseline
-increment. The mandatory workflow label deliberately fails pending actual hooks.
-Do not treat an E6 baseline PR or storage probe as full Wave7 acceptance.
+The owned workflow adapter now uses actual E1/E2/E3 APIs and actual PR61 hooks.
+`run.py --suite workflow-service` is a required two-method TransactionTestCase
+for actual intake/replay/conflict/reference/review/new-process preparation and
+two concurrent review processes (one success, one409, one persisted event).
+The mandatory `--suite browser` now runs persisted_browser.mjs with eight real
+interaction cases, not an unconditional placeholder failure. It requires actual
+E5 GET registration/flag before preparing data and never creates an E6 URLconf
+or a fake HTML overlay. Until E5/E4 integration and a protected engine run, full
+workflow browser acceptance remains NOT_RUN. No baseline/service success promotes
+that gate. E5 must wire the new workflow-service DB label separately.
 
 Artifacts: `E6_WAVE7_ARTIFACTS` holds sanitized baseline JSON (SHA/dirty paths,
 command/versions, per-case statuses, actual asset200/MIME/bytes checks, sandbox

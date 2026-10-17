@@ -21,7 +21,9 @@ with exit2 / `unrecognized arguments: --input`. A new pure E6 regression
 and the approved named flag. It fails on that real E1 source snapshot, without
 editing the command. On foundation-only E6 it also fails because E1 is absent;
 it is an explicit integration label, never optionalized into green baseline.
-Root/E1 must repair the CLI contract. Exact currently observed E1/E3 signatures
+**Resolved on final E1 2678b91a7c7f2e210a7585e6997725432782aa72:** E6 rechecked
+the same pure regression and it passed 1/1. No E1 rework is requested for this
+historical issue. Exact currently observed E1/E3 signatures
 and SHA pins are recorded in INTEGRATION_HANDOFF.md, with no execution/acceptance
 claim for their complete services yet.
 
@@ -39,7 +41,9 @@ observed Cloud SUID startup gate remains blocked; no supported engine run or
 browser PASS is claimed. E5 must execute actual protected Chrome in supported
 standard CI before acceptance. Full workflow still waits actual E1–E4 integration,
 and its dedicated gate remains failing rather than falling back to catalog-only
-acceptance. Existing PG17/18 six-test results belong to tested head2966b99; this
+acceptance. Actual published producer hook/PR61 journey implementation has since
+been added; see PRODUCER_HOOKS.md for the current component evidence and missing
+E5 route/flag/protected engine. Existing PG17/18 six-test results belong to tested head2966b99; this
 follow-up does not alter their storage/asset code or the approved foundation.
 
 No new task/worktree restart, no Wave6 changes, no other-lane production changes,

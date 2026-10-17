@@ -16,9 +16,10 @@ application guard, and does not duplicate its ownership/write policy.
 This increment provides guarded test-resource selection, cross-process storage
 probes, actual HTTP asset checks, and a protected-engine catalog baseline.
 It does **not** implement E1 intake/replay, E2 review, E3 resolution or E4 views.
-The mandatory persisted-browser label currently fails closed with an explicit
-integration-pending code; there is no fake service, HTTP write, mocked browser,
-optional passing fallback or zero-test success.
+The persisted-browser label uses actual producer services and published PR61
+selectors; until E5 registers its opt-in GET route/flag it fails closed with an
+explicit pending code. There is no fake service, E6 URLconf, HTTP write, mocked
+browser, optional passing fallback or zero-test success.
 
 ## Exact commands and labels for E5
 
@@ -60,12 +61,13 @@ these labels explicitly; the existing CI foundation labels do not discover E6.
 | --- | --- |
 | `python -m unittest tests.acceptance.wave7.test_target -v` | 4 pure preflight tests; safe for no-DB runner |
 | `node --test tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs` | 8 transport/request-policy/native-key tests; not browser acceptance |
-| `python -m unittest tests.acceptance.wave7.test_entrypoints -v` | 1 explicit E1 pure integration regression; currently FAIL on E1 c4adc40 because approved --input is absent; missing command also fails on foundation-only lane |
+| `python -m unittest tests.acceptance.wave7.test_entrypoints -v` | 1 explicit E1 pure integration regression; PASS on final2678b91 (old c4adc40 failure resolved); missing command still fails on foundation-only lane |
 | `run.py --suite service` | `tests.acceptance.wave7.test_storage` (4) + `tests.acceptance.wave7.test_assets` (2), actual PG only |
+| `run.py --suite workflow-service` | `tests.acceptance.wave7.test_workflow_services` (2), actual E1/E2/E3 APIs and competing review processes, PostgreSQL only; never browser acceptance |
 | `run.py --suite browser-baseline` | `tests.acceptance.wave7.test_browser.BrowserBaselineTests` (1), four actual engine cases |
-| `run.py --suite browser` | `tests.acceptance.wave7.test_browser.PersistedWorkflowBrowserTests` (1), mandatory full-workflow gate; currently FAIL/pending |
+| `run.py --suite browser` | `tests.acceptance.wave7.test_browser.PersistedWorkflowBrowserTests` (1), eight actual persisted-browser cases; required E5 route/flag and protected engine |
 
-The last three commands require the owned PG17/18 setup. Never add their DB labels
+The service and browser commands require the owned PG17/18 setup. Never add their DB labels
 to the port-1 pure runner. The runner forces `config.settings.wave7_test`; E5 owns
 the later separate opt-in read-only GET integration settings/route registration.
 
@@ -89,8 +91,10 @@ the later separate opt-in read-only GET integration settings/route registration.
   zero browser PASS/FAIL/SKIP. Five preflight assets actually returned 200,
   JS/CSS MIME and exact original file bytes. No screenshot fabricated.
 - Mandatory persisted workflow: one failing gate; actual services/routes/hooks
-  not integrated. Full workflow browser/idempotency/review/concurrency acceptance
-  NOT_RUN. This does not become green because baseline storage tests passed.
+  were not integrated at first head2966b99. The owned adapter now implements
+  actual E1/E2/E3 preparation and published PR61 UI journeys. Current component
+  service evidence and remaining full browser limits are in PRODUCER_HOOKS.md.
+  This does not become browser acceptance because service tests passed.
 
 Storage probes parse source only with the approved lossless parser, persist
 `SourceSlice.text/start/end` verbatim and inspect them from new Python processes.
