@@ -23,6 +23,7 @@ full C1/C2/C3/importer discovery:
 python -B tools/dev/wave7_qa.py --suite pure --json .local/qa/c6/wave7-pure.json
 python -B tools/dev/wave7_qa.py --suite editorial-off --json .local/qa/c6/wave7-editorial-off.json
 python tools/dev/wave4_node.py tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs
+python tools/dev/wave4_node.py tests/acceptance/wave7/reference_assertions.test.mjs
 python tools/dev/wave3_qa.py --standalone --require-integrated --reports .local/qa/c6
 ```
 
@@ -34,6 +35,10 @@ required module must import and collect at least one case before any execution;
 another module's green cases cannot mask zero collection. Missing modules,
 execution/count mismatches, skips and expected failures fail the new Wave7 gate.
 Bounded JSON records exact SHA, clean/dirty state, platform, counts and skips.
+The E6 Node collection is 18 cases: six CDP, two keyboard and ten exact-reference
+assertions, including negative status/citation/row/batch/pointer/locator cases.
+The new ten-case file has its own mandatory nonzero gate, so the existing eight
+cases cannot mask its absence or zero collection.
 
 Legacy importer reporting still discloses its real source skips; no owner source
 acceptance is inferred. The D6 port-1 manifest remains unchanged.

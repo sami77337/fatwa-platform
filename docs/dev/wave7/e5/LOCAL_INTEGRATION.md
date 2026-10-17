@@ -23,6 +23,11 @@ C6/B6 workflow wiring and these operation/evidence documents.
 
 ## Red/green and actual local evidence
 
+This table records the first integration increment at
+`8d0ff3e40d4aef7ef6a1625263762689133f9076`. The later, narrowly authorized E6
+reference assertion patch and its updated 18-case Node collection are recorded in
+[`E6_REFERENCE_P2.md`](E6_REFERENCE_P2.md), without rewriting these prior results.
+
 Runtime: Cloud Debian 13, Python 3.13.5 (`/usr/bin/python3.13`, venv created with
 uv 0.12.23), Node v24.19.0; existing eight exact requirements installed with uv
 from PyPI using `--no-deps`. Disposable tmpfs PG17.11 and PG18.6 services use

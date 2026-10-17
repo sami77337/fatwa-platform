@@ -30,6 +30,9 @@ class ProducerWorkflowTests(TransactionTestCase):
         self.assertEqual([report["items"][6]["question_original"] for report in reports], list(scenario.original_questions))
         self.assertEqual(reports[0]["items"][6]["review_status"], "REVIEWED_INTERNAL")
         self.assertEqual(reports[1]["items"][6]["review_status"], "UNREVIEWED")
+        self.assertEqual(scenario.verified_reference.batch_id, scenario.batch_ids[0])
+        self.assertEqual(scenario.verified_reference.reference_ordinal, 1)
+        self.assertIn("، ج الأول، ص 8 ", scenario.verified_reference.citation_text)
 
     def test_two_new_review_processes_have_one_winner_and_one_conflict(self):
         scenario = prepare_workflow_scenario(require_get_registration=False)

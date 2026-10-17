@@ -10,6 +10,23 @@ class WorkflowIntegrationPending(RuntimeError):
     pass
 
 
+EXPECTED_VERIFIED_CITATION = (
+    "إحالة إلى عنوان في فهرس مرجع اصطناعي لتجارب Wave7: كِتَابٌ اصطناعي / بابٌ اصطناعي أول"
+    "، ج الأول، ص 8 (عنوان فهرس، وليس نص فتوى)."
+)
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedReferenceExpectation:
+    batch_id: str
+    row_id: str
+    question: str
+    reference_ordinal: int
+    original_pointer: str
+    citation_text: str
+    locator: str
+
+
 @dataclass(frozen=True, slots=True)
 class WorkflowScenario:
     """Prepared outside HTTP by actual E1/E2/E3 services, then read by the browser.
@@ -30,6 +47,7 @@ class WorkflowScenario:
     review_target_id: str
     batch_keys: tuple[str, str]
     event_reasons: tuple[str, ...]
+    verified_reference: VerifiedReferenceExpectation
 
 
 def require_producer_services():
@@ -140,9 +158,19 @@ def prepare_workflow_scenario(*, require_get_registration=True) -> WorkflowScena
                 for ordinal in (2, 3, 8)}
     assert selected[3].intake_status == "BLOCKED_INVALID"
     assert selected[8].original_row == "null"
+    verified = IntakeReference.objects.get(intake_item=rows[0], reference_ordinal=1)
+    pointer = c.parse_synthetic_payload(raw, synthetic_fixtures_only=True).reference_sources[6][0]
+    assert verified.reference_status == "VERIFIED"
+    assert verified.verified_identity == dict(c.VERIFIED_IDENTITIES[1])
+    assert verified.original_pointer == pointer.text
+    # Independent fixed-fixture expectation, not copied from a possibly wrong
+    # stored/DTO citation and not obtained by calling the renderer under test.
+    assert verified.citation_text == EXPECTED_VERIFIED_CITATION
+    expected_reference = VerifiedReferenceExpectation(str(first.batch_id), str(rows[0].pk),
+        f.ORIGINAL_QUESTION, 1, pointer.text, EXPECTED_VERIFIED_CITATION, "، ج الأول، ص 8 ")
     return WorkflowScenario(path, (str(first.batch_id), str(second.batch_id)), "W7-READY-2",
         tuple(detail(receipt.batch_id, row.pk) for receipt, row in zip((first, second), rows, strict=True)),
         (f.ORIGINAL_QUESTION, alternate_question), detail(first.batch_id, selected[8].pk),
         detail(first.batch_id, rows[0].pk), detail(first.batch_id, selected[2].pk),
         detail(first.batch_id, selected[3].pk), detail(first.batch_id, selected[2].pk),
-        str(rows[1].pk), keys, reasons)
+        str(rows[1].pk), keys, reasons, expected_reference)

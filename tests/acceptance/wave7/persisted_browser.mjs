@@ -8,6 +8,7 @@ import path from "node:path";
 import os from "node:os";
 import {CDP,loopbackOrigin,permittedRequest} from "./cdp.mjs";
 import {dispatchKey} from "./keyboard.mjs";
+import {assertVerifiedReference,readReferenceDetail} from "./reference_assertions.mjs";
 
 const root=fileURLToPath(new URL("../../../",import.meta.url));
 const origin=loopbackOrigin(process.argv[2]);
@@ -91,9 +92,11 @@ const cases=[
   }],
   ["persisted review state/events and verified reference are distinct",async()=>{
     await navigate(scenario.reviewed_detail_path);const text=await body();
-    assert.match(text,/READY_FOR_EDITOR/);assert.match(text,/REVIEWED_INTERNAL/);assert.match(text,/VERIFIED/);
+    assert.match(text,/READY_FOR_EDITOR/);assert.match(text,/REVIEWED_INTERNAL/);
+    assertVerifiedReference(await evaluate(`(${readReferenceDetail.toString()})(document,location.href)`),scenario.verified_reference);
     for(const reason of scenario.event_reasons)assert.ok(text.includes(reason));
     await reload();assert.match(await body(),/REVIEWED_INTERNAL/);
+    assertVerifiedReference(await evaluate(`(${readReferenceDetail.toString()})(document,location.href)`),scenario.verified_reference);
   }],
   ["new process replay and competing review services persist once before reload",async()=>{
     for(let index=0;index<2;index++){
