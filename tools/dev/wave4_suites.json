@@ -18,7 +18,9 @@
     "django": [
       "tests.editorial_demo.test_preview",
       "tests.editorial_demo.test_pipeline_preview",
-      "tests.editorial_demo.test_worklist"
+      "tests.editorial_demo.test_worklist",
+      "tests.editorial_demo.test_synthetic_batch",
+      "tests.editorial_demo.test_review_fixes"
     ],
     "node": []
   },
@@ -38,7 +40,8 @@
     ],
     "python": [],
     "django": [
-      "tests.integration.api.test_d4_filter_ui"
+      "tests.integration.api.test_d4_filter_ui",
+      "tests.integration.api.test_e4_catalog"
     ],
     "node": [
       "tests/integration/ui/adapter.test.mjs",
