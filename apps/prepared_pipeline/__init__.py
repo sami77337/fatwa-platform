@@ -137,9 +137,12 @@ def prepare_batch(raw: bytes, *, synthetic_fixtures_only: bool = False,
                                                   'source_row_id': mapped.source_row_id}, catalog)
                             result.update(resolution.internal_payload())
                             result['resolver_outcome'] = resolution.outcome.value
-                            if resolution.evidence is not None and any(
-                                getattr(resolution.evidence, key) != getattr(mapped.c2, key)
-                                for key in ('source_namespace', 'source_book_id', 'source_input_sha256')
+                            if resolution.evidence is not None and (
+                                any(getattr(resolution.evidence, key) != getattr(mapped.c2, key)
+                                    for key in ('source_namespace', 'source_book_id', 'source_input_sha256'))
+                                or any(getattr(resolution.evidence, key) is not None
+                                       and getattr(resolution.evidence, key) != getattr(mapped.c2, key)
+                                       for key in ('edition_key', 'source_archive_sha256'))
                             ):
                                 result.update(outcome='mismatched', reasons=['C2_source_identity_mismatch'])
                             elif result['outcome'] == 'mismatched_metadata':

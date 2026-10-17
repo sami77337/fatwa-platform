@@ -106,3 +106,48 @@ candidate:800 rows,original whitespace unchanged,D3 received1,000,000 bytes,
 zero fabricated drafts/references.1,000,001 bytes rejected. This supplements
 the committed1MB/row/reference and999,999-byte regressions; it is a one-off
 runtime probe, not a new counted unittest method.
+
+## Independent combined review P2: D1 optional source-pin comparison
+
+Fresh independent Astra review of head921ac85702ffe1a02892fcb1e96a63cf886a592f
+returned FIXES_REQUIRED for one integration contract defect. E3 now exposes
+explicit edition_key/archive SHA in Heading evidence, while D1 compared only
+namespace/book/input SHA. Actual wrong edition/archive evidence could therefore
+remain D1 verified although D3 rejects it and E2 suppresses its citation.
+
+RED before the production edit, Python3.13.5 uv environment:
+- `PGPORT=1 /tmp/wave6-venv/bin/python -m unittest discover -s tests/prepared_pipeline -p test_source_pins.py -v`:4 methods,2FAIL/2PASS. Both mismatches returned verified instead of mismatched.
+- Disposable synthetic PG18 container fatwa-wave6-p2-20261017-pg18,loopback
+  port32768,base/test names wave6_p2_ephemeral/test_wave6_p2_ephemeral;
+  `manage.py test` with the four new `CatalogAdapterTests.test_pipeline_actual_adapter_*`
+  labels,`--noinput --verbosity=2 --settings=config.settings.test`:4 methods,
+  2FAIL/2PASS for the same explicit-pin mismatches. Matching and legacy optional
+  metadata compatibility passed. Fixtures only; no owner source/database access.
+
+The narrow D1 correction compares available edition_key and archive SHA exactly
+against ExplicitMapping.c2,using the same per-field None compatibility as D3.
+No inferred identity,casting,global cache or D3 change. None means optional
+metadata absent; available metadata must match. Existing resolver validation
+continues rejecting malformed explicit values. D1's documented intake-readiness
+status is independent of reference verification and remains unchanged: mismatches
+are `mismatched` plus `references-unverified`; E2 requires human review and
+suppresses citations. Original strings and in-memory receipt semantics survive.
+
+GREEN local:all41 prepared_pipeline methods and all16 actual PG adapter methods
+PASS,0fail/error/skip. The four new DB methods compare D1/D3/E2 behavior using
+DjangoCatalog and assert SELECT-only reads; legacy compatibility deliberately
+projects optional metadata away from actual adapter evidence (database edition
+metadata itself remains explicit). The four new pure methods cover both
+mismatches,matching pins,and each/both optional fields absent.
+
+Mandatory wiring uses existing discovery:tests/prepared_pipeline automatically
+joins D6 on both systems;the four DB methods join the already required nonzero
+`tests.reference_links_db.test_catalog_adapter` B6/qa_worker label on PG17/18.
+No DB module enters port-1 C6/D6 and no optional fallback is added.
+
+New integration-correction paths:apps/prepared_pipeline/__init__.py,
+tests/prepared_pipeline/test_source_pins.py,
+tests/reference_links_db/test_catalog_adapter.py,and this record.
+All producer branch heads and six merge ancestors remain pinned. Full exact-head
+CI,importer and protected10-journey browser must run again;fresh independent
+same-head re-review stays pending. No acceptance or Wave7 dispatch.

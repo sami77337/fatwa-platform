@@ -9,6 +9,9 @@ from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 
 from apps.reference.models import ReferenceEdition, ReferenceHeading, ReferenceWork
+from apps.editorial_demo.integration import compose_synthetic_batch
+from apps.fatwa_drafts.intake import ReferenceLink
+from apps.prepared_pipeline import C1Pointer, ExplicitMapping, prepare_batch
 from apps.reference_links.bridge import (
     BridgeConfig, EditionMap, HeadingMap, SourceIdentity, resolve_prepared_pointers,
 )
@@ -198,3 +201,64 @@ class CatalogAdapterTests(TestCase):
         with transaction.atomic(), self.assertRaises(IntegrityError):
             ReferenceHeading.objects.filter(pk=self.target.pk).update(title_original="changed")
         self.assertEqual(self.bridge().status, Outcome.VERIFIED)
+
+    def pipeline(self, catalog=None):
+        original = {"external_id": "synthetic-d1-adapter", "question": "  سُؤالٌ\tاصطناعي\n  ",
+                    "prepared_clip_url": "https://example.invalid/prepared.mp4",
+                    "reference_links": [self.pointer]}
+        raw = json.dumps({"schema": "fatwa.prepared-intake.v1", "items": [original]},
+                         ensure_ascii=False).encode()
+        mapped = self.config.headings[0]
+        reference_map = {C1Pointer(**self.pointer): ExplicitMapping(
+            ReferenceLink(**asdict(self.identity), source_id=mapped.c2_source_id),
+            self.config.edition.edition_id, mapped.source_row_id, "synthetic-db-pin-regression")}
+        adapter = catalog if catalog is not None else self.adapter
+        with self.select_queries():
+            batch = prepare_batch(raw, synthetic_fixtures_only=True,
+                                  reference_map=reference_map, catalog=adapter)
+            preview = compose_synthetic_batch(raw, synthetic_fixtures_only=True,
+                reference_map=reference_map, bridge_config=self.config, catalog=adapter)[0]
+            bridge = resolve_prepared_pointers(raw, self.config, adapter)[0].reference_links[0]
+        self.assertEqual(batch.report["items"][0]["original"], original)
+        self.assertEqual(batch.drafts[0].intake.question, original["question"])
+        return batch.report["items"][0], bridge, preview
+
+    def assert_pipeline_pin_mismatch(self):
+        row, bridge, preview = self.pipeline()
+        self.assertEqual(row["references"][0]["outcome"], "mismatched")
+        self.assertEqual(row["references"][0]["reasons"], ["C2_source_identity_mismatch"])
+        self.assertIn("references-unverified", row["statuses"])
+        self.assertEqual(bridge.reasons, ("catalog_source_pin_mismatch",))
+        self.assertIsNone(bridge.citation)
+        self.assertEqual(preview.references[0].status, "unverified")
+        self.assertIsNone(preview.references[0].citation)
+        self.assertEqual(preview.status, "needs-editor-review")
+
+    def test_pipeline_actual_adapter_edition_key_mismatch(self):
+        self.use_distinct_edition(edition_key="another-explicit-edition")
+        self.assert_pipeline_pin_mismatch()
+
+    def test_pipeline_actual_adapter_archive_hash_mismatch(self):
+        self.use_distinct_edition(source_archive_sha256="d" * 64)
+        self.assert_pipeline_pin_mismatch()
+
+    def test_pipeline_actual_adapter_matching_metadata(self):
+        row, bridge, preview = self.pipeline()
+        self.assertEqual(row["references"][0]["outcome"], "verified")
+        self.assertNotIn("references-unverified", row["statuses"])
+        self.assertEqual(bridge.status, Outcome.VERIFIED)
+        self.assertEqual(preview.references[0].status, "verified")
+        self.assertIsNotNone(preview.references[0].citation)
+
+    def test_pipeline_actual_adapter_legacy_optional_metadata_projection(self):
+        adapter = self.adapter
+
+        class LegacyCatalog:
+            def lookup(self, edition_id, source_row_id):
+                return tuple(replace(heading, edition_key=None, source_archive_sha256=None)
+                             for heading in adapter.lookup(edition_id, source_row_id))
+
+        row, bridge, preview = self.pipeline(LegacyCatalog())
+        self.assertEqual(row["references"][0]["outcome"], "verified")
+        self.assertEqual(bridge.status, Outcome.VERIFIED)
+        self.assertEqual(preview.references[0].status, "verified")
