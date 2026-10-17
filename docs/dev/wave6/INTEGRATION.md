@@ -87,3 +87,22 @@ failure rather than guessing a production change. No catalog code changed.
 Additional candidate paths: `tests/acceptance/wave6/test_review_batches.py`,
 `tests/acceptance/wave6/review_batches.mjs`, `tests/acceptance/wave6/browser.mjs`.
 The full10 browser journeys, including review-batches, remain mandatory.
+
+Second protected run38984629868 tested exact head47cfeda8291fc0ef26d90419ae9ee6166bfdf2c8
+on both PG versions: review-batches3/3 and browser9/10 passed, proving row-link
+and Enter corrections. The one remaining failure was a test expectation:
+`docs/dev/e4/README.md` explicitly requires search/filter reloads to render
+native SSR fallback pages (also present in the pinned base). Diagnostic actual
+DOM had the correct20 results, exact query/depth/children/root/page and no
+interactive panel. The browser journey now requires that native SSR state,
+checks result21 on page2, follows actual native detail/return and clear links,
+and separately re-enters the interactive page to verify JavaScript clear and
+PR47 basic-link state. No assertion is optional; no production change made.
+Both native and enhanced navigation remain exercised in the same mandatory
+journey. Third protected run must establish the final10/10 result.
+
+The exact compact1,000,000-byte E1/E2/E3 probe also passed on the assembled
+candidate:800 rows,original whitespace unchanged,D3 received1,000,000 bytes,
+zero fabricated drafts/references.1,000,001 bytes rejected. This supplements
+the committed1MB/row/reference and999,999-byte regressions; it is a one-off
+runtime probe, not a new counted unittest method.

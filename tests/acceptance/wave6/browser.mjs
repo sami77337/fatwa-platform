@@ -114,15 +114,35 @@ const cases = [
     assert.match(await evaluate("document.querySelector('#reference-content').innerText"),/باب اصطناعي/);
     await history("back"); assert.equal(await evaluate("location.href"),saved);
     await history("forward"); await history("back");
-    await reload(); await catalogReady();
-    assert.equal(await evaluate("new URL(location.href).searchParams.get('depth')"),"2");
     // Follow PR47's actual basic link and assert filter/page identity survives.
     const basic=await evaluate("document.querySelector('#basic-link').getAttribute('href')");
     for (const [name,value] of [["q","باب"],["depth","2"],["has_children","false"],["offset","20"]]) assert.equal(new URL(basic,origin).searchParams.get(name),value);
+    // E4 deliberately renders reloaded search bookmarks as native SSR pages.
+    await reload(); await wait("!!document.querySelector('#query') && !!document.querySelector('.heading-list')");
+    assert.equal(await evaluate("location.href"),saved);
+    for (const [selector,value] of [["#query","باب"],["#mode","normalized"],["#basic-depth","2"],["#basic-has_children","false"],["input[name=root]","1"]]) {
+      assert.equal(await evaluate(`document.querySelector(${JSON.stringify(selector)}).value`),value);
+    }
+    assert.equal(await evaluate("document.querySelectorAll('.heading-list > li > a').length"),20);
+    assert.match(await evaluate("document.querySelector('.heading-list > li > a').textContent"),/باب اصطناعي للطهارة 21/);
+    await click(".heading-list > li > a"); await wait("!!document.querySelector('.basic-reference')");
+    assert.match(await evaluate("document.querySelector('.selected-title').textContent"),/باب اصطناعي للطهارة 21/);
+    await evaluate("[...document.querySelectorAll('a')].find(a=>a.textContent==='العودة إلى نتائج البحث').click()");
+    await wait("location.pathname==='/fiqh' && !!document.querySelector('.heading-list > li > a')");
+    for (const [name,value] of [["q","باب"],["mode","normalized"],["root","1"],["depth","2"],["has_children","false"],["offset","20"]]) {
+      assert.equal(await evaluate(`new URL(location.href).searchParams.get(${JSON.stringify(name)})`),value);
+    }
+    await evaluate("[...document.querySelectorAll('a')].find(a=>a.textContent==='مسح البحث والمرشحات').click()");
+    await wait("!new URL(location.href).searchParams.has('q') && document.querySelector('#query')?.value===''");
+    assert.equal(await evaluate("document.querySelector('#basic-depth').value+document.querySelector('#basic-has_children').value"),"");
+    await navigate("/fiqh"); await catalogReady();
+    await search("باب","normalized",{root:"1",depth:"2",children:"false"});
     await click("#clear-search");
     assert.equal(await evaluate("document.querySelector('#search-query').value"),"");
     assert.equal(await evaluate("new URL(location.href).searchParams.has('q')"),false);
     assert.equal(await evaluate("document.activeElement.id"),"search-query");
+    assert.equal(await evaluate("document.querySelector('#search-depth').value+document.querySelector('#search-has_children').value+document.querySelector('#search-scope').value"),"");
+    assert.equal(new URL(await evaluate("document.querySelector('#basic-link').getAttribute('href')"),origin).searchParams.has("q"),false);
   }],
   ["catalog empty-query filters are applied", async () => {
     await navigate("/fiqh"); await catalogReady();
