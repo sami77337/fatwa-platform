@@ -330,7 +330,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python manage.py test tests.wave7_foundation.test_database tests.wave7_foundation.test_review_regressions --noinput --verbosity=2 --settings=config.settings.wave7_test 2>&1 | tee .local/qa/wave7-foundation/tests.log
+          python manage.py test tests.wave7_foundation.test_database tests.wave7_foundation.test_review_regressions tests.wave7_foundation.test_lossless_db --noinput --verbosity=2 --settings=config.settings.wave7_test 2>&1 | tee .local/qa/wave7-foundation/tests.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

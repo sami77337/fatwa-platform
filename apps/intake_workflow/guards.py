@@ -121,11 +121,12 @@ def require_synthetic_write(*, synthetic_fixtures_only: bool = False,
                        "AND t.tgenabled IN ('O','A') AND c.relname = ANY(%s)",
                        [['intake_workflow_'+name for name in ('intakebatch','intakeitem','intakereference','reviewevent')]])
         _require(cursor.fetchone()[0] == 4, 'WORKFLOW_SCHEMA_NOT_READY')
-        cursor.execute("SELECT EXISTS (SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid "
+        cursor.execute("SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid "
                        "JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' "
                        "AND c.relname='intake_workflow_intakebatch' AND NOT t.tgisinternal "
-                       "AND t.tgname='w7_15_unique_json_keys' AND t.tgenabled IN ('O','A'))")
-        _require(cursor.fetchone()[0], 'WORKFLOW_SCHEMA_NOT_READY')
+                       "AND t.tgname IN ('w7_15_unique_json_keys','w7_16_lossless_json_strings') "
+                       "AND t.tgenabled IN ('O','A')")
+        _require(cursor.fetchone()[0] == 2, 'WORKFLOW_SCHEMA_NOT_READY')
     return context
 
 

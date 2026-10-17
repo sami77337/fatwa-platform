@@ -1,5 +1,10 @@
 # PR58 independent review correction — partial, numeric decision blocked
 
+**Historical three-fix increment at 47b040105c1a122171af2bdaa1d05ad78672141f.**
+The later leadership-approved numeric correction supersedes the pending-decision
+status below; see [LOSSLESS_STORAGE.md](LOSSLESS_STORAGE.md). Earlier RED/CI
+counts remain evidence for their own heads, not the new candidate.
+
 Review input head: `8eebb1c97f79f2eb5cbe4f4930a493e0c8ed1241`.
 Same branch/PR58, development base `8a362b0ff69dadbac288d05a7cf33d5fdd36951e`.
 No replacement branch/PR or dependent-lane implementation. No freeze/acceptance claim.

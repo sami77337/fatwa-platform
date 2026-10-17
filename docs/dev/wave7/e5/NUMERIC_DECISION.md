@@ -1,5 +1,11 @@
 # Numeric representation decision required — no adoption
 
+**Historical proposal, superseded.** Leadership subsequently approved exact text
+storage and byte offsets, not the JSONB/codec-only proposal below. The current
+approved implementation candidate and public signatures are in
+[LOSSLESS_STORAGE.md](LOSSLESS_STORAGE.md). No numeric decision is pending;
+final acceptance still requires independent Astra review of the new head.
+
 Independent review reproduced this accepted malformed row failing storage:
 
 ```json

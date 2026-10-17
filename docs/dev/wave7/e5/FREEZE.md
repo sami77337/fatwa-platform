@@ -1,11 +1,11 @@
 # Wave7 E5 foundation freeze
 
-**FIXES_REQUIRED — freeze withdrawn pending numeric contract decision and fresh
-independent review.** PR58's first review found four defects at `8eebb1c97f79f2eb5cbe4f4930a493e0c8ed1241`.
-The corrective increment fixes ownership inventory, duplicate-key storage and
-external-ID integrity. Numeric precision remains an acknowledged blocker;
-the earlier FREEZE_READY handoff is superseded. No dependent-lane write dispatch.
-See [REVIEW_FIXES.md](REVIEW_FIXES.md) and [NUMERIC_DECISION.md](NUMERIC_DECISION.md).
+**Updated candidate — independent Astra acceptance still pending; no final freeze
+or dependent write dispatch.** Leadership approved LOSSLESS_NUMERIC_STORAGE after
+the first three review corrections. The exact current source-field/parser/slice
+contract is [LOSSLESS_STORAGE.md](LOSSLESS_STORAGE.md); it supersedes the earlier
+JSONB source representation and the old held proposal in NUMERIC_DECISION.md.
+The earlier FREEZE_READY handoff remains superseded pending fresh review.
 
 Development-only base: `8a362b0ff69dadbac288d05a7cf33d5fdd36951e` on
 `codex/20261017-wave6-integrated-candidate`. The PR/handoff records the exact
@@ -29,6 +29,9 @@ ROW_ORDINAL_START = REFERENCE_ORDINAL_START = 1
 
 parse_synthetic_payload(raw: bytes, *, synthetic_fixtures_only: bool = False) -> ParsedPayload
 # ParsedPayload.raw: bytes; payload_sha256: str; items: tuple[object, ...]
+# items_source: SourceSlice; item_sources: tuple[SourceSlice, ...]
+# reference_sources: tuple[tuple[SourceSlice, ...], ...]
+# SourceSlice(start: int, end: int, text: str): absolute UTF-8 bytes, end exclusive
 ParsedPayload.prepared_bytes() -> bytes  # derived C1/D1 input, not the hash source
 idempotency_decision(existing_sha256: str | None, incoming_sha256: str) -> IdempotencyDecision
 next_review_status(current: str, action: str) -> ReviewStatus
@@ -63,9 +66,9 @@ All four models have UUID `id` primary keys. Related names are part of the freez
 
 | Model | Fields and relations |
 | --- | --- |
-| IntakeBatch | scope; idempotency_key (128 ASCII-safe chars); payload_sha256; original_payload (BinaryField); payload_snapshot (server-derived JSONB); contract_version; source_config_id; created_at |
-| IntakeItem | batch FK(PROTECT, related_name=items); row_ordinal; nullable external_id (100 chars, no uniqueness); nullable question_original; nullable original_row JSON; intake_status; review_status; validation_results JSON |
-| IntakeReference | intake_item FK(PROTECT, related_name=references); reference_ordinal; nullable original_pointer JSON; reference_status; verification_results JSON; verified_identity JSON; citation_text |
+| IntakeBatch | scope; idempotency_key (128 ASCII-safe chars); payload_sha256; original_payload (BinaryField); payload_snapshot (server-derived exact UTF-8 TextField); contract_version; source_config_id; created_at |
+| IntakeItem | batch FK(PROTECT, related_name=items); row_ordinal; nullable external_id (100 chars, no uniqueness); nullable question_original; original_row TextField; source_byte_start/end; intake_status; review_status; validation_results JSON |
+| IntakeReference | intake_item FK(PROTECT, related_name=references); reference_ordinal; original_pointer TextField; source_byte_start/end; reference_status; verification_results JSON; verified_identity JSON; citation_text |
 | ReviewEvent | intake_item FK(PROTECT, related_name=review_events); operation_id UUID; action; from_status; to_status; reason (1..2000 nonblank chars); created_at |
 
 Unique: `(scope,idempotency_key)`, `(batch,row_ordinal)`,
@@ -82,7 +85,9 @@ without changing that app. Use the two migrations together; the guard refuses
 workflow writes until all four DB write triggers and the `0003_review_integrity`
 original-text duplicate-key trigger are present/enabled. Migration 0003 also
 aligns the external-ID constraint with Python 3.13 strip/control semantics.
-Previously published migrations 0001/0002 remain unchanged.
+0004_lossless_numeric_storage adds exact text/offset provenance and the w7_16
+lossless-string validation trigger, also required for readiness. Previously
+published migrations 0001/0002/0003 remain unchanged.
 
 The database checks original payload length and SHA256 with PostgreSQL built-ins
 (no extensions/grants), fixed configuration and bounded ordinals/statuses.
@@ -95,10 +100,11 @@ Derived item/ref states may change only inside the guarded write unit. Events
 are append-only through ordinary DML; privileged test teardown/DDL is not an
 application API or an advertised tamper-proof audit system.
 
-JSONB snapshots preserve decoded values, not JSON object key order/lexical number
-format. Exact source/provenance bytes, including pointer key order, remain in
-original_payload and can be recovered with the stable item/reference ordinals.
-Never overwrite source bytes or trim original questions.
+Source fields preserve exact text/key order/lexical numeric format. Byte ranges
+are absolute zero-based/end-exclusive, identify the actual ordinal's token and
+must match original_payload bytes; references must be within their row. JSON null
+is text `null`. Source validation uses json structure and byte equality, never
+JSONB numeric comparison. Never overwrite source bytes or trim original questions.
 
 UNVERIFIED/MISMATCHED refs require empty verified_identity and citation_text.
 VERIFIED requires one complete fixed identity plus its corresponding original
@@ -170,9 +176,11 @@ example.invalid and is never fetched.
 
 Pure labels (no DB):
 `tests.wave7_foundation.test_contracts` (11),
-`tests.wave7_foundation.test_guard_config` (8).
+`tests.wave7_foundation.test_guard_config` (8),
+`tests.wave7_foundation.test_lossless` (6).
 DB-only labels: `tests.wave7_foundation.test_database` (21) and
-`tests.wave7_foundation.test_review_regressions` (4), selected exclusively
+`tests.wave7_foundation.test_review_regressions` (4),
+`tests.wave7_foundation.test_lossless_db` (9), selected exclusively
 with wave7_test settings and disposable PG17/18. E1 owns its own tests/intake_workflow
 path; this distinct E5 package avoids cross-lane writes or accidental port-1 DB discovery.
 

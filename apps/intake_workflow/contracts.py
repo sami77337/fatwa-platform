@@ -1,10 +1,12 @@
 """Frozen Wave7 pure contracts. No database, caller-derived scope or source lookup."""
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 import hashlib
 import json
 import re
 from types import MappingProxyType
+from .source_slices import SourceSlice, source_slices
 
 CONTRACT_VERSION = 'wave7.intake.v1'
 PAYLOAD_SCHEMA = 'fatwa.wave7.synthetic-intake.v1'
@@ -134,16 +136,41 @@ def _finite(value):
     raise ContractError('json: nonfinite_number')
 
 
+def _decimal(token):
+    try:
+        value=Decimal(token)
+        if value.is_finite():
+            return value
+    except InvalidOperation:
+        pass
+    # The C implementation stores its exponent in a bounded machine integer.
+    # Python's bundled Decimal implementation is the stdlib fallback and can
+    # retain larger exponents. Construct a tuple without the global int/str cap.
+    from _pydecimal import Decimal as PythonDecimal
+    match=re.fullmatch(r'(-?)([0-9]+)(?:\.([0-9]+))?(?:[eE]([+-]?[0-9]+))?',token)
+    if match is None:
+        raise ContractError('json: invalid_number')
+    sign,whole,fraction,exponent=match.groups()
+    fraction=fraction or ''
+    power=int(Decimal(exponent or '0'))-len(fraction)
+    return PythonDecimal((int(bool(sign)),tuple(ord(ch)-48 for ch in whole+fraction),power))
+
+
 @dataclass(frozen=True, slots=True)
 class ParsedPayload:
     raw: bytes
     payload_sha256: str
     items: tuple[object, ...]
+    items_source: SourceSlice
+    item_sources: tuple[SourceSlice, ...]
+    reference_sources: tuple[tuple[SourceSlice, ...], ...]
 
     def prepared_bytes(self) -> bytes:
         """Derived D1 input only; raw remains the immutable idempotency/hash source."""
-        return json.dumps({'schema': PREPARED_SCHEMA, 'items': self.items},
-                          ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8')
+        # Reuse the validated original array: exact numeric tokens (including
+        # huge ints/underflow exponents), never float/string conversion or growth.
+        return (b'{"schema":"'+PREPARED_SCHEMA.encode('ascii')+b'","items":'
+                +self.raw[self.items_source.start:self.items_source.end]+b'}')
 
 
 def parse_synthetic_payload(raw: bytes, *, synthetic_fixtures_only: bool = False) -> ParsedPayload:
@@ -152,22 +179,26 @@ def parse_synthetic_payload(raw: bytes, *, synthetic_fixtures_only: bool = False
     if type(raw) is not bytes or not 1 <= len(raw) <= MAX_INPUT_BYTES:
         raise ContractError('payload: expected_1_to_1000000_bytes')
     try:
-        data = json.loads(raw.decode('utf-8'), object_pairs_hook=_object, parse_constant=_finite)
-        json.dumps(data, ensure_ascii=False, allow_nan=False).encode('utf-8')
-    except (UnicodeError, ValueError, RecursionError) as exc:
+        data = json.loads(raw.decode('utf-8'),object_pairs_hook=_object,parse_constant=_finite,
+                          parse_float=_decimal,parse_int=lambda token:int(Decimal(token)))
+    except (UnicodeError, ValueError, RecursionError, InvalidOperation) as exc:
         raise ContractError('payload: invalid_json_or_unicode') from exc
-    # PostgreSQL cannot represent NUL in text/JSONB. Reject the envelope before any writes.
-    if b'\\u0000' in json.dumps(data, ensure_ascii=True).encode('ascii'):
-        # Inspect decoded values so a literal backslash-u0000 remains ordinary source text.
-        stack = [data]
-        while stack:
-            value = stack.pop()
-            if isinstance(value, str) and '\x00' in value:
+    # Validate decoded Unicode without serializing numbers or changing process-wide
+    # Python integer limits. Literal backslash-u0000 remains ordinary source text.
+    stack = [data]
+    while stack:
+        value = stack.pop()
+        if isinstance(value,str):
+            try:
+                value.encode('utf-8')
+            except UnicodeError as exc:
+                raise ContractError('payload: invalid_json_or_unicode') from exc
+            if '\x00' in value:
                 raise ContractError('payload: unsupported_nul')
-            if isinstance(value, dict):
-                stack.extend(value.keys()); stack.extend(value.values())
-            elif isinstance(value, list):
-                stack.extend(value)
+        elif isinstance(value,dict):
+            stack.extend(value.keys()); stack.extend(value.values())
+        elif isinstance(value,list):
+            stack.extend(value)
     if (not isinstance(data, dict) or set(data) != {'schema', 'synthetic_fixtures_only', 'items'}
             or data['schema'] != PAYLOAD_SCHEMA or data['synthetic_fixtures_only'] is not True
             or not isinstance(data['items'], list) or not 1 <= len(data['items']) <= MAX_ITEMS):
@@ -177,4 +208,5 @@ def parse_synthetic_payload(raw: bytes, *, synthetic_fixtures_only: bool = False
             links = item.get('reference_links', [])
             if isinstance(links, list) and len(links) > MAX_REFERENCES_PER_ITEM:
                 raise ContractError('payload: reference_limit')
-    return ParsedPayload(raw, hashlib.sha256(raw).hexdigest(), tuple(data['items']))
+    array,items,references = source_slices(raw)
+    return ParsedPayload(raw,hashlib.sha256(raw).hexdigest(),tuple(data['items']),array,items,references)

@@ -32,6 +32,8 @@ jobs:
         run: python -B -m unittest tests.wave7_foundation.test_contracts -v
       - name: Wave7 foundation pure guard configuration
         run: python -B -m unittest tests.wave7_foundation.test_guard_config -v
+      - name: Wave7 lossless numeric and source-slice contracts
+        run: python -B -m unittest tests.wave7_foundation.test_lossless -v
       - name: Require C1 C2 C3 and complete importer collection
         run: python tools/dev/wave3_qa.py --standalone --require-integrated --reports .local/qa/c6
       - uses: actions/upload-artifact@v4

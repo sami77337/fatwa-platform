@@ -38,13 +38,16 @@ class ReviewRegressionTests(TransactionTestCase):
         with connection.cursor() as cursor:
             cursor.execute('INSERT INTO intake_workflow_intakebatch '
                 '(id,scope,idempotency_key,original_payload,payload_sha256,payload_snapshot,'
-                'contract_version,source_config_id,created_at) VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s)',
-                [model.pk,c.SYNTHETIC_SCOPE,model.idempotency_key,raw,model.payload_sha256,'{}',
+                'contract_version,source_config_id,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                [model.pk,c.SYNTHETIC_SCOPE,model.idempotency_key,raw,model.payload_sha256,'',
                  c.CONTRACT_VERSION,c.SOURCE_CONFIG_ID,datetime.now(timezone.utc)])
         return model
 
     def item(self, batch, row, *, via='orm', external_id=None, ordinal=1):
-        values = dict(batch=batch,row_ordinal=ordinal,original_row=row,external_id=external_id,
+        parsed=c.parse_synthetic_payload(bytes(batch.original_payload),synthetic_fixtures_only=True)
+        source=parsed.item_sources[ordinal-1]
+        values = dict(batch=batch,row_ordinal=ordinal,original_row=source.text,external_id=external_id,
+            source_byte_start=source.start,source_byte_end=source.end,
             question_original=row.get('question') if isinstance(row,dict) and isinstance(row.get('question'),str) else None,
             intake_status='BLOCKED_INVALID')
         if via == 'orm':
@@ -55,9 +58,9 @@ class ReviewRegressionTests(TransactionTestCase):
         with connection.cursor() as cursor:
             cursor.execute('INSERT INTO intake_workflow_intakeitem '
                 '(id,batch_id,row_ordinal,external_id,question_original,original_row,intake_status,'
-                'review_status,validation_results) VALUES (%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s::jsonb)',
-                [model.pk,batch.pk,ordinal,external_id,model.question_original,json.dumps(row),
-                 model.intake_status,model.review_status,'{}'])
+                'review_status,validation_results,source_byte_start,source_byte_end) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s)',
+                [model.pk,batch.pk,ordinal,external_id,model.question_original,source.text,
+                 model.intake_status,model.review_status,'{}',source.start,source.end])
         return model
 
     def test_unknown_schema_and_standalone_types_never_claim_or_migrate(self):
@@ -148,7 +151,7 @@ class ReviewRegressionTests(TransactionTestCase):
                         item = self.item(batch,row,via=via,external_id=None)
                     item.refresh_from_db()
                     self.assertIsNone(item.external_id)
-                    self.assertEqual(item.original_row,row)
+                    self.assertEqual(item.original_row,json.dumps(row,ensure_ascii=False))
                     self.assertEqual(item.question_original,row['question'])
 
         # Interior whitespace and exact valid Unicode IDs must not be trimmed/rejected.

@@ -44,11 +44,19 @@ class FoundationDatabaseTests(TransactionTestCase):
             original_payload=raw, payload_sha256=hashlib.sha256(raw).hexdigest())
 
     def item(self, batch, ordinal=1, **changes):
-        row=json.loads(batch.original_payload)['items'][ordinal-1]
+        parsed=c.parse_synthetic_payload(bytes(batch.original_payload),synthetic_fixtures_only=True)
+        row=parsed.items[ordinal-1];source=parsed.item_sources[ordinal-1]
         return IntakeItem.objects.create(batch=batch,row_ordinal=ordinal,
             external_id=c.valid_external_id(row.get('external_id')) if isinstance(row,dict) else None,
             question_original=row.get('question') if isinstance(row,dict) and isinstance(row.get('question'),str) else None,
-            original_row=row,**changes)
+            original_row=source.text,source_byte_start=source.start,source_byte_end=source.end,**changes)
+
+    def reference(self, item, **changes):
+        parsed=c.parse_synthetic_payload(bytes(item.batch.original_payload),synthetic_fixtures_only=True)
+        source=parsed.reference_sources[item.row_ordinal-1][0]
+        values=dict(intake_item=item,reference_ordinal=1,original_pointer=source.text,
+                    source_byte_start=source.start,source_byte_end=source.end)
+        return IntakeReference.objects.create(**(values|changes))
 
     def test_original_bytes_questions_duplicates_and_blocked_rows_persist(self):
         with g.synthetic_atomic(synthetic_fixtures_only=True):
@@ -56,10 +64,10 @@ class FoundationDatabaseTests(TransactionTestCase):
             items=[self.item(batch,n,intake_status='READY_FOR_EDITOR' if n==7 else 'BLOCKED_INVALID') for n in range(1,9)]
         batch.refresh_from_db();items[0].refresh_from_db();items[3].refresh_from_db();items[7].refresh_from_db()
         self.assertEqual(bytes(batch.original_payload),f.synthetic_payload())
-        self.assertEqual(batch.payload_snapshot,json.loads(f.synthetic_payload()))
+        self.assertEqual(batch.payload_snapshot,f.synthetic_payload().decode('utf-8'))
         self.assertEqual(items[0].question_original,f.ORIGINAL_QUESTION)
         self.assertEqual(items[0].external_id,items[3].external_id)
-        self.assertIsNone(items[7].original_row)
+        self.assertEqual(items[7].original_row,'null')
         self.assertEqual(IntakeItem.objects.filter(batch=batch).count(),8)
 
     def test_unique_key_same_payload_replay_and_conflict_contract(self):
@@ -103,12 +111,11 @@ class FoundationDatabaseTests(TransactionTestCase):
     def test_row_and_per_item_reference_ordinals_and_evidence_constraints(self):
         with g.synthetic_atomic(synthetic_fixtures_only=True):
             batch=self.batch();one=self.item(batch,1);duplicate=self.item(batch,4)
-            pointer=one.original_row['reference_links'][0]
-            IntakeReference.objects.create(intake_item=one,reference_ordinal=1,original_pointer=pointer)
-            IntakeReference.objects.create(intake_item=duplicate,reference_ordinal=1,original_pointer=pointer)
+            self.reference(one)
+            self.reference(duplicate)
         for action in (lambda:self.item(batch,1),lambda:self.item(batch,0),lambda:IntakeItem.objects.create(batch=batch,row_ordinal=1001,original_row=None),
-                       lambda:IntakeReference.objects.create(intake_item=one,reference_ordinal=1,original_pointer=pointer),
-                       lambda:IntakeReference.objects.create(intake_item=one,reference_ordinal=101,original_pointer=pointer)):
+                       lambda:self.reference(one),
+                       lambda:self.reference(one,reference_ordinal=101)):
             with self.subTest(action=action),self.assertRaises((IntegrityError,IndexError)),g.synthetic_atomic(synthetic_fixtures_only=True):
                 action()
         self.assertEqual(IntakeReference.objects.count(),2)
@@ -116,25 +123,23 @@ class FoundationDatabaseTests(TransactionTestCase):
     def test_unverified_or_incomplete_identity_cannot_hold_citation(self):
         with g.synthetic_atomic(synthetic_fixtures_only=True):
             batch=self.batch();item=self.item(batch)
-        pointer=item.original_row['reference_links'][0]
         for values in ({'reference_status':'UNVERIFIED','citation_text':'false citation'},
                        {'reference_status':'MISMATCHED','verified_identity':dict(c.VERIFIED_IDENTITIES[0])},
                        {'reference_status':'VERIFIED','verified_identity':{}},
                        {'reference_status':'VERIFIED','verified_identity':dict(c.VERIFIED_IDENTITIES[1])},
                        {'reference_status':'VERIFIED','verified_identity':dict(c.VERIFIED_IDENTITIES[0],source_input_sha256='c'*64)}):
             with self.subTest(values=values),self.assertRaises(IntegrityError),g.synthetic_atomic(synthetic_fixtures_only=True):
-                IntakeReference.objects.create(intake_item=item,reference_ordinal=1,original_pointer=pointer,**values)
+                self.reference(item,**values)
         f.seed_reference_catalog(synthetic_fixtures_only=True)
         with g.synthetic_atomic(synthetic_fixtures_only=True):
-            ref=IntakeReference.objects.create(intake_item=item,reference_ordinal=1,original_pointer=pointer,
+            ref=self.reference(item,
                 reference_status='VERIFIED',verified_identity=dict(c.VERIFIED_IDENTITIES[0]),citation_text='عنوان اصطناعي؛ ليس فتوى')
         self.assertEqual(ref.reference_status,'VERIFIED')
 
     def test_originals_and_scope_and_event_rows_are_immutable(self):
         with g.synthetic_atomic(synthetic_fixtures_only=True):
             batch=self.batch();item=self.item(batch)
-            ref=IntakeReference.objects.create(intake_item=item,reference_ordinal=1,
-                original_pointer=item.original_row['reference_links'][0])
+            ref=self.reference(item)
             event=ReviewEvent.objects.create(intake_item=item,from_status='UNREVIEWED',to_status='IN_REVIEW',
                 action='start_review',reason='Synthetic review start',operation_id=uuid4())
         actions=[lambda:IntakeBatch.objects.filter(pk=batch.pk).update(idempotency_key='rewritten'),
@@ -276,8 +281,7 @@ class FoundationDatabaseTests(TransactionTestCase):
     def test_ready_intake_can_remain_unverified_without_citation(self):
         with g.synthetic_atomic(synthetic_fixtures_only=True):
             batch=self.batch();item=self.item(batch,7,intake_status='READY_FOR_EDITOR')
-            ref=IntakeReference.objects.create(intake_item=item,reference_ordinal=1,
-                original_pointer=item.original_row['reference_links'][0])
+            ref=self.reference(item)
         self.assertEqual((item.intake_status,item.review_status,ref.reference_status,ref.citation_text),
                          ('READY_FOR_EDITOR','UNREVIEWED','UNVERIFIED',''))
 
@@ -285,8 +289,7 @@ class FoundationDatabaseTests(TransactionTestCase):
         with g.synthetic_atomic(synthetic_fixtures_only=True):
             batch=self.batch();item=self.item(batch)
         with self.assertRaises(IntegrityError),g.synthetic_atomic(synthetic_fixtures_only=True):
-            IntakeReference.objects.create(intake_item=item,reference_ordinal=1,
-                original_pointer=item.original_row['reference_links'][0],reference_status='VERIFIED',
+            self.reference(item,reference_status='VERIFIED',
                 verified_identity=dict(c.VERIFIED_IDENTITIES[0]),citation_text='No absent catalog proof')
         self.assertEqual(IntakeReference.objects.count(),0)
 

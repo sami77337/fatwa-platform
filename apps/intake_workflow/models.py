@@ -25,7 +25,7 @@ class IntakeBatch(models.Model):
     idempotency_key = models.CharField(max_length=128)
     payload_sha256 = models.CharField(max_length=64)
     original_payload = models.BinaryField()
-    payload_snapshot = models.JSONField(default=dict,editable=False)
+    payload_snapshot = models.TextField(default='',editable=False)
     contract_version = models.CharField(max_length=32, default=c.CONTRACT_VERSION, editable=False)
     source_config_id = models.CharField(max_length=64, default=c.SOURCE_CONFIG_ID, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -41,6 +41,9 @@ class IntakeBatch(models.Model):
             models.CheckConstraint(condition=Exact(F('payload_sha256'),Func(
                 Func(F('original_payload'),function='sha256'),Value('hex'),function='encode',output_field=models.CharField())),
                 name='w7_batch_exact_payload_hash'),
+            models.CheckConstraint(condition=Exact(
+                Func(F('payload_snapshot'),Value('UTF8'),function='convert_to',output_field=models.BinaryField()),
+                F('original_payload')),name='w7_batch_exact_source_text'),
         ]
 
 
@@ -50,7 +53,9 @@ class IntakeItem(models.Model):
     row_ordinal = models.PositiveSmallIntegerField()
     external_id = models.CharField(max_length=100,null=True,blank=True)
     question_original = models.TextField(null=True,blank=True)
-    original_row = models.JSONField(null=True)
+    original_row = models.TextField()
+    source_byte_start = models.PositiveIntegerField()
+    source_byte_end = models.PositiveIntegerField()
     intake_status = models.CharField(max_length=32,choices=_choices(c.IntakeStatus),default=c.IntakeStatus.RECEIVED.value)
     review_status = models.CharField(max_length=32,choices=_choices(c.ReviewStatus),default=c.ReviewStatus.UNREVIEWED.value)
     validation_results = models.JSONField(default=dict)
@@ -60,6 +65,8 @@ class IntakeItem(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['batch','row_ordinal'],name='w7_item_batch_ordinal_unique'),
             models.CheckConstraint(condition=Q(row_ordinal__gte=1,row_ordinal__lte=c.MAX_ITEMS),name='w7_item_ordinal_bound'),
+            models.CheckConstraint(condition=Q(source_byte_start__gte=0,source_byte_end__gt=F('source_byte_start'),
+                source_byte_end__lte=c.MAX_INPUT_BYTES),name='w7_item_source_offsets_bound'),
             models.CheckConstraint(condition=Q(intake_status__in=list(c.IntakeStatus)),name='w7_item_intake_status'),
             models.CheckConstraint(condition=Q(review_status__in=list(c.ReviewStatus)),name='w7_item_review_status'),
             models.CheckConstraint(condition=Q(external_id__isnull=True)|(
@@ -74,7 +81,9 @@ class IntakeReference(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     intake_item = models.ForeignKey(IntakeItem,on_delete=models.PROTECT,related_name='references')
     reference_ordinal = models.PositiveSmallIntegerField()
-    original_pointer = models.JSONField(null=True)
+    original_pointer = models.TextField()
+    source_byte_start = models.PositiveIntegerField()
+    source_byte_end = models.PositiveIntegerField()
     reference_status = models.CharField(max_length=16,choices=_choices(c.ReferenceStatus),default=c.ReferenceStatus.UNVERIFIED.value)
     verification_results = models.JSONField(default=dict)
     verified_identity = models.JSONField(default=dict)
@@ -85,11 +94,11 @@ class IntakeReference(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['intake_item','reference_ordinal'],name='w7_ref_item_ordinal_unique'),
             models.CheckConstraint(condition=Q(reference_ordinal__gte=1,reference_ordinal__lte=c.MAX_REFERENCES_PER_ITEM),name='w7_ref_ordinal_bound'),
+            models.CheckConstraint(condition=Q(source_byte_start__gte=0,source_byte_end__gt=F('source_byte_start'),
+                source_byte_end__lte=c.MAX_INPUT_BYTES),name='w7_ref_source_offsets_bound'),
             models.CheckConstraint(condition=Q(reference_status__in=list(c.ReferenceStatus)),name='w7_ref_status'),
             models.CheckConstraint(condition=(Q(reference_status='VERIFIED') & reduce(or_, [
-                Q(verified_identity=dict(value)) & (
-                    Q(original_pointer={'source_id':'W7-SOURCE','heading_id':f'W7-HEADING-{value["source_row_id"]}'}) |
-                    Q(original_pointer={key:item for key,item in value.items() if key not in ('edition_id','source_row_id')}))
+                Q(verified_identity=dict(value))
                 for value in c.VERIFIED_IDENTITIES]) |
                 (Q(reference_status__in=['UNVERIFIED','MISMATCHED'],verified_identity={},citation_text=''))),
                 name='w7_ref_verified_identity_only'),
