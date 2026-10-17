@@ -27,6 +27,7 @@ SUITES = {
         'tests.wave7_foundation.test_database',
         'tests.wave7_foundation.test_review_regressions',
         'tests.wave7_foundation.test_lossless_db',
+        'tests.wave7_foundation.test_span_performance_db',
         'tests.wave7_foundation.test_reference_service',
         'tests.wave7_foundation.test_service_integration',
         'tests.intake_workflow.test_database',
