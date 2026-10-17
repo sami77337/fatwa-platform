@@ -11,7 +11,7 @@ export function reviewBatchCase({navigate, wait, evaluate, click, key, reload, h
     await navigate("/dev/editorial-preview/pipeline");
     await evaluate("document.querySelector('#batch').value='mixed';document.querySelector('#q').focus()");
     await key("Enter", 13); await wait("new URL(location.href).searchParams.get('batch')==='mixed'");
-    await click("article h2 a"); await wait("location.pathname.endsWith('/SYN-P01')");
+    await click("article h2 a"); await wait("new URL(location.href).searchParams.get('row')==='1' && !!document.querySelector('article h3')");
     assert.equal(await evaluate("document.querySelector('article .original-text').textContent"), "  سؤالٌ اصطناعيٌّ آخر\tللمراجعة\nفقط  ");
     assert.match(await text(), /دفعة متنوعة/);
     await navigate("/dev/editorial-preview/pipeline?batch=mixed");
@@ -20,7 +20,8 @@ export function reviewBatchCase({navigate, wait, evaluate, click, key, reload, h
     await click('a[rel="next"]'); await wait("new URL(location.href).searchParams.get('page')==='2'");
     const saved = await evaluate("location.href");
     const expected = {batch:"mixed",status:"blocked-invalid",issue:"invalid_input",page_size:"1",page:"2",q:"اصطناعي"};
-    await click("article h2 a"); await wait("location.pathname.endsWith('/SYN-M03')");
+    await click("article h2 a"); await wait("new URL(location.href).searchParams.get('row')==='3' && !!document.querySelector('article h3')");
+    assert.match(await text(), /سجل SYN-M03/);
     for (const [name,value] of Object.entries(expected)) assert.equal(await evaluate(`new URL(location.href).searchParams.get(${JSON.stringify(name)})`), value);
     assert.match(await text(), /لم يُنشأ سجل مسودة/);
     await evaluate("[...document.querySelectorAll('a')].find(a=>a.textContent.includes('العودة إلى القائمة المصفاة')).click()");

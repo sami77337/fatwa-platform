@@ -58,3 +58,32 @@ No source imports, owner DB access, real fatwa drafting/publishing, main merge,
 deployment, credentials, grants or security changes. Source pins are caller
 assertions, not archive-inspection proof. Gate B NOT_PASSED; C/D/E HOLD;
 Phase01 BLOCKED. NOT_DEPLOYED / GATES_HOLD / USAGE_NOT_OBSERVED.
+
+## First combined runtime findings
+
+Initial B6 run38984354783 on PR merge5c82fe5 (tree identical to head6424e52)
+ran PG17 and18:158 B6 cases each, including the 12 real E3 adapter cases.
+E6 guard6,transport6,service8,assets2,regression1 passed. Actual Google Chrome
+155.0.8059.39 started with its sandbox enabled. Browser10 journeys:7 PASS,
+3 FAIL,0 NOT_RUN. Review-batches HTTP3:2 PASS,1 ERROR (`StopIteration`).
+Artifacts12082177646(PG18),12081459876(PG17) contain screenshots and traces.
+The connector downloaded an archive reference, but workspace retrieval returned
+HTTP403; raw job logs were inspected successfully. No artifact content is
+claimed inspected from that failed retrieval.
+
+Recoverable E6 integration assumptions are corrected only on this candidate,
+never on the E6 or E2 producer branches: actual E2 list links use trusted
+batch-local `row` ordinals, not legacy `/SYN-ID` paths. HTTP and real-browser
+assertions now follow row3 and verify SYN-M03; the old path wait for row2 and
+repeated row1 is updated likewise. E2 behavior and its contract are unchanged.
+The first real browser also exposed Enter not submitting the native review
+form; the CDP Enter key now supplies its carriage-return text. All existing
+keyboard, filter, batch and return assertions remain required. These runtime
+fixes require the next protected CI run to establish GREEN. Added bounded
+synthetic failure diagnostics and final browser metadata to CI logs, alongside
+unchanged screenshots/trace artifacts, to investigate the catalog reload
+failure rather than guessing a production change. No catalog code changed.
+
+Additional candidate paths: `tests/acceptance/wave6/test_review_batches.py`,
+`tests/acceptance/wave6/review_batches.mjs`, `tests/acceptance/wave6/browser.mjs`.
+The full10 browser journeys, including review-batches, remain mandatory.

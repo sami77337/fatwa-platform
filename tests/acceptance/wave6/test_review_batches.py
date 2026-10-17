@@ -49,9 +49,12 @@ class ReviewBatchIntegrationTests(SyntheticLiveServerTestCase):
         self.assertIn("SYN-M03", html)
         links = Links()
         links.feed(html)
-        detail = next(link for link in links.hrefs if urlsplit(link).path == self.base + "/SYN-M03")
-        self.assertEqual(parse_qs(urlsplit(detail).query), params)
+        detail = next(link for link in links.hrefs if urlsplit(link).path == self.base
+                      and parse_qs(urlsplit(link).query).get("row") == ["3"])
+        self.assertEqual(parse_qs(urlsplit(detail).query), {**params, "row": ["3"]})
         detail_html = self.get(detail.removeprefix(self.base))
+        self.assertIn("سجل SYN-M03", detail_html)
+        self.assertIn("لم يُنشأ سجل مسودة", detail_html)
         returned = Links()
         returned.feed(detail_html)
         back = next(link for link in returned.hrefs if urlsplit(link).path == self.base

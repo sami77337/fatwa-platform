@@ -63,7 +63,8 @@ async function search(query, mode="normalized", filters={}) {
   await wait("document.querySelector('#search-results').getAttribute('aria-busy')==='false'");
 }
 async function key(key, code) {
-  await cdp.send("Input.dispatchKeyEvent", {type:"keyDown", key, windowsVirtualKeyCode:code});
+  await cdp.send("Input.dispatchKeyEvent", {type:"keyDown", key, windowsVirtualKeyCode:code,
+    ...(key === "Enter" ? {code:"Enter",text:"\r",unmodifiedText:"\r"} : {})});
   await cdp.send("Input.dispatchKeyEvent", {type:"keyUp", key, windowsVirtualKeyCode:code});
 }
 async function screenshot(name) {
@@ -146,7 +147,7 @@ const cases = [
     await key("Enter",13); await wait("new URL(location.href).searchParams.get('page_size')==='1'");
     await click('a[rel="next"]'); await wait("new URL(location.href).searchParams.get('page')==='2'");
     const saved=await evaluate("location.href"); await click("article h2 a");
-    await wait("/pipeline\\/[^/]+$/.test(location.pathname)");
+    await wait("new URL(location.href).searchParams.get('row')==='2' && !!document.querySelector('article h3')");
     assert.match(await text(),/إحالة غير محسومة/);
     await evaluate("[...document.querySelectorAll('a')].find(a=>a.textContent.includes('العودة إلى القائمة المصفاة')).click()");
     await wait("location.pathname.endsWith('/pipeline')"); assert.equal(await evaluate("location.href"),saved);
@@ -251,6 +252,11 @@ try {
     try {await run();report.tests[index].result="PASS";console.log("PASS "+name);}
     catch(error) {
       report.tests[index]={name,result:"FAIL",error:error.message};
+      report.tests[index].diagnostic = await evaluate(`({url:location.href,title:document.title,
+        ready:document.readyState,interactiveHidden:document.querySelector('#interactive-catalog')?.hidden,
+        treeBusy:document.querySelector('#tree-region')?.getAttribute('aria-busy'),
+        body:document.body.innerText.slice(0,5000),focus:document.activeElement?.outerHTML?.slice(0,500)})`).catch(()=>null);
+      console.log("DIAGNOSTIC "+JSON.stringify(report.tests[index].diagnostic));
       await screenshot(`failure-${index+1}.png`).catch(()=>{});
       console.log("FAIL "+name+": "+error.message);
     }
@@ -269,4 +275,9 @@ finally {
   await writeFile(path.join(artifacts,"browser-result.json"),JSON.stringify(report,null,2)+"\n");
 }
 console.log(JSON.stringify({result:report.result,counts:report.counts,blocker:report.blocker,artifacts}));
+console.log("E6_BROWSER_EVIDENCE "+JSON.stringify({sha:report.sha,dirty_paths:report.dirty_paths,
+  browser:report.browser,environment:report.environment,result:report.result,counts:report.counts,
+  tests:report.tests,asset_preflight:report.asset_preflight,screenshots:report.screenshots,
+  request_count:report.requests.length,console_errors:report.console_errors,
+  exceptions:report.exceptions,unwanted_requests:report.unwanted_requests}));
 process.exitCode=report.result==="PASS"?0:report.result==="BLOCKED"?2:1;
