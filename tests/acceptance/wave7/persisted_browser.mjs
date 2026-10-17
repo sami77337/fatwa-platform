@@ -57,13 +57,13 @@ async function child(action,options){
 }
 const query=(batch,extra={})=>route+"?"+new URLSearchParams({batch,...extra});
 const cases=[
-  ["desktop batch selector and repeated external ID isolate exact original questions",async()=>{
+  ["desktop batch selector and question filters isolate repeated-ID originals",async()=>{
     await navigate(query(scenario.batch_ids[0]));
     assert.equal(await evaluate("document.documentElement.dir"),"rtl");
     assert.equal(await evaluate("document.querySelectorAll('#stored-batch option').length"),2);
     for(let index=0;index<2;index++){
       if(index===1)await navigate(query(scenario.batch_ids[0]));
-      await evaluate(`document.querySelector('#stored-batch').value=${JSON.stringify(scenario.batch_ids[index])};document.querySelector('#stored-q').value=${JSON.stringify(scenario.repeated_external_id)};document.querySelector('#stored-q').focus()`);
+      await evaluate(`document.querySelector('#stored-batch').value=${JSON.stringify(scenario.batch_ids[index])};document.querySelector('#stored-mode').value='normalized';document.querySelector('#stored-intake').value='READY_FOR_EDITOR';document.querySelector('#stored-q').value='اصطناعي';document.querySelector('#stored-q').focus()`);
       await submit();assert.equal(await evaluate("document.querySelectorAll('#wave7-persisted article').length"),1);
       await click("#wave7-persisted article h2 a");
       assert.equal(await evaluate("document.querySelector('#wave7-persisted article p.original-text').textContent"),scenario.original_questions[index]);
@@ -77,7 +77,7 @@ const cases=[
     await submit();await click('#wave7-persisted a[rel="next"]');
     const saved=await evaluate("location.href");assert.equal(new URL(saved).searchParams.get("page"),"2");
     await click("#wave7-persisted article h2 a");assert.match(await body(),/BLOCKED_INVALID/);
-    for(const [key,value] of Object.entries({batch:scenario.batch_ids[0],q:"اصطناعي",intake_status:"BLOCKED_INVALID",page_size:"1",page:"2"}))assert.equal(await evaluate(`new URL(location.href).searchParams.get(${JSON.stringify(key)})`),value);
+    for(const [key,value] of Object.entries({batch:scenario.batch_ids[0],q:"اصطناعي",mode:"normalized",intake_status:"BLOCKED_INVALID",page_size:"1",page:"2"}))assert.equal(await evaluate(`new URL(location.href).searchParams.get(${JSON.stringify(key)})`),value);
     await returnToList();assert.equal(await evaluate("location.href"),saved);
     await backForward("back");await backForward("forward");await reload();
     assert.equal(await evaluate("location.href"),saved);assert.equal(await evaluate("document.querySelector('#stored-intake').value"),"BLOCKED_INVALID");
@@ -118,7 +118,7 @@ const cases=[
     for(const width of [390,320]){
       await cdp.send("Emulation.setDeviceMetricsOverride",{width,height:844,deviceScaleFactor:1,mobile:true});
       await navigate(query(scenario.batch_ids[1]));
-      await evaluate(`document.querySelector('#stored-q').value=${JSON.stringify(scenario.repeated_external_id)};document.querySelector('#stored-q').focus()`);
+      await evaluate("document.querySelector('#stored-mode').value='normalized';document.querySelector('#stored-intake').value='READY_FOR_EDITOR';document.querySelector('#stored-q').value='اصطناعي';document.querySelector('#stored-q').focus()");
       await submit();await click("#wave7-persisted article h2 a");
       assert.equal(await evaluate("document.querySelector('#wave7-persisted article p.original-text').textContent"),scenario.original_questions[1]);
       assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"),true);

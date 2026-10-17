@@ -1,9 +1,9 @@
 # Wave7 available-producer QA integration
 
 This is local integration of the accepted foundation, published E1/E2/E3/E6 files,
-and the coordinator's hash-verified internal E4 patch. Publication remains on
-owner hold. E4 APIs/context are wired; E2's actual loader adaptation is still
-awaited from its producer. This increment does not constitute assembled Wave7
+and the coordinator's hash-verified internal E4, E6-P2 and E2-adapter patches.
+Publication remains on owner hold. E4 APIs/context and E2's actual loader are
+now integrated. This increment does not constitute assembled Wave7
 browser acceptance or independent review. Patch provenance is recorded in
 `docs/dev/wave7/e5/E4_PATCH_INTEGRATION.md`; no unpublished producer commit is
 claimed as remote ancestry.
@@ -59,7 +59,7 @@ and cleanup policy. It now runs:
 python tools/dev/wave7_qa.py --suite database --json .local/qa/wave7-foundation/tests.json
 ```
 
-Actual required labels (106 cases before the E2 loader adaptation):
+Actual required labels (115 cases with the actual E2 adapter):
 
 | Module under `tests.` | Cases |
 | --- | ---: |
@@ -67,10 +67,11 @@ Actual required labels (106 cases before the E2 loader adaptation):
 | `wave7_foundation.test_review_regressions` | 4 |
 | `wave7_foundation.test_lossless_db` | 9 |
 | `wave7_foundation.test_reference_service` | 15 |
-| `wave7_foundation.test_service_integration` | 4 |
+| `wave7_foundation.test_service_integration` | 5 |
 | `intake_workflow.test_database` | 15 |
 | `editorial_demo.test_wave7_review_db` | 16 |
 | `editorial_demo.test_wave7_read_db` | 12 |
+| `editorial_demo.test_wave7_e4_adapter_db` | 8 |
 | `integration.ui.wave7_workflow_reads_db` | 10 |
 
 The permanent E3 module implements the producer's DB proposal, including exact
@@ -88,7 +89,9 @@ findings remain unchanged, current reference state is read, batch UUID isolation
 GET filter/page/detail/return state, default-off and unsafe method boundaries.
 The new E4 cases compare actual shared API results to the SSR read context,
 preserve source text and current citations, and check disabled/HEAD/invalid/unsafe
-requests through the real registered URLs. They do not replace E2's pending loader.
+requests through the real registered URLs. A further case verifies the browser's
+question-only search plus READY_FOR_EDITOR filter across repeated-ID batches,
+through the actual adapted E2 loader. The obsolete external-ID query matches zero.
 
 The same separate URLconf registers `wave7_api_batches` at
 `/dev/wave7/api/batches`, `wave7_api_items` at `/dev/wave7/api/items`, and
@@ -125,15 +128,18 @@ browser commands therefore exit nonzero, with 4 and 8 browser cases NOT_RUN.
 Do not change system security or disable sandbox protections. Actual supported
 browser execution and a fresh independent combined review remain required.
 
-## Pending E2 adaptation and gates
+## Final composition and remaining gates
 
 The actual E4 patch files and eight no-DB / ten DB labels are now wired. Its DB
 label is explicit only in the owned Wave7 PG17/18 group; it is never sent to
 port-1 C6/D6 discovery. The producer's deliberate DB filename remains unchanged.
-E2-to-E4 reader adaptation, including search mode, is assigned to E2 and awaits
-that producer's actual patch. E5 does not edit the loader ahead of it. Full E6
-browser reruns on this assembled increment wait for that patch. Existing earlier
-browser artifacts remain attributed to their exact preceding SHA.
+E2-to-E4 reader adaptation, including search mode, now comes from the verified
+43,383-byte producer patch. Its eight DB regressions are explicitly included.
+E5 changes no producer service contract. The E6 browser's desktop/mobile fixture
+query is aligned with question-only search and native mode/status controls; exact
+citation/row/batch/source assertions remain intact. Full E6 runs are now applicable
+to the final clean local head, using the same protected runtime and fresh owned DB.
+See `docs/dev/wave7/e5/FINAL_INTEGRATION.md` and the exact-head artifact manifest.
 
 Windows CI and GitHub Actions are NOT_RUN while publication is held. Real-source
 read-only checks, independent combined review and source/product acceptance are

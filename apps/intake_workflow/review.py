@@ -7,14 +7,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from django.db.models import Q
-
 from . import contracts as c, guards
 
 
 class ReviewConflict(c.ContractError):
     code = 'REVIEW_CONFLICT'
     status_code = 409
+
+
+class ReviewUnavailable(c.ContractError):
+    code = 'REVIEW_UNAVAILABLE'
+    status_code = 503
 
 
 class ReviewNotFound(c.ContractError):
@@ -147,11 +150,12 @@ class ReviewWorklist:
     page_count: int
     page_size: int
     q: str
+    mode: str
     intake_status: str
     review_status: str
 
 
-def _read_parameters(batch_id, row_id, q, intake_status, review_status, page, page_size):
+def _read_parameters(batch_id, row_id, q, mode, intake_status, review_status, page, page_size):
     batch_id = _uuid(batch_id) if batch_id is not None else None
     row_id = _uuid(row_id) if row_id is not None else None
     if (row_id is not None and batch_id is None or not isinstance(q, str) or len(q) > 80
@@ -164,24 +168,39 @@ def _read_parameters(batch_id, row_id, q, intake_status, review_status, page, pa
         q.encode('utf-8', errors='strict')
     except UnicodeError as exc:
         raise c.ContractError('review: invalid_query') from exc
+    from apps.reference.query import Page, validate_search
+    validate_search(q, mode)
+    Page(page_size, (page-1)*page_size)  # E4's offset ceiling applies to SSR too.
     return batch_id, row_id
 
 
-def load_review_worklist(*, batch_id=None, row_id=None, q: str = '', intake_status: str = '',
+def _workflow_read(call, *args, **kwargs):
+    from apps.reference import services
+    try:
+        return call(*args, **kwargs)
+    except (services.WorkflowReadsDisabled, services.WorkflowItemNotFound) as exc:
+        raise ReviewNotFound('review: read_not_found') from exc
+    except services.WorkflowReadUnavailable as exc:
+        raise ReviewUnavailable('review: read_unavailable') from exc
+
+
+def load_review_worklist(*, batch_id=None, row_id=None, q: str = '', mode: str = 'normalized', intake_status: str = '',
                          review_status: str = '', page: int = 1, page_size: int = 20,
                          synthetic_fixtures_only: bool = False, using: str = 'default') -> ReviewWorklist:
-    batch_id, row_id = _read_parameters(batch_id, row_id, q, intake_status, review_status, page, page_size)
+    batch_id, row_id = _read_parameters(batch_id, row_id, q, mode, intake_status, review_status, page, page_size)
     # No write tag/transaction is opened for reads. Ownership/flags precede ORM.
-    guards.require_owned_database(synthetic_fixtures_only=synthetic_fixtures_only, using=using)
+    from apps.reference import services
+    from apps.reference.query import Page
+    _workflow_read(services._require_workflow_read, synthetic_fixtures_only=synthetic_fixtures_only, using=using)
     from .models import IntakeBatch, IntakeItem, IntakeReference, ReviewEvent
-    batches = IntakeBatch.objects.using(using).filter(scope=c.SYNTHETIC_SCOPE, source_config_id=c.SOURCE_CONFIG_ID)
+    batches = IntakeBatch.objects.using(using).filter(scope=c.SYNTHETIC_SCOPE, source_config_id=c.SOURCE_CONFIG_ID, contract_version=c.CONTRACT_VERSION)
     options = list(batches.only('id', 'created_at').order_by('-created_at', 'id')[:100])
     if batch_id is None:
         batch_id = options[0].id if options else None
     if batch_id is None:
         if page != 1:
             raise ReviewNotFound('review: page_not_found')
-        return ReviewWorklist((), None, (), None, 0, 0, page, 1, page_size, q, intake_status, review_status)
+        return ReviewWorklist((), None, (), None, 0, 0, page, 1, page_size, q, mode, intake_status, review_status)
     try:
         batch = batches.get(id=batch_id)
     except IntakeBatch.DoesNotExist as exc:
@@ -193,31 +212,25 @@ def load_review_worklist(*, batch_id=None, row_id=None, q: str = '', intake_stat
         raise c.ContractError('review: source_integrity_mismatch')
     items = IntakeItem.objects.using(using).filter(batch_id=batch_id).order_by('row_ordinal')
     total_count = items.count()
-    filtered = items
-    if intake_status:
-        filtered = filtered.filter(intake_status=intake_status)
-    if review_status:
-        filtered = filtered.filter(review_status=review_status)
-    if q.strip():
-        filtered = filtered.filter(Q(question_original__icontains=q.strip()) | Q(external_id__icontains=q.strip()))
-    matched_count = filtered.count()
+    result = _workflow_read(services.workflow_items, batch_id=batch_id, text=q, mode=mode,
+        intake_status=intake_status or None, review_status=review_status or None,
+        page=Page(page_size,(page-1)*page_size), synthetic_fixtures_only=synthetic_fixtures_only, using=using)
+    matched_count = result.total
     page_count = max(1, (matched_count + page_size - 1) // page_size)
     if page > page_count:
         raise ReviewNotFound('review: page_not_found')
-    selected = list(filtered[(page - 1)*page_size:page*page_size])
-    detail = None
-    if row_id is not None:
-        try:
-            detail = items.get(id=row_id)
-        except IntakeItem.DoesNotExist as exc:
-            raise ReviewNotFound('review: item_not_found') from exc
-    chosen = {item.id: item for item in selected}
-    if detail is not None:
-        chosen[detail.id] = detail
+    page_ids = [UUID(item.id) for item in result.items]
+    page_items = {item.id:item for item in items.filter(id__in=page_ids)}
+    if len(page_items) != len(page_ids):
+        raise ReviewUnavailable('review: concurrent_read_change')
+    selected = [page_items[item_id] for item_id in page_ids]
+    detail_read = (_workflow_read(services.workflow_item, row_id, batch_id=batch_id,
+        synthetic_fixtures_only=synthetic_fixtures_only, using=using) if row_id is not None else None)
+    chosen = {item.id: item for item in selected if item.id != row_id}
     references = {}
     for reference in IntakeReference.objects.using(using).filter(intake_item_id__in=chosen).order_by('reference_ordinal'):
         references.setdefault(reference.intake_item_id, []).append(reference)
-    events = list(ReviewEvent.objects.using(using).filter(intake_item_id=row_id).order_by('-created_at','-id')[:101]) if detail else []
+    events = list(ReviewEvent.objects.using(using).filter(intake_item_id=row_id).order_by('-created_at','-id')[:101]) if detail_read is not None else []
     rendered = {}
     for item in chosen.values():
         if not 1 <= item.row_ordinal <= len(parsed.item_sources):
@@ -241,11 +254,18 @@ def load_review_worklist(*, batch_id=None, row_id=None, q: str = '', intake_stat
                                         reference.reference_status, reference.citation_text))
         original = parsed.items[item.row_ordinal-1]
         clip = original.get('prepared_clip_url') if isinstance(original, dict) else None
-        history = tuple(StoredReviewEvent(e.id,e.operation_id,e.action,e.from_status,e.to_status,e.reason,e.created_at)
-                        for e in events[:100]) if item.id == row_id else ()
         rendered[item.id] = StoredReviewRow(item.id,item.batch_id,item.row_ordinal,item.external_id,item.question_original,
             source.text,source.start,source.end,item.intake_status,item.review_status,
-            clip if isinstance(clip,str) else None,tuple(refs),history,item.id == row_id and len(events)>100)
+            clip if isinstance(clip,str) else None,tuple(refs))
+    if detail_read is not None:
+        detail, source = detail_read.item, detail_read.source
+        refs = tuple(StoredReference(UUID(ref.id),ref.source.text,ref.source.start,ref.source.end,
+                      ref.reference_status,ref.citation_text or '') for ref in detail_read.references)
+        history = tuple(StoredReviewEvent(e.id,e.operation_id,e.action,e.from_status,e.to_status,e.reason,e.created_at)
+                        for e in events[:100])
+        rendered[row_id] = StoredReviewRow(UUID(detail.id),UUID(detail.batch_id),detail.row_ordinal,
+            detail.external_id,detail.question_original,source.text,source.start,source.end,
+            detail.intake_status,detail.review_status,detail_read.prepared_clip_url,refs,history,len(events)>100)
     return ReviewWorklist(tuple(ReviewBatchOption(b.id,b.created_at) for b in options),batch_id,
         tuple(rendered[item.id] for item in selected),rendered.get(row_id),total_count,matched_count,page,page_count,
-        page_size,q,intake_status,review_status)
+        page_size,q,mode,intake_status,review_status)

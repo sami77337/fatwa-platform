@@ -167,3 +167,11 @@ subcommand, e.g. `python manage.py wave7_review
 --settings=config.settings.wave7_development transition --item UUID --operation
 UUID --action start_review --expected-status UNREVIEWED --reason 'Synthetic'
 --synthetic-fixtures-only`, or set DJANGO_SETTINGS_MODULE in the environment.
+
+## Local actual-E4 adapter follow-up
+
+The publication/flag/label statements above describe the prior b55 increment.
+The unpublished local adapter now uses the single E4 read gate; see
+[E4_ADAPTER_EVIDENCE.md](E4_ADAPTER_EVIDENCE.md) for actual composed tests and
+[CONTRACT.md](CONTRACT.md) for the superseding E5 configuration/label proposal.
+Publication remains held. No new remote SHA/CI or independent review is claimed.

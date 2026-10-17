@@ -41,7 +41,7 @@ class ServiceIntegrationTests(TransactionTestCase):
         self.assertFalse(any(q['sql'].lstrip().upper().startswith(('INSERT', 'UPDATE', 'DELETE')) for q in queries))
         self.assertEqual(ReviewEvent.objects.count(), 1)
         self.assertEqual(IntakeReference.objects.filter(reference_status='VERIFIED').count(), 3)
-        with override_settings(WAVE7_REVIEW_READ_ENABLED=False), self.assertNumQueries(0):
+        with override_settings(WAVE7_READS_ENABLED=False, WAVE7_REVIEW_READ_ENABLED=False), self.assertNumQueries(0):
             self.assertEqual(self.client.get(self.url, HTTP_HOST='localhost').status_code, 404)
         for method in ('post', 'put', 'patch', 'delete'):
             with self.subTest(method=method), self.assertNumQueries(0):
@@ -52,7 +52,7 @@ class ServiceIntegrationTests(TransactionTestCase):
         other_row = IntakeItem.objects.get(batch_id=other.batch_id, row_ordinal=7)
         self.assertEqual(self.row.external_id, other_row.external_id)
         self.assertNotEqual(self.row.pk, other_row.pk)
-        params = dict(batch=str(self.receipt.batch_id), q='اصطناعي', page='2', page_size='1', review_status='UNREVIEWED')
+        params = dict(batch=str(self.receipt.batch_id), q='اصطناعي', mode='normalized', page='2', page_size='1', review_status='UNREVIEWED')
         listing = self.client.get(self.url, params, HTTP_HOST='localhost')
         self.assertEqual(listing.status_code, 200)
         detail = self.client.get(listing.context['stored_display_rows'][0]['detail_url'], HTTP_HOST='localhost')
@@ -104,3 +104,20 @@ class ServiceIntegrationTests(TransactionTestCase):
             self.assertEqual((invalid.status_code, invalid.json()['error']), (400, 'invalid_query'))
             invalid = self.client.get(paths[1], {'q': f.ORIGINAL_QUESTION}, HTTP_HOST='localhost')
             self.assertEqual((invalid.status_code, invalid.json()['error']), (400, 'invalid_query'))
+
+    def test_browser_question_filter_selects_ready_originals_across_repeated_id_batches(self):
+        other = import_intake(f.synthetic_payload(), idempotency_key=uuid4().hex, synthetic_fixtures_only=True)
+        legacy = self.client.get(self.url, {'batch': self.receipt.batch_id, 'q': self.row.external_id}, HTTP_HOST='localhost')
+        self.assertEqual((legacy.status_code, legacy.context['stored'].matched_count), (200, 0))
+        for receipt in (self.receipt, other):
+            verify_batch_references(receipt.batch_id, synthetic_fixtures_only=True)
+            expected = IntakeItem.objects.get(batch_id=receipt.batch_id, row_ordinal=7)
+            params = dict(batch=str(receipt.batch_id), q='اصطناعي', mode='normalized', intake_status='READY_FOR_EDITOR')
+            listing = self.client.get(self.url, params, HTTP_HOST='localhost')
+            self.assertEqual((listing.status_code, listing.context['stored'].matched_count), (200, 1))
+            self.assertEqual(listing.context['stored'].rows[0].id, expected.pk)
+            detail = self.client.get(listing.context['stored_display_rows'][0]['detail_url'], HTTP_HOST='localhost')
+            row = detail.context['stored'].row
+            self.assertEqual((row.id, row.batch_id, row.question), (expected.pk, receipt.batch_id, f.ORIGINAL_QUESTION))
+            self.assertEqual(row.references[0].reference_status, 'VERIFIED')
+            self.assertTrue(row.references[0].citation_text)

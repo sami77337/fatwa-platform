@@ -13,7 +13,7 @@ from apps.intake_workflow.models import IntakeBatch, IntakeItem, ReviewEvent
 from .wave7_support import OwnedReviewTestCase
 
 
-@override_settings(WAVE7_REVIEW_READ_ENABLED=True, ROOT_URLCONF='tests.editorial_demo.wave7_urls')
+@override_settings(WAVE7_READS_ENABLED=True, ROOT_URLCONF='tests.editorial_demo.wave7_urls')
 class PersistentReadDatabaseTests(OwnedReviewTestCase):
     url = '/dev/editorial-preview/persisted'
 
@@ -47,6 +47,7 @@ from django.conf import settings
 from django.db import connections
 from apps.intake_workflow.review import load_review_worklist
 connections['default'].settings_dict['NAME'] = settings.WAVE7_TEST_DATABASE_NAME
+settings.WAVE7_READS_ENABLED = True
 row = load_review_worklist(batch_id=sys.argv[1],row_id=sys.argv[2],synthetic_fixtures_only=True).row
 assert row.review_status == 'IN_REVIEW'
 sys.stdout.buffer.write(row.original_row.encode('utf-8'))
@@ -79,7 +80,7 @@ sys.stdout.buffer.write(row.original_row.encode('utf-8'))
 
     def test_filters_page_detail_and_return_state_are_native_get_links(self):
         params = {'batch': str(self.batch.id), 'intake_status': 'BLOCKED_INVALID', 'review_status': 'UNREVIEWED',
-                  'page_size': '1', 'page': '2', 'q': 'اصطناعي'}
+                  'page_size': '1', 'page': '2', 'q': 'اصطناعي', 'mode':'normalized'}
         response = self.get(params)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'wave7-persisted')
@@ -104,7 +105,7 @@ sys.stdout.buffer.write(row.original_row.encode('utf-8'))
         self.assertEqual(set(IntakeItem.objects.values_list('review_status', flat=True)), {'UNREVIEWED'})
 
     def test_feature_local_and_production_guards_reject_before_orm(self):
-        for values in ({'WAVE7_REVIEW_READ_ENABLED':False}, {'FATWA_PRODUCTION':True}):
+        for values in ({'WAVE7_READS_ENABLED':False}, {'FATWA_PRODUCTION':True}):
             with override_settings(**values), CaptureQueriesContext(connection) as queries:
                 response = self.get()
             self.assertEqual(response.status_code,404)
@@ -127,7 +128,7 @@ sys.stdout.buffer.write(row.original_row.encode('utf-8'))
 
     def test_unknown_batch_row_and_page_fail_closed(self):
         for params in ({'batch':str(uuid4())}, {'batch':str(self.batch.id),'row':str(uuid4())},
-                       {'batch':str(self.batch.id),'page':'10000'}, {'batch':str(self.batch.id),'q':'no-match','page':'2'}):
+                       {'batch':str(self.batch.id),'page':'100'}, {'batch':str(self.batch.id),'q':'no-match','page':'2'}):
             self.assertEqual(self.get(params).status_code,404)
         self.assertContains(self.get({'batch':str(self.batch.id),'q':'no-match'}),'لا توجد سجلات مطابقة')
 

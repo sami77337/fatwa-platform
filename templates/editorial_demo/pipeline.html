@@ -54,7 +54,12 @@
         <div><label for="stored-batch">دفعة اصطناعية محفوظة</label><select id="stored-batch" name="batch">
           {% for option in stored.batches %}<option value="{{ option.id }}"{% if option.id == stored.batch_id %} selected{% endif %}>دفعة {{ option.created_at }}</option>{% endfor %}
         </select></div>
-        <div><label for="stored-q">بحث في السؤال أو المعرّف الأصلي</label><input id="stored-q" name="q" maxlength="80" value="{{ stored.q }}"></div>
+        <div><label for="stored-q">بحث في السؤال الأصلي</label><input id="stored-q" name="q" maxlength="80" value="{{ stored.q }}"></div>
+        <div><label for="stored-mode">طريقة البحث</label><select id="stored-mode" name="mode">
+          <option value="exact"{% if stored.mode == 'exact' %} selected{% endif %}>مطابقة السؤال كاملًا</option>
+          <option value="literal"{% if stored.mode == 'literal' %} selected{% endif %}>كلمات حرفية</option>
+          <option value="normalized"{% if stored.mode == 'normalized' %} selected{% endif %}>كلمات مع تسوية البحث</option>
+        </select></div>
         <div><label for="stored-intake">جاهزية الاستلام</label><select id="stored-intake" name="intake_status"><option value="">الجميع</option>
           {% for key,label in stored_intake_statuses.items %}<option value="{{ key }}"{% if key == stored.intake_status %} selected{% endif %}>{{ label }}</option>{% endfor %}
         </select></div>

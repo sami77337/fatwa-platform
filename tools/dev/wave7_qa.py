@@ -32,6 +32,7 @@ SUITES = {
         'tests.intake_workflow.test_database',
         'tests.editorial_demo.test_wave7_review_db',
         'tests.editorial_demo.test_wave7_read_db',
+        'tests.editorial_demo.test_wave7_e4_adapter_db',
         'tests.integration.ui.wave7_workflow_reads_db',
     ),
 }
