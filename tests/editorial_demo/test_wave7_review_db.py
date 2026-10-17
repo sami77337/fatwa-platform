@@ -164,7 +164,7 @@ class ReviewServiceDatabaseTests(OwnedReviewTestCase):
     def test_cli_calls_service_without_outer_transaction_and_replays(self):
         output = StringIO()
         operation = str(uuid4())
-        args = ['--item', str(self.item.id), '--operation', operation, '--action', 'start_review',
+        args = ['transition', '--item', str(self.item.id), '--operation', operation, '--action', 'start_review',
                 '--expected-status', 'UNREVIEWED', '--reason', 'CLI synthetic', '--synthetic-fixtures-only']
         call_command('wave7_review', *args, stdout=output)
         self.assertIn('"replayed": false', output.getvalue())
@@ -175,7 +175,14 @@ class ReviewServiceDatabaseTests(OwnedReviewTestCase):
 
     def test_cli_missing_ack_or_flag_fails_without_echoing_reason(self):
         with self.assertRaises(CommandError) as caught:
-            call_command('wave7_review', '--item', str(self.item.id), '--operation', str(uuid4()),
+            call_command('wave7_review', 'transition', '--item', str(self.item.id), '--operation', str(uuid4()),
                          '--action', 'start_review', '--expected-status', 'UNREVIEWED', '--reason', 'DO_NOT_ECHO')
         self.assertNotIn('DO_NOT_ECHO', str(caught.exception))
         self.assertEqual(ReviewEvent.objects.count(), 0)
+
+    def test_cli_requires_the_leadership_transition_subcommand(self):
+        with self.assertRaises(CommandError):
+            call_command('wave7_review','--item',str(self.item.id),'--operation',str(uuid4()),
+                '--action','start_review','--expected-status','UNREVIEWED','--reason','Synthetic bare command',
+                '--synthetic-fixtures-only',stdout=StringIO())
+        self.assertEqual(ReviewEvent.objects.count(),0)

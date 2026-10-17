@@ -36,9 +36,9 @@ Latest 100 events are shown on detail with an explicit truncation marker; lists
 load no event histories. Batch selector lists latest 100, retaining a selected old
 batch. Explicit UUID deep links remain valid across process restarts.
 
-CLI: `python manage.py wave7_review --item UUID --operation UUID --action
+CLI: `python manage.py wave7_review --settings=config.settings.wave7_development transition --item UUID --operation UUID --action
 start_review --expected-status UNREVIEWED --reason 'Synthetic review reason'
---synthetic-fixtures-only --settings=config.settings.wave7_development`.
+--synthetic-fixtures-only`.
 No command-level outer atomic; fixed/sanitized result/error codes only.
 
 E5 proposed shared integration patch (do not apply to public/base settings):

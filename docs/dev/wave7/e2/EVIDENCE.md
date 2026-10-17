@@ -27,7 +27,7 @@ update and append-only event insertion commit or roll back together. All four
 frozen legal transitions use the shared transition matrix. No answer, scholarly
 approval or publication state exists.
 
-`wave7_review` invokes that service without an outer transaction and emits only a
+`wave7_review transition` invokes that service without an outer transaction and emits only a
 bounded derived UUID/status/replay receipt. Validation/guard/database errors use
 fixed codes and do not echo source/reason/connection details. It is absent from
 default settings because only the separate Wave7 app registers it.
@@ -106,12 +106,16 @@ manage.py check --database default --settings=config.settings.wave7_test
 manage.py test tests.wave7_foundation.test_database tests.wave7_foundation.test_review_regressions tests.wave7_foundation.test_lossless_db tests.editorial_demo.test_wave7_review_db tests.editorial_demo.test_wave7_read_db --noinput --settings=config.settings.wave7_test
 ```
 
-Final test matrix: **61 methods on PG17 and 61 on PG18**, 0 failed/errors/skips
+First committed checkpoint `6ef2e705058752de154e612c31b6b673462cd685`:
+**61 methods on PG17 and 61 on PG18**, 0 failed/errors/skips
 (34 unchanged foundation + E2 review 15 + E2 persisted read 12). The 12th read
 method launches a fresh Python process against the owned test DB, verifies the
 committed review status, and compares exact original source bytes. Earlier full
 runs before that method had 60 methods; these counts overlap, do not sum them.
-Independent lane-only final runs: 27/27 on each PG major.
+Initial lane-only runs: 27/27 on each PG major. After the full-spec CLI correction
+below, lane-only runs are **28/28 on each PG major** (review 16 + read 12).
+Fresh committed-head full counts are published with the PR; those supersede the
+first checkpoint, rather than counting reruns as independent coverage.
 
 PG17 `makemigrations --check --dry-run`: no changes; PG18 `migrate --check`: PASS.
 Django system checks on both actual targets: zero issues. Only new services,
@@ -126,16 +130,16 @@ PGPORT=1 /tmp/fatwa-wave7-e2-venv/bin/python manage.py test tests.editorial_demo
 git diff --check
 ```
 
-Results: foundation pure 25/25; editorial default-off/legacy 65/65 (61 legacy +4
-new); existing D6/C6 dispatcher PASS; diff check PASS. No-DB discovery is separate
+Results: foundation pure 25/25; editorial default-off/legacy **67/67** (61 legacy +6
+new, including no-DB CLI parser/ack/action/reason validation); existing D6/C6 dispatcher PASS; diff check PASS. No-DB discovery is separate
 from the two DB labels. Actual counts/clean tested SHA from fresh committed-head
 reruns and CI links are published with the PR handoff.
 
 ## Coordination, limits and held gates
 
 E5 must wire exactly the shared flag/route proposal in CONTRACT.md (new route
-before the old generic editorial route), plus the 4-method no-DB label and the
-15+12 method DB labels in their separate matrices. Until then the optional view
+before the old generic editorial route), plus the **6-method** no-DB label and the
+**16+12 method** DB labels in their separate matrices. Until then the optional view
 is exercised through the owned test URLconf; default/global routes stay unchanged.
 No missing/zero-suite fallback. E4/E6 can consume the DTO and native #stored-batch,
 #stored-q, #stored-intake, #stored-review, #stored-page-size, #wave7-persisted hooks.
@@ -146,3 +150,20 @@ CI state is checked after publication, never inferred from earlier heads. No
 main merge/deployment, PR58 metadata edit, source reimport or credential grant.
 MAIN_UNCHANGED was checked at fcdc20e1c8f8849e65b9b912d695cb87ab9a0280.
 NOT_DEPLOYED / GATES_HOLD / USAGE_NOT_OBSERVED.
+
+## Reconciliation after the recovered complete leadership specification
+
+The complete source arrived after the first local commit. No restart or shared
+change was needed. One concrete difference was corrected: the required command
+is `wave7_review transition`, not the initially implemented bare options form.
+A two-test RED run observed the bare form succeeding (1 failure) and the required
+subcommand being rejected (1 error). The command now requires the transition
+subparser; bare commands fail before service execution. CLI service/guard/atomic
+behavior is unchanged. The initial local commit is retained and the correction
+is additive. No migration/storage/status/reference/guard semantics changed.
+
+When selecting settings explicitly, use Django's global option before the
+subcommand, e.g. `python manage.py wave7_review
+--settings=config.settings.wave7_development transition --item UUID --operation
+UUID --action start_review --expected-status UNREVIEWED --reason 'Synthetic'
+--synthetic-fixtures-only`, or set DJANGO_SETTINGS_MODULE in the environment.

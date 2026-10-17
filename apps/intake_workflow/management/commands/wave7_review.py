@@ -11,6 +11,7 @@ class Command(BaseCommand):
     help = 'Append a synthetic internal review event and transition its item atomically; never approve or publish.'
 
     def add_arguments(self, parser):
+        parser = parser.add_subparsers(dest='review_command', required=True).add_parser('transition')
         parser.add_argument('--item', required=True)
         parser.add_argument('--operation', required=True)
         parser.add_argument('--action', required=True, choices=list(c.ReviewAction))
