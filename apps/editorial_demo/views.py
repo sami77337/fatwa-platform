@@ -2,7 +2,6 @@
 
 import ipaddress
 import os
-from pathlib import Path
 import re
 from urllib.parse import urlencode, urlsplit
 
@@ -12,6 +11,7 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_safe
 
+from .asset_integrity import AssetIntegrityError, verified_preview_css
 from .fixtures import ROWS, SCHEMA, STATUSES
 from .integration import (
     ISSUE_LABELS, STATUS_LABELS, SYNTHETIC_BATCHES, build_batch_preview_rows, build_preview_rows,
@@ -83,10 +83,13 @@ def preview(request: HttpRequest, ident: str | None = None) -> HttpResponse:
 @require_safe
 def stylesheet(request: HttpRequest) -> HttpResponse:
     local_only(request)
-    return HttpResponse(
-        Path(__file__).with_name("preview.css").read_text(encoding="utf-8"),
-        content_type="text/css; charset=utf-8",
-    )
+    try:
+        payload = verified_preview_css()
+    except AssetIntegrityError as exc:
+        raise Http404("Unavailable local stylesheet") from exc
+    response = HttpResponse(payload, content_type="text/css; charset=utf-8")
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 def _failure(message: str, status: int) -> HttpResponse:
