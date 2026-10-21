@@ -1,3 +1,8 @@
-# Preserve the exact Git bytes of the SHA-256-pinned loopback preview asset.
-# Windows core.autocrlf must not convert this CSS file to CRLF on checkout.
+# Preserve exact Git bytes of SHA-256-pinned static assets on Windows.
+# Do not let core.autocrlf rewrite an asset before its runtime integrity check.
 apps/editorial_demo/preview.css text eol=lf
+apps/reference/static/reference/catalog.js text eol=lf
+apps/reference/static/reference/django-api.mjs text eol=lf
+apps/reference/static/reference/tree.js text eol=lf
+apps/reference/static/reference/catalog.css text eol=lf
+apps/reference/static/reference/style.css text eol=lf

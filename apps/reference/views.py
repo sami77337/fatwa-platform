@@ -311,7 +311,7 @@ def branch(request: HttpRequest, ident: int) -> HttpResponse:
 
 
 @require_safe
-def public_asset(request: HttpRequest, asset: str) -> FileResponse:
+def public_asset(request: HttpRequest, asset: str) -> HttpResponse:
     from django.contrib.staticfiles import finders
 
     allowed = asset in {
@@ -334,8 +334,18 @@ def public_asset(request: HttpRequest, asset: str) -> FileResponse:
     content_type = (
         "text/css; charset=utf-8" if asset.endswith(".css") else "text/javascript; charset=utf-8"
     )
-    return FileResponse(open(filename, "rb"), content_type=content_type)
+    # The five reference assets are source-pinned and served only after their
+    # exact bytes are verified. django_htmx remains separately allowlisted but
+    # unpinned until its exact authorized package bytes are established.
+    from .asset_integrity import AssetIntegrityError, REFERENCE_ASSET_MANIFEST, verified_reference_asset
 
+    if asset in REFERENCE_ASSET_MANIFEST:
+        try:
+            payload = verified_reference_asset(asset, filename)
+        except AssetIntegrityError as exc:
+            raise Http404("Unavailable or modified reference asset") from exc
+        return HttpResponse(payload, content_type=content_type)
+    return FileResponse(open(filename, "rb"), content_type=content_type)
 
 # Wave7 endpoints are exported for E5's opt-in URLConf only. No legacy route is
 # changed, and E2 owns the single workflow SSR screen consuming this context.
