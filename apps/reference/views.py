@@ -11,6 +11,11 @@ from django.views.decorators.http import require_safe
 from django.views.decorators.vary import vary_on_headers
 
 from . import services
+from .asset_integrity import (
+    AssetIntegrityError,
+    REFERENCE_ASSET_MANIFEST,
+    verified_reference_asset,
+)
 from .query import (
     MAX_OFFSET,
     MAX_SOURCE_ID,
@@ -337,7 +342,6 @@ def public_asset(request: HttpRequest, asset: str) -> HttpResponse:
     # The five reference assets are source-pinned and served only after their
     # exact bytes are verified. django_htmx remains separately allowlisted but
     # unpinned until its exact authorized package bytes are established.
-    from .asset_integrity import AssetIntegrityError, REFERENCE_ASSET_MANIFEST, verified_reference_asset
 
     if asset in REFERENCE_ASSET_MANIFEST:
         try:

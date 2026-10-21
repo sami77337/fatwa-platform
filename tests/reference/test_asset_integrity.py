@@ -32,6 +32,10 @@ class ReferenceAssetIntegrityTests(SimpleTestCase):
                     else "text/javascript; charset=utf-8",
                 )
 
+    def test_manifest_cannot_be_mutated_at_runtime(self):
+        with self.assertRaises(TypeError):
+            REFERENCE_ASSET_MANIFEST["reference/style.css"] = (1, "0" * 64)
+
     def test_missing_pinned_asset_fails_closed(self):
         with patch("django.contrib.staticfiles.finders.find", return_value=None):
             response = self.get_asset("reference/style.css")
