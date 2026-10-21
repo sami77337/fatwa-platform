@@ -339,9 +339,9 @@ def public_asset(request: HttpRequest, asset: str) -> HttpResponse:
     content_type = (
         "text/css; charset=utf-8" if asset.endswith(".css") else "text/javascript; charset=utf-8"
     )
-    # The five reference assets are source-pinned and served only after their
-    # exact bytes are verified. django_htmx remains separately allowlisted but
-    # unpinned until its exact authorized package bytes are established.
+    # The five reference assets and the version-pinned htmx bundle are served
+    # only after their exact bytes are verified. Other django_htmx JavaScript
+    # remains separately allowlisted but unpinned.
 
     if asset in PINNED_PUBLIC_ASSET_MANIFEST:
         try:

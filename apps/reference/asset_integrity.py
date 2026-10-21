@@ -7,9 +7,8 @@ Other django_htmx JavaScript assets remain separately allowlisted but unpinned.
 from hashlib import sha256
 from pathlib import Path
 from types import MappingProxyType
-from types import MappingProxyType
 
-REFERENCE_ASSET_MANIFEST = MappingProxyType({
+PINNED_PUBLIC_ASSET_MANIFEST = MappingProxyType({
     "reference/catalog.js": (29665, "d78cff1450d64547a1cd04dcbc48a7df57dd1125d39808e3f90f8dd5c6bd6566"),
     "reference/django-api.mjs": (9615, "6df97f43e7558e20f839c0a9370694273f5ace532fe532a667b3a2f79c57a915"),
     "reference/tree.js": (1066, "9463a1cb27e922d7e54941aeec090a843d2f3dff3f62915e8398331a2fe4f173"),
@@ -25,7 +24,7 @@ class AssetIntegrityError(Exception):
 
 def verified_reference_asset(asset: str, filename: str) -> bytes:
     """Return exact pinned bytes, or fail closed before serving the asset."""
-    expected = REFERENCE_ASSET_MANIFEST.get(asset)
+    expected = PINNED_PUBLIC_ASSET_MANIFEST.get(asset)
     if expected is None:
         raise AssetIntegrityError("asset_not_pinned")
     expected_size, expected_sha256 = expected
