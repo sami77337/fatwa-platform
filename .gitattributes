@@ -1,0 +1,3 @@
+# Preserve the exact Git bytes of the SHA-256-pinned loopback preview asset.
+# Windows core.autocrlf must not convert this CSS file to CRLF on checkout.
+apps/editorial_demo/preview.css text eol=lf
