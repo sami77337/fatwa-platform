@@ -1,11 +1,12 @@
-"""Exact source-byte pins for the five fixed reference assets.
+"""Exact source-byte pins for reference assets and one installed htmx bundle.
 
-This is a bounded runtime integrity check, not a full served-asset lock:
-django_htmx remains separately allowlisted until its exact authorized bytes
-and package provenance are established.
+The htmx pin reflects django-htmx 1.29.0 local package bytes and RECORD only.
+It does not establish historical Wave7 equivalence or independent upstream provenance.
+Other django_htmx JavaScript assets remain separately allowlisted but unpinned.
 """
 from hashlib import sha256
 from pathlib import Path
+from types import MappingProxyType
 from types import MappingProxyType
 
 REFERENCE_ASSET_MANIFEST = MappingProxyType({
@@ -14,7 +15,8 @@ REFERENCE_ASSET_MANIFEST = MappingProxyType({
     "reference/tree.js": (1066, "9463a1cb27e922d7e54941aeec090a843d2f3dff3f62915e8398331a2fe4f173"),
     "reference/catalog.css": (6616, "bc26502e83911a7b198b4d68183db3d78c44816f8f665d1302f950daef74f46c"),
     "reference/style.css": (1253, "6f58de051096896a45078dee82f11a6b29d810a4007675402df0889d48c63a65"),
-})
+    "django_htmx/htmx-2.min.js": (51238, "71ea67185bfa8c98c39d31717c6fce5d852370fcdfd129db4543774d3145c0de"),
+}))
 
 
 class AssetIntegrityError(Exception):

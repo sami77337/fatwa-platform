@@ -1,5 +1,7 @@
 """Route-level tests for pinned reference asset integrity; no database required."""
+import base64
 from hashlib import sha256
+from importlib.metadata import distribution
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -7,7 +9,7 @@ from unittest.mock import patch
 from django.contrib.staticfiles import finders
 from django.test import SimpleTestCase
 
-from apps.reference.asset_integrity import REFERENCE_ASSET_MANIFEST
+from apps.reference.asset_integrity import PINNED_PUBLIC_ASSET_MANIFEST
 
 
 class ReferenceAssetIntegrityTests(SimpleTestCase):
@@ -15,7 +17,7 @@ class ReferenceAssetIntegrityTests(SimpleTestCase):
         return self.client.get("/assets/" + asset, HTTP_HOST="localhost")
 
     def test_all_pinned_assets_match_manifest_and_served_bytes(self):
-        for asset, (expected_size, expected_sha256) in REFERENCE_ASSET_MANIFEST.items():
+        for asset, (expected_size, expected_sha256) in PINNED_PUBLIC_ASSET_MANIFEST.items():
             with self.subTest(asset=asset):
                 filename = finders.find(asset)
                 self.assertIsNotNone(filename)
@@ -32,9 +34,29 @@ class ReferenceAssetIntegrityTests(SimpleTestCase):
                     else "text/javascript; charset=utf-8",
                 )
 
+    def test_htmx_pin_matches_installed_distribution_record(self):
+        dist = distribution("django-htmx")
+        self.assertEqual(dist.version, "1.29.0")
+        relative = "django_htmx/static/django_htmx/htmx-2.min.js"
+        matches = [
+            entry for entry in (dist.files or [])
+            if str(entry).replace("\\", "/") == relative
+        ]
+        self.assertEqual(len(matches), 1)
+        entry = matches[0]
+        self.assertEqual(entry.hash.mode, "sha256")
+        data = dist.locate_file(entry).read_bytes()
+        encoded = base64.urlsafe_b64encode(sha256(data).digest()).decode().rstrip("=")
+        self.assertEqual(encoded, entry.hash.value)
+        self.assertEqual(len(data), 51238)
+        self.assertEqual(
+            sha256(data).hexdigest(),
+            PINNED_PUBLIC_ASSET_MANIFEST["django_htmx/htmx-2.min.js"][1],
+        )
+
     def test_manifest_cannot_be_mutated_at_runtime(self):
         with self.assertRaises(TypeError):
-            REFERENCE_ASSET_MANIFEST["reference/style.css"] = (1, "0" * 64)
+            PINNED_PUBLIC_ASSET_MANIFEST["reference/style.css"] = (1, "0" * 64)
 
     def test_missing_pinned_asset_fails_closed(self):
         with patch("django.contrib.staticfiles.finders.find", return_value=None):
