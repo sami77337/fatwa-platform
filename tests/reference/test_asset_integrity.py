@@ -54,6 +54,35 @@ class ReferenceAssetIntegrityTests(SimpleTestCase):
             PINNED_PUBLIC_ASSET_MANIFEST["django_htmx/htmx-2.min.js"][1],
         )
 
+    def test_htmx_route_rejects_modified_or_missing_installed_bundle(self):
+        asset = "django_htmx/htmx-2.min.js"
+        expected_size, expected_sha256 = PINNED_PUBLIC_ASSET_MANIFEST[asset]
+        filename = finders.find(asset)
+        self.assertIsNotNone(filename)
+        original = Path(filename).read_bytes()
+        self.assertEqual((len(original), sha256(original).hexdigest()),
+                         (expected_size, expected_sha256))
+        served = self.get_asset(asset)
+        self.assertEqual(served.status_code, 200)
+        self.assertEqual(served.content, original)
+        self.assertEqual(served["Content-Type"], "text/javascript; charset=utf-8")
+        head_response = self.client.head("/assets/" + asset, HTTP_HOST="localhost")
+        self.assertEqual(head_response.status_code, 200)
+        self.assertEqual(head_response.content, b"")
+
+        with TemporaryDirectory() as directory:
+            candidate = Path(directory) / "htmx-2.min.js"
+            changed = bytearray(original)
+            changed[0] ^= 1  # Same size, invalid digest: must fail closed.
+            candidate.write_bytes(changed)
+            with patch("django.contrib.staticfiles.finders.find", return_value=str(candidate)):
+                self.assertEqual(self.get_asset(asset).status_code, 404)
+                self.assertEqual(
+                    self.client.head("/assets/" + asset, HTTP_HOST="localhost").status_code, 404
+                )
+        with patch("django.contrib.staticfiles.finders.find", return_value=None):
+            self.assertEqual(self.get_asset(asset).status_code, 404)
+
     def test_manifest_cannot_be_mutated_at_runtime(self):
         with self.assertRaises(TypeError):
             PINNED_PUBLIC_ASSET_MANIFEST["reference/style.css"] = (1, "0" * 64)
