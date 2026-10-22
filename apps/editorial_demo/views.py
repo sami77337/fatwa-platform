@@ -3,6 +3,7 @@
 import ipaddress
 import os
 import re
+from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 
 from django.conf import settings
@@ -16,6 +17,8 @@ from .fixtures import ROWS, SCHEMA, STATUSES
 from .integration import (
     ISSUE_LABELS, STATUS_LABELS, SYNTHETIC_BATCHES, build_batch_preview_rows, build_preview_rows,
 )
+from .revision_comparison import compare_revisions
+from .revision_fixtures import COMPARISON_RECORD
 
 
 def local_only(request: HttpRequest) -> None:
@@ -94,6 +97,47 @@ def stylesheet(request: HttpRequest) -> HttpResponse:
 
 def _failure(message: str, status: int) -> HttpResponse:
     response = HttpResponse(message, status=status)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_safe
+def revision_compare(request: HttpRequest) -> HttpResponse:
+    """Read two fixed synthetic snapshots; no intake, editing, or approval operation."""
+    local_only(request)
+    try:
+        query = request.GET
+        if (set(query) - {"before", "after"}
+                or any(len(query.getlist(key)) != 1 for key in query)):
+            raise ValueError("unknown_or_duplicate_parameter")
+        before_id, after_id = query.get("before", "1"), query.get("after", "2")
+        if before_id not in {"1", "2"} or after_id not in {"1", "2"}:
+            raise ValueError("unknown_synthetic_revision")
+    except (ValueError, TooManyFieldsSent):
+        return _failure("اختيار نسخ غير صالح؛ المسموح مراجعتان اصطناعيتان ثابتتان فقط.", 400)
+    before = COMPARISON_RECORD.history[int(before_id) - 1]
+    after = COMPARISON_RECORD.history[int(after_id) - 1]
+    response = render(request, "editorial_demo/revision_compare.html", {
+        "comparison": compare_revisions(before, after),
+        "before_revision": before, "after_revision": after,
+        "revisions": COMPARISON_RECORD.history, "source": COMPARISON_RECORD.intake,
+    })
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_safe
+def revision_compare_stylesheet(request: HttpRequest) -> HttpResponse:
+    local_only(request)
+    try:
+        if request.GET:
+            return _failure("معايير غير صالحة.", 400)
+        payload = Path(__file__).with_name("revision_compare.css").read_bytes()
+    except TooManyFieldsSent:
+        return _failure("معايير غير صالحة.", 400)
+    except OSError as exc:
+        raise Http404("Unavailable comparison stylesheet") from exc
+    response = HttpResponse(payload, content_type="text/css; charset=utf-8")
     response["Cache-Control"] = "no-store"
     return response
 

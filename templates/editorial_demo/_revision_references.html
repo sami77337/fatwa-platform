@@ -1,0 +1,5 @@
+<ol class="reference-list">{% for entry in entries %}
+  <li><p class="change-status">{{ entry.label }} — الموضع {{ entry.position }}{% if entry.position_changed %}؛ الموضع في النسخة المقابلة {{ entry.other_position }}{% endif %}</p>
+    <dl>{% for label,value in entry.identity_fields %}<dt>{{ label }}</dt><dd><code><bdi dir="auto">{{ value }}</bdi></code></dd>{% endfor %}</dl>
+  </li>{% empty %}<li>لا توجد مراجع في هذه النسخة.</li>{% endfor %}
+</ol>

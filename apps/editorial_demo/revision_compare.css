@@ -1,0 +1,12 @@
+.comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.revision-column{min-width:0;border:1px solid #9baeb4;padding:.8rem;background:#fff}
+.revision-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;tab-size:4;min-width:0}
+ins{background:#d5f2df;color:#123e24;text-decoration:underline;text-decoration-thickness:2px}
+del{background:#ffe0dd;color:#601b17;text-decoration:line-through}
+.change-status{font-weight:bold}.reference-list{padding-inline-start:1.5rem}
+.reference-list>li{padding:.5rem;margin-block:.6rem;border:1px solid #9baeb4}
+.reference-list code{white-space:pre-wrap;overflow-wrap:anywhere}
+section{margin-block:1.5rem;scroll-margin-block-start:1rem}
+:focus-visible{outline:3px solid #a64100;outline-offset:3px}
+.legend{display:flex;flex-wrap:wrap;gap:1rem}
+@media(max-width:45rem){.comparison-grid{grid-template-columns:minmax(0,1fr)}}
