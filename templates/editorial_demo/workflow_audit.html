@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الخط الزمني لتدقيق المسار الاصطناعي Wave7</title>
+  <link rel="stylesheet" href="{% url 'editorial_demo_style' %}">
+  <link rel="stylesheet" href="{% url 'editorial_revision_compare_style' %}">
+</head>
+<body>
+<a class="skip" href="#main-content">انتقل إلى المحتوى</a>
+<header>
+  <p class="banner"><strong>Wave7 — سجلات اصطناعية محفوظة، تطوير فقط وقراءة فقط</strong><br>لا اعتماد أو نشر أو إجابات شرعية أو تغيير للحالة من هذه الصفحة.</p>
+  <nav aria-label="التنقل العام"><a href="{{ persisted_url }}">المعاينة التحريرية المحفوظة</a><a href="{% url 'editorial_revision_history' %}">سجل المراجعات التحريرية الثابتة منفصل</a></nav>
+</header>
+<main id="main-content" tabindex="-1">
+  <h1>الخط الزمني لتدقيق المسار الاصطناعي Wave7</h1>
+  <p>المصدر قارئ Wave7 المحروس للسجلات المحفوظة. لا يحتوي حدث تغيير الحالة على لقطة نصية؛ سجل المراجعات التحريرية الثابتة منفصل، ولا توجد مطابقة مستنتجة بينهما.</p>
+  <nav aria-label="أقسام التدقيق"><a href="#filters">تصفية السجلات</a>{% if stored.row %}<a href="#provenance">مصدر الاستلام</a><a href="#references">حالة المراجع الحالية</a><a href="#timeline">الأحداث حسب الوقت</a>{% else %}<a href="#records">اختيار سجل</a>{% endif %}</nav>
+  <section id="filters" tabindex="-1" aria-labelledby="filters-heading">
+    <h2 id="filters-heading">تصفية السجلات الاصطناعية</h2>
+    {% if stored.batches %}
+    <form method="get" action="{{ base_url }}" role="search" aria-label="تصفية سجلات التدقيق المحفوظة">
+      <input type="hidden" name="page" value="1">
+      <div><label for="audit-batch">هوية الدفعة الاصطناعية</label><select id="audit-batch" name="batch" required>{% for option in stored.batches %}<option value="{{ option.id }}"{% if option.id == stored.batch_id %} selected{% endif %}>{{ option.id }} — {{ option.created_at|date:'c' }}</option>{% endfor %}</select></div>
+      <div><label for="audit-q">بحث في السؤال الأصلي — حتى 80 محرفًا و10 كلمات</label><input id="audit-q" name="q" maxlength="80" value="{{ stored.q }}"></div>
+      <div><label for="audit-mode">طريقة البحث</label><select id="audit-mode" name="mode"><option value="exact"{% if stored.mode == 'exact' %} selected{% endif %}>مطابقة السؤال كاملًا</option><option value="literal"{% if stored.mode == 'literal' %} selected{% endif %}>كلمات حرفية</option><option value="normalized"{% if stored.mode == 'normalized' %} selected{% endif %}>كلمات مع تسوية البحث فقط</option></select></div>
+      <div><label for="audit-intake">جاهزية الاستلام</label><select id="audit-intake" name="intake_status"><option value="">الجميع</option>{% for status in intake_statuses %}<option value="{{ status }}"{% if stored.intake_status == status %} selected{% endif %}>{{ status }}</option>{% endfor %}</select></div>
+      <div><label for="audit-review">حالة المراجعة الداخلية</label><select id="audit-review" name="review_status"><option value="">الجميع</option>{% for status in review_statuses %}<option value="{{ status }}"{% if stored.review_status == status %} selected{% endif %}>{{ status }}</option>{% endfor %}</select></div>
+      <div><label for="audit-size">عدد السجلات في الصفحة</label><input id="audit-size" name="page_size" type="number" min="1" max="50" value="{{ stored.page_size }}" required></div>
+      <button type="submit">عرض السجلات</button>
+    </form>
+    <p>تغيير التصفية يعيد الصفحة الأولى ويلغي اختيار السجل. تُعرض أحدث 100 دفعة مع الدفعة المحددة إن كانت أقدم؛ يمكن فتح هوية دفعة أقدم برابطها الثابت.</p>
+    {% else %}<p role="status">لا توجد دفعات اصطناعية متاحة. لا تنشئ هذه الصفحة بيانات تجريبية.</p>{% endif %}
+  </section>
+  {% if stored.row %}
+  <p><a href="{{ list_url }}">العودة إلى القائمة المصفاة</a> · <a href="{{ selected_url }}">رابط ثابت للسجل المحدد</a></p>
+  <section id="provenance" tabindex="-1" aria-labelledby="provenance-heading">
+    <h2 id="provenance-heading">مصدر الاستلام المحفوظ</h2>
+    <dl>
+      <dt>هوية الدفعة</dt><dd><code dir="ltr">{{ stored.row.batch_id }}</code></dd>
+      <dt>هوية السجل المحفوظة</dt><dd><code dir="ltr">{{ stored.row.id }}</code></dd>
+      <dt>ترتيب السجل في المصدر</dt><dd>{{ stored.row.row_ordinal }}</dd>
+      <dt>المعرّف الخارجي الأصلي — ليس مفتاح اختيار</dt><dd class="revision-text">{{ stored.row.external_id|default_if_none:'غير متاح' }}</dd>
+      <dt>حدود السجل في المصدر ببايتات UTF-8</dt><dd>البداية {{ stored.row.source_byte_start }}؛ النهاية غير المشمولة {{ stored.row.source_byte_end }}</dd>
+      <dt>جاهزية الاستلام الحالية</dt><dd><code>{{ stored.row.intake_status }}</code></dd>
+      <dt>حالة المراجعة الداخلية الحالية</dt><dd><code>{{ stored.row.review_status }}</code></dd>
+    </dl>
+    <h3>السؤال الأصلي — دون تسوية أو قص</h3><pre class="revision-text"><span>{{ stored.row.question|default_if_none:'غير متاح' }}</span></pre>
+    <h3>نص السجل الأصلي كما ورد</h3><pre class="revision-text"><span>{{ stored.row.original_row }}</span></pre>
+    <h3>رابط المقطع الأصلي — نص فقط</h3><pre class="revision-text" dir="ltr"><span>{{ stored.row.prepared_clip_url|default_if_none:'غير مرفق' }}</span></pre>
+  </section>
+  <section id="references" tabindex="-1" aria-labelledby="references-heading">
+    <h2 id="references-heading">حالة المراجع الحالية بترتيب المصدر</h2>
+    <p>حالة حالية منفصلة عن الخط الزمني؛ لا يوفّر عقد القراءة وقت تحقق المرجع أو تاريخ تغيّراته، ولا يعرض كائن هوية المطابقة الكامل. يُعرض المؤشر الأصلي وهوية المرجع المحفوظة والاستشهاد المتاح دون استنتاج هويات جديدة.</p>
+    <ol class="reference-list">{% for reference in stored.row.references %}<li>
+      <dl><dt>هوية المرجع المحفوظة</dt><dd><code dir="ltr">{{ reference.id }}</code></dd><dt>حالة المطابقة الحالية</dt><dd><code>{{ reference.reference_status }}</code></dd><dt>حدود المؤشر في المصدر ببايتات UTF-8</dt><dd>البداية {{ reference.source_byte_start }}؛ النهاية غير المشمولة {{ reference.source_byte_end }}</dd></dl>
+      <h3>المؤشر الأصلي</h3><pre class="revision-text"><span>{{ reference.original_pointer }}</span></pre>
+      {% if reference.citation_text %}<h3>نص الاستشهاد الاصطناعي المتاح</h3><pre class="revision-text"><span>{{ reference.citation_text }}</span></pre>{% else %}<p>لا يوجد استشهاد موثق متاح في عقد القراءة.</p>{% endif %}
+    </li>{% empty %}<li>لا توجد مراجع مرفقة بهذا السجل.</li>{% endfor %}</ol>
+  </section>
+  <section id="timeline" tabindex="-1" aria-labelledby="timeline-heading">
+    <h2 id="timeline-heading">الأحداث المحفوظة ومؤشر إنشاء الدفعة — الأقدم أولًا</h2>
+    <p>يُرتّب الوقت تصاعديًا ثم هوية الحدث عند تساوي الوقت؛ يسبق مؤشر الدفعة الأحداث عند تساوي الوقت. لا يُستنتج تسلسل سببي من التعادل.</p>
+    {% if stored.row.events_truncated %}<p role="status">آخر 100 حدث فقط بترتيب زمني تصاعدي؛ الأحداث الأقدم غير معروضة هنا. هذا العرض ليس سجلًا تاريخيًا كاملًا.</p>{% endif %}
+    <nav aria-label="الانتقال إلى أحداث السجل">{% for entry in timeline %}<a href="#{{ entry.anchor }}">{% if entry.kind == 'batch' %}إنشاء الدفعة{% else %}حدث {{ entry.source.id }}{% endif %}</a>{% endfor %}</nav>
+    <ol>{% for entry in timeline %}<li id="{{ entry.anchor }}" tabindex="-1"><article>
+      {% if entry.kind == 'batch' %}
+      <h3>إنشاء الدفعة المحفوظة — مؤشر مصدر الاستلام</h3>
+      <p>وقت إنشاء الدفعة، وليس وقت استلام مستقلًا للسجل. هذا مؤشر من بيانات الدفعة وليس حدث مراجعة.</p>
+      <p>هوية الدفعة: <code dir="ltr">{{ entry.source.id }}</code></p>
+      {% else %}
+      <h3>حدث مراجعة داخلية محفوظ</h3>
+      <dl><dt>هوية الحدث</dt><dd><code dir="ltr">{{ entry.source.id }}</code></dd><dt>هوية العملية</dt><dd><code dir="ltr">{{ entry.source.operation_id }}</code></dd><dt>العملية المسجلة</dt><dd><code>{{ entry.source.action }}</code></dd><dt>الحالة السابقة</dt><dd><code>{{ entry.source.from_status }}</code></dd><dt>الحالة اللاحقة</dt><dd><code>{{ entry.source.to_status }}</code></dd></dl>
+      <h4>السبب الأصلي المسجل</h4><pre class="revision-text"><span>{{ entry.source.reason }}</span></pre>
+      {% endif %}
+      <p>الوقت المحفوظ: <time dir="ltr" datetime="{{ entry.timestamp }}">{{ entry.timestamp }}</time></p>
+      <a href="#timeline">العودة إلى تنقل الأحداث</a>
+    </article></li>{% endfor %}</ol>
+    {% if not stored.row.events %}<p role="status">لا توجد أحداث مراجعة محفوظة لهذا السجل.</p>{% endif %}
+  </section>
+  {% else %}
+  <section id="records" tabindex="-1" aria-labelledby="records-heading">
+    <h2 id="records-heading">اختيار سجل اصطناعي محفوظ</h2>
+    <p role="status">إجمالي الدفعة: {{ stored.total_count }}؛ مطابق للتصفية: {{ stored.matched_count }}.</p>
+    {% for entry in display_rows %}<article><h3><a href="{{ entry.detail_url }}">تدقيق السجل {{ entry.item.id }}</a></h3><p class="revision-text">{{ entry.item.external_id|default_if_none:'دون معرّف خارجي صالح' }}</p><p class="revision-text">{{ entry.item.question|default_if_none:'لا يوجد سؤال نصي صالح' }}</p><p>ترتيب المصدر: {{ entry.item.row_ordinal }}؛ الاستلام: {{ entry.item.intake_status }}؛ المراجعة: {{ entry.item.review_status }}</p></article>{% empty %}<p>لا توجد سجلات مطابقة.</p>{% endfor %}
+    <nav aria-label="صفحات السجلات الاصطناعية">{% if previous_url %}<a href="{{ previous_url }}" rel="prev">الصفحة السابقة</a>{% endif %}<span aria-current="page">الصفحة {{ stored.page }} من {{ stored.page_count }}</span>{% if next_url %}<a href="{{ next_url }}" rel="next">الصفحة التالية</a>{% endif %}</nav>
+  </section>
+  {% endif %}
+</main>
+<footer><p>NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p></footer>
+</body>
+</html>

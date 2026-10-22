@@ -329,6 +329,7 @@ def persisted_review(request: HttpRequest) -> HttpResponse:
         params['batch'] = str(stored.batch_id)
     response = render(request,'editorial_demo/pipeline.html',{
         'stored':stored,'stored_return_url':base+'?'+urlencode(params),
+        'stored_audit_query':urlencode({**params, **({'row':str(stored.row.id)} if stored.row else {})}),
         'stored_list_url':base,
         'stored_display_rows':tuple({'item':row,'detail_url':base+'?'+urlencode({**params,'row':str(row.id)})}
                                    for row in stored.rows),
