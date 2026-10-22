@@ -15,7 +15,7 @@ PINNED_PUBLIC_ASSET_MANIFEST = MappingProxyType({
     "reference/catalog.css": (6616, "bc26502e83911a7b198b4d68183db3d78c44816f8f665d1302f950daef74f46c"),
     "reference/style.css": (1253, "6f58de051096896a45078dee82f11a6b29d810a4007675402df0889d48c63a65"),
     "django_htmx/htmx-2.min.js": (51238, "71ea67185bfa8c98c39d31717c6fce5d852370fcdfd129db4543774d3145c0de"),
-}))
+})
 
 
 class AssetIntegrityError(Exception):
