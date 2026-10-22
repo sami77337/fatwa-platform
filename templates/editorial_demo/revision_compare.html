@@ -10,7 +10,7 @@
 <a class="skip" href="#main-content">انتقل إلى المحتوى</a>
 <header>
   <p class="banner"><strong>معاينة تطويرية للقراءة فقط — بيانات اصطناعية</strong><br>نصوص اختبار تقنية؛ ليست أحكامًا علمية أو أجوبة فتاوى. لا تحرير أو اعتماد أو نشر.</p>
-  <nav aria-label="التنقل العام"><a href="{% url 'editorial_demo' %}">قائمة المعاينة التحريرية</a><a href="{% url 'editorial_pipeline' %}">قائمة الاستلام الاصطناعية</a></nav>
+  <nav aria-label="التنقل العام"><a href="{% url 'editorial_demo' %}">قائمة المعاينة التحريرية</a><a href="{% url 'editorial_pipeline' %}">قائمة الاستلام الاصطناعية</a><a href="{% url 'editorial_revision_history' %}">سجل المراجعات الاصطناعية</a></nav>
 </header>
 <main id="main-content" tabindex="-1">
   <h1>مقارنة مراجعتين اصطناعيتين</h1>
@@ -20,36 +20,7 @@
     <div><label for="after">النسخة اللاحقة في المقارنة</label><select id="after" name="after">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == after_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
     <button type="submit">عرض المقارنة</button>
   </form>
-  <p class="legend"><span><ins>مضاف: تحته خط</ins></span><span><del>محذوف: يتوسطه خط</del></span><span>دون تغيير: نص عادي</span></p>
-  <p>المقارنة حرفية وتشمل المسافات والتشكيل. هوية المرجع هي حقوله الستة كاملة. تغير الموضع يظهر منفصلًا عن تغير الهوية.</p>
-  <nav id="changes" tabindex="-1" aria-label="التنقل بين الفروق">
-    {% for target in comparison.targets %}<a href="#{{ target.anchor }}">{{ target.label }}</a>{% empty %}<p role="status">لا توجد فروق بين محتوى النسختين.</p>{% endfor %}
-  </nav>
-  {% for field in comparison.fields %}
-  <section id="change-{{ field.key }}" tabindex="-1" aria-labelledby="heading-{{ field.key }}">
-    <h2 id="heading-{{ field.key }}">{{ field.label }} — {% if field.changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
-    <div class="comparison-grid">
-      <div class="revision-column"><h3>النسخة السابقة — المراجعة {{ before_revision.number }}</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.before %}</div>
-      <div class="revision-column"><h3>النسخة اللاحقة — المراجعة {{ after_revision.number }}</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.after %}</div>
-    </div>
-    <details><summary>إظهار علامات المسافات ونهايات الأسطر لهذا الحقل</summary><p>· مسافة؛ ⇥ جدولة؛ ␍ CR؛ ␊ LF. هذه علامات عرض، والنص الأصلي محفوظ دون تعديل.</p><div class="comparison-grid">
-      <div class="revision-column"><h3>علامات النسخة السابقة</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.before show_whitespace=True %}</div>
-      <div class="revision-column"><h3>علامات النسخة اللاحقة</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.after show_whitespace=True %}</div>
-    </div></details>
-    <p><a href="#changes">العودة إلى قائمة الفروق</a></p>
-  </section>
-  {% endfor %}
-  <section id="change-references" tabindex="-1" aria-labelledby="heading-references">
-    <h2 id="heading-references">هويات المراجع وترتيبها — {% if comparison.references_changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
-    <p>تُعرض الحقول الأصلية كاملة وبترتيب المراجع في كل نسخة؛ لا توجد روابط إلى مصادر خارجية.</p>
-    <div class="comparison-grid">
-      <div class="revision-column"><h3>مراجع النسخة السابقة — المراجعة {{ before_revision.number }}</h3>{% include 'editorial_demo/_revision_references.html' with entries=comparison.before_references %}</div>
-      <div class="revision-column"><h3>مراجع النسخة اللاحقة — المراجعة {{ after_revision.number }}</h3>{% include 'editorial_demo/_revision_references.html' with entries=comparison.after_references %}</div>
-    </div><p><a href="#changes">العودة إلى قائمة الفروق</a></p>
-  </section>
-  <section aria-labelledby="source-heading"><h2 id="source-heading">النص الأصلي وحقول المصدر الثابتة</h2>
-    <dl><dt>المعرّف الاصطناعي</dt><dd><code>{{ source.external_id }}</code></dd><dt>نص المصدر</dt><dd><pre class="revision-text"><span>{{ source.question }}</span></pre></dd><dt>رابط المصدر النصي غير القابل للفتح</dt><dd><code>{{ source.prepared_clip_url }}</code></dd><dt>ملاحظات المصدر الأصلية</dt><dd><pre class="revision-text"><span>{{ source.staff_notes }}</span></pre></dd></dl>
-  </section>
+  {% include 'editorial_demo/_revision_comparison_content.html' %}
 </main>
 <footer><p>NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p></footer>
 </body>

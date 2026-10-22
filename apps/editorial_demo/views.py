@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.exceptions import TooManyFieldsSent
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.http import require_safe
 
 from .asset_integrity import AssetIntegrityError, verified_preview_css
@@ -18,7 +19,10 @@ from .integration import (
     ISSUE_LABELS, STATUS_LABELS, SYNTHETIC_BATCHES, build_batch_preview_rows, build_preview_rows,
 )
 from .revision_comparison import compare_revisions
-from .revision_fixtures import COMPARISON_RECORD
+from .revision_fixtures import COMPARISON_RECORD, REVISION_HISTORY_RECORD
+from .revision_history import (
+    HistoryDataError, InvalidRevisionId, UnknownRevisionId, build_history, select_revisions,
+)
 
 
 def local_only(request: HttpRequest) -> None:
@@ -138,6 +142,53 @@ def revision_compare_stylesheet(request: HttpRequest) -> HttpResponse:
     except OSError as exc:
         raise Http404("Unavailable comparison stylesheet") from exc
     response = HttpResponse(payload, content_type="text/css; charset=utf-8")
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_safe
+def revision_history(request: HttpRequest) -> HttpResponse:
+    """Browse a fixed synthetic timeline and compare only explicitly selected identities."""
+    local_only(request)
+    try:
+        query = request.GET
+        if query and (set(query) != {"before", "after"}
+                      or any(len(query.getlist(key)) != 1 for key in query)):
+            raise InvalidRevisionId("missing_unknown_or_duplicate_parameter")
+    except (InvalidRevisionId, TooManyFieldsSent):
+        return _failure("حدد هويتي مراجعتين مرة واحدة دون معاملات إضافية.", 400)
+    try:
+        entries = build_history(REVISION_HISTORY_RECORD)
+    except HistoryDataError:
+        return _failure("سجل المراجعات الاصطناعي غير متاح.", 503)
+    comparison = None
+    before, after = entries[0].revision, entries[-1].revision
+    if query:
+        try:
+            before, after = select_revisions(entries, query.get("before"), query.get("after"))
+        except InvalidRevisionId:
+            return _failure("هويتا المراجعتين غير صالحتين.", 400)
+        except UnknownRevisionId as exc:
+            raise Http404("Unknown synthetic revision identity") from exc
+        comparison = compare_revisions(before, after)
+    base_url = reverse("editorial_revision_history")
+
+    def pair_url(left: int, right: int) -> str:
+        return base_url + "?" + urlencode({"before": left, "after": right})
+
+    rows = tuple({
+        "entry": entry,
+        "before_url": pair_url(entry.revision.number, after.number) + "#selected-comparison",
+        "after_url": pair_url(before.number, entry.revision.number) + "#selected-comparison",
+        "previous_url": (pair_url(entry.previous_number, entry.revision.number)
+                         + "#selected-comparison" if entry.previous_number is not None else None),
+    } for entry in entries)
+    response = render(request, "editorial_demo/revision_history.html", {
+        "history_rows": rows, "revisions": tuple(entry.revision for entry in entries),
+        "before_revision": before, "after_revision": after, "comparison": comparison,
+        "selection_url": pair_url(before.number, after.number) if query else None,
+        "source": REVISION_HISTORY_RECORD.intake,
+    })
     response["Cache-Control"] = "no-store"
     return response
 
