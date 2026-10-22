@@ -2,6 +2,7 @@
 from django.urls import path
 
 from apps.editorial_demo import views as editorial_views
+from apps.editorial_demo.workflow_audit_views import workflow_audit
 from apps.reference import views as reference_views
 from config.urls import urlpatterns as legacy_patterns
 
@@ -12,5 +13,6 @@ urlpatterns = [
     path('dev/wave7/api/items/<str:ident>', reference_views.api_workflow_item, name='wave7_api_item'),
     path('dev/editorial-preview/persisted', editorial_views.persisted_review,
          name='wave7_editorial_review'),
+    path('dev/editorial-preview/workflow-audit', workflow_audit, name='wave7_workflow_audit'),
     *legacy_patterns,
 ]
