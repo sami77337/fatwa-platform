@@ -54,15 +54,23 @@ def workflow_audit(request: HttpRequest) -> HttpResponse:
     if stored.batch_id is not None:
         params['batch'] = str(stored.batch_id)
     selected_params = {**params, **({'row': str(stored.row.id)} if stored.row is not None else {})}
+
+    def page_url(page: int) -> str:
+        return base + '?' + urlencode({**params, 'page': page}) + '#records'
+
     response = render(request, 'editorial_demo/workflow_audit.html', {
         'stored': stored, 'timeline': timeline, 'base_url': base,
-        'list_url': base + '?' + urlencode(params),
+        'list_url': page_url(stored.page),
         'selected_url': base + '?' + urlencode(selected_params),
         'persisted_url': reverse('wave7_editorial_review') + '?' + urlencode(selected_params),
+        'selected_on_page': stored.row is not None and any(row.id == stored.row.id for row in stored.rows),
         'display_rows': tuple({'item': row, 'detail_url': base + '?' + urlencode({**params, 'row': str(row.id)})}
                               for row in stored.rows),
-        'previous_url': base + '?' + urlencode({**params, 'page': stored.page - 1}) if stored.page > 1 else None,
-        'next_url': base + '?' + urlencode({**params, 'page': stored.page + 1}) if stored.page < stored.page_count else None,
+        'pagination_fields': tuple((key, value) for key, value in params.items() if key != 'page'),
+        'first_url': page_url(1) if stored.page > 1 else None,
+        'previous_url': page_url(stored.page - 1) if stored.page > 1 else None,
+        'next_url': page_url(stored.page + 1) if stored.page < stored.page_count else None,
+        'last_url': page_url(stored.page_count) if stored.page < stored.page_count else None,
         'intake_statuses': tuple(c.IntakeStatus), 'review_statuses': tuple(c.ReviewStatus),
     })
     response['Cache-Control'] = 'no-store'

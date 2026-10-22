@@ -1,7 +1,7 @@
 """Pure presentation of existing Wave7 read DTOs; no snapshots or persistence."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from apps.intake_workflow.review import (
@@ -68,5 +68,7 @@ def build_audit_timeline(stored: ReviewWorklist) -> tuple[AuditEntry, ...]:
         operations.add(event.operation_id)
     sources = (batches[0], *row.events)
     return tuple(AuditEntry(source) for source in sorted(sources, key=lambda source: (
-        source.created_at, isinstance(source, StoredReviewEvent), source.id,
+        # A repeated local hour can compare by wall time when tzinfo is shared.
+        # Compare instants in UTC without changing the source or displayed time.
+        source.created_at.astimezone(timezone.utc), isinstance(source, StoredReviewEvent), source.id,
     )))
