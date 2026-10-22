@@ -18,11 +18,11 @@
   <section id="selection" tabindex="-1" aria-labelledby="selection-heading">
     <h2 id="selection-heading">اختيار مراجعتين للمقارنة</h2>
     <form method="get" action="{% url 'editorial_revision_history' %}#selected-comparison" aria-label="اختيار مراجعتين من التاريخ">
-      <div><label for="before">النسخة السابقة في المقارنة</label><select id="before" name="before">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == before_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
-      <div><label for="after">النسخة اللاحقة في المقارنة</label><select id="after" name="after">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == after_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
+      <div><label for="before">النسخة السابقة في المقارنة</label><select id="before" name="before" aria-describedby="selection-help">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == before_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
+      <div><label for="after">النسخة اللاحقة في المقارنة</label><select id="after" name="after" aria-describedby="selection-help">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == after_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
       <button type="submit">مقارنة المراجعتين</button>
     </form>
-    <p>يمكن عكس الاتجاه أو اختيار المراجعة نفسها. يحتفظ الرابط بهويتي المراجعتين، وليس بموقعيهما في القائمة.</p>
+    <p id="selection-help">يمكن عكس الاتجاه أو اختيار المراجعة نفسها. السابقة واللاحقة تصفان طرفي المقارنة المختارين؛ قد يختلف اتجاههما عن ترتيب السجل. يحتفظ الرابط بهويتي المراجعتين، وليس بموقعيهما في القائمة.</p>
   </section>
   <section aria-labelledby="history-heading"><h2 id="history-heading">تاريخ المراجعات بترتيب تصاعدي</h2>
     <ol>{% for row in history_rows %}<li id="revision-{{ row.entry.revision.number }}" tabindex="-1"><article>
@@ -35,10 +35,25 @@
       <nav aria-label="اختيارات المراجعة {{ row.entry.revision.number }}"><a href="{{ row.before_url }}" aria-label="اختيار المراجعة {{ row.entry.revision.number }} كنسخة سابقة مع المراجعة {{ after_revision.number }}">اختيارها كنسخة سابقة</a><a href="{{ row.after_url }}" aria-label="اختيار المراجعة {{ row.entry.revision.number }} كنسخة لاحقة مع المراجعة {{ before_revision.number }}">اختيارها كنسخة لاحقة</a>{% if row.previous_url %}<a href="{{ row.previous_url }}">مقارنتها بالسابقة في التاريخ</a>{% endif %}<a href="#selection">العودة إلى عناصر الاختيار</a></nav>
     </article></li>{% endfor %}</ol>
   </section>
-  <div id="selected-comparison" tabindex="-1">
-    {% if comparison %}<h2>المقارنة المحددة: المراجعة {{ before_revision.number }} ثم المراجعة {{ after_revision.number }}</h2><p><a href="{{ selection_url }}#selected-comparison">رابط المقارنة الحالية</a></p>{% include 'editorial_demo/_revision_comparison_content.html' %}
-    {% else %}<p role="status">اختر مراجعتين لعرض المقارنة؛ تصفح التاريخ وحده لا ينفذ مقارنة ضمنية.</p>{% endif %}
-  </div>
+  <section id="selected-comparison" tabindex="-1" aria-labelledby="selected-comparison-heading">
+    {% if comparison %}
+      <h2 id="selected-comparison-heading">المقارنة المحددة: المراجعة {{ before_revision.number }} ثم المراجعة {{ after_revision.number }}</h2>
+      <p id="comparison-direction">{% if before_revision.number == after_revision.number %}المراجعة نفسها في طرفي المقارنة.{% elif before_revision.number < after_revision.number %}باتجاه ترتيب السجل: من المراجعة {{ before_revision.number }} إلى المراجعة {{ after_revision.number }}.{% else %}بعكس ترتيب السجل: من المراجعة {{ before_revision.number }} إلى المراجعة {{ after_revision.number }}.{% endif %} تظهر الإضافات والحذف بالنسبة إلى هذا الاتجاه.</p>
+      <p id="comparison-summary">مجموعات الفروق: {{ comparison.targets|length }}. {% if comparison.changed %}يُحسب كل حقل متغيّر ومجموعة المراجع مرة واحدة؛ العدد لا يمثل عدد الكلمات المتغيرة.{% else %}لا يتغير محتوى المقارنة؛ قد تختلف وسوم النسبة أو ملاحظة اللقطة بين مراجعتين مختلفتين.{% endif %}</p>
+      <nav id="comparison-tools" aria-label="أدوات المقارنة المحددة" aria-describedby="comparison-summary comparison-direction">
+        {% if comparison.changed %}{% with first_target=comparison.targets|first last_target=comparison.targets|last %}
+          <a id="comparison-first-difference" href="#{{ first_target.anchor }}">أول فرق: {{ first_target.label }}</a>
+          {% if comparison.targets|length > 1 %}<a id="comparison-last-difference" href="#{{ last_target.anchor }}">آخر فرق: {{ last_target.label }}</a>{% endif %}
+          <a id="comparison-change-index" href="#changes">قائمة مجموعات الفروق</a>
+        {% endwith %}{% endif %}
+        <a id="comparison-edit-selection" href="#selection">تغيير المراجعتين</a>
+        {% if before_revision.number != after_revision.number %}<a id="comparison-reverse" href="{% url 'editorial_revision_history' %}?before={{ after_revision.number }}&amp;after={{ before_revision.number }}#selected-comparison">عكس اتجاه المقارنة: المراجعة {{ after_revision.number }} ثم {{ before_revision.number }}</a>{% endif %}
+        <a href="{{ selection_url }}#selected-comparison">رابط المقارنة الحالية</a>
+      </nav>
+      {% include 'editorial_demo/_revision_comparison_content.html' %}
+      <p><a href="#selected-comparison">العودة إلى سياق المقارنة وأدوات التنقل</a></p>
+    {% else %}<h2 id="selected-comparison-heading">لم تُحدّد مقارنة بعد</h2><p role="status">اختر مراجعتين لعرض المقارنة؛ تصفح التاريخ وحده لا ينفذ مقارنة ضمنية.</p>{% endif %}
+  </section>
 </main>
 <footer><p>NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p></footer>
 </body>
