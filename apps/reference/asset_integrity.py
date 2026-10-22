@@ -1,0 +1,38 @@
+"""Exact source-byte pins for reference assets and one installed htmx bundle.
+
+The htmx pin reflects django-htmx 1.29.0 local package bytes and RECORD only.
+It does not establish historical Wave7 equivalence or independent upstream provenance.
+Other django_htmx JavaScript assets remain separately allowlisted but unpinned.
+"""
+from hashlib import sha256
+from pathlib import Path
+from types import MappingProxyType
+
+PINNED_PUBLIC_ASSET_MANIFEST = MappingProxyType({
+    "reference/catalog.js": (29665, "d78cff1450d64547a1cd04dcbc48a7df57dd1125d39808e3f90f8dd5c6bd6566"),
+    "reference/django-api.mjs": (9615, "6df97f43e7558e20f839c0a9370694273f5ace532fe532a667b3a2f79c57a915"),
+    "reference/tree.js": (1066, "9463a1cb27e922d7e54941aeec090a843d2f3dff3f62915e8398331a2fe4f173"),
+    "reference/catalog.css": (6616, "bc26502e83911a7b198b4d68183db3d78c44816f8f665d1302f950daef74f46c"),
+    "reference/style.css": (1253, "6f58de051096896a45078dee82f11a6b29d810a4007675402df0889d48c63a65"),
+    "django_htmx/htmx-2.min.js": (51238, "71ea67185bfa8c98c39d31717c6fce5d852370fcdfd129db4543774d3145c0de"),
+})
+
+
+class AssetIntegrityError(Exception):
+    """A pinned reference asset is missing or has changed."""
+
+
+def verified_reference_asset(asset: str, filename: str) -> bytes:
+    """Return exact pinned bytes, or fail closed before serving the asset."""
+    expected = PINNED_PUBLIC_ASSET_MANIFEST.get(asset)
+    if expected is None:
+        raise AssetIntegrityError("asset_not_pinned")
+    expected_size, expected_sha256 = expected
+    try:
+        with Path(filename).open("rb") as source:
+            payload = source.read(expected_size + 1)
+    except OSError as exc:
+        raise AssetIntegrityError("asset_unavailable") from exc
+    if len(payload) != expected_size or sha256(payload).hexdigest() != expected_sha256:
+        raise AssetIntegrityError("asset_integrity_mismatch")
+    return payload

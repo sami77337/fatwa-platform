@@ -11,6 +11,11 @@ from django.views.decorators.http import require_safe
 from django.views.decorators.vary import vary_on_headers
 
 from . import services
+from .asset_integrity import (
+    AssetIntegrityError,
+    PINNED_PUBLIC_ASSET_MANIFEST,
+    verified_reference_asset,
+)
 from .query import (
     MAX_OFFSET,
     MAX_SOURCE_ID,
@@ -311,7 +316,7 @@ def branch(request: HttpRequest, ident: int) -> HttpResponse:
 
 
 @require_safe
-def public_asset(request: HttpRequest, asset: str) -> FileResponse:
+def public_asset(request: HttpRequest, asset: str) -> HttpResponse:
     from django.contrib.staticfiles import finders
 
     allowed = asset in {
@@ -334,8 +339,17 @@ def public_asset(request: HttpRequest, asset: str) -> FileResponse:
     content_type = (
         "text/css; charset=utf-8" if asset.endswith(".css") else "text/javascript; charset=utf-8"
     )
-    return FileResponse(open(filename, "rb"), content_type=content_type)
+    # The five reference assets and the version-pinned htmx bundle are served
+    # only after their exact bytes are verified. Other django_htmx JavaScript
+    # remains separately allowlisted but unpinned.
 
+    if asset in PINNED_PUBLIC_ASSET_MANIFEST:
+        try:
+            payload = verified_reference_asset(asset, filename)
+        except AssetIntegrityError as exc:
+            raise Http404("Unavailable or modified reference asset") from exc
+        return HttpResponse(payload, content_type=content_type)
+    return FileResponse(open(filename, "rb"), content_type=content_type)
 
 # Wave7 endpoints are exported for E5's opt-in URLConf only. No legacy route is
 # changed, and E2 owns the single workflow SSR screen consuming this context.
