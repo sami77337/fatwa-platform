@@ -1,5 +1,6 @@
 """Two immutable, invented technical snapshots; no scholarly answer or real attribution."""
 
+from dataclasses import replace
 from hashlib import sha256
 
 from apps.fatwa_drafts.domain import DraftRecord, Revision, State
@@ -54,4 +55,33 @@ COMPARISON_RECORD = DraftRecord(
             reviewer_notes="ملاحظة اختبار: راجع ترتيب الحقول والمراجع.",
         ),
     ),
+)
+
+# Extend the accepted two snapshots without replacing them or their source.
+# Gaps deliberately ensure selectors resolve identities, never tuple positions.
+_HISTORY_TEXT = replace(
+    COMPARISON_RECORD.history[-1], number=4, action="synthetic_text_revision",
+    human_editor="وسم محرر اصطناعي ٤", editorial_note="تغيير تقني ثابت في العنوان ونهاية النص.",
+    title="مثال تقني لسجل المراجعات",
+    answer=COMPARISON_RECORD.history[-1].answer + "\n",
+)
+_HISTORY_ORDER = replace(
+    _HISTORY_TEXT, number=7, action="synthetic_reference_order",
+    human_editor="وسم محرر اصطناعي ٧", editorial_note="إعادة ترتيب هويات اصطناعية للعرض فقط.",
+    reference_links=(_ADD, _KEEP),
+)
+_HISTORY_NOTES = replace(
+    _HISTORY_ORDER, number=9, action="synthetic_notes_revision",
+    human_editor="وسم مراجع اصطناعي ٩", editorial_note="ملاحظة تقنية ومرجع اصطناعي مضاف.",
+    reviewer_notes="ملاحظة اختبار: تثبيت ترتيب المقارنة.",
+    reference_links=(_ADD, _REMOVE, _KEEP),
+)
+_HISTORY_LAST = replace(
+    _HISTORY_NOTES, number=11, action="synthetic_snapshot",
+    human_editor="وسم محرر اصطناعي ١١", editorial_note="لقطة لاحقة دون تغيير محتوى المقارنة.",
+)
+REVISION_HISTORY_RECORD = replace(
+    COMPARISON_RECORD,
+    history=(*COMPARISON_RECORD.history, _HISTORY_TEXT, _HISTORY_ORDER,
+             _HISTORY_NOTES, _HISTORY_LAST),
 )

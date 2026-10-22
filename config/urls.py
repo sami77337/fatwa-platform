@@ -17,6 +17,8 @@ urlpatterns = [
          name="editorial_revision_compare"),
     path("dev/editorial-preview/revision-compare.css", editorial_views.revision_compare_stylesheet,
          name="editorial_revision_compare_style"),
+    path("dev/editorial-preview/revision-history", editorial_views.revision_history,
+         name="editorial_revision_history"),
     path("dev/editorial-preview/<str:ident>", editorial_views.preview, name="editorial_demo_detail"),
     path("", public_views.home, name="home"),
     path("help", public_views.help_page, name="public_help"),
