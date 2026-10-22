@@ -34,6 +34,7 @@
   </section>
   {% if stored.row %}
   <p><a href="{{ list_url }}">العودة إلى القائمة المصفاة</a> · <a href="{{ selected_url }}">رابط ثابت للسجل المحدد</a></p>
+  {% if not selected_on_page %}<p role="status">السجل المحدد غير موجود في الصفحة الحالية من القائمة المصفاة؛ الرابط الثابت لا يعني مطابقته للتصفية. العودة إلى القائمة تحفظ المرشحات والصفحة {{ stored.page }}.</p>{% endif %}
   <section id="provenance" tabindex="-1" aria-labelledby="provenance-heading">
     <h2 id="provenance-heading">مصدر الاستلام المحفوظ</h2>
     <dl>
@@ -60,16 +61,16 @@
   </section>
   <section id="timeline" tabindex="-1" aria-labelledby="timeline-heading">
     <h2 id="timeline-heading">الأحداث المحفوظة ومؤشر إنشاء الدفعة — الأقدم أولًا</h2>
-    <p>يُرتّب الوقت تصاعديًا ثم هوية الحدث عند تساوي الوقت؛ يسبق مؤشر الدفعة الأحداث عند تساوي الوقت. لا يُستنتج تسلسل سببي من التعادل.</p>
+    <p>يُرتّب الوقت حسب اللحظة الزمنية تصاعديًا ثم هوية الحدث عند تساوي اللحظة؛ يسبق مؤشر الدفعة الأحداث عند تساوي اللحظة. يُعرض الوقت المحفوظ مع إزاحته الأصلية دون تحويل. لا يُستنتج تسلسل سببي من التعادل.</p>
     {% if stored.row.events_truncated %}<p role="status">آخر 100 حدث فقط بترتيب زمني تصاعدي؛ الأحداث الأقدم غير معروضة هنا. هذا العرض ليس سجلًا تاريخيًا كاملًا.</p>{% endif %}
-    <nav aria-label="الانتقال إلى أحداث السجل">{% for entry in timeline %}<a href="#{{ entry.anchor }}">{% if entry.kind == 'batch' %}إنشاء الدفعة{% else %}حدث {{ entry.source.id }}{% endif %}</a>{% endfor %}</nav>
-    <ol>{% for entry in timeline %}<li id="{{ entry.anchor }}" tabindex="-1"><article>
+    <nav aria-label="الانتقال إلى أحداث السجل">{% for entry in timeline %}<a href="#{{ entry.anchor }}">{% if entry.kind == 'batch' %}إنشاء الدفعة — {{ entry.timestamp }}{% else %}حدث {{ entry.source.id }} — {{ entry.source.action }} — {{ entry.timestamp }}{% endif %}</a>{% endfor %}</nav>
+    <ol>{% for entry in timeline %}<li id="{{ entry.anchor }}" tabindex="-1"><article aria-labelledby="{{ entry.anchor }}-heading">
       {% if entry.kind == 'batch' %}
-      <h3>إنشاء الدفعة المحفوظة — مؤشر مصدر الاستلام</h3>
+      <h3 id="{{ entry.anchor }}-heading">إنشاء الدفعة المحفوظة — مؤشر مصدر الاستلام</h3>
       <p>وقت إنشاء الدفعة، وليس وقت استلام مستقلًا للسجل. هذا مؤشر من بيانات الدفعة وليس حدث مراجعة.</p>
       <p>هوية الدفعة: <code dir="ltr">{{ entry.source.id }}</code></p>
       {% else %}
-      <h3>حدث مراجعة داخلية محفوظ</h3>
+      <h3 id="{{ entry.anchor }}-heading">حدث مراجعة داخلية محفوظ — {{ entry.source.action }}</h3>
       <dl><dt>هوية الحدث</dt><dd><code dir="ltr">{{ entry.source.id }}</code></dd><dt>هوية العملية</dt><dd><code dir="ltr">{{ entry.source.operation_id }}</code></dd><dt>العملية المسجلة</dt><dd><code>{{ entry.source.action }}</code></dd><dt>الحالة السابقة</dt><dd><code>{{ entry.source.from_status }}</code></dd><dt>الحالة اللاحقة</dt><dd><code>{{ entry.source.to_status }}</code></dd></dl>
       <h4>السبب الأصلي المسجل</h4><pre class="revision-text"><span>{{ entry.source.reason }}</span></pre>
       {% endif %}
@@ -81,9 +82,23 @@
   {% else %}
   <section id="records" tabindex="-1" aria-labelledby="records-heading">
     <h2 id="records-heading">اختيار سجل اصطناعي محفوظ</h2>
-    <p role="status">إجمالي الدفعة: {{ stored.total_count }}؛ مطابق للتصفية: {{ stored.matched_count }}.</p>
+    <p id="audit-pagination-summary" role="status">إجمالي الدفعة: {{ stored.total_count }}؛ مطابق للتصفية: {{ stored.matched_count }}. التنقل بين الصفحات يحفظ المرشحات ويلغي اختيار السجل.</p>
     {% for entry in display_rows %}<article><h3><a href="{{ entry.detail_url }}">تدقيق السجل {{ entry.item.id }}</a></h3><p class="revision-text">{{ entry.item.external_id|default_if_none:'دون معرّف خارجي صالح' }}</p><p class="revision-text">{{ entry.item.question|default_if_none:'لا يوجد سؤال نصي صالح' }}</p><p>ترتيب المصدر: {{ entry.item.row_ordinal }}؛ الاستلام: {{ entry.item.intake_status }}؛ المراجعة: {{ entry.item.review_status }}</p></article>{% empty %}<p>لا توجد سجلات مطابقة.</p>{% endfor %}
-    <nav aria-label="صفحات السجلات الاصطناعية">{% if previous_url %}<a href="{{ previous_url }}" rel="prev">الصفحة السابقة</a>{% endif %}<span aria-current="page">الصفحة {{ stored.page }} من {{ stored.page_count }}</span>{% if next_url %}<a href="{{ next_url }}" rel="next">الصفحة التالية</a>{% endif %}</nav>
+    {% if stored.matched_count %}
+    <nav aria-label="صفحات السجلات الاصطناعية" aria-describedby="audit-pagination-summary">
+      {% if first_url %}<a href="{{ first_url }}">الصفحة الأولى</a>{% else %}<span aria-disabled="true">الصفحة الأولى</span>{% endif %}
+      {% if previous_url %}<a href="{{ previous_url }}" rel="prev">الصفحة السابقة</a>{% else %}<span aria-disabled="true">الصفحة السابقة</span>{% endif %}
+      <span aria-current="page">الصفحة {{ stored.page }} من {{ stored.page_count }}</span>
+      {% if next_url %}<a href="{{ next_url }}" rel="next">الصفحة التالية</a>{% else %}<span aria-disabled="true">الصفحة التالية</span>{% endif %}
+      {% if last_url %}<a href="{{ last_url }}">الصفحة الأخيرة</a>{% else %}<span aria-disabled="true">الصفحة الأخيرة</span>{% endif %}
+    </nav>
+    <form id="audit-page-form" method="get" action="{{ base_url }}#records" aria-label="الانتقال إلى صفحة من السجلات المصفاة">
+      {% for name, value in pagination_fields %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+      <label for="audit-page">رقم الصفحة — من 1 إلى {{ stored.page_count }}</label>
+      <input id="audit-page" name="page" type="number" min="1" max="{{ stored.page_count }}" value="{{ stored.page }}" inputmode="numeric" aria-describedby="audit-pagination-summary" required>
+      <button type="submit">انتقل إلى الصفحة</button>
+    </form>
+    {% endif %}
   </section>
   {% endif %}
 </main>

@@ -6,8 +6,9 @@ real immutable DTOs. They are not database integration evidence.
 
 import os
 from dataclasses import asdict, replace
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 from html import escape
+from html.parser import HTMLParser
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlencode, urlsplit
 from uuid import UUID
@@ -22,6 +23,29 @@ from apps.intake_workflow import contracts as c, fixtures, guards, review
 
 def uid(number):
     return UUID(int=number)
+
+
+class AuditPageForm(HTMLParser):
+    """Read the actual GET controls, including empty and escaped filter values."""
+
+    def __init__(self, html):
+        super().__init__()
+        self.active = False
+        self.attributes = {}
+        self.fields = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'form' and attrs.get('id') == 'audit-page-form':
+            self.active = True
+            self.attributes = attrs
+        elif self.active and tag == 'input' and 'name' in attrs:
+            self.fields.append((attrs['name'], attrs.get('value', '')))
+
+    def handle_endtag(self, tag):
+        if tag == 'form':
+            self.active = False
 
 
 def synthetic_read():
@@ -64,6 +88,27 @@ class AuditProjectionTests(SimpleTestCase):
         row = replace(self.stored.row, events=events)
         entries = self.build(replace(self.stored, row=row))
         self.assertEqual([entry.source.id for entry in entries], [uid(1), uid(31), uid(32)])
+
+    def test_repeated_local_hour_orders_instants_without_rewriting_stored_times(self):
+        class RepeatedHour(tzinfo):
+            def utcoffset(self, value):
+                return timedelta(hours=1 - value.fold)
+
+            def dst(self, value):
+                return timedelta(0)
+
+        zone = RepeatedHour()
+        earlier = replace(self.stored.row.events[1],
+            created_at=datetime(2026, 10, 25, 1, 45, tzinfo=zone, fold=0))
+        later = replace(self.stored.row.events[0],
+            created_at=datetime(2026, 10, 25, 1, 15, tzinfo=zone, fold=1))
+        row = replace(self.stored.row, events=(later, earlier))
+        entries = self.build(replace(self.stored, row=row))
+        self.assertEqual([entry.source.id for entry in entries], [uid(1), uid(31), uid(32)])
+        self.assertIs(entries[1].source, earlier)
+        self.assertIs(entries[2].source, later)
+        self.assertEqual([entry.timestamp for entry in entries[1:]],
+            ['2026-10-25T01:45:00+01:00', '2026-10-25T01:15:00+00:00'])
 
     def test_no_detail_has_no_invented_events(self):
         self.assertEqual(self.build(replace(self.stored, row=None)), ())
@@ -210,6 +255,85 @@ class AuditPageTests(SimpleTestCase):
         self.assertContains(response, 'href="#main-content"')
         self.assertContains(response, '<label for="audit-batch">')
         self.assertNotContains(response, 'method="post"')
+
+    def test_first_last_pages_preserve_filters_and_focus_the_results(self):
+        stored = replace(self.stored, row=None, q='أ أ', mode='literal',
+            intake_status='READY_FOR_EDITOR', review_status='NEEDS_CHANGES',
+            page=2, page_count=3, page_size=1, matched_count=3, total_count=4)
+        response, _ = self.get(stored=stored)
+        expected = dict(batch=[str(uid(1))], q=['أ أ'], mode=['literal'],
+            intake_status=['READY_FOR_EDITOR'], review_status=['NEEDS_CHANGES'],
+            page_size=['1'])
+        for name, page in (('first_url', '1'), ('previous_url', '1'),
+                           ('next_url', '3'), ('last_url', '3')):
+            with self.subTest(name=name):
+                url = urlsplit(response.context[name])
+                self.assertEqual(url.path, self.url)
+                self.assertEqual(url.fragment, 'records')
+                self.assertEqual(parse_qs(url.query), {**expected, 'page': [page]})
+                self.assertContains(response, escape(response.context[name], quote=True))
+        self.assertContains(response, 'aria-describedby="audit-pagination-summary"')
+        self.assertContains(response, 'id="records" tabindex="-1"')
+
+    def test_pagination_edges_and_empty_results_do_not_offer_missing_pages(self):
+        cases = ((1, 3, False, True), (3, 3, True, False), (1, 1, False, False))
+        for page, page_count, has_previous, has_next in cases:
+            stored = replace(self.stored, row=None, page=page, page_count=page_count,
+                page_size=1, matched_count=page_count, total_count=page_count)
+            with self.subTest(page=page, page_count=page_count):
+                response, _ = self.get(stored=stored)
+                for key in ('first_url', 'previous_url'):
+                    self.assertEqual(response.context[key] is not None, has_previous)
+                for key in ('last_url', 'next_url'):
+                    self.assertEqual(response.context[key] is not None, has_next)
+                form = AuditPageForm(response.content.decode())
+                self.assertEqual(dict(form.fields)['page'], str(page))
+                self.assertContains(response, 'id="audit-page" name="page" type="number" min="1" max="'
+                    + str(page_count) + '"')
+        empty = replace(self.stored, row=None, rows=(), matched_count=0, total_count=0)
+        response, _ = self.get(stored=empty)
+        self.assertEqual(AuditPageForm(response.content.decode()).fields, [])
+        self.assertNotContains(response, 'aria-current="page"')
+
+    def test_page_form_round_trip_keeps_filter_bytes_and_drops_selected_row(self):
+        query = '  أ + &= "  '
+        listed = replace(self.stored, row=None, q=query, mode='exact',
+            review_status='NEEDS_CHANGES', page=2, page_count=3,
+            page_size=1, matched_count=3, total_count=4)
+        # Controls come from the returned DTO, rather than stale request values.
+        response, _ = self.get({'q': 'stale', 'mode': 'literal'}, stored=listed)
+        form = AuditPageForm(response.content.decode())
+        self.assertEqual(form.attributes['method'], 'get')
+        self.assertEqual(form.attributes['action'], self.url + '#records')
+        self.assertEqual(len({name for name, _ in form.fields}), len(form.fields))
+        params = dict(form.fields)
+        self.assertEqual(params, dict(batch=str(uid(1)), q=query, mode='exact',
+            intake_status='', review_status='NEEDS_CHANGES', page='2', page_size='1'))
+        params['page'] = '3'
+        response, reader = self.get(params, stored=replace(listed, page=3))
+        self.assertEqual(response.status_code, 200)
+        reader.assert_called_once_with(batch_id=str(uid(1)), row_id=None, q=query,
+            mode='exact', intake_status='', review_status='NEEDS_CHANGES', page=3,
+            page_size=1, synthetic_fixtures_only=True)
+        detail, _ = self.get(stored=replace(listed, row=self.stored.row))
+        self.assertEqual(urlsplit(detail.context['list_url']).fragment, 'records')
+        self.assertNotIn('row', parse_qs(urlsplit(detail.context['list_url']).query))
+
+    def test_selected_record_outside_filtered_page_is_disclosed(self):
+        response, _ = self.get(stored=replace(self.stored, rows=(), q='لا يطابق', matched_count=0))
+        self.assertContains(response, 'السجل المحدد غير موجود في الصفحة الحالية من القائمة المصفاة')
+        self.assertContains(response, 'الرابط الثابت لا يعني مطابقته للتصفية')
+        response, _ = self.get()
+        self.assertNotContains(response, 'السجل المحدد غير موجود في الصفحة الحالية')
+
+    def test_event_navigation_names_actual_actions_and_stored_times(self):
+        response, _ = self.get()
+        self.assertContains(response, '<article aria-labelledby="event-'
+            + str(uid(31)) + '-heading">')
+        self.assertContains(response, 'id="event-' + str(uid(31)) + '-heading"')
+        for event in self.stored.row.events:
+            self.assertContains(response, 'حدث ' + str(event.id) + ' — '
+                + event.action + ' — ' + event.created_at.isoformat())
 
     def test_empty_batches_and_no_review_events_have_no_fake_timeline(self):
         empty = replace(self.stored, batches=(), batch_id=None, rows=(), row=None,
