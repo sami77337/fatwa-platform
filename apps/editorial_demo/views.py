@@ -23,6 +23,7 @@ from .revision_fixtures import COMPARISON_RECORD, REVISION_HISTORY_RECORD
 from .revision_history import (
     HistoryDataError, InvalidRevisionId, UnknownRevisionId, build_history, select_revisions,
 )
+from .revision_navigation import difference_sequence
 
 
 def local_only(request: HttpRequest) -> None:
@@ -121,8 +122,10 @@ def revision_compare(request: HttpRequest) -> HttpResponse:
         return _failure("اختيار نسخ غير صالح؛ المسموح مراجعتان اصطناعيتان ثابتتان فقط.", 400)
     before = COMPARISON_RECORD.history[int(before_id) - 1]
     after = COMPARISON_RECORD.history[int(after_id) - 1]
+    comparison = compare_revisions(before, after)
     response = render(request, "editorial_demo/revision_compare.html", {
-        "comparison": compare_revisions(before, after),
+        "comparison": comparison,
+        "difference_navigation": difference_sequence(comparison.targets),
         "before_revision": before, "after_revision": after,
         "revisions": COMPARISON_RECORD.history, "source": COMPARISON_RECORD.intake,
     })
