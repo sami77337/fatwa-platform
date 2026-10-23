@@ -13,11 +13,12 @@ from types import MappingProxyType
 from apps.intake_workflow import contracts as c, fixtures
 from apps.intake_workflow.references import (
     ItemReferenceVerification,
+    ReferenceVerification,
     plan_reference_verification,
 )
 
-from .bridge import BridgeConfig
-from .resolution import KIND, Heading
+from .bridge import BridgeConfig, EditionMap, HeadingMap, SourceIdentity
+from .resolution import KIND, MAX_SNAPSHOT, Heading
 
 
 # Presentation only: these strings never participate in reference resolution.
@@ -70,6 +71,137 @@ def _require_immutable_fields(rows: tuple[Heading, ...]) -> None:
             raise c.ContractError("reference: immutable_heading_fields_required")
 
 
+def _invalid_report() -> None:
+    raise c.ContractError("reference: invalid_diagnostic_report")
+
+
+def _utf8(value: object) -> bytes:
+    if type(value) is not str:
+        _invalid_report()
+    try:
+        return value.encode("utf-8")
+    except UnicodeError as error:
+        raise c.ContractError("reference: invalid_diagnostic_report") from error
+
+
+def _json_integer(value: int) -> None:
+    # Representability only: retain invalid catalog metadata for diagnostics
+    # whenever the existing JSON encoder can emit it, without a new domain bound
+    # or changing the interpreter's integer-to-decimal conversion limit.
+    try:
+        json.dumps(value, allow_nan=False)
+    except ValueError as error:
+        raise c.ContractError("reference: invalid_diagnostic_report") from error
+
+
+def _heading_contract(heading: object) -> None:
+    if type(heading) is not Heading:
+        _invalid_report()
+    _require_immutable_fields((heading,))
+    if type(heading.edition_id) is not int or type(heading.source_row_id) is not int:
+        _invalid_report()
+    for value in (heading.edition_id, heading.source_row_id, heading.printed_page):
+        if value is not None:
+            _json_integer(value)
+    for name in ("work_title", "heading_title", "source_namespace", "source_book_id",
+                 "source_input_sha256", "printed_part", "edition_key", "source_archive_sha256"):
+        value = getattr(heading, name)
+        if value is not None:
+            _utf8(value)
+    for title in heading.path:
+        _utf8(title)
+
+
+def _source_contract(source: object) -> bytes:
+    if (type(source) is not c.SourceSlice or type(source.start) is not int
+            or type(source.end) is not int
+            or not 0 <= source.start < source.end <= c.MAX_INPUT_BYTES):
+        _invalid_report()
+    raw = _utf8(source.text)
+    if len(raw) != source.end - source.start:
+        _invalid_report()
+    return raw
+
+
+def _report_contract(report: "ReferenceDiagnosticReport") -> None:
+    """Check export structure, never recompute or upgrade a planner decision.
+
+    A frozen dataclass alone accepts mutable or wrongly typed runtime values.
+    Reject those values before making any payload. This cannot authenticate a
+    directly constructed report's input hash: the complete input is not retained.
+    Catalog conflicts, unknown reasons and absent legacy pins remain reportable.
+    """
+    digest = report.payload_sha256
+    if (type(digest) is not str or len(digest) != 64
+            or any(char not in "0123456789abcdef" for char in digest)):
+        _invalid_report()
+    binding = report.trusted_binding
+    if (type(binding) is not BridgeConfig or type(binding.edition) is not EditionMap
+            or type(binding.edition.identity) is not SourceIdentity
+            or type(binding.edition.edition_id) is not int
+            or type(binding.headings) is not tuple or len(binding.headings) > MAX_SNAPSHOT):
+        _invalid_report()
+    _json_integer(binding.edition.edition_id)
+    for name in ("source_namespace", "source_book_id", "edition_key",
+                 "source_archive_sha256", "source_input_sha256"):
+        _utf8(getattr(binding.edition.identity, name))
+    for mapping in binding.headings:
+        if type(mapping) is not HeadingMap or type(mapping.source_row_id) is not int:
+            _invalid_report()
+        _json_integer(mapping.source_row_id)
+        for value in (mapping.c1_source_id, mapping.c1_heading_id, mapping.c2_source_id):
+            _utf8(value)
+    if type(report.catalog_rows) is not tuple or len(report.catalog_rows) > MAX_SNAPSHOT:
+        _invalid_report()
+    for heading in report.catalog_rows:
+        _heading_contract(heading)
+    if type(report.items) is not tuple or not 1 <= len(report.items) <= c.MAX_ITEMS:
+        _invalid_report()
+    previous_item_end = 0
+    for ordinal, item in enumerate(report.items, 1):
+        if (type(item) is not ItemReferenceVerification or type(item.row_ordinal) is not int
+                or item.row_ordinal != ordinal or type(item.references) is not tuple
+                or len(item.references) > c.MAX_REFERENCES_PER_ITEM):
+            _invalid_report()
+        item_raw = _source_contract(item.source)
+        if item.source.start < previous_item_end:
+            _invalid_report()
+        previous_item_end = item.source.end
+        previous_reference_end = item.source.start
+        for number, reference in enumerate(item.references, 1):
+            if (type(reference) is not ReferenceVerification
+                    or type(reference.reference_ordinal) is not int
+                    or reference.reference_ordinal != number
+                    or type(reference.status) is not c.ReferenceStatus
+                    or type(reference.reasons) is not tuple
+                    or type(reference.identity) is not tuple):
+                _invalid_report()
+            reference_raw = _source_contract(reference.source)
+            if (reference.source.start < previous_reference_end
+                    or reference.source.end > item.source.end
+                    or item_raw[reference.source.start - item.source.start:
+                                reference.source.end - item.source.start] != reference_raw):
+                _invalid_report()
+            previous_reference_end = reference.source.end
+            for reason in reference.reasons:
+                _utf8(reason)
+            seen = set()
+            for pair in reference.identity:
+                if type(pair) is not tuple or len(pair) != 2:
+                    _invalid_report()
+                key, value = pair
+                _utf8(key)
+                if key in seen or type(value) not in (str, int):
+                    _invalid_report()
+                seen.add(key)
+                if type(value) is str:
+                    _utf8(value)
+                else:
+                    _json_integer(value)
+            if reference.evidence is not None:
+                _heading_contract(reference.evidence)
+
+
 @dataclass(frozen=True, slots=True)
 class ReferenceDiagnosticReport:
     """Presentation of existing immutable contracts, without a second resolver.
@@ -86,6 +218,7 @@ class ReferenceDiagnosticReport:
 
     def to_payload(self) -> dict[str, object]:
         """Return fresh JSON-safe containers; original numeric tokens stay text."""
+        _report_contract(self)
         labels = {
             c.ReferenceStatus.VERIFIED: "verified",
             c.ReferenceStatus.UNVERIFIED: "unresolved",
