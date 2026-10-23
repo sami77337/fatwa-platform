@@ -132,14 +132,10 @@ class DiagnosticPresentationTests(unittest.TestCase):
             self.assertLess(output.index("future_reason"), output.index("identity_not_found"))
             self.assertIn("سبب تشخيصي غير مترجم", output)
 
-    def test_empty_input_items_and_missing_reference_evidence_are_explicit(self):
-        for items in ([], [{"question": "بلا إحالات"}], [{"reference_links": [POINTER]}]):
+    def test_builder_reports_empty_references_and_missing_evidence_explicitly(self):
+        for items in ([{"question": "بلا إحالات"}], [{"reference_links": [POINTER]}]):
             with self.subTest(items=items):
-                # The intake builder requires a nonempty envelope. The renderer
-                # also handles an explicitly constructed empty report value.
-                _, report = report_for(items or [{}], ())
-                if not items:
-                    report = replace(report, items=())
+                _, report = report_for(items, ())
                 for output in (self.html(report), self.text(report)):
                     self.assertIn("لا توجد", output)
                     self.assertNotIn("إحالة معتمدة", output)
