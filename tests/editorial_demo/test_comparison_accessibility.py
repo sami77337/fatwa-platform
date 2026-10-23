@@ -68,7 +68,10 @@ class ComparisonAccessibilityTests(SimpleTestCase):
         page = self.page()
         form, = page.find("form")
         self.assertEqual(form.attrs["method"], "get")
-        self.assertEqual(form.attrs["action"], self.url + "#comparison-result")
+        self.assertEqual(form.attrs["action"], self.url)
+        submit, = form.find("button", type="submit")
+        self.assertEqual(submit.attrs.get("formaction", form.attrs["action"]),
+                         self.url + "#comparison-result")
         result, = page.find("section", id="comparison-result")
         self.assertEqual(result.attrs.get("tabindex"), "-1")
         heading, = page.find(id=result.attrs["aria-labelledby"])
