@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from apps.editorial_demo.revision_history import HistoryDataError, HistoryEntry, build_history
+from apps.revision_core.revision_history import HistoryDataError, HistoryEntry, build_history
 
 from .domain import DraftRecord, Revision, State
 
