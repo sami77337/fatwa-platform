@@ -15,7 +15,7 @@ from apps.intake_workflow import contracts as c, guards, review
 from apps.reference import services
 
 from .views import _failure, _positive_query, local_only
-from .workflow_audit import AuditDataError, build_audit_timeline
+from .workflow_audit import AuditDataError, build_audit_timeline, serialize_audit_json
 
 
 @require_safe
@@ -27,9 +27,11 @@ def workflow_audit(request: HttpRequest) -> HttpResponse:
         return _failure('الخط الزمني المحفوظ غير متاح', 404)
     try:
         query = request.GET
-        if set(query) - {'batch', 'row', 'q', 'mode', 'intake_status', 'review_status', 'page', 'page_size'} or any(
+        if set(query) - {'batch', 'row', 'q', 'mode', 'intake_status', 'review_status', 'page', 'page_size', 'format'} or any(
                 len(query.getlist(key)) != 1 for key in query):
             raise c.ContractError('review: invalid_query')
+        if query.get('format', 'html') not in {'html', 'json'}:
+            raise c.ContractError('review: invalid_format')
         # Canonical UUIDs, search/status bounds and offset limits belong to the
         # existing reader. They are checked there before any database access.
         stored = review.load_review_worklist(
@@ -45,6 +47,10 @@ def workflow_audit(request: HttpRequest) -> HttpResponse:
     except (guards.SyntheticWriteDenied, DatabaseError):
         return _failure('الخط الزمني المحفوظ غير متاح', 503)
     try:
+        if query.get('format') == 'json':
+            response = HttpResponse(serialize_audit_json(stored), content_type='application/json')
+            response['Cache-Control'] = 'no-store'
+            return response
         timeline = build_audit_timeline(stored)
     except AuditDataError:
         return _failure('الخط الزمني المحفوظ غير متاح', 503)
