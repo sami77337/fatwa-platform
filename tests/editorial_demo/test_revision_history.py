@@ -337,3 +337,59 @@ class HistoryRouteTests(SimpleTestCase):
         self.assertContains(response, 'id="change-title"')
         self.assertContains(response, self.url)
         self.assertEqual(len(response.context["revisions"]), 2)
+
+class DifferenceSequenceTests(SimpleTestCase):
+    def test_previous_next_existing_groups_and_immutable_comparison(self):
+        import re
+
+        from django.template.loader import render_to_string
+
+        from apps.editorial_demo.revision_fixtures import REVISION_HISTORY_RECORD
+
+        snapshot = asdict(REVISION_HISTORY_RECORD)
+        for before in (1, 2, 4, 7, 9, 11):
+            for after in (1, 2, 4, 7, 9, 11):
+                with self.subTest(before=before, after=after):
+                    response = self.client.get('/dev/editorial-preview/revision-history',
+                                               {'before': before, 'after': after},
+                                               HTTP_HOST='localhost')
+                    html = response.content.decode()
+                    pattern = r'<nav id="difference-nav-([^" ]+)"[^>]*>(.*?)</nav>'
+                    navs = dict(re.findall(pattern, html, re.S))
+                    targets = response.context['comparison'].targets
+                    self.assertEqual(list(navs), [t.anchor for t in targets])
+                    elements = PageStructure(html).elements
+                    ids = [a['id'] for _, a in elements if 'id' in a]
+                    self.assertEqual(len(ids), len(set(ids)))
+                    for index, target in enumerate(targets):
+                        links = [a for tag, a in PageStructure(navs[target.anchor]).elements
+                                 if tag == 'a']
+                        expected = []
+                        if index:
+                            expected.append(('prev', '#' + targets[index - 1].anchor))
+                        if index + 1 < len(targets):
+                            expected.append(('next', '#' + targets[index + 1].anchor))
+                        self.assertEqual([(a['rel'], a['href']) for a in links], expected)
+                        for attrs in links:
+                            self.assertNotIn('tabindex', attrs)
+                            self.assertNotIn('onclick', attrs)
+                            destination = next(a for _, a in elements
+                                               if a.get('id') == attrs['href'][1:])
+                            self.assertEqual(destination.get('tabindex'), '-1')
+                        self.assertIn('الفرق السابق' if index else 'لا يوجد فرق سابق',
+                                      navs[target.anchor])
+                        self.assertIn('الفرق التالي' if index + 1 < len(targets)
+                                      else 'لا يوجد فرق تالٍ', navs[target.anchor])
+                    original = render_to_string(
+                        'editorial_demo/_revision_comparison_content.html',
+                        {key: response.context[key] for key in ('comparison', 'before_revision', 'after_revision', 'source')})
+                    without_nav = re.sub(pattern, '', html, flags=re.S)
+                    self.assertIn(original.strip(), without_nav)
+                    self.assertIn('<html lang="ar" dir="rtl">', html)
+                    self.assertFalse(any(t == 'script' for t, _ in elements))
+        self.assertEqual(asdict(REVISION_HISTORY_RECORD), snapshot)
+
+    def test_unselected_history_has_no_sequence_navigation(self):
+        response = self.client.get('/dev/editorial-preview/revision-history',
+                                   HTTP_HOST='localhost')
+        self.assertNotContains(response, 'id="difference-nav-')
