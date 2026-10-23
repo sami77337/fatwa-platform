@@ -84,12 +84,25 @@ def _utf8(value: object) -> bytes:
         raise c.ContractError("reference: invalid_diagnostic_report") from error
 
 
+def _json_integer(value: int) -> None:
+    # Representability only: retain invalid catalog metadata for diagnostics
+    # whenever the existing JSON encoder can emit it, without a new domain bound
+    # or changing the interpreter's integer-to-decimal conversion limit.
+    try:
+        json.dumps(value, allow_nan=False)
+    except ValueError as error:
+        raise c.ContractError("reference: invalid_diagnostic_report") from error
+
+
 def _heading_contract(heading: object) -> None:
     if type(heading) is not Heading:
         _invalid_report()
     _require_immutable_fields((heading,))
     if type(heading.edition_id) is not int or type(heading.source_row_id) is not int:
         _invalid_report()
+    for value in (heading.edition_id, heading.source_row_id, heading.printed_page):
+        if value is not None:
+            _json_integer(value)
     for name in ("work_title", "heading_title", "source_namespace", "source_book_id",
                  "source_input_sha256", "printed_part", "edition_key", "source_archive_sha256"):
         value = getattr(heading, name)
@@ -128,12 +141,14 @@ def _report_contract(report: "ReferenceDiagnosticReport") -> None:
             or type(binding.edition.edition_id) is not int
             or type(binding.headings) is not tuple or len(binding.headings) > MAX_SNAPSHOT):
         _invalid_report()
+    _json_integer(binding.edition.edition_id)
     for name in ("source_namespace", "source_book_id", "edition_key",
                  "source_archive_sha256", "source_input_sha256"):
         _utf8(getattr(binding.edition.identity, name))
     for mapping in binding.headings:
         if type(mapping) is not HeadingMap or type(mapping.source_row_id) is not int:
             _invalid_report()
+        _json_integer(mapping.source_row_id)
         for value in (mapping.c1_source_id, mapping.c1_heading_id, mapping.c2_source_id):
             _utf8(value)
     if type(report.catalog_rows) is not tuple or len(report.catalog_rows) > MAX_SNAPSHOT:
@@ -181,6 +196,8 @@ def _report_contract(report: "ReferenceDiagnosticReport") -> None:
                 seen.add(key)
                 if type(value) is str:
                     _utf8(value)
+                else:
+                    _json_integer(value)
             if reference.evidence is not None:
                 _heading_contract(reference.evidence)
 
