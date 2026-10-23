@@ -50,7 +50,44 @@
         {% if before_revision.number != after_revision.number %}<a id="comparison-reverse" href="{% url 'editorial_revision_history' %}?before={{ after_revision.number }}&amp;after={{ before_revision.number }}#selected-comparison">عكس اتجاه المقارنة: المراجعة {{ after_revision.number }} ثم {{ before_revision.number }}</a>{% endif %}
         <a href="{{ selection_url }}#selected-comparison">رابط المقارنة الحالية</a>
       </nav>
-      {% include 'editorial_demo/_revision_comparison_content.html' %}
+        <p class="legend"><span><ins>مضاف: تحته خط</ins></span><span><del>محذوف: يتوسطه خط</del></span><span>دون تغيير: نص عادي</span></p>
+  <p>المقارنة حرفية وتشمل المسافات والتشكيل. هوية المرجع هي حقوله الستة كاملة. تغير الموضع يظهر منفصلًا عن تغير الهوية.</p>
+  <nav id="changes" tabindex="-1" aria-label="التنقل بين الفروق">
+    {% for target in comparison.targets %}<a href="#{{ target.anchor }}">{{ target.label }}</a>{% empty %}<p role="status">لا توجد فروق بين محتوى النسختين.</p>{% endfor %}
+  </nav>
+  {% for field in comparison.fields %}
+  <section id="change-{{ field.key }}" tabindex="-1" aria-labelledby="heading-{{ field.key }}">
+{% with current_anchor='change-'|add:field.key %}{% for target in comparison.targets %}{% if target.anchor == current_anchor %}<nav id="difference-nav-{{ target.anchor }}" aria-label="الفروق عند {{ target.label }}" aria-describedby="comparison-summary comparison-direction">
+{% if forloop.first %}<span>لا يوجد فرق سابق</span>{% endif %}
+{% for neighbour in comparison.targets %}{% if forloop.counter == forloop.parentloop.counter0 %}<a rel="prev" href="#{{ neighbour.anchor }}">الفرق السابق: {{ neighbour.label }}</a>{% endif %}{% if forloop.counter0 == forloop.parentloop.counter %}<a rel="next" href="#{{ neighbour.anchor }}">الفرق التالي: {{ neighbour.label }}</a>{% endif %}{% endfor %}
+{% if forloop.last %}<span>لا يوجد فرق تالٍ</span>{% endif %}
+</nav>{% endif %}{% endfor %}{% endwith %}    <h2 id="heading-{{ field.key }}">{{ field.label }} — {% if field.changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
+    <div class="comparison-grid">
+      <div class="revision-column"><h3>النسخة السابقة — المراجعة {{ before_revision.number }}</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.before %}</div>
+      <div class="revision-column"><h3>النسخة اللاحقة — المراجعة {{ after_revision.number }}</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.after %}</div>
+    </div>
+    <details><summary>إظهار علامات المسافات ونهايات الأسطر لهذا الحقل</summary><p>· مسافة؛ ⇥ جدولة؛ ␍ CR؛ ␊ LF. هذه علامات عرض، والنص الأصلي محفوظ دون تعديل.</p><div class="comparison-grid">
+      <div class="revision-column"><h3>علامات النسخة السابقة</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.before show_whitespace=True %}</div>
+      <div class="revision-column"><h3>علامات النسخة اللاحقة</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.after show_whitespace=True %}</div>
+    </div></details>
+    <p><a href="#changes">العودة إلى قائمة الفروق</a></p>
+  </section>
+  {% endfor %}
+  <section id="change-references" tabindex="-1" aria-labelledby="heading-references">
+{% for target in comparison.targets %}{% if target.anchor == 'change-references' %}<nav id="difference-nav-{{ target.anchor }}" aria-label="الفروق عند {{ target.label }}" aria-describedby="comparison-summary comparison-direction">
+{% if forloop.first %}<span>لا يوجد فرق سابق</span>{% endif %}
+{% for neighbour in comparison.targets %}{% if forloop.counter == forloop.parentloop.counter0 %}<a rel="prev" href="#{{ neighbour.anchor }}">الفرق السابق: {{ neighbour.label }}</a>{% endif %}{% if forloop.counter0 == forloop.parentloop.counter %}<a rel="next" href="#{{ neighbour.anchor }}">الفرق التالي: {{ neighbour.label }}</a>{% endif %}{% endfor %}
+{% if forloop.last %}<span>لا يوجد فرق تالٍ</span>{% endif %}
+</nav>{% endif %}{% endfor %}    <h2 id="heading-references">هويات المراجع وترتيبها — {% if comparison.references_changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
+    <p>تُعرض الحقول الأصلية كاملة وبترتيب المراجع في كل نسخة؛ لا توجد روابط إلى مصادر خارجية.</p>
+    <div class="comparison-grid">
+      <div class="revision-column"><h3>مراجع النسخة السابقة — المراجعة {{ before_revision.number }}</h3>{% include 'editorial_demo/_revision_references.html' with entries=comparison.before_references %}</div>
+      <div class="revision-column"><h3>مراجع النسخة اللاحقة — المراجعة {{ after_revision.number }}</h3>{% include 'editorial_demo/_revision_references.html' with entries=comparison.after_references %}</div>
+    </div><p><a href="#changes">العودة إلى قائمة الفروق</a></p>
+  </section>
+  <section aria-labelledby="source-heading"><h2 id="source-heading">النص الأصلي وحقول المصدر الثابتة</h2>
+    <dl><dt>المعرّف الاصطناعي</dt><dd><code>{{ source.external_id }}</code></dd><dt>نص المصدر</dt><dd><pre class="revision-text"><span>{{ source.question }}</span></pre></dd><dt>رابط المصدر النصي غير القابل للفتح</dt><dd><code>{{ source.prepared_clip_url }}</code></dd><dt>ملاحظات المصدر الأصلية</dt><dd><pre class="revision-text"><span>{{ source.staff_notes }}</span></pre></dd></dl>
+  </section>
       <p><a href="#selected-comparison">العودة إلى سياق المقارنة وأدوات التنقل</a></p>
     {% else %}<h2 id="selected-comparison-heading">لم تُحدّد مقارنة بعد</h2><p role="status">اختر مراجعتين لعرض المقارنة؛ تصفح التاريخ وحده لا ينفذ مقارنة ضمنية.</p>{% endif %}
   </section>
