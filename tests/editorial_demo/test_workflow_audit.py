@@ -434,3 +434,134 @@ class AuditPageTests(SimpleTestCase):
         response, reader = self.get()
         self.assertEqual(response.status_code, 404)
         reader.assert_not_called()
+
+
+@override_settings(ROOT_URLCONF='config.wave7_urls', WAVE7_READS_ENABLED=True,
+                   INSTALLED_APPS=[*settings.INSTALLED_APPS, 'apps.intake_workflow'])
+class AuditJsonTests(SimpleTestCase):
+    """Same guarded endpoint; the read boundary is a synthetic immutable DTO."""
+
+    setUp = AuditPageTests.setUp
+    get = AuditPageTests.get
+
+    def test_json_is_deterministic_and_preserves_source_and_timeline(self):
+        response, reader = self.get({'format': 'json'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response['Cache-Control'], 'no-store')
+        data = response.json()
+        self.assertEqual(data['schema'], 'wave7.audit.v1')
+        self.assertEqual(data['scope'], c.SYNTHETIC_SCOPE)
+        self.assertEqual(data['source_config_id'], c.SOURCE_CONFIG_ID)
+        self.assertEqual(data['worklist']['row']['original_row'], self.stored.row.original_row)
+        self.assertEqual(data['worklist']['row']['source_byte_start'], self.stored.row.source_byte_start)
+        self.assertEqual(data['worklist']['row']['references'][0]['original_pointer'],
+                         self.stored.row.references[0].original_pointer)
+        self.assertEqual([entry['source']['id'] for entry in data['timeline']],
+                         [str(uid(1)), str(uid(31)), str(uid(32))])
+        self.assertEqual(data['worklist']['row']['events'][0]['operation_id'], str(uid(42)))
+        reader.assert_called_once()
+        again, _ = self.get({'format': 'json'})
+        self.assertEqual(response.content, again.content)
+        head, _ = self.get({'format': 'json'}, method='head')
+        self.assertEqual(head.status_code, 200)
+        self.assertEqual(head.content, b'')
+        self.assertEqual(head['Content-Type'], response['Content-Type'])
+
+    def test_json_retains_whitespace_microseconds_reference_order_and_window(self):
+        row = self.stored.row
+        text = '  \t\n<script> & أ  '
+        refs = (replace(row.references[0], id=uid(22), original_pointer=text), *row.references)
+        events = (replace(row.events[0], reason=text,
+                          created_at=row.events[0].created_at.replace(microsecond=123456)),)
+        stored = replace(self.stored, row=replace(row, references=refs, events=events,
+                                                events_truncated=True))
+        before = asdict(stored)
+        response, _ = self.get({'format': 'json'}, stored=stored)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['worklist']['row']['references'][0]['original_pointer'], text)
+        self.assertEqual([ref['id'] for ref in data['worklist']['row']['references']],
+                         [str(uid(22)), str(uid(21))])
+        self.assertEqual(data['timeline'][1]['source']['created_at'], events[0].created_at.isoformat())
+        self.assertTrue(data['worklist']['row']['events_truncated'])
+        self.assertEqual(data['worklist']['row']['events'][0]['reason'], text)
+        self.assertEqual(asdict(stored), before)
+
+    def test_json_empty_selection_and_bounded_page_are_not_full_history(self):
+        stored = replace(self.stored, row=None, page=2, page_count=3, page_size=1,
+                         total_count=4, matched_count=3)
+        response, _ = self.get({'format': 'json'}, stored=stored)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['worklist']['row'])
+        self.assertEqual(data['timeline'], [])
+        self.assertEqual(len(data['worklist']['rows']), 1)
+        self.assertEqual(data['worklist']['page'], 2)
+        self.assertFalse(data['complete_history'])
+
+    def test_json_invalid_formats_rejected_before_reader(self):
+        for query in ('format=', 'format=xml', 'format=JSON', 'format=json&format=json'):
+            with self.subTest(query=query), patch.object(review, 'load_review_worklist') as reader:
+                response = self.client.get(self.url + '?' + query,
+                    HTTP_HOST='localhost', REMOTE_ADDR='127.0.0.1')
+                self.assertEqual(response.status_code, 400)
+                reader.assert_not_called()
+
+    def test_json_oversized_output_fails_closed_without_partial_source(self):
+        from apps.editorial_demo import workflow_audit
+        with patch.object(workflow_audit, 'MAX_AUDIT_JSON_BYTES', 100):
+            response, _ = self.get({'format': 'json'})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response['Cache-Control'], 'no-store')
+        self.assertNotIn(self.stored.row.original_row.encode(), response.content)
+    def test_json_guards_methods_and_errors_match_html(self):
+        for host, peer in (('testserver', '127.0.0.1'), ('localhost', '192.0.2.1')):
+            with self.subTest(host=host, peer=peer), patch.object(review, 'load_review_worklist') as reader:
+                response = self.client.get(self.url, {'format': 'json'}, HTTP_HOST=host, REMOTE_ADDR=peer)
+                self.assertEqual(response.status_code, 404)
+                reader.assert_not_called()
+        for overrides in ({'WAVE7_READS_ENABLED': False}, {'FATWA_PRODUCTION': True},
+                          {'SETTINGS_MODULE': 'config.settings.production'},
+                          {'INSTALLED_APPS': [a for a in settings.INSTALLED_APPS if a != 'apps.intake_workflow']}):
+            with self.settings(**overrides):
+                response, reader = self.get({'format': 'json'})
+                self.assertEqual(response.status_code, 404)
+                reader.assert_not_called()
+        for env in ({'FATWA_PRODUCTION': '1'}, {'FATWA_WAVE7_SYNTHETIC_READS': '0'}):
+            with patch.dict(os.environ, env):
+                response, reader = self.get({'format': 'json'})
+                self.assertEqual(response.status_code, 404)
+                reader.assert_not_called()
+        for method in ('post', 'put', 'patch', 'delete', 'options', 'trace'):
+            response, reader = self.get({'format': 'json'}, method=method)
+            self.assertEqual(response.status_code, 405)
+            reader.assert_not_called()
+        for query in ('row=bogus', 'q=' + 'a' * 81, 'page_size=51', 'page=10001'):
+            with patch.object(review, '_workflow_read') as boundary:
+                response = self.client.get(self.url + '?format=json&' + query,
+                    HTTP_HOST='localhost', REMOTE_ADDR='127.0.0.1')
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response['Cache-Control'], 'no-store')
+                boundary.assert_not_called()
+        for error, status in ((review.ReviewNotFound('private detail'), 404),
+                              (DatabaseError('private detail'), 503)):
+            with patch.object(review, 'load_review_worklist', side_effect=error):
+                response = self.client.get(self.url, {'format': 'json'},
+                    HTTP_HOST='localhost', REMOTE_ADDR='127.0.0.1')
+                self.assertEqual(response.status_code, status)
+                self.assertEqual(response['Cache-Control'], 'no-store')
+                self.assertNotIn(b'private detail', response.content)
+
+    def test_json_rejects_unbounded_and_ambiguous_dtos(self):
+        cases = (replace(self.stored, rows=self.stored.rows * 51),
+                 replace(self.stored, batches=self.stored.batches * 102),
+                 replace(self.stored, row=replace(self.stored.row,
+                     references=self.stored.row.references * 101)),
+                 replace(self.stored, row=replace(self.stored.row,
+                     events=self.stored.row.events * 51)),
+                 replace(self.stored, batches=()))
+        for stored in cases:
+            response, _ = self.get({'format': 'json'}, stored=stored)
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response['Cache-Control'], 'no-store')
