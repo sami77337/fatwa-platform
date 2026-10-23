@@ -5,7 +5,7 @@
   </nav>
   {% for field in comparison.fields %}
   <section id="change-{{ field.key }}" tabindex="-1" aria-labelledby="heading-{{ field.key }}">
-    <h2 id="heading-{{ field.key }}">{{ field.label }} — {% if field.changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
+{% with current_anchor='change-'|add:field.key %}{% for difference in difference_navigation %}{% if difference.current.anchor == current_anchor %}{% include 'editorial_demo/_difference_navigation.html' with difference=difference only %}{% endif %}{% endfor %}{% endwith %}    <h2 id="heading-{{ field.key }}">{{ field.label }} — {% if field.changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
     <div class="comparison-grid">
       <div class="revision-column"><h3>النسخة السابقة — المراجعة {{ before_revision.number }}</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.before %}</div>
       <div class="revision-column"><h3>النسخة اللاحقة — المراجعة {{ after_revision.number }}</h3>{% include 'editorial_demo/_revision_text.html' with pieces=field.after %}</div>
@@ -18,7 +18,7 @@
   </section>
   {% endfor %}
   <section id="change-references" tabindex="-1" aria-labelledby="heading-references">
-    <h2 id="heading-references">هويات المراجع وترتيبها — {% if comparison.references_changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
+{% for difference in difference_navigation %}{% if difference.current.anchor == 'change-references' %}{% include 'editorial_demo/_difference_navigation.html' with difference=difference only %}{% endif %}{% endfor %}    <h2 id="heading-references">هويات المراجع وترتيبها — {% if comparison.references_changed %}تغيّر{% else %}دون تغيير{% endif %}</h2>
     <p>تُعرض الحقول الأصلية كاملة وبترتيب المراجع في كل نسخة؛ لا توجد روابط إلى مصادر خارجية.</p>
     <div class="comparison-grid">
       <div class="revision-column"><h3>مراجع النسخة السابقة — المراجعة {{ before_revision.number }}</h3>{% include 'editorial_demo/_revision_references.html' with entries=comparison.before_references %}</div>
