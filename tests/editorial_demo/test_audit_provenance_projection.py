@@ -236,3 +236,70 @@ class AuditProvenanceProjectionTests(SimpleTestCase):
             result = self.project()
         self.assertEqual(len(result.chronology), 3)
         self.assertIs(result.selected_row, self.stored.row)
+
+    def test_malformed_collections_and_bounds_fail_before_timeline_traversal(self):
+        cases = (
+            None,
+            replace(self.stored, batches=None),
+            replace(self.stored, batches=(None,)),
+            replace(self.stored, batches=self.stored.batches * 102),
+            replace(self.stored, rows=None),
+            replace(self.stored, rows=(None,)),
+            replace(self.stored, rows=self.stored.rows * 2),
+            replace(self.stored, row={}),
+            replace(self.stored, row=replace(self.stored.row, references=None)),
+            replace(self.stored, row=replace(self.stored.row, events=None)),
+        )
+        for selected in (True, False):
+            for index, stored in enumerate(cases):
+                if not selected and stored is not None:
+                    stored = replace(stored, row=None)
+                    # These cases only corrupt selection, which is now absent.
+                    if index >= 7:
+                        continue
+                with self.subTest(selected=selected, case=index):
+                    with patch.object(provenance, 'build_audit_timeline',
+                                      side_effect=AssertionError('premature traversal')):
+                        with self.assertRaises(AuditDataError):
+                            provenance.build_audit_provenance(
+                                stored, synthetic_fixtures_only=True,
+                            )
+
+    def test_non_dto_members_fail_before_timeline_for_all_retained_collections(self):
+        row = self.stored.row
+        cases = (
+            replace(self.stored, batches=({},)),
+            replace(self.stored, rows=({},)),
+            replace(self.stored, row=replace(row, references=({},))),
+            replace(self.stored, row=replace(row, events=({},))),
+            replace(self.stored, rows=(replace(row, references=({},)),)),
+            replace(self.stored, rows=(replace(row, events=({},)),)),
+            replace(self.stored, row=None, rows=(replace(row, references=({},)),)),
+            replace(self.stored, row=None, rows=(replace(row, events=({},)),)),
+        )
+        for index, stored in enumerate(cases):
+            with self.subTest(case=index):
+                with patch.object(provenance, 'build_audit_timeline',
+                                  side_effect=AssertionError('premature traversal')):
+                    with self.assertRaises(AuditDataError):
+                        self.project(stored)
+
+    def test_mutable_scalar_fields_cannot_hide_inside_frozen_source_dtos(self):
+        row = self.stored.row
+        cases = (
+            replace(self.stored, q={}),
+            replace(self.stored, batches=(replace(self.stored.batches[0], created_at={}),)),
+            replace(self.stored, row=replace(row, question={})),
+            replace(self.stored, row=replace(row, references=(replace(
+                row.references[0], original_pointer={},
+            ),))),
+            replace(self.stored, row=None, rows=(replace(row, events=(replace(
+                row.events[0], reason={},
+            ),)),)),
+        )
+        for index, stored in enumerate(cases):
+            with self.subTest(case=index):
+                with patch.object(provenance, 'build_audit_timeline',
+                                  side_effect=AssertionError('premature traversal')):
+                    with self.assertRaises(AuditDataError):
+                        self.project(stored)

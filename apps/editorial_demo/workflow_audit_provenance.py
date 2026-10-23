@@ -6,15 +6,17 @@ not archive hashes or resolved edition identities. No missing identity, intake
 timestamp, historical reference state or scholarly validity is inferred here.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 from typing import Literal
+from uuid import UUID
 
 from apps.intake_workflow import contracts as c
 from apps.intake_workflow.review import (
     ReviewBatchOption,
     ReviewWorklist,
     StoredReference,
+    StoredReviewEvent,
     StoredReviewRow,
 )
 
@@ -59,6 +61,23 @@ class AuditProvenance:
     synthetic_declaration_is_proof: Literal[False] = field(default=False, init=False)
 
 
+def _require_immutable_scalars(
+    source: ReviewWorklist | ReviewBatchOption | StoredReviewRow | StoredReference | StoredReviewEvent,
+    collections: tuple[str, ...] = (),
+) -> None:
+    """Reject mutable leaves in known frozen DTOs, without interpreting values.
+
+    Collection members are checked separately against their concrete DTO types.
+    This is representation validation only: no source identity, status, byte
+    alignment, timestamp validity or domain rule is established by this check.
+    """
+    for member in fields(source):
+        if (member.name not in collections
+                and type(getattr(source, member.name)) not in
+                (str, int, bool, UUID, datetime, type(None))):
+            raise AuditDataError('mutable_or_unsupported_source_field')
+
+
 def build_audit_provenance(
     stored: ReviewWorklist, *, synthetic_fixtures_only: bool = False,
 ) -> AuditProvenance:
@@ -72,17 +91,33 @@ def build_audit_provenance(
     """
     if synthetic_fixtures_only is not True:
         raise AuditDataError('synthetic_fixture_acknowledgement_required')
-    timeline = build_audit_timeline(stored)
-    if (not isinstance(stored.rows, tuple) or not isinstance(stored.batches, tuple)
+    if type(stored) is not ReviewWorklist:
+        raise AuditDataError('invalid_worklist')
+    if (type(stored.rows) is not tuple or type(stored.batches) is not tuple
             or type(stored.page_size) is not int or not 1 <= stored.page_size <= 50
             or len(stored.rows) > stored.page_size or len(stored.batches) > 101):
         raise AuditDataError('unbounded_or_mutable_worklist')
+    _require_immutable_scalars(stored, ('batches', 'rows', 'row'))
+    for batch_option in stored.batches:
+        if type(batch_option) is not ReviewBatchOption:
+            raise AuditDataError('invalid_batch_member')
+        _require_immutable_scalars(batch_option)
     for row in (*stored.rows, *((stored.row,) if stored.row is not None else ())):
-        if (not isinstance(row, StoredReviewRow)
-                or not isinstance(row.references, tuple) or not isinstance(row.events, tuple)
+        if (type(row) is not StoredReviewRow
+                or type(row.references) is not tuple or type(row.events) is not tuple
                 or len(row.references) > c.MAX_REFERENCES_PER_ITEM or len(row.events) > 100
                 or type(row.events_truncated) is not bool):
             raise AuditDataError('unbounded_or_mutable_row')
+        _require_immutable_scalars(row, ('references', 'events'))
+        for reference in row.references:
+            if type(reference) is not StoredReference:
+                raise AuditDataError('invalid_reference_member')
+            _require_immutable_scalars(reference)
+        for event in row.events:
+            if type(event) is not StoredReviewEvent:
+                raise AuditDataError('invalid_event_member')
+            _require_immutable_scalars(event)
+    timeline = build_audit_timeline(stored)
     # The authoritative timeline includes the selected batch exactly once. Do
     # not select by chronology position: a batch marker may follow an event.
     batch = next((entry.source for entry in timeline
