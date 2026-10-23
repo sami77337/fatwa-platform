@@ -15,7 +15,7 @@ from apps.intake_workflow import contracts as c, guards, review
 from apps.reference import services
 
 from .views import _failure, _positive_query, local_only
-from .workflow_audit import AuditDataError, build_audit_timeline
+from .workflow_audit import AuditDataError, build_audit_timeline, serialize_audit_json
 
 
 @require_safe
@@ -27,9 +27,11 @@ def workflow_audit(request: HttpRequest) -> HttpResponse:
         return _failure('الخط الزمني المحفوظ غير متاح', 404)
     try:
         query = request.GET
-        if set(query) - {'batch', 'row', 'q', 'mode', 'intake_status', 'review_status', 'page', 'page_size'} or any(
+        if set(query) - {'batch', 'row', 'q', 'mode', 'intake_status', 'review_status', 'page', 'page_size', 'format'} or any(
                 len(query.getlist(key)) != 1 for key in query):
             raise c.ContractError('review: invalid_query')
+        if query.get('format', 'html') not in {'html', 'json'}:
+            raise c.ContractError('review: invalid_format')
         # Canonical UUIDs, search/status bounds and offset limits belong to the
         # existing reader. They are checked there before any database access.
         stored = review.load_review_worklist(
@@ -45,6 +47,10 @@ def workflow_audit(request: HttpRequest) -> HttpResponse:
     except (guards.SyntheticWriteDenied, DatabaseError):
         return _failure('الخط الزمني المحفوظ غير متاح', 503)
     try:
+        if query.get('format') == 'json':
+            response = HttpResponse(serialize_audit_json(stored), content_type='application/json')
+            response['Cache-Control'] = 'no-store'
+            return response
         timeline = build_audit_timeline(stored)
     except AuditDataError:
         return _failure('الخط الزمني المحفوظ غير متاح', 503)
@@ -54,15 +60,23 @@ def workflow_audit(request: HttpRequest) -> HttpResponse:
     if stored.batch_id is not None:
         params['batch'] = str(stored.batch_id)
     selected_params = {**params, **({'row': str(stored.row.id)} if stored.row is not None else {})}
+
+    def page_url(page: int) -> str:
+        return base + '?' + urlencode({**params, 'page': page}) + '#records'
+
     response = render(request, 'editorial_demo/workflow_audit.html', {
         'stored': stored, 'timeline': timeline, 'base_url': base,
-        'list_url': base + '?' + urlencode(params),
+        'list_url': page_url(stored.page),
         'selected_url': base + '?' + urlencode(selected_params),
         'persisted_url': reverse('wave7_editorial_review') + '?' + urlencode(selected_params),
+        'selected_on_page': stored.row is not None and any(row.id == stored.row.id for row in stored.rows),
         'display_rows': tuple({'item': row, 'detail_url': base + '?' + urlencode({**params, 'row': str(row.id)})}
                               for row in stored.rows),
-        'previous_url': base + '?' + urlencode({**params, 'page': stored.page - 1}) if stored.page > 1 else None,
-        'next_url': base + '?' + urlencode({**params, 'page': stored.page + 1}) if stored.page < stored.page_count else None,
+        'pagination_fields': tuple((key, value) for key, value in params.items() if key != 'page'),
+        'first_url': page_url(1) if stored.page > 1 else None,
+        'previous_url': page_url(stored.page - 1) if stored.page > 1 else None,
+        'next_url': page_url(stored.page + 1) if stored.page < stored.page_count else None,
+        'last_url': page_url(stored.page_count) if stored.page < stored.page_count else None,
         'intake_statuses': tuple(c.IntakeStatus), 'review_statuses': tuple(c.ReviewStatus),
     })
     response['Cache-Control'] = 'no-store'

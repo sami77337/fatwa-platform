@@ -6,8 +6,9 @@ real immutable DTOs. They are not database integration evidence.
 
 import os
 from dataclasses import asdict, replace
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 from html import escape
+from html.parser import HTMLParser
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlencode, urlsplit
 from uuid import UUID
@@ -22,6 +23,29 @@ from apps.intake_workflow import contracts as c, fixtures, guards, review
 
 def uid(number):
     return UUID(int=number)
+
+
+class AuditPageForm(HTMLParser):
+    """Read the actual GET controls, including empty and escaped filter values."""
+
+    def __init__(self, html):
+        super().__init__()
+        self.active = False
+        self.attributes = {}
+        self.fields = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'form' and attrs.get('id') == 'audit-page-form':
+            self.active = True
+            self.attributes = attrs
+        elif self.active and tag == 'input' and 'name' in attrs:
+            self.fields.append((attrs['name'], attrs.get('value', '')))
+
+    def handle_endtag(self, tag):
+        if tag == 'form':
+            self.active = False
 
 
 def synthetic_read():
@@ -64,6 +88,27 @@ class AuditProjectionTests(SimpleTestCase):
         row = replace(self.stored.row, events=events)
         entries = self.build(replace(self.stored, row=row))
         self.assertEqual([entry.source.id for entry in entries], [uid(1), uid(31), uid(32)])
+
+    def test_repeated_local_hour_orders_instants_without_rewriting_stored_times(self):
+        class RepeatedHour(tzinfo):
+            def utcoffset(self, value):
+                return timedelta(hours=1 - value.fold)
+
+            def dst(self, value):
+                return timedelta(0)
+
+        zone = RepeatedHour()
+        earlier = replace(self.stored.row.events[1],
+            created_at=datetime(2026, 10, 25, 1, 45, tzinfo=zone, fold=0))
+        later = replace(self.stored.row.events[0],
+            created_at=datetime(2026, 10, 25, 1, 15, tzinfo=zone, fold=1))
+        row = replace(self.stored.row, events=(later, earlier))
+        entries = self.build(replace(self.stored, row=row))
+        self.assertEqual([entry.source.id for entry in entries], [uid(1), uid(31), uid(32)])
+        self.assertIs(entries[1].source, earlier)
+        self.assertIs(entries[2].source, later)
+        self.assertEqual([entry.timestamp for entry in entries[1:]],
+            ['2026-10-25T01:45:00+01:00', '2026-10-25T01:15:00+00:00'])
 
     def test_no_detail_has_no_invented_events(self):
         self.assertEqual(self.build(replace(self.stored, row=None)), ())
@@ -211,6 +256,85 @@ class AuditPageTests(SimpleTestCase):
         self.assertContains(response, '<label for="audit-batch">')
         self.assertNotContains(response, 'method="post"')
 
+    def test_first_last_pages_preserve_filters_and_focus_the_results(self):
+        stored = replace(self.stored, row=None, q='أ أ', mode='literal',
+            intake_status='READY_FOR_EDITOR', review_status='NEEDS_CHANGES',
+            page=2, page_count=3, page_size=1, matched_count=3, total_count=4)
+        response, _ = self.get(stored=stored)
+        expected = dict(batch=[str(uid(1))], q=['أ أ'], mode=['literal'],
+            intake_status=['READY_FOR_EDITOR'], review_status=['NEEDS_CHANGES'],
+            page_size=['1'])
+        for name, page in (('first_url', '1'), ('previous_url', '1'),
+                           ('next_url', '3'), ('last_url', '3')):
+            with self.subTest(name=name):
+                url = urlsplit(response.context[name])
+                self.assertEqual(url.path, self.url)
+                self.assertEqual(url.fragment, 'records')
+                self.assertEqual(parse_qs(url.query), {**expected, 'page': [page]})
+                self.assertContains(response, escape(response.context[name], quote=True))
+        self.assertContains(response, 'aria-describedby="audit-pagination-summary"')
+        self.assertContains(response, 'id="records" tabindex="-1"')
+
+    def test_pagination_edges_and_empty_results_do_not_offer_missing_pages(self):
+        cases = ((1, 3, False, True), (3, 3, True, False), (1, 1, False, False))
+        for page, page_count, has_previous, has_next in cases:
+            stored = replace(self.stored, row=None, page=page, page_count=page_count,
+                page_size=1, matched_count=page_count, total_count=page_count)
+            with self.subTest(page=page, page_count=page_count):
+                response, _ = self.get(stored=stored)
+                for key in ('first_url', 'previous_url'):
+                    self.assertEqual(response.context[key] is not None, has_previous)
+                for key in ('last_url', 'next_url'):
+                    self.assertEqual(response.context[key] is not None, has_next)
+                form = AuditPageForm(response.content.decode())
+                self.assertEqual(dict(form.fields)['page'], str(page))
+                self.assertContains(response, 'id="audit-page" name="page" type="number" min="1" max="'
+                    + str(page_count) + '"')
+        empty = replace(self.stored, row=None, rows=(), matched_count=0, total_count=0)
+        response, _ = self.get(stored=empty)
+        self.assertEqual(AuditPageForm(response.content.decode()).fields, [])
+        self.assertNotContains(response, 'aria-current="page"')
+
+    def test_page_form_round_trip_keeps_filter_bytes_and_drops_selected_row(self):
+        query = '  أ + &= "  '
+        listed = replace(self.stored, row=None, q=query, mode='exact',
+            review_status='NEEDS_CHANGES', page=2, page_count=3,
+            page_size=1, matched_count=3, total_count=4)
+        # Controls come from the returned DTO, rather than stale request values.
+        response, _ = self.get({'q': 'stale', 'mode': 'literal'}, stored=listed)
+        form = AuditPageForm(response.content.decode())
+        self.assertEqual(form.attributes['method'], 'get')
+        self.assertEqual(form.attributes['action'], self.url + '#records')
+        self.assertEqual(len({name for name, _ in form.fields}), len(form.fields))
+        params = dict(form.fields)
+        self.assertEqual(params, dict(batch=str(uid(1)), q=query, mode='exact',
+            intake_status='', review_status='NEEDS_CHANGES', page='2', page_size='1'))
+        params['page'] = '3'
+        response, reader = self.get(params, stored=replace(listed, page=3))
+        self.assertEqual(response.status_code, 200)
+        reader.assert_called_once_with(batch_id=str(uid(1)), row_id=None, q=query,
+            mode='exact', intake_status='', review_status='NEEDS_CHANGES', page=3,
+            page_size=1, synthetic_fixtures_only=True)
+        detail, _ = self.get(stored=replace(listed, row=self.stored.row))
+        self.assertEqual(urlsplit(detail.context['list_url']).fragment, 'records')
+        self.assertNotIn('row', parse_qs(urlsplit(detail.context['list_url']).query))
+
+    def test_selected_record_outside_filtered_page_is_disclosed(self):
+        response, _ = self.get(stored=replace(self.stored, rows=(), q='لا يطابق', matched_count=0))
+        self.assertContains(response, 'السجل المحدد غير موجود في الصفحة الحالية من القائمة المصفاة')
+        self.assertContains(response, 'الرابط الثابت لا يعني مطابقته للتصفية')
+        response, _ = self.get()
+        self.assertNotContains(response, 'السجل المحدد غير موجود في الصفحة الحالية')
+
+    def test_event_navigation_names_actual_actions_and_stored_times(self):
+        response, _ = self.get()
+        self.assertContains(response, '<article aria-labelledby="event-'
+            + str(uid(31)) + '-heading">')
+        self.assertContains(response, 'id="event-' + str(uid(31)) + '-heading"')
+        for event in self.stored.row.events:
+            self.assertContains(response, 'حدث ' + str(event.id) + ' — '
+                + event.action + ' — ' + event.created_at.isoformat())
+
     def test_empty_batches_and_no_review_events_have_no_fake_timeline(self):
         empty = replace(self.stored, batches=(), batch_id=None, rows=(), row=None,
                         total_count=0, matched_count=0)
@@ -310,3 +434,134 @@ class AuditPageTests(SimpleTestCase):
         response, reader = self.get()
         self.assertEqual(response.status_code, 404)
         reader.assert_not_called()
+
+
+@override_settings(ROOT_URLCONF='config.wave7_urls', WAVE7_READS_ENABLED=True,
+                   INSTALLED_APPS=[*settings.INSTALLED_APPS, 'apps.intake_workflow'])
+class AuditJsonTests(SimpleTestCase):
+    """Same guarded endpoint; the read boundary is a synthetic immutable DTO."""
+
+    setUp = AuditPageTests.setUp
+    get = AuditPageTests.get
+
+    def test_json_is_deterministic_and_preserves_source_and_timeline(self):
+        response, reader = self.get({'format': 'json'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')
+        self.assertEqual(response['Cache-Control'], 'no-store')
+        data = response.json()
+        self.assertEqual(data['schema'], 'wave7.audit.v1')
+        self.assertEqual(data['scope'], c.SYNTHETIC_SCOPE)
+        self.assertEqual(data['source_config_id'], c.SOURCE_CONFIG_ID)
+        self.assertEqual(data['worklist']['row']['original_row'], self.stored.row.original_row)
+        self.assertEqual(data['worklist']['row']['source_byte_start'], self.stored.row.source_byte_start)
+        self.assertEqual(data['worklist']['row']['references'][0]['original_pointer'],
+                         self.stored.row.references[0].original_pointer)
+        self.assertEqual([entry['source']['id'] for entry in data['timeline']],
+                         [str(uid(1)), str(uid(31)), str(uid(32))])
+        self.assertEqual(data['worklist']['row']['events'][0]['operation_id'], str(uid(42)))
+        reader.assert_called_once()
+        again, _ = self.get({'format': 'json'})
+        self.assertEqual(response.content, again.content)
+        head, _ = self.get({'format': 'json'}, method='head')
+        self.assertEqual(head.status_code, 200)
+        self.assertEqual(head.content, b'')
+        self.assertEqual(head['Content-Type'], response['Content-Type'])
+
+    def test_json_retains_whitespace_microseconds_reference_order_and_window(self):
+        row = self.stored.row
+        text = '  \t\n<script> & أ  '
+        refs = (replace(row.references[0], id=uid(22), original_pointer=text), *row.references)
+        events = (replace(row.events[0], reason=text,
+                          created_at=row.events[0].created_at.replace(microsecond=123456)),)
+        stored = replace(self.stored, row=replace(row, references=refs, events=events,
+                                                events_truncated=True))
+        before = asdict(stored)
+        response, _ = self.get({'format': 'json'}, stored=stored)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['worklist']['row']['references'][0]['original_pointer'], text)
+        self.assertEqual([ref['id'] for ref in data['worklist']['row']['references']],
+                         [str(uid(22)), str(uid(21))])
+        self.assertEqual(data['timeline'][1]['source']['created_at'], events[0].created_at.isoformat())
+        self.assertTrue(data['worklist']['row']['events_truncated'])
+        self.assertEqual(data['worklist']['row']['events'][0]['reason'], text)
+        self.assertEqual(asdict(stored), before)
+
+    def test_json_empty_selection_and_bounded_page_are_not_full_history(self):
+        stored = replace(self.stored, row=None, page=2, page_count=3, page_size=1,
+                         total_count=4, matched_count=3)
+        response, _ = self.get({'format': 'json'}, stored=stored)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIsNone(data['worklist']['row'])
+        self.assertEqual(data['timeline'], [])
+        self.assertEqual(len(data['worklist']['rows']), 1)
+        self.assertEqual(data['worklist']['page'], 2)
+        self.assertFalse(data['complete_history'])
+
+    def test_json_invalid_formats_rejected_before_reader(self):
+        for query in ('format=', 'format=xml', 'format=JSON', 'format=json&format=json'):
+            with self.subTest(query=query), patch.object(review, 'load_review_worklist') as reader:
+                response = self.client.get(self.url + '?' + query,
+                    HTTP_HOST='localhost', REMOTE_ADDR='127.0.0.1')
+                self.assertEqual(response.status_code, 400)
+                reader.assert_not_called()
+
+    def test_json_oversized_output_fails_closed_without_partial_source(self):
+        from apps.editorial_demo import workflow_audit
+        with patch.object(workflow_audit, 'MAX_AUDIT_JSON_BYTES', 100):
+            response, _ = self.get({'format': 'json'})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response['Cache-Control'], 'no-store')
+        self.assertNotIn(self.stored.row.original_row.encode(), response.content)
+    def test_json_guards_methods_and_errors_match_html(self):
+        for host, peer in (('testserver', '127.0.0.1'), ('localhost', '192.0.2.1')):
+            with self.subTest(host=host, peer=peer), patch.object(review, 'load_review_worklist') as reader:
+                response = self.client.get(self.url, {'format': 'json'}, HTTP_HOST=host, REMOTE_ADDR=peer)
+                self.assertEqual(response.status_code, 404)
+                reader.assert_not_called()
+        for overrides in ({'WAVE7_READS_ENABLED': False}, {'FATWA_PRODUCTION': True},
+                          {'SETTINGS_MODULE': 'config.settings.production'},
+                          {'INSTALLED_APPS': [a for a in settings.INSTALLED_APPS if a != 'apps.intake_workflow']}):
+            with self.settings(**overrides):
+                response, reader = self.get({'format': 'json'})
+                self.assertEqual(response.status_code, 404)
+                reader.assert_not_called()
+        for env in ({'FATWA_PRODUCTION': '1'}, {'FATWA_WAVE7_SYNTHETIC_READS': '0'}):
+            with patch.dict(os.environ, env):
+                response, reader = self.get({'format': 'json'})
+                self.assertEqual(response.status_code, 404)
+                reader.assert_not_called()
+        for method in ('post', 'put', 'patch', 'delete', 'options', 'trace'):
+            response, reader = self.get({'format': 'json'}, method=method)
+            self.assertEqual(response.status_code, 405)
+            reader.assert_not_called()
+        for query in ('row=bogus', 'q=' + 'a' * 81, 'page_size=51', 'page=10001'):
+            with patch.object(review, '_workflow_read') as boundary:
+                response = self.client.get(self.url + '?format=json&' + query,
+                    HTTP_HOST='localhost', REMOTE_ADDR='127.0.0.1')
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response['Cache-Control'], 'no-store')
+                boundary.assert_not_called()
+        for error, status in ((review.ReviewNotFound('private detail'), 404),
+                              (DatabaseError('private detail'), 503)):
+            with patch.object(review, 'load_review_worklist', side_effect=error):
+                response = self.client.get(self.url, {'format': 'json'},
+                    HTTP_HOST='localhost', REMOTE_ADDR='127.0.0.1')
+                self.assertEqual(response.status_code, status)
+                self.assertEqual(response['Cache-Control'], 'no-store')
+                self.assertNotIn(b'private detail', response.content)
+
+    def test_json_rejects_unbounded_and_ambiguous_dtos(self):
+        cases = (replace(self.stored, rows=self.stored.rows * 51),
+                 replace(self.stored, batches=self.stored.batches * 102),
+                 replace(self.stored, row=replace(self.stored.row,
+                     references=self.stored.row.references * 101)),
+                 replace(self.stored, row=replace(self.stored.row,
+                     events=self.stored.row.events * 51)),
+                 replace(self.stored, batches=()))
+        for stored in cases:
+            response, _ = self.get({'format': 'json'}, stored=stored)
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response['Cache-Control'], 'no-store')

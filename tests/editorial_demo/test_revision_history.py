@@ -205,6 +205,82 @@ class HistoryRouteTests(SimpleTestCase):
         self.assertTrue(any(tag == "nav" and attrs.get("aria-label") == "التنقل في سجل المراجعات"
                             for tag, attrs in structure.elements))
 
+    def test_difference_shortcuts_skip_unchanged_fields(self):
+        for before, after, count, first, last in (
+            ("1", "2", 4, "change-title", "change-references"),
+            ("4", "7", 1, "change-references", None),
+            ("7", "9", 2, "change-reviewer_notes", "change-references"),
+        ):
+            with self.subTest(before=before, after=after):
+                response = self.get({"before": before, "after": after})
+                structure = PageStructure(response.content.decode())
+                elements = {attrs["id"]: (tag, attrs) for tag, attrs in structure.elements
+                            if "id" in attrs}
+                self.assertContains(response, f"مجموعات الفروق: {count}")
+                self.assertEqual(elements["comparison-first-difference"][0], "a")
+                self.assertEqual(elements["comparison-first-difference"][1]["href"], "#" + first)
+                self.assertEqual(elements[first][1].get("tabindex"), "-1")
+                if last is None:
+                    self.assertNotIn("comparison-last-difference", elements)
+                else:
+                    self.assertEqual(elements["comparison-last-difference"][0], "a")
+                    self.assertEqual(elements["comparison-last-difference"][1]["href"], "#" + last)
+                    self.assertEqual(elements[last][1].get("tabindex"), "-1")
+                self.assertEqual(elements["comparison-change-index"][1]["href"], "#changes")
+
+    def test_comparison_context_distinguishes_reverse_and_same_identity(self):
+        for before, after, direction in (
+            ("1", "11", "باتجاه ترتيب السجل"),
+            ("11", "4", "بعكس ترتيب السجل"),
+            ("4", "4", "المراجعة نفسها في طرفي المقارنة"),
+        ):
+            with self.subTest(before=before, after=after):
+                response = self.get({"before": before, "after": after})
+                self.assertContains(response, direction)
+                structure = PageStructure(response.content.decode())
+                elements = {attrs["id"]: (tag, attrs) for tag, attrs in structure.elements
+                            if "id" in attrs}
+                self.assertEqual(elements["selected-comparison"][1]["aria-labelledby"],
+                                 "selected-comparison-heading")
+                self.assertEqual(elements["comparison-tools"][1]["aria-describedby"],
+                                 "comparison-summary comparison-direction")
+                self.assertEqual(elements["comparison-edit-selection"][1]["href"], "#selection")
+                if before == after:
+                    self.assertNotIn("comparison-reverse", elements)
+                else:
+                    self.assertEqual(elements["comparison-reverse"][1]["href"], self.url
+                                     + f"?before={after}&after={before}#selected-comparison")
+
+    def test_no_difference_shortcuts_for_equal_or_unselected_content(self):
+        for query in ({}, {"before": "4", "after": "4"}, {"before": "9", "after": "11"}):
+            with self.subTest(query=query):
+                response = self.get(query)
+                structure = PageStructure(response.content.decode())
+                ids = {attrs["id"] for _, attrs in structure.elements if "id" in attrs}
+                self.assertFalse({"comparison-first-difference", "comparison-last-difference",
+                                  "comparison-change-index"} & ids)
+                if query:
+                    self.assertContains(response, "مجموعات الفروق: 0")
+                    self.assertContains(response, "لا يتغير محتوى المقارنة")
+                else:
+                    self.assertNotIn("comparison-tools", ids)
+
+    def test_selection_help_is_connected_to_native_keyboard_controls(self):
+        response = self.get({"before": "4", "after": "7"})
+        structure = PageStructure(response.content.decode())
+        elements = {attrs["id"]: (tag, attrs) for tag, attrs in structure.elements if "id" in attrs}
+        self.assertIn("selection-help", elements)
+        for name in ("before", "after"):
+            self.assertEqual(elements[name][0], "select")
+            self.assertEqual(elements[name][1].get("aria-describedby"), "selection-help")
+        for name in ("comparison-first-difference", "comparison-change-index",
+                     "comparison-edit-selection", "comparison-reverse"):
+            tag, attrs = elements[name]
+            self.assertEqual(tag, "a")
+            self.assertNotIn("tabindex", attrs)
+            self.assertNotIn("onclick", attrs)
+        self.assertFalse(any(tag == "script" for tag, _ in structure.elements))
+
     def test_get_head_unsafe_methods_and_headers(self):
         from apps.editorial_demo.views import revision_history
 
@@ -261,3 +337,59 @@ class HistoryRouteTests(SimpleTestCase):
         self.assertContains(response, 'id="change-title"')
         self.assertContains(response, self.url)
         self.assertEqual(len(response.context["revisions"]), 2)
+
+class DifferenceSequenceTests(SimpleTestCase):
+    def test_previous_next_existing_groups_and_immutable_comparison(self):
+        import re
+
+        from django.template.loader import render_to_string
+
+        from apps.editorial_demo.revision_fixtures import REVISION_HISTORY_RECORD
+
+        snapshot = asdict(REVISION_HISTORY_RECORD)
+        for before in (1, 2, 4, 7, 9, 11):
+            for after in (1, 2, 4, 7, 9, 11):
+                with self.subTest(before=before, after=after):
+                    response = self.client.get('/dev/editorial-preview/revision-history',
+                                               {'before': before, 'after': after},
+                                               HTTP_HOST='localhost')
+                    html = response.content.decode()
+                    pattern = r'<nav id="difference-nav-([^" ]+)"[^>]*>(.*?)</nav>'
+                    navs = dict(re.findall(pattern, html, re.S))
+                    targets = response.context['comparison'].targets
+                    self.assertEqual(list(navs), [t.anchor for t in targets])
+                    elements = PageStructure(html).elements
+                    ids = [a['id'] for _, a in elements if 'id' in a]
+                    self.assertEqual(len(ids), len(set(ids)))
+                    for index, target in enumerate(targets):
+                        links = [a for tag, a in PageStructure(navs[target.anchor]).elements
+                                 if tag == 'a']
+                        expected = []
+                        if index:
+                            expected.append(('prev', '#' + targets[index - 1].anchor))
+                        if index + 1 < len(targets):
+                            expected.append(('next', '#' + targets[index + 1].anchor))
+                        self.assertEqual([(a['rel'], a['href']) for a in links], expected)
+                        for attrs in links:
+                            self.assertNotIn('tabindex', attrs)
+                            self.assertNotIn('onclick', attrs)
+                            destination = next(a for _, a in elements
+                                               if a.get('id') == attrs['href'][1:])
+                            self.assertEqual(destination.get('tabindex'), '-1')
+                        self.assertIn('الفرق السابق' if index else 'لا يوجد فرق سابق',
+                                      navs[target.anchor])
+                        self.assertIn('الفرق التالي' if index + 1 < len(targets)
+                                      else 'لا يوجد فرق تالٍ', navs[target.anchor])
+                    original = render_to_string(
+                        'editorial_demo/_revision_comparison_content.html',
+                        {key: response.context[key] for key in ('comparison', 'before_revision', 'after_revision', 'source')})
+                    without_nav = re.sub(pattern, '', html, flags=re.S)
+                    self.assertIn(original.strip(), without_nav)
+                    self.assertIn('<html lang="ar" dir="rtl">', html)
+                    self.assertFalse(any(t == 'script' for t, _ in elements))
+        self.assertEqual(asdict(REVISION_HISTORY_RECORD), snapshot)
+
+    def test_unselected_history_has_no_sequence_navigation(self):
+        response = self.client.get('/dev/editorial-preview/revision-history',
+                                   HTTP_HOST='localhost')
+        self.assertNotContains(response, 'id="difference-nav-')
