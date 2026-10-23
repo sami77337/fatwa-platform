@@ -8,6 +8,7 @@ The existing pure reference planner owns all mapping and resolution decisions.
 import json
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+from types import MappingProxyType
 
 from apps.intake_workflow import contracts as c, fixtures
 from apps.intake_workflow.references import (
@@ -17,6 +18,32 @@ from apps.intake_workflow.references import (
 
 from .bridge import BridgeConfig
 from .resolution import KIND, Heading
+
+
+# Presentation only: these strings never participate in reference resolution.
+_STATUS_EXPLANATIONS_AR = MappingProxyType({
+    c.ReferenceStatus.VERIFIED: "تطابق تقني مع لقطة الفهرس الاصطناعية المصرح بها فقط.",
+    c.ReferenceStatus.UNVERIFIED: "لم يثبت تطابق تقني مع لقطة الفهرس الاصطناعية المصرح بها.",
+    c.ReferenceStatus.MISMATCHED: "تعارض تقني مع بيانات الربط أو الفهرس الاصطناعية المصرح بها.",
+})
+_REASON_EXPLANATIONS_AR = MappingProxyType({
+    "invalid_pointer": "المؤشر لا يستوفي صيغة القيم النصية الدقيقة المطلوبة.",
+    "explicit_mapping_missing": "لا يوجد ربط صريح للمؤشر في الإعداد الاصطناعي الثابت.",
+    "source_identity_mismatch": "هوية المصدر المدخلة لا تطابق الهوية الاصطناعية الثابتة.",
+    "unsupported_pointer_shape": "بنية حقول المؤشر غير مدعومة في العقد الاصطناعي الثابت.",
+    "duplicate_pointer": "المؤشر مكرر داخل العنصر؛ لم يعتمد أي من تكراراته.",
+    "trusted_configuration_missing": "أحد روابط الإعداد الاصطناعي الثابت المطلوبة مفقود.",
+    "trusted_configuration_conflict": "توجد بيانات متعارضة في روابط الإعداد الاصطناعي الثابت.",
+    "trusted_configuration_incomplete": "الإعداد الاصطناعي الثابت غير مكتمل للتحقق من الدليل القديم.",
+    "catalog_source_row_mismatch": "بيانات صف المصدر في الفهرس لا تطابق الربط الاصطناعي الثابت.",
+    "catalog_metadata_mismatch": "بيانات سجل الفهرس لا تطابق البيانات الاصطناعية المتوقعة.",
+    "identity_not_found": "لم توجد الهوية المطلوبة في لقطة الفهرس المصرح بها.",
+    "multiple_exact_candidates": "توجد عدة سجلات تطابق الهوية المطلوبة؛ لم يختر التقرير أحدها.",
+    "incomplete_source_evidence": "بيانات دليل المصدر في لقطة الفهرس غير مكتملة أو غير صالحة تقنيا.",
+    "missing_printed_location": "بيانات الجزء أو الصفحة المطبوعة مفقودة أو غير صالحة تقنيا.",
+})
+_UNKNOWN_REASON_AR = "سبب تشخيصي غير مترجم؛ يرجى الرجوع إلى رمز السبب الأصلي."
+_VERIFICATION_LIMIT_AR = "لا تثبت هذه النتيجة صحة علمية أو ملاءمة إحالة، ولا تعني فحص الأرشيف."
 
 
 def _heading_payload(heading: Heading) -> dict[str, object]:
@@ -76,6 +103,12 @@ class ReferenceDiagnosticReport:
                     "status": status,
                     "contract_status": reference.status.value,
                     "reasons": list(reference.reasons),
+                    "explanation_ar": _STATUS_EXPLANATIONS_AR[reference.status],
+                    "reason_explanations_ar": [
+                        _REASON_EXPLANATIONS_AR.get(reason, _UNKNOWN_REASON_AR)
+                        for reason in reference.reasons
+                    ],
+                    "verification_limit_ar": _VERIFICATION_LIMIT_AR,
                     "source": asdict(reference.source),
                     "source_sha256": sha256(reference.source.text.encode("utf-8")).hexdigest(),
                     "verified_identity": dict(reference.identity),
