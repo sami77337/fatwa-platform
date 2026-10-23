@@ -139,6 +139,24 @@ class DiagnosticSerializationContractTests(unittest.TestCase):
         output["items"][0]["references"][0]["reasons"].append("changed")
         self.assertEqual(report.json_bytes(), first)
 
+    def test_unencodable_catalog_integer_raises_fixed_contract_error(self):
+        # Asserted diagnostic metadata is not upgraded or restricted by a new
+        # scholarly bound; Python's JSON encoder may reject its representation.
+        page = 10**5000
+        report = build_reference_diagnostics(
+            self.raw, synthetic_fixtures_only=True,
+            catalog_rows=(replace(ROOT, printed_page=page),),
+        )
+        for boundary in (report.to_payload, report.json_bytes):
+            with self.subTest(boundary=boundary.__name__), self.assertRaisesRegex(
+                c.ContractError, "^reference: invalid_diagnostic_report$",
+            ):
+                boundary()
+
+    def test_unencodable_identity_integer_is_rejected_at_both_boundaries(self):
+        reference = replace(self.reference, identity=(("edition_id", 10**5000),))
+        self.assert_rejected(self.with_reference(reference))
+
 
 if __name__ == "__main__":
     unittest.main()
