@@ -15,12 +15,18 @@
 <main id="main-content" tabindex="-1">
   <h1>مقارنة مراجعتين اصطناعيتين</h1>
   <p>اختر النسختين الثابتتين للمقارنة. الأسماء والبصمات اصطناعية بالكامل ولا تثبت صحة مرجع أو حدوث مراجعة بشرية.</p>
+  <p id="comparison-selection-help">استخدم Tab للتنقل بين عناصر الاختيار، والأسهم لاختيار المراجعة، ثم زر «عرض المقارنة» لعرض النتيجة؛ تغيير الاختيار وحده لا يعرض مقارنة جديدة. يمكنك عكس الطرفين أو اختيار المراجعة نفسها. السابقة واللاحقة تصفان طرفي المقارنة المختارين، وليس ترتيب المراجعات بالضرورة.</p>
   <form method="get" action="{% url 'editorial_revision_compare' %}" aria-label="اختيار نسختي المقارنة">
-    <div><label for="before">النسخة السابقة في المقارنة</label><select id="before" name="before">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == before_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
-    <div><label for="after">النسخة اللاحقة في المقارنة</label><select id="after" name="after">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == after_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
-    <button type="submit">عرض المقارنة</button>
+    <div><label for="before">النسخة السابقة في المقارنة</label><select id="before" name="before" aria-describedby="comparison-selection-help">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == before_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
+    <div><label for="after">النسخة اللاحقة في المقارنة</label><select id="after" name="after" aria-describedby="comparison-selection-help">{% for revision in revisions %}<option value="{{ revision.number }}"{% if revision.number == after_revision.number %} selected{% endif %}>المراجعة {{ revision.number }}</option>{% endfor %}</select></div>
+    <button type="submit" formaction="{% url 'editorial_revision_compare' %}#comparison-result">عرض المقارنة</button>
   </form>
-  {% include 'editorial_demo/_revision_comparison_content.html' %}
+  <section id="comparison-result" tabindex="-1" aria-labelledby="comparison-result-heading" aria-describedby="comparison-result-direction comparison-result-summary">
+    <h2 id="comparison-result-heading">نتيجة المقارنة: المراجعة {{ before_revision.number }} ثم المراجعة {{ after_revision.number }}</h2>
+    <p id="comparison-result-direction">{% if before_revision.number == after_revision.number %}المراجعة نفسها في طرفي المقارنة؛ لا توجد فروق بين محتوى النسختين.{% elif before_revision.number < after_revision.number %}باتجاه ترتيب المراجعات: من المراجعة {{ before_revision.number }} إلى المراجعة {{ after_revision.number }}.{% else %}بعكس ترتيب المراجعات: من المراجعة {{ before_revision.number }} إلى المراجعة {{ after_revision.number }}.{% endif %} تظهر الإضافات والحذف بالنسبة إلى هذا الاتجاه.</p>
+    <p id="comparison-result-summary">مجموعات الفروق: {{ comparison.targets|length }}. يُحسب كل حقل متغيّر ومجموعة المراجع مرة واحدة؛ العدد لا يمثل عدد الكلمات المتغيرة.</p>
+    {% include 'editorial_demo/_revision_comparison_content.html' %}
+  </section>
 </main>
 <footer><p>NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p></footer>
 </body>

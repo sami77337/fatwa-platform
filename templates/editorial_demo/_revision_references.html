@@ -1,5 +1,5 @@
-<ol class="reference-list">{% for entry in entries %}
-  <li><p class="change-status">{{ entry.label }} — الموضع {{ entry.position }}{% if entry.position_changed %}؛ الموضع في النسخة المقابلة {{ entry.other_position }}{% endif %}</p>
+<ol class="reference-list" aria-label="{% if reference_context %}{{ reference_context }}{% else %}هويات المراجع بترتيبها في هذه النسخة{% endif %}">{% for entry in entries %}
+  <li><div role="group" aria-label="المرجع في الموضع {{ entry.position }} — {{ entry.label }}"><p class="change-status">{{ entry.label }} — الموضع {{ entry.position }}{% if entry.position_changed %}؛ الموضع في النسخة المقابلة {{ entry.other_position }}{% endif %}</p>
     <dl>{% for label,value in entry.identity_fields %}<dt>{{ label }}</dt><dd><code><bdi dir="auto">{{ value }}</bdi></code></dd>{% endfor %}</dl>
-  </li>{% empty %}<li>لا توجد مراجع في هذه النسخة.</li>{% endfor %}
+  </div></li>{% empty %}<li>لا توجد مراجع في هذه النسخة.</li>{% endfor %}
 </ol>
