@@ -188,3 +188,54 @@ class ReferenceDiagnosticsTests(unittest.TestCase):
             report = build_reference_diagnostics(raw, synthetic_fixtures_only=True, catalog_rows=(ROOT,))
             output = json.loads(report.json_bytes())
         self.assertEqual(output["summary"], {"verified": 1, "unresolved": 0, "mismatched": 0})
+
+
+class ArabicReferenceExplanationTests(unittest.TestCase):
+    report = ReferenceDiagnosticsTests.report
+
+    def test_arabic_status_explanations_preserve_planner_fields(self):
+        from dataclasses import asdict
+        from apps.intake_workflow.references import plan_reference_verification
+
+        raw = payload([C1, {"source_id": "7001", "heading_id": "1"},
+                       {**C2, "edition_key": "other-edition"}])
+        report = self.report(raw)
+        planned = plan_reference_verification(raw, synthetic_fixtures_only=True, catalog_rows=(ROOT,))
+        refs = report.to_payload()["items"][0]["references"]
+        expected = ["تطابق تقني مع لقطة الفهرس الاصطناعية المصرح بها فقط.",
+                    "لم يثبت تطابق تقني مع لقطة الفهرس الاصطناعية المصرح بها.",
+                    "تعارض تقني مع بيانات الربط أو الفهرس الاصطناعية المصرح بها."]
+        for ref, original, text in zip(refs, planned[0].references, expected, strict=True):
+            self.assertRegex(ref["explanation_ar"], r"[؀-ۿ]")
+            self.assertNotIn("?", ref["explanation_ar"])
+            self.assertEqual(ref["explanation_ar"], text)
+            self.assertEqual(ref["verification_limit_ar"],
+                             "لا تثبت هذه النتيجة صحة علمية أو ملاءمة إحالة، ولا تعني فحص الأرشيف.")
+            self.assertEqual(ref["source"], asdict(original.source))
+            self.assertEqual(ref["verified_identity"], dict(original.identity))
+            self.assertEqual(ref["reasons"], list(original.reasons))
+            self.assertEqual(ref["source_sha256"], hashlib.sha256(
+                raw[original.source.start:original.source.end]).hexdigest())
+        self.assertEqual(refs[0]["reason_explanations_ar"], [])
+        self.assertEqual(refs[1]["reason_explanations_ar"],
+                         ["لا يوجد ربط صريح للمؤشر في الإعداد الاصطناعي الثابت."])
+        self.assertEqual(refs[2]["reason_explanations_ar"],
+                         ["هوية المصدر المدخلة لا تطابق الهوية الاصطناعية الثابتة."])
+        before = report.json_bytes()
+        refs[1]["reason_explanations_ar"].append("تغيير")
+        self.assertEqual(report.json_bytes(), before)
+
+    def test_reason_explanations_follow_existing_reason_order_with_safe_fallback(self):
+        report = self.report()
+        original = report.items[0].references[0]
+        reasons = ("identity_not_found", "multiple_exact_candidates", "future_reason")
+        altered = replace(original, status=c.ReferenceStatus.UNVERIFIED, reasons=reasons,
+                          identity=(), evidence=None)
+        output = replace(report, items=(replace(report.items[0], references=(altered,)),)).to_payload()
+        ref = output["items"][0]["references"][0]
+        self.assertEqual(ref["reasons"], list(reasons))
+        self.assertEqual(ref["reason_explanations_ar"], [
+            "لم توجد الهوية المطلوبة في لقطة الفهرس المصرح بها.",
+            "توجد عدة سجلات تطابق الهوية المطلوبة؛ لم يختر التقرير أحدها.",
+            "سبب تشخيصي غير مترجم؛ يرجى الرجوع إلى رمز السبب الأصلي.",
+        ])
