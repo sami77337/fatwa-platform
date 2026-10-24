@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from uuid import UUID
 
+from apps.intake_workflow import contracts as c
 from apps.intake_workflow.review import (
-    ReviewBatchOption, ReviewWorklist, StoredReviewEvent, StoredReviewRow,
+    ReviewBatchOption, ReviewWorklist, StoredReference, StoredReviewEvent, StoredReviewRow,
 )
 
 
@@ -77,6 +78,70 @@ def build_audit_timeline(stored: ReviewWorklist) -> tuple[AuditEntry, ...]:
 MAX_AUDIT_JSON_BYTES = 4 * 1024 * 1024
 
 
+def _audit_text(value: object, *, nullable: bool = False) -> None:
+    if value is None and nullable:
+        return
+    if not isinstance(value, str):
+        raise AuditDataError('invalid_audit_export_dto')
+    try:
+        value.encode('utf-8', errors='strict')
+    except UnicodeError:
+        raise AuditDataError('invalid_audit_export_dto') from None
+
+
+def _validate_audit_export(stored: ReviewWorklist) -> None:
+    """Check the fixed v1 DTO shape before asdict can copy arbitrary values.
+
+    Dataclass annotations are not runtime checks. In particular, bool is an int
+    subclass and asdict includes extra fields on dataclass subclasses. Reject
+    malformed reader results without coercing or rewriting any source values.
+    """
+    if (type(stored) is not ReviewWorklist or type(stored.rows) is not tuple
+            or type(stored.batches) is not tuple
+            or stored.batch_id is not None and type(stored.batch_id) is not UUID
+            or any(type(value) is not int for value in (
+                stored.total_count, stored.matched_count, stored.page,
+                stored.page_count, stored.page_size))):
+        raise AuditDataError('invalid_audit_export_dto')
+    if (not 1 <= stored.page_size <= 50 or len(stored.rows) > stored.page_size
+            or len(stored.batches) > 101):
+        raise AuditDataError('unbounded_worklist')
+    for value in (stored.q, stored.mode, stored.intake_status, stored.review_status):
+        _audit_text(value)
+    for batch in stored.batches:
+        if type(batch) is not ReviewBatchOption:
+            raise AuditDataError('invalid_audit_export_dto')
+        _dated_identity(batch)
+    for row in (*stored.rows, *((stored.row,) if stored.row is not None else ())):
+        if (type(row) is not StoredReviewRow or type(row.id) is not UUID
+                or type(row.batch_id) is not UUID
+                or any(type(value) is not int for value in (
+                    row.row_ordinal, row.source_byte_start, row.source_byte_end))
+                or type(row.events_truncated) is not bool
+                or type(row.references) is not tuple or type(row.events) is not tuple):
+            raise AuditDataError('invalid_audit_export_dto')
+        if len(row.references) > c.MAX_REFERENCES_PER_ITEM or len(row.events) > 100:
+            raise AuditDataError('unbounded_row')
+        for value in (row.external_id, row.question, row.prepared_clip_url):
+            _audit_text(value, nullable=True)
+        for value in (row.original_row, row.intake_status, row.review_status):
+            _audit_text(value)
+        for reference in row.references:
+            if (type(reference) is not StoredReference or type(reference.id) is not UUID
+                    or type(reference.source_byte_start) is not int
+                    or type(reference.source_byte_end) is not int):
+                raise AuditDataError('invalid_audit_export_dto')
+            for value in (reference.original_pointer, reference.reference_status,
+                          reference.citation_text):
+                _audit_text(value)
+        for event in row.events:
+            if type(event) is not StoredReviewEvent or type(event.operation_id) is not UUID:
+                raise AuditDataError('invalid_audit_export_dto')
+            _dated_identity(event)
+            for value in (event.action, event.from_status, event.to_status, event.reason):
+                _audit_text(value)
+
+
 def serialize_audit_json(stored: ReviewWorklist) -> bytes:
     """Export one guarded reader page, never fetch additional rows or history.
 
@@ -87,15 +152,8 @@ def serialize_audit_json(stored: ReviewWorklist) -> bytes:
     import json
     from dataclasses import asdict
 
-    from apps.intake_workflow import contracts as c
-
+    _validate_audit_export(stored)
     timeline = build_audit_timeline(stored)
-    if (not 1 <= stored.page_size <= 50 or len(stored.rows) > stored.page_size
-            or len(stored.batches) > 101):
-        raise AuditDataError('unbounded_worklist')
-    for row in (*stored.rows, *((stored.row,) if stored.row is not None else ())):
-        if (len(row.references) > c.MAX_REFERENCES_PER_ITEM or len(row.events) > 100):
-            raise AuditDataError('unbounded_row')
 
     def scalar(value):
         if isinstance(value, UUID):

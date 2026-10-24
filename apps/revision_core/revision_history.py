@@ -97,3 +97,30 @@ def select_revisions(
         return available[before], available[after]
     except KeyError as exc:
         raise UnknownRevisionId("unknown_revision_identity") from exc
+
+
+@dataclass(frozen=True, slots=True)
+class HistoryNavigation:
+    """Original selected snapshot and its immediate revision-number neighbors."""
+
+    selected: Revision
+    previous: Revision | None
+    next: Revision | None
+
+
+def navigate_history(record: DraftRecord, selected: object) -> HistoryNavigation:
+    """Select an exact identity and navigate the validated, bounded history.
+
+    Order is by revision number, not tuple offset or timestamp. Gaps and unchanged
+    content do not hide snapshots. A missing boundary neighbor is ``None``; invalid
+    histories and selections retain the builder/selector exceptions unchanged.
+    This read-only result carries no workflow authorization or state transition.
+    """
+    entries = build_history(record)
+    revision, _ = select_revisions(entries, selected, selected)
+    index = next(index for index, entry in enumerate(entries) if entry.revision is revision)
+    return HistoryNavigation(
+        revision,
+        entries[index - 1].revision if index > 0 else None,
+        entries[index + 1].revision if index + 1 < len(entries) else None,
+    )
