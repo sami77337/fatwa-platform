@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from django.core.exceptions import TooManyFieldsSent
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
+from django.template import engines
 from django.urls import reverse
 from django.views.decorators.http import require_safe
 
@@ -20,7 +21,7 @@ from apps.revision_core.revision_history import (
     select_revisions,
 )
 
-from .services import WorkbenchDataError, build_cases
+from .services import WorkbenchDataError, build_cases, build_prepared_workbench
 
 STATUSES = (("ready", "جاهز للعرض التحريري"), ("review", "يحتاج مراجعة"), ("blocked", "مدخل محجوب"))
 
@@ -40,21 +41,24 @@ def failure(request: HttpRequest, message: str, status: int) -> HttpResponse:
     return response
 
 
-def _query(request: HttpRequest, *, detail: bool) -> tuple[str, str]:
+def _query(request: HttpRequest, *, detail: bool) -> tuple[str, str, str]:
     query = request.GET
-    allowed = {"q", "status"} | ({"revision", "before", "after"} if detail else set())
+    allowed = {"q", "status", "batch"} | ({"revision", "before", "after"} if detail else set())
     q, status = query.get("q", ""), query.get("status", "")
+    batch = query.get("batch", "")
     if (
         set(query) - allowed
         or any(len(query.getlist(key)) != 1 for key in query)
         or len(q) > 80
         or any(ord(c) < 32 or ord(c) == 127 for c in q)
         or status not in {"", *(code for code, _ in STATUSES)}
+        or len(batch) > 100
+        or any(not (c.isascii() and (c.isalnum() or c == "-")) for c in batch)
         or ("before" in query) != ("after" in query)
     ):
         raise ValueError("invalid_query")
     q.encode("utf-8", errors="strict")
-    return q, status
+    return q, status, batch
 
 
 def _url(name: str, params: dict, key: str | None = None, anchor: str = "") -> str:
@@ -66,15 +70,19 @@ def _url(name: str, params: dict, key: str | None = None, anchor: str = "") -> s
 def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
     local_only(request)
     try:
-        q, status = _query(request, detail=key is not None)
+        q, status, batch_id = _query(request, detail=key is not None)
     except (ValueError, UnicodeError, TooManyFieldsSent):
         return failure(
             request, "معايير غير صالحة. استخدم بحثًا حتى ٨٠ حرفًا واختر حالتين للمقارنة.", 400
         )
     try:
         all_cases = build_cases()
+        prepared = build_prepared_workbench()
+        all_cases += prepared.cases
     except WorkbenchDataError:
         return failure(request, "تعذر تحميل العينات الاصطناعية. عد إلى القائمة وأعد المحاولة.", 503)
+    if batch_id and batch_id not in {entry.batch_id for entry in prepared.batches}:
+        return failure(request, "الدفعة غير معروفة. اختر دفعة اصطناعية من القائمة.", 400)
     case = next((item for item in all_cases if item.key == key), None)
     if key is not None and case is None:
         return failure(request, "السجل الاصطناعي غير موجود. اختر سجلًا من القائمة.", 404)
@@ -83,9 +91,37 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
         item
         for item in all_cases
         if (not status or item.status == status)
+        and (not batch_id or getattr(item, "batch_id", None) == batch_id)
         and (not term or term in ((item.external_id or "") + (item.question or "")).casefold())
     )
-    filters = {name: value for name, value in (("q", q), ("status", status)) if value}
+    filters = {
+        name: value for name, value in (("q", q), ("status", status), ("batch", batch_id)) if value
+    }
+    selected_batch = next(
+        (
+            entry
+            for entry in prepared.batches
+            if entry.batch_id == (getattr(case, "batch_id", None) or batch_id)
+        ),
+        None,
+    )
+    peers = tuple(
+        item for item in cases if getattr(item, "batch_id", None) == getattr(case, "batch_id", None)
+    )
+    position = next((i for i, item in enumerate(peers) if item.key == key), None)
+    neighbors = (
+        ()
+        if position is None
+        else tuple(
+            {
+                "label": label,
+                "case": peers[index],
+                "url": _url("editorial_workbench:detail", filters, peers[index].key),
+            }
+            for label, index in (("السجل السابق", position - 1), ("السجل التالي", position + 1))
+            if 0 <= index < len(peers)
+        )
+    )
     history, history_rows, revisions = (), (), ()
     selected = before = after = comparison = audit = None
     if case is not None and case.record is not None:
@@ -139,41 +175,54 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
         )
     elif case is not None and set(request.GET) & {"revision", "before", "after"}:
         return failure(request, "لا توجد مسودة أو مراجعات لهذا المدخل. راجع ملاحظات الاستلام.", 400)
-    response = render(
-        request,
-        "editorial_workbench/workbench.html",
-        {
-            "cases": cases,
-            "case": case,
-            "q": q,
-            "status": status,
-            "statuses": STATUSES,
-            "list_url": reverse("editorial_workbench:index"),
-            "return_url": _url("editorial_workbench:index", filters),
-            "detail_rows": tuple(
-                {"case": item, "url": _url("editorial_workbench:detail", filters, item.key)}
-                for item in cases
-            ),
-            "history_rows": history_rows,
-            "revisions": revisions,
-            "selected_revision": selected,
-            "before_revision": before,
-            "after_revision": after,
-            "comparison": comparison,
-            "audit": audit,
-            "references": case.references if case else (),
-            "compare_url": reverse("editorial_workbench:detail", args=[key]) if case else "",
-            "hidden_filters": tuple(filters.items()),
-            "selected_url": _url("editorial_workbench:detail", filters, key) if case else "",
-            "summary": {
-                "total": len(all_cases),
-                **{code: sum(item.status == code for item in all_cases) for code, _ in STATUSES},
-            },
-            "stored_url": reverse("editorial_workbench:stored"),
+    context = {
+        "batches": prepared.batches,
+        "batch_id": batch_id,
+        "selected_batch": selected_batch,
+        "neighbors": neighbors,
+        "batch_panel": _owned_template("batches.html"),
+        "reference_panel": _owned_template("references.html"),
+        "cases": cases,
+        "case": case,
+        "q": q,
+        "status": status,
+        "statuses": STATUSES,
+        "list_url": reverse("editorial_workbench:index"),
+        "return_url": _url("editorial_workbench:index", filters),
+        "detail_rows": tuple(
+            {"case": item, "url": _url("editorial_workbench:detail", filters, item.key)}
+            for item in cases
+        ),
+        "history_rows": history_rows,
+        "revisions": revisions,
+        "selected_revision": selected,
+        "before_revision": before,
+        "after_revision": after,
+        "comparison": comparison,
+        "audit": audit,
+        "references": case.references if case else (),
+        "compare_url": reverse("editorial_workbench:detail", args=[key]) if case else "",
+        "hidden_filters": tuple(filters.items()),
+        "selected_url": _url("editorial_workbench:detail", filters, key) if case else "",
+        "summary": {
+            "total": len(all_cases),
+            **{code: sum(item.status == code for item in all_cases) for code, _ in STATUSES},
         },
-    )
+        "stored_url": reverse("editorial_workbench:stored"),
+    }
+    response = HttpResponse(_owned_template("workbench.html").render(context, request))
     response["Cache-Control"] = "no-store"
     return response
+
+
+def _owned_template(name: str):
+    """Fixed lane-owned templates use the existing configured Django backend.
+
+    Names are code constants, never request values. This keeps template changes
+    in this lane without changing shared loader settings or app registration.
+    """
+    source = Path(__file__).with_name("templates").joinpath(name).read_text(encoding="utf-8")
+    return engines["django"].from_string(source)
 
 
 @require_safe
