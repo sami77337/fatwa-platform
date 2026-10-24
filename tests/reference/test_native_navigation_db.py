@@ -120,6 +120,60 @@ class NativeNavigationDatabaseTests(TestCase):
         self.assertTrue(all(query["sql"].lstrip().startswith("SELECT") for query in queries))
         return response, len(queries)
 
+    def assert_no_edition_choices(self, response, *, status=200):
+        for value in (
+            "اختر الطبعة",
+            "تحديد الطبعة",
+            self.spec.edition_key,
+            self.spec.edition_title,
+            self.spec.publisher,
+            self.spec.source_archive_sha256,
+            self.spec.source_input_sha256,
+            'name="edition"',
+            "edition=",
+            'class="heading-list"',
+        ):
+            self.assertNotContains(response, value, status_code=status)
+
+    def test_ambiguous_entry_points_hide_inventory_and_keep_catalog_unselected(self):
+        for params in ({}, {"basic": 1}):
+            for headers in ({}, {"HTTP_HX_REQUEST": "true"}):
+                with self.subTest(params=params, headers=headers):
+                    with CaptureQueriesContext(connection) as queries:
+                        response = self.client.get("/fiqh", params, **headers)
+                    self.assertTrue(
+                        all(query["sql"].lstrip().startswith("SELECT") for query in queries)
+                    )
+                    self.assertContains(response, "الفهرس غير متاح للتصفح حاليًا")
+                    self.assertIsNone(response.context["edition"])
+                    self.assert_no_edition_choices(response)
+
+    def test_ambiguous_content_requests_fail_closed_with_neutral_recovery(self):
+        for path, params in (
+            ("/fiqh", {"q": "عنوان"}),
+            ("/fiqh", {"offset": 2}),
+            ("/fiqh", {"basic": 1, "anchor": 30}),
+            ("/fiqh/nodes/30", {}),
+            ("/fiqh/nodes/30/children", {}),
+        ):
+            with self.subTest(path=path, params=params):
+                response, _ = self.native_get(path, params)
+                self.assertEqual(response.status_code, 400)
+                self.assert_no_edition_choices(response, status=400)
+                self.assertContains(response, "تحقق من معلمات البحث", status_code=400)
+                recovery = NavigationLinks(response.content).href("العودة إلى الفهرس")
+                recovered, _ = self.native_get(recovery)
+                self.assertContains(recovered, "الفهرس غير متاح للتصفح حاليًا")
+                self.assert_no_edition_choices(recovered)
+
+    def test_unknown_edition_recovers_without_offering_inventory(self):
+        response, _ = self.native_get("/fiqh", {"edition": 999999, "basic": 1})
+        self.assert_no_edition_choices(response, status=404)
+        recovery = NavigationLinks(response.content).href("العودة إلى الفهرس")
+        recovered, _ = self.native_get(recovery)
+        self.assertContains(recovered, "الفهرس غير متاح للتصفح حاليًا")
+        self.assert_no_edition_choices(recovered)
+
     def test_deep_breadcrumbs_reveal_the_actual_child_and_root_pages(self):
         detail, count = self.native_get(
             "/fiqh/nodes/36", {"edition": self.edition_id, "basic": 1, "limit": 2}

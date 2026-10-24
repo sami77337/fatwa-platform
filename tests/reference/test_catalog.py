@@ -173,11 +173,14 @@ class CatalogTests(TestCase):
             self.assertEqual(response.json()["total"], 2)
         response = self.client.get("/fiqh")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "اختر الطبعة")
+        self.assertContains(response, "الفهرس غير متاح للتصفح حاليًا")
+        self.assertNotContains(response, "اختر الطبعة")
+        self.assertNotContains(response, self.spec.edition_title)
+        self.assertNotContains(response, self.spec.publisher)
         self.assertNotContains(response, 'class="heading-list"')
         for edition_id in [self.edition_id, result.edition_id]:
             url = f"/fiqh?edition={edition_id}&basic=1"
-            self.assertContains(response, url.replace("&", "&amp;"))
+            self.assertNotContains(response, url.replace("&", "&amp;"))
             selected = self.client.get(url)
             self.assertEqual(selected.status_code, 200)
             self.assertEqual(selected.context["edition"]["id"], edition_id)
