@@ -1,0 +1,10 @@
+<ol class="reference-list">{% for reference in references %}<li class="reference-item">
+  <h3>المرجع {{ reference.reference_ordinal }} · <code>{{ reference.status }}</code></h3>
+  <p>{{ reference.explanation_ar }}</p>{% if reference.verification_limit_ar %}<p class="muted">{{ reference.verification_limit_ar }}</p>{% endif %}
+  <dl><dt>نتيجة محلل الإحالات</dt><dd><code>{{ reference.contract_status }}</code></dd><dt>المؤشر الأصلي بعد تحليل الصف</dt><dd><pre class="exact-text" dir="auto">{{ reference.source.text }}</pre></dd><dt>حدود المؤشر في المصدر</dt><dd>لا توجد حدود ملف أصلية؛ تسلسل للمؤشر الأصلي المحلل من صف الاستلام.</dd></dl>
+  {% if reference.reason_explanations_ar %}<ul>{% for reason in reference.reason_explanations_ar %}<li>{{ reason }}</li>{% endfor %}</ul>{% endif %}
+  {% if reference.reasons %}<details><summary>رموز أسباب المطابقة</summary><ul>{% for reason in reference.reasons %}<li><code>{{ reason }}</code></li>{% endfor %}</ul></details>{% endif %}
+  {% if reference.original_identity %}<h4>هوية المرجع الأصلية كاملة</h4><dl>{% for key,value in reference.original_identity.items %}<dt><code>{{ key }}</code></dt><dd><code><bdi dir="auto">{{ value }}</bdi></code></dd>{% endfor %}</dl>{% endif %}
+  {% if reference.verified_identity %}<h4>هوية المطابقة الكاملة</h4><dl>{% for key,value in reference.verified_identity.items %}<dt><code>{{ key }}</code></dt><dd><code><bdi dir="auto">{{ value }}</bdi></code></dd>{% endfor %}</dl>{% else %}<p class="empty">لا توجد هوية مطابقة متحققة لهذا المؤشر.</p>{% endif %}
+  {% if reference.evidence %}<details><summary>دليل المطابقة الاصطناعي</summary><dl>{% for key,value in reference.evidence.items %}<dt><code>{{ key }}</code></dt><dd class="exact-text"><bdi dir="auto">{{ value }}</bdi></dd>{% endfor %}</dl></details>{% endif %}
+</li>{% empty %}<li class="empty">لا توجد مؤشرات مراجع مرفقة بهذا المصدر.</li>{% endfor %}</ol>

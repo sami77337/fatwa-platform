@@ -2,6 +2,88 @@
 
 Development only; synthetic data; no database or HTTP mutations.
 
+## Multi-batch bridge (2026-10-24)
+
+The workbench now consumes `prepare_batches` from PR #95 at exact source commit
+`5530b9f9b425d52790ce2072e1b0b6c30bd447df`. Its parent was already an ancestor of
+the PR #96 base `b1653b20584052f36fba1b59565c7ed57d688215`; neither the source
+commit nor its patch was contained. It was cherry-picked with `-x` without
+conflicts as `0bcbc31` (stable patch ID
+`e9ff38802af013c420f635440bc7844dc8ef00d0`). The integration PR targets PR #96's
+branch, `codex/20261024-fastbuild-editorial`, not `main`.
+
+Open `/dev/editorial-workbench?batch=synthetic-csv` to select a prepared batch.
+Eleven additional rows across CSV, JSON and JSONL include valid receipts,
+pending inputs, cross-batch duplicate identities, invalid media/references,
+CSV overflow cells and null records. A fourth malformed file remains visible
+with its digest and recovery instructions, without fabricated rows. Existing
+Wave7 cases and the independent revision-history sample remain available.
+
+Each row is addressed by batch identity and original ordinal. The bridge checks
+batch hashes, freshly parsed original fields, row order and exact serialized
+draft association before displaying results. Rejected inputs have no draft;
+missing media remains pending without history. Pending reference mapping can
+have its own receipt draft. Receipt validity and reference verification are
+displayed independently; no references or scholarly citations are invented.
+Only a single empty `received` snapshot is created by preparation. Neighbor
+navigation discards revision selection from the previous record and preserves
+batch/search/status filters. Existing comparison/history/audit services remain
+responsible for the selected record's own snapshots.
+
+The new inputs are fixed UTF-8 bytes generated in memory by `batch_fixtures.py`.
+There is no upload, file-path parameter, network fetch, write endpoint, database
+operation, or new permission. Full original file text and its byte digest are
+available separately from explicitly labeled JSON serialization of parsed row
+fields. CSV CR/LF and Unicode values survive in the DTOs; browsers may normalize
+line endings when rendering HTML. No original byte offsets are claimed for
+these parsed rows. Recovery instructions require correcting the synthetic
+fixture outside the read-only UI and preparing it again.
+
+Templates are local to `apps/editorial_workbench/templates/`, rendered with the
+existing Django backend and fixed code-selected names. The workbench template
+adapts PR #96's presentation and reuses its base/comparison fragments. Shared
+templates, URL configuration, settings and dependencies are unchanged by the
+bridge. Keep future shared workbench layout changes synchronized with this local
+copy. Removing these bridge changes restores PR #96 behavior; no migrations exist.
+
+Fixed source identities (SHA-256):
+
+| Batch | Format | Bytes | Digest |
+| --- | --- | ---: | --- |
+| synthetic-csv | CSV | 719 | `0e5d1bfe94c5f9abf5652a065b57212fcaa143abd738f95f2b233df5b68410f8` |
+| synthetic-json | JSON | 620 | `d96eaabe7207a71ccdc1bc0426bf486f8448651ec34bf59e3ae96599b71c5aec` |
+| synthetic-jsonl | JSONL | 714 | `e8caaf496a756df9a7867f6a8ff9f4b9074d85eb0374f51d5e4c742803456363` |
+| synthetic-malformed | invalid JSON | 13 | `d4360bc841807dbc8d40aa57d52210c8b12413a8940b57310a8b3d14d1ca7086` |
+
+Focused bridge command (33 tests, including the 25 existing workbench tests):
+
+```powershell
+python manage.py test tests.editorial_workbench.test_batches tests.editorial_workbench.test_services tests.editorial_workbench.test_views tests.editorial_workbench.test_persisted --settings=config.settings.test --noinput
+```
+
+The 8 new tests first failed on the missing bridge and batch navigation, then
+passed against the real preparation/HTTP/history services. They cover isolated
+rows and histories, rejected duplicates, missing media, source hashes, Unicode,
+reference positions, recovery details, corrupted service reports, deterministic
+fresh results and forbidden external I/O. `SimpleTestCase` forbids database
+access; this is not PostgreSQL or owner-source acceptance.
+
+Final validation: 33 workbench + 65 prepared-pipeline + 40 content-intake +
+8 intake-check + 45 directly affected editorial-demo tests passed (191 total,
+no failures or skips). Django development system check, bridge-only Ruff lint
+and format (13 Python files), and Git whitespace checks passed. One independent
+read-only final review reran the 33 workbench tests after the missing batch
+selector was corrected and found no remaining actionable issues.
+
+An expanded Ruff check also inspected inherited intake tests: five existing
+import-order findings remain in `test_exact_prepared.py`, `test_intake.py`,
+`test_pipeline.py`, `test_source_pins.py` and `test_wave6_contract.py`; the expanded
+format check identified three inherited prepared-pipeline test files. They were
+not reformatted outside this lane. No browser layout, PostgreSQL or owner archive
+acceptance is claimed for this bridge.
+
+## Original PR #96 implementation notes
+
 Run the existing database-free local preview launcher, `python -m apps.editorial_demo`,
 and open <http://127.0.0.1:8012/dev/editorial-workbench>. The launcher skips only
 the unrelated migration preflight; it preserves middleware and development guards.

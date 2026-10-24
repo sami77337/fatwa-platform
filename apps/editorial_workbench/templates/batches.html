@@ -1,0 +1,25 @@
+<section class="panel" aria-labelledby="batches-heading">
+  <h2 id="batches-heading">دفعات الاستلام الاصطناعية</h2>
+  <p>صالح: اجتاز قواعد الاستلام. معلّق: يحتاج استكمالًا أو مراجعة. مرفوض: لا توجد مسودة. تحقق المراجع مستقل عن صلاحية الاستلام؛ لا يمثل اعتمادًا علميًا.</p>
+  {% if not case %}
+  <ul>{% for batch in batches %}<li>
+    <bdi>{{ batch.batch_id }}</bdi> · {{ batch.input_format }} · {{ batch.record_count }} سجلات:
+    صالح {{ batch.valid_count }}؛ معلّق {{ batch.pending_count }}؛ مرفوض {{ batch.rejected_count }}.
+    {% if batch.error_code %}<p role="status"><code>{{ batch.error_code }}</code> — معالجة: {{ batch.recovery }}</p>{% endif %}
+  </li>{% endfor %}</ul>
+  {% endif %}
+  {% if selected_batch %}
+  <dl><dt>الدفعة المحددة</dt><dd><bdi>{{ selected_batch.batch_id }}</bdi></dd>
+    <dt>SHA-256 لبايتات الملف الاصطناعي الأصلية</dt><dd><code dir="ltr">{{ selected_batch.input_sha256 }}</code></dd>
+    {% if case.row_ordinal %}<dt>الصف الأصلي في الدفعة</dt><dd>{{ case.row_ordinal }}</dd><dt>حالة الاستلام</dt><dd>{{ case.status_label }} · <code>{{ case.intake_state }}</code></dd>
+    <dt>تحقق المراجع</dt><dd>{% if case.reference_review_required %}غير مكتمل؛ يحتاج فحصًا مستقلًا{% else %}مطابقة تقنية لفهرس اصطناعي فقط{% endif %}</dd>{% endif %}
+  </dl>
+  {% if selected_batch.error_code %}<p role="status"><code>{{ selected_batch.error_code }}</code> — معالجة: {{ selected_batch.recovery }}</p>{% endif %}
+  <details><summary>نص الدفعة الاصطناعية الأصلية كاملًا</summary><p>هذا نص الملف كاملًا. قد يعرض المتصفح نهايات الأسطر بطريقة موحدة؛ البصمة محسوبة على بايتات UTF-8 الأصلية في الذاكرة. سجل الصف أدناه تسلسل للحقول المحللة، ولا ندّعي له حدود بايتات أصلية.</p><pre class="exact-text" dir="auto">{{ selected_batch.raw_source }}</pre></details>
+  {% endif %}
+  {% if case.batch_id %}
+  {% if case.reasons %}<h3>أسباب الرفض أو التعليق وخطوات المعالجة</h3><ul>{% for reason in case.reasons %}<li><code>{{ reason.field }} / {{ reason.code }}</code>{% if reason.reference_index %} · المؤشر {{ reason.reference_index }}{% endif %} · <code>{{ reason.severity }}</code><p>{{ reason.explanation }}</p><p>معالجة: {{ reason.recovery }}</p></li>{% endfor %}</ul>{% endif %}
+  {% if case.csv_extra_cells %}<h3>خلايا CSV الزائدة كما وردت</h3><ul>{% for cell in case.csv_extra_cells %}<li><pre class="exact-text" dir="auto">{{ cell }}</pre></li>{% endfor %}</ul>{% endif %}
+  <nav aria-label="التنقل بين سجلات الدفعة">{% for neighbor in neighbors %}<a href="{{ neighbor.url }}">{{ neighbor.label }}: <bdi>{{ neighbor.case.external_id|default:'بلا معرّف' }}</bdi> · الصف {{ neighbor.case.row_ordinal }}</a>{% empty %}<span>لا توجد سجلات مجاورة ضمن التصفية الحالية.</span>{% endfor %}</nav>
+  {% endif %}
+</section>
