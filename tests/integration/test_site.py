@@ -150,7 +150,9 @@ class IntegratedStaticAssetTests(SimpleTestCase):
         for name in ["catalog.js", "django-api.mjs", "catalog.css"]:
             response = self.client.get("/assets/reference/" + name)
             self.assertEqual(response.status_code, 200)
-            body = b"".join(response.streaming_content)
+            body = (
+                b"".join(response.streaming_content) if response.streaming else response.content
+            )
             self.assertNotIn(b"createMockAdapter", body)
             self.assertNotIn(b"fixture.js", body)
             response.close()
