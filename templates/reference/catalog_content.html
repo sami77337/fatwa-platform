@@ -54,9 +54,6 @@
   <h2>{% if node %}العناوين الفرعية{% elif searching or query %}العناوين المطابقة{% else %}جذور الفهرس{% endif %}</h2>
   <p>عدد العناوين في هذه القائمة: {{ results.total }}</p>
   <div class="branch-contents">{% include 'reference/heading_list.html' %}</div>
-  {% elif books %}
-  <h2>اختر الطبعة</h2>
-  <p>اختر مصدرًا واحدًا لعرض عناوينه ومساراته دون خلط الطبعات.</p>
-  <ul>{% for book in books %}<li><a href="{% url 'catalog' %}?edition={{ book.id }}&amp;basic=1">{{ book.work.title_original }} — {{ book.title }}؛ {{ book.publisher }} ({{ book.edition_key }})</a></li>{% endfor %}</ul>
+  {% elif books %}<p role="status">الفهرس غير متاح للتصفح حاليًا.</p>
   {% else %}<p role="status">لم يُحمّل فهرس مرجعي بعد.</p>{% endif %}
 </main>
