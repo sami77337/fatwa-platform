@@ -213,8 +213,14 @@ def artifacts(raw, suffix):
 
 
 def main(argv=None):
+    arguments = sys.argv[1:] if argv is None else list(argv)
+    if arguments and arguments[0] == "diagnose":
+        # Keep all historical C1 commands and their artifacts unchanged.
+        from .diagnostic_cli import main as diagnose_main
+        return diagnose_main(arguments[1:])
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("diagnose", help="Offline synthetic batch reconciliation (diagnose --help)")
     for name in ("validate", "preview", "export", "check"):
         command = sub.add_parser(name)
         command.add_argument("input", type=Path)

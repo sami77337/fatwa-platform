@@ -1,5 +1,8 @@
 # Offline synthetic prepared-input processing
 
+For per-row byte receipts, Arabic recovery, explicit source inventory checks and
+deterministic reconciliation bundles, see [the offline diagnostic workflow](DIAGNOSTICS.md).
+
 This development-only flow validates caller-supplied **synthetic** editorial input
 and creates process-local `received` draft objects with empty answers. It never
 persists drafts, fetches media, approves rulings or publishes anything.
