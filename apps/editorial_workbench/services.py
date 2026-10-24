@@ -267,3 +267,13 @@ def build_cases() -> tuple[WorkbenchCase, ...]:
         return (_history_case(), *_intake_cases())
     except (c.ContractError, ValidationError) as exc:
         raise WorkbenchDataError("workbench: invalid_fixed_synthetic_data") from exc
+
+
+def build_prepared_workbench():
+    """Compose only the built-in synthetic batches; no caller path or payload."""
+    from .batches import build_prepared_workbench as build
+
+    try:
+        return build()
+    except ValidationError as exc:
+        raise WorkbenchDataError("workbench: invalid_fixed_prepared_data") from exc
