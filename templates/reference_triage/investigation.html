@@ -1,0 +1,54 @@
+{% extends "reference_triage/base.html" %}
+{% block content %}
+<h1>{% if selected %}تحقيق إحالات السجل <bdi>{{ selected.case.key }}</bdi>{% else %}التحقيق المرجعي للحالات الثابتة{% endif %}</h1>
+<form class="panel filters" action="{% url 'reference_triage:index' %}" method="get">
+  <div class="field"><label for="status">حالة الإحالة التقنية</label><select id="status" name="status"><option value="">كل الحالات</option>{% for value,label in statuses %}<option value="{{ value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="batch">الدفعة الاصطناعية</label><select id="batch" name="batch"><option value="">كل الدفعات</option>{% for batch in batches %}<option value="{{ batch.batch_id }}"{% if batch_id == batch.batch_id %} selected{% endif %}>{{ batch.label }}</option>{% endfor %}</select></div>
+  <button type="submit">تطبيق التصفية</button><a href="{% url 'reference_triage:index' %}">مسح التصفية</a>
+</form>
+{% if selected %}
+<nav class="section-nav" aria-label="تنقل التحقيق"><a href="{{ return_url }}">العودة إلى النتائج</a>{% if previous_url %}<a href="{{ previous_url }}" rel="prev">السجل السابق</a>{% endif %}{% if next_url %}<a href="{{ next_url }}" rel="next">السجل التالي</a>{% endif %}<a href="{{ workbench_url }}#references">الإحالات في مساحة العمل المقابلة</a><a href="#references">نتائج الإحالات</a><a href="#source">المصدر المحفوظ</a></nav>
+{% if outside_filter %}<p class="notice">هذا السجل خارج التصفية الحالية؛ لا تُستنتج له سجلات مجاورة.</p>{% endif %}
+<section class="panel" aria-labelledby="case-title"><h2 id="case-title">سياق السجل وملخص إحالاته</h2>
+  <p>الدفعة: <bdi>{{ selected.batch_id }}</bdi> · حالة الاستلام الأصلية: {{ selected.case.status_label }}</p>
+  <p>المعرّف الخارجي: <bdi>{{ selected.case.external_id|default_if_none:"غير مرفق" }}</bdi></p>
+  <pre class="exact-text" dir="auto"><code>{{ question }}</code></pre>
+  {% include "reference_triage/_summary.html" with counts=selected.summary %}
+  <p>هذه أعداد إحالات تقنية، مستقلة عن قبول الاستلام. غياب المؤشرات لا يعني التحقق.</p>
+  {% if selected.case.issues %}<h3>ملاحظات الخدمة الأصلية</h3><ul>{% for issue in selected.case.issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% endif %}
+  <a href="{{ workbench_url }}">فتح السجل نفسه في مساحة العمل</a>
+</section>
+<section class="panel" id="references" aria-labelledby="references-title"><h2 id="references-title">أسباب النتائج والأدلة المتاحة</h2>
+  {% if selected.case.key == "history" %}<p class="notice">هذه مؤشرات أحدث لقطة ثابتة لسجل المراجعات، وليست مؤشرات كل مراجعاته.</p>{% endif %}
+  <ol class="reference-list">{% for entry in references %}<li class="reference-item" id="reference-{{ entry.ref.ordinal }}">
+    <h3>الإحالة {{ entry.ref.ordinal }} · {{ entry.ref.label }}</h3>
+    <p>{{ entry.ref.explanation }}</p>
+    <p>حالة الخدمة كما وردت: <code>{{ entry.ref.raw_status }}</code> · حالة العقد: <code>{{ entry.ref.contract_status }}</code></p>
+    <h4>أسباب الخدمة الأصلية</h4>
+    <ul>{% for reason in entry.ref.reasons %}<li><code>{{ reason }}</code></li>{% empty %}<li>لم تسجل الخدمة رمز سبب إضافيًا.</li>{% endfor %}</ul>
+    {% if entry.ref.reason_explanations %}<ul>{% for explanation in entry.ref.reason_explanations %}<li>{{ explanation }}</li>{% endfor %}</ul>{% endif %}
+    <p class="notice">إرشاد المتابعة الآمنة: {{ entry.ref.recovery }}</p>
+    <h4>نص المؤشر الأصلي دون تعديل</h4><pre class="exact-text" dir="auto"><code>{{ entry.source }}</code></pre>
+    <p>بصمة نص المؤشر UTF-8: <code dir="ltr">{{ entry.ref.source_sha256 }}</code></p>
+    {% if entry.ref.source_start != None %}<p>البداية {{ entry.ref.source_start }}؛ النهاية غير المشمولة {{ entry.ref.source_end }} ببايتات UTF-8 في الحمولة الأصلية.</p>{% else %}<p>تسلسل هوية من الخدمة؛ لا توجد حدود شريحة أصلية في ملف.</p>{% endif %}
+    <details><summary>الهويات التقنية الدقيقة في العرض المحلي المحمي</summary>
+      <h4>الهوية المدخلة كما وردت</h4><pre class="exact-text" dir="auto"><code>{{ entry.original }}</code></pre>
+      <h4>هوية المطابقة المثبتة في الخدمة</h4><pre class="exact-text" dir="auto"><code>{{ entry.verified }}</code></pre>
+      <p>الكائن الفارغ يعني أن الخدمة لم تسجل هوية مطابقة؛ لم نستكملها بالتخمين.</p>
+    </details>
+    <details><summary>الدليل المتاح من الخدمة</summary><pre class="exact-text" dir="auto"><code>{{ entry.evidence }}</code></pre><p>القيمة <code>null</code> تعني عدم وجود دليل مسجل. لم تُفحص أرشيفات، ولم تُنشأ إحالة علمية من هذه البيانات.</p></details>
+  </li>{% empty %}<li class="empty">لا توجد مؤشرات إحالة قابلة للعرض. راجع ملاحظات الاستلام وبنية المصدر الأصلي؛ قد تكون المراجع غائبة أو غير صالحة. لا تضف استشهادًا تخمينيًا.</li>{% endfor %}</ol>
+</section>
+<section class="panel" id="source" aria-labelledby="source-title"><h2 id="source-title">مصدر السجل المحفوظ</h2>
+  <p>{{ selected.case.fixture_label }}</p>
+  <dl><dt>بصمة الحمولة الأصلية</dt><dd><code dir="ltr">{{ selected.case.payload_sha256 }}</code></dd><dt>بصمة النص المعروض</dt><dd><code dir="ltr">{{ selected.source_sha256 }}</code></dd></dl>
+  {% if selected.case.source_start != None %}<p>البداية {{ selected.case.source_start }}؛ النهاية غير المشمولة {{ selected.case.source_end }} ببايتات UTF-8.</p>{% else %}<p>لا توجد حدود في ملف أصلي لهذا التسلسل؛ بصمته تخص النص المعروض، وبصمة الحمولة تخص مدخل الخدمة.</p>{% endif %}
+  <pre class="exact-text" dir="auto"><code>{{ source }}</code></pre>
+</section>
+{% else %}
+<section class="panel" aria-labelledby="summary-title"><h2 id="summary-title">ملخص كامل العينات الثابتة</h2>{% include "reference_triage/_summary.html" with counts=summary %}<p>كل مؤشر يُعد مرة واحدة. عدد السجلات بلا مؤشرات مستقل عن عدد الإحالات. الصفر لا يثبت صحة علمية أو اكتمال الدفعة.</p></section>
+<section aria-labelledby="batches-title"><h2 id="batches-title">ملخص كل دفعة</h2><div class="case-list">{% for entry in batch_rows %}<article class="case-card"><h3><a href="{{ entry.url }}">{{ entry.batch.label }}</a></h3>{% include "reference_triage/_summary.html" with counts=entry.batch.summary %}<p>بصمة المدخل: <code dir="ltr">{{ entry.batch.input_sha256 }}</code></p>{% if entry.batch.error_code %}<p class="notice">تعذر تحليل الدفعة: <code>{{ entry.batch.error_code }}</code>. {{ entry.batch.recovery }}</p>{% endif %}</article>{% endfor %}</div></section>
+<section class="panel" aria-labelledby="results-title"><h2 id="results-title">السجلات المطابقة للتصفية</h2>{% include "reference_triage/_summary.html" with counts=filtered_summary %}<p>التصفية تختار السجل الذي يحتوي حالة الإحالة المختارة؛ تعرض الملخصات كل إحالات السجلات المختارة.</p></section>
+<div class="case-list">{% for entry in rows %}<article class="case-card"><h2><a href="{{ entry.url }}">تحقيق السجل <bdi>{{ entry.row.case.key }}</bdi></a></h2><pre class="exact-text" dir="auto"><code>{{ entry.question }}</code></pre><p>{{ entry.row.case.status_label }}</p>{% include "reference_triage/_summary.html" with counts=entry.row.summary %}<a href="{{ entry.workbench_url }}">فتح السجل المقابل في مساحة العمل</a></article>{% empty %}<p class="empty">لا توجد سجلات تطابق التصفية. <a href="{% url 'reference_triage:index' %}">عرض جميع السجلات</a></p>{% endfor %}</div>
+{% endif %}
+{% endblock %}

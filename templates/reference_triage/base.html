@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}التحقيق المرجعي الاصطناعي{% endblock %}</title>
+  <link rel="stylesheet" href="{% url 'editorial_workbench:style' %}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+<header class="site-header"><div class="shell">
+  <p class="eyebrow">بيئة تطوير محلية · بيانات اصطناعية · قراءة فقط</p>
+  <p class="site-title">التحقيق المرجعي</p>
+  <p>مطابقة تقنية مع عينات ثابتة فقط؛ لا تثبت صحة علمية أو ملاءمة استشهاد أو فحص أي أرشيف.</p>
+  <nav aria-label="التنقل العام"><a href="{% url 'reference_triage:index' %}">كل التحقيقات المرجعية</a><a href="{% url 'editorial_workbench:index' %}">مساحة العمل التحريرية</a><a href="{% url 'editorial_queue:index' %}">قائمة المراجعة</a></nav>
+</div></header>
+<main class="shell" id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
+<footer class="shell site-footer">
+  <p>الهويات التقنية أدلة تشخيص محلية. لا تعديل للفهرس المحمي ولا كتابة أو نشر أو اعتماد علمي.</p>
+  <p class="gates" dir="ltr">NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p>
+</footer>
+</body>
+</html>
