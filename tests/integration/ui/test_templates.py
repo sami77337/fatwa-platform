@@ -63,6 +63,25 @@ class CatalogTemplateTests(SimpleTestCase):
             self.assertNotIn("اختر الطبعة", html)
             self.assertIn("الفهرس", html)
 
+    def test_unavailable_catalog_does_not_render_edition_metadata_or_choices(self):
+        book = {
+            "id": 7, "title": "INTERNAL-EDITION-TITLE", "publisher": "INTERNAL-PUBLISHER",
+            "edition_key": "INTERNAL-EDITION-KEY",
+            "source_archive_sha256": "a" * 64, "source_input_sha256": "b" * 64,
+            "work": {"title_original": "INTERNAL-WORK"},
+        }
+        for template in ["reference/catalog.html", "reference/catalog_content.html"]:
+            with self.subTest(template=template):
+                html = render_to_string(template, self.context(
+                    edition=None, books=[book, {**book, "id": 8}], node=None,
+                ))
+                self.assertIn("الفهرس غير متاح للتصفح حاليًا", html)
+                for internal in [
+                    "INTERNAL-", "a" * 64, "b" * 64, "edition=", 'name="edition"',
+                    "اختر الطبعة", "reference/catalog.js", 'class="heading-list"',
+                ]:
+                    self.assertNotIn(internal, html)
+
     def test_basic_reading_metadata_and_manual_copy_print_help(self):
         html = render_to_string("reference/catalog.html", self.context())
         self.assertIn('class="basic-reference"', html)

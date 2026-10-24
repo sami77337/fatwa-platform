@@ -161,7 +161,7 @@ class NativeNavigationTests(SimpleTestCase):
         self.assertContains(response, "تحقق من معلمات البحث", status_code=400)
         self.assertNotContains(response, "private-sentinel", status_code=400)
 
-    def test_ambiguous_catalog_offers_each_edition_as_a_native_link(self):
+    def test_ambiguous_catalog_has_neutral_status_without_edition_links(self):
         inventory = services.CatalogPage(
             [
                 services.edition_data(edition(7)),
@@ -174,10 +174,12 @@ class NativeNavigationTests(SimpleTestCase):
         )
         with patch.object(services, "list_books", return_value=inventory):
             response = self.client.get("/fiqh")
-        self.assertContains(response, "اختر الطبعة")
-        choices = NavigationHTML(response).links("/fiqh")
-        for ident in (7, 8):
-            self.assertIn(f"/fiqh?edition={ident}&basic=1", choices)
+        self.assertContains(response, "الفهرس غير متاح للتصفح حاليًا")
+        self.assertContains(response, 'role="status"')
+        self.assertNotContains(response, "اختر الطبعة")
+        self.assertTrue(
+            all("edition=" not in link for link in NavigationHTML(response).links("/fiqh"))
+        )
 
     def test_removing_root_scope_keeps_other_search_filters_and_resets_page(self):
         with self.catalog():

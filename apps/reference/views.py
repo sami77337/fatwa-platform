@@ -325,7 +325,7 @@ def catalog(request: HttpRequest, ident: int | None = None) -> HttpResponse:
         return render(
             request,
             "reference/error.html",
-            {"message": "تحقق من معلمات البحث؛ يلزم تحديد الطبعة عند توفر أكثر من طبعة."},
+            {"message": "تحقق من معلمات البحث أو عد إلى الفهرس باستخدام الرابط أدناه."},
             status=400,
         )
     except services.HeadingNotFound as error:
