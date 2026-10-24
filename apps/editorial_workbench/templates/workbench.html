@@ -6,6 +6,7 @@
   <p><a href="{{ return_url }}">العودة إلى القائمة المصفاة</a></p>
   <div class="detail-heading"><h1>مراجعة السجل الاصطناعي <bdi>{{ case.external_id|default:'دون معرّف خارجي صالح' }}</bdi></h1><span class="badge">{{ case.status_label }}</span></div>
   <p class="notice">كل ما يلي مرتبط بهذا المصدر الاصطناعي وحده. اختيار لقطة أو مقارنة يغيّر العرض فقط، ولا يحفظ تغييرًا.</p>
+  <p><a class="button-link" href="{{ packet_url }}">حزمة مراجعة السجل · عرض وتصدير وطباعة</a></p>
   <nav class="section-nav" aria-label="أقسام مراجعة السجل"><a href="#intake">الاستلام الأصلي</a><a href="#snapshot">لقطة المسودة</a><a href="#history">تاريخ المراجعات</a><a href="#comparison">مقارنة النسخ</a><a href="#references">مطابقة المراجع</a><a href="#audit">تدقيق اللقطات</a></nav>
   {% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
   <section class="panel" id="intake" tabindex="-1" aria-labelledby="intake-heading">

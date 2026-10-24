@@ -1,0 +1,64 @@
+{% extends 'editorial_workbench/base.html' %}
+{% block title %}حزمة مراجعة السجل · {{ case.key }}{% endblock %}
+{% block content %}
+<article class="case-packet">
+  <h1>حزمة مراجعة السجل الاصطناعي <bdi>{{ case.external_id|default:'دون معرّف خارجي صالح' }}</bdi></h1>
+  <p class="notice">قراءة فقط. أسئلة المتابعة مستمدة من ملاحظات الاستلام ونتائج المطابقة التقنية. لا توجد نتيجة مراجعة أو قرار علمي في الحزمة.</p>
+  <nav class="packet-actions" aria-label="إجراءات عرض الحزمة"><a href="{{ workbench_url }}">العودة إلى السجل واختيار اللقطات</a><a href="{{ packet_json_url }}">تنزيل JSON المحدد</a><a href="{{ packet_print_url }}">فتح نسخة الطباعة</a></nav>
+  {% if print_mode %}<p class="print-help">النسخة الكاملة جاهزة للطباعة من قائمة المتصفح أو Ctrl+P. لا تُرسل البيانات إلى خدمة خارجية.</p>{% endif %}
+  <p>تصدير حتمي بلا وقت إنشاء · {{ packet_bytes }} بايت · <code>{{ packet.schema }}</code></p>
+  <p>بصمة ملف JSON الكامل SHA-256: <code dir="ltr">{{ packet_sha256 }}</code></p>
+  <nav class="section-nav" aria-label="أقسام حزمة المراجعة"><a href="#packet-intake">الاستلام والهوية</a><a href="#packet-follow-up">أسئلة المتابعة</a><a href="#packet-snapshots">اللقطات الثابتة</a><a href="#packet-changes">فروق اللقطات</a><a href="#packet-references">التحقق التقني</a><a href="#packet-events">الأحداث المحفوظة</a></nav>
+
+  <section class="panel" id="packet-intake" tabindex="-1" aria-labelledby="packet-intake-heading">
+    <h2 id="packet-intake-heading">الاستلام الأصلي وهويته الدقيقة</h2>
+    <dl><dt>هوية السجل المستقرة</dt><dd><code>{{ packet.identity.case_key }}</code></dd><dt>المعرّف الخارجي كما ورد</dt><dd><pre class="exact-text">{{ packet.identity.external_id|default_if_none:'غير موجود' }}</pre></dd><dt>الدفعة والصف الأصلي</dt><dd>{% if packet.identity.batch_id %}<code>{{ packet.identity.batch_id }}</code> · {{ packet.identity.row_ordinal }}{% else %}{{ packet.source.label_ar }}{% endif %}</dd><dt>نوع تمثيل المصدر</dt><dd><code>{{ packet.source.kind }}</code> · {{ packet.source.label_ar }}</dd><dt>SHA-256 لمدخل العينة</dt><dd><code dir="ltr">{{ packet.source.input_sha256 }}</code></dd><dt>SHA-256 لنص تمثيل السجل</dt><dd><code dir="ltr">{{ packet.source.text_sha256 }}</code></dd><dt>حدود المصدر</dt><dd>{% if packet.source.start != None %}بايتات UTF-8 من {{ packet.source.start }} إلى {{ packet.source.end }} غير المشمولة{% else %}لا توجد حدود بايتات أصلية لهذا التسلسل{% endif %}</dd><dt>حالة الاستلام</dt><dd>{{ packet.receipt.label_ar }} · <code>{{ packet.receipt.intake_state|default_if_none:packet.receipt.status }}</code></dd><dt>المسودة</dt><dd>{% if packet.receipt.draft_available %}متاحة؛ أحدث لقطة {{ packet.receipt.current_revision }} · <code>{{ packet.receipt.current_state }}</code>{% else %}لا توجد مسودة؛ لا تُستعار لقطات سجل آخر{% endif %}</dd></dl>
+    <h3>السؤال كما ورد</h3><pre class="exact-text" dir="auto">{{ packet.intake.question|default_if_none:'لا يوجد سؤال نصي صالح' }}</pre>
+    <h3>رابط المقطع الجاهز — نص فقط</h3><pre class="exact-text" dir="ltr">{{ packet.intake.prepared_clip_url|default_if_none:'غير مرفق' }}</pre>
+    <h3>تمثيل السجل الأصلي</h3><pre class="exact-text" dir="auto">{{ packet.source.text }}</pre>
+    <details{% if print_mode %} open{% endif %}><summary>الاستلام المحضّر والحقول الأصلية والخلايا الزائدة — تسلسل JSON</summary><pre class="exact-text" dir="auto">{{ packet_intake_json }}</pre></details>
+    <details{% if print_mode %} open{% endif %}><summary>مدخل العينة الكامل للتحقق من البصمة</summary><pre class="exact-text" dir="auto">{{ packet.source.input_text }}</pre></details>
+    <p class="muted">النص وUnicode محفوظان في JSON. قد يطبّع المتصفح نهايات الأسطر عند عرض HTML. تسلسل الصف المحلل ليس شريحة بايتات أصلية.</p>
+  </section>
+
+  <section class="panel" id="packet-follow-up" tabindex="-1" aria-labelledby="packet-follow-up-heading">
+    <h2 id="packet-follow-up-heading">أسئلة المتابعة وأخطاء التحضير</h2>
+    <p>هذه نقاط فحص تقنية قائمة على الأدلة المعروضة؛ صلاحية الاستلام لا تعني مراجعة بشرية أو تحقق المراجع.</p>
+    <ol>{% for question in packet.open_questions %}<li><p>{{ question.evidence_ar }}{% if question.reference_ordinal %} · الإحالة {{ question.reference_ordinal }}{% endif %}</p><p><strong>خطوة المتابعة:</strong> {{ question.action_ar }}</p></li>{% empty %}<li>لا توجد نقاط متابعة مُبلَّغ عنها في هذه العينة؛ لا يُستنتج اكتمال مراجعة بشرية.</li>{% endfor %}</ol>
+    <h3>نتائج التحضير المنظمة</h3><ul>{% for error in packet.preparation_errors %}<li><code>{{ error.field }}</code> · <code>{{ error.code }}</code> · <code>{{ error.severity }}</code>{% if error.reference_index != None %} · الإحالة {{ error.reference_index }}{% endif %}<p>{{ error.explanation }}</p><p>{{ error.recovery }}</p></li>{% empty %}<li>لا توجد نتائج تحضير منظمة إضافية من محوّل الدفعات؛ ملاحظات الاستلام ونقاط الفحص معروضة أعلاه.</li>{% endfor %}</ul>
+  </section>
+
+  <section class="panel" id="packet-snapshots" tabindex="-1" aria-labelledby="packet-snapshots-heading">
+    <h2 id="packet-snapshots-heading">اللقطات الثابتة المرتبطة بالسجل</h2>
+    <p>كل لقطة كما هي؛ الأرقام ليست أوقاتًا، ووسم المحرر ليس هوية مستخدم موثقة. اللقطة المختارة {{ packet.selection.revision|default_if_none:'غير متاحة' }}.</p>
+    {% for row in packet_snapshots %}<section id="packet-revision-{{ row.snapshot.number }}" aria-labelledby="packet-revision-heading-{{ row.snapshot.number }}">
+      <h3 id="packet-revision-heading-{{ row.snapshot.number }}">المراجعة {{ row.snapshot.number }}{% if row.snapshot.number == packet.selection.revision %} · اللقطة المختارة{% endif %}</h3>
+      <dl><dt>وسم الحالة</dt><dd><code>{{ row.snapshot.state }}</code></dd><dt>وسم العملية</dt><dd><code>{{ row.snapshot.action }}</code></dd><dt>وسم النسبة</dt><dd><pre class="exact-text">{{ row.snapshot.human_editor }}</pre></dd><dt>ملاحظة اللقطة</dt><dd><pre class="exact-text">{{ row.snapshot.editorial_note }}</pre></dd></dl>
+      <h4>العنوان</h4><pre class="exact-text" dir="auto">{{ row.snapshot.title }}</pre>
+      <h4>نص المسودة الاصطناعي</h4><pre class="exact-text" dir="auto">{{ row.snapshot.answer }}</pre>
+      <h4>ملاحظات المراجع</h4><pre class="exact-text" dir="auto">{{ row.snapshot.reviewer_notes }}</pre>
+      <h4>هويات مراجع اللقطة وترتيبها — تسلسل JSON</h4><pre class="exact-text" dir="auto">{{ row.references }}</pre>
+    </section>{% empty %}<p>لا توجد لقطات مسودة لهذا الاستلام.</p>{% endfor %}
+  </section>
+
+  <section class="panel" id="packet-changes" tabindex="-1" aria-labelledby="packet-changes-heading">
+    <h2 id="packet-changes-heading">فروق اللقطات وملاحظاتها الوصفية</h2>
+    {% if packet.comparison %}<h3>المقارنة المختارة: {{ packet.comparison.before }} ← {{ packet.comparison.after }}</h3><p>اتجاه الحساب من الطرف {{ packet.comparison.before }} إلى الطرف {{ packet.comparison.after }}. المضاف تحته خط والمحذوف يتوسطه خط؛ لا يعني الاختلاف وقوع حدث مراجعة.</p>
+    {% for field in packet.comparison.fields %}<h4>{{ field.label }} · {% if field.changed %}تغيّر{% else %}دون تغيير{% endif %}</h4><div class="comparison-grid"><div><p>السابق</p>{% include 'editorial_workbench/_text.html' with pieces=field.before %}</div><div><p>اللاحق</p>{% include 'editorial_workbench/_text.html' with pieces=field.after %}</div></div>{% endfor %}
+    <h4>هويات المراجع وترتيبها</h4><p>{% if packet.comparison.references_changed %}تغيّرت الهويات أو مواضعها. تُقارن حقول الهوية الستة، ويظهر تغيّر الموضع مستقلًا عن الإضافة والحذف.{% else %}دون تغيير بين طرفي المقارنة.{% endif %}</p>
+    <div class="comparison-grid"><div><h4>مراجع الطرف السابق</h4>{% include 'editorial_workbench/_compared_references.html' with entries=comparison.before_references %}</div><div><h4>مراجع الطرف اللاحق</h4>{% include 'editorial_workbench/_compared_references.html' with entries=comparison.after_references %}</div></div>
+    {% else %}<p>لا توجد مقارنة لأن السجل بلا مسودة.</p>{% endif %}
+    <h3>ملاحظات على اللقطات المتجاورة</h3><ol>{% for entry in packet.snapshot_observations %}<li>المراجعة {{ entry.revision }}{% if entry.previous_revision %} مقارنة بالمراجعة {{ entry.previous_revision }}<ul>{% for field in entry.changed_fields %}<li>تغيّر {{ field }}</li>{% endfor %}<li>المراجع: مضاف {{ entry.references_added }}؛ محذوف {{ entry.references_removed }}؛ تغيّر موضع {{ entry.reference_positions_changed }}.</li>{% for field in entry.changed_metadata %}<li>اختلف الحقل الوصفي <code>{{ field }}</code></li>{% endfor %}{% if entry.observed_state_change %}<li>اختلف وسم الحالة من <code>{{ entry.observed_state_change.0 }}</code> إلى <code>{{ entry.observed_state_change.1 }}</code>؛ لا يثبت انتقال عمل.</li>{% endif %}</ul>{% else %}؛ أول لقطة، لا يُستنتج لها سابق.{% endif %}</li>{% empty %}<li>لا توجد لقطات للمقارنة.</li>{% endfor %}</ol>
+  </section>
+
+  <section class="panel" id="packet-references" tabindex="-1" aria-labelledby="packet-references-heading">
+    <h2 id="packet-references-heading">نتائج التحقق التقني للمراجع</h2>
+    <p>{% if packet.reference_verification.scope == 'latest_fixture_snapshot' %}تخص هويات أحدث لقطة ثابتة: المراجعة {{ packet.reference_verification.revision }}، ولا تخص مؤشرات الاستلام الأصلي أو اللقطة المختارة تاريخيًا.{% else %}تخص مؤشرات الاستلام الأصلي؛ لا تُسقط النتيجة على مراجع اللقطات التاريخية.{% endif %}</p>
+    <p class="notice">{{ packet.reference_verification.limit_ar }}</p>
+    {% if case.batch_id %}{% include reference_panel %}{% else %}{% include 'editorial_workbench/_references.html' %}{% endif %}
+    <details{% if print_mode %} open{% endif %}><summary>النتائج والأسباب والأدلة التقنية كاملة — تسلسل JSON</summary><pre class="exact-text" dir="auto">{{ packet_reference_json }}</pre></details>
+  </section>
+
+  <section class="panel" id="packet-events" tabindex="-1" aria-labelledby="packet-events-heading"><h2 id="packet-events-heading">أحداث المراجعة المحفوظة</h2><p>{{ packet.persisted_review.explanation_ar }}</p><p>الحالة: <code>{{ packet.persisted_review.status }}</code>؛ ربط اللقطات: <code>{{ packet.persisted_review.snapshot_link }}</code>. قيمة الأحداث في JSON هي <code>null</code>؛ لا تدل على عدم وجود أحداث.</p><a class="packet-actions" href="{{ stored_url }}">فتح قارئ التدقيق المحفوظ بحواجزه القائمة</a></section>
+</article>
+{% endblock %}
