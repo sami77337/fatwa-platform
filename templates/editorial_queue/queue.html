@@ -1,0 +1,89 @@
+{% extends 'editorial_queue/base.html' %}
+{% block title %}{% if selected %}{{ selected.case.key }} · {% endif %}قائمة المراجعة التحريرية{% endblock %}
+{% block content %}
+{% if selected %}
+  <p><a href="{{ return_url }}">العودة إلى النتائج مع التصفية</a></p>
+  <h1>السجل <bdi>{{ selected.case.key }}</bdi></h1>
+  <p>المعرّف الخارجي: <bdi>{{ selected.case.external_id|default:'غير متاح أو غير صالح' }}</bdi></p>
+  {% include 'editorial_queue/_indicators.html' with item=selected %}
+  <nav class="record-nav panel" aria-label="التنقل بين السجلات المصفاة">
+    {% if previous_url %}<a href="{{ previous_url }}" rel="prev">السجل السابق</a>{% else %}<span>لا يوجد سجل سابق ضمن التصفية</span>{% endif %}
+    {% if selection.position %}<span>السجل {{ selection.position }} من {{ selection.rows|length }}</span>{% endif %}
+    {% if next_url %}<a href="{{ next_url }}" rel="next">السجل التالي</a>{% else %}<span>لا يوجد سجل تالٍ ضمن التصفية</span>{% endif %}
+  </nav>
+  {% if not selection.position %}<p class="notice" role="status">هذا السجل خارج التصفية الحالية. يمكنك فحصه أو العودة إلى النتائج؛ لا توجد له جيران ضمن هذه التصفية.</p>{% endif %}
+  <nav aria-label="أقسام السجل">
+    <a href="#question">السؤال والملاحظات</a><a href="#provenance">المصدر الدقيق</a><a href="#references">حالة المراجع</a><a href="#revisions">المراجعات</a><a href="#audit">تدقيق اللقطات</a>
+  </nav>
+  <section class="panel" id="question" tabindex="-1" aria-labelledby="question-heading">
+    <h2 id="question-heading">السؤال الأصلي</h2>
+    <pre dir="auto">{{ selected.case.question|default:'لا يوجد سؤال نصي صالح في هذا المدخل.' }}</pre>
+    <h3>الملاحظات غير المحسومة</h3>
+    <ul>{% for issue in selected.case.issues %}<li>{{ issue }}</li>{% empty %}<li>لا توجد ملاحظات تقنية من خدمة الاستلام؛ لا يعني ذلك مراجعة بشرية أو اعتمادًا.</li>{% endfor %}</ul>
+    <p><a href="{{ workbench_url }}">فتح هذا السجل في مساحة العمل التحريرية</a></p>
+  </section>
+  <section class="panel" id="provenance" tabindex="-1" aria-labelledby="provenance-heading">
+    <h2 id="provenance-heading">المصدر الدقيق وهوية العينة</h2>
+    <dl>
+      <dt>هوية العينة</dt><dd>{{ selected.case.fixture_label }}</dd>
+      <dt>مفتاح التنقل الثابت</dt><dd><code>{{ selected.case.key }}</code> — مستقل عن المعرّف الخارجي</dd>
+      <dt>بصمة مدخل العينة SHA-256</dt><dd><code dir="ltr">{{ selected.case.payload_sha256 }}</code></dd>
+      <dt>بصمة نص هذا السجل الخام بترميز UTF-8</dt><dd><code dir="ltr">{{ selected.source_sha256 }}</code></dd>
+      <dt>حدود السجل في المصدر</dt><dd>{% if selected.case.source_start != None %}البداية {{ selected.case.source_start }}؛ النهاية غير المشمولة {{ selected.case.source_end }} ببايتات UTF-8{% else %}تسلسل موضح للاستلام الاصطناعي؛ لا توجد حدود في ملف أصلي{% endif %}</dd>
+      <dt>رابط المقطع الجاهز — نص اصطناعي فقط</dt><dd><pre dir="ltr">{{ selected.case.prepared_clip_url|default:'غير مرفق' }}</pre></dd>
+    </dl>
+    <details><summary>عرض السجل الخام حرفيًا</summary><pre dir="auto">{{ selected.case.raw_source }}</pre></details>
+    <p><a href="{{ workbench_url }}#intake">فحص الاستلام نفسه في مساحة العمل</a></p>
+  </section>
+  <section class="panel" id="references" tabindex="-1" aria-labelledby="references-heading">
+    <h2 id="references-heading">حالة الإحالات المرجعية</h2>
+    <p>{% if selected.case.key == 'history' %}هذه مؤشرات أحدث لقطة ثابتة في سجل المراجعات؛ ليست مؤشرات الاستلام الأصلي.{% else %}هذه مؤشرات الاستلام الأصلي، وليست بديلًا عن مراجع اللقطات التاريخية.{% endif %} المطابقة تقنية مع فهرس اصطناعي ثابت، ولا تعني فحص مصدر مملوك أو تحققًا علميًا.</p>
+    <ol>{% for reference in selected.case.references %}<li class="reference">
+      <h3>الإحالة {{ forloop.counter }} · <code>{{ reference.status }}</code></h3>
+      <p>{{ reference.explanation_ar }}</p>
+      <ul>{% for reason in reference.reason_explanations_ar %}<li>{{ reason }}</li>{% endfor %}</ul>
+      <pre dir="auto">{{ reference.source.text }}</pre>
+      <p><a href="{{ workbench_url }}#references">فحص هوية الإحالة ودليل المطابقة في السجل نفسه</a></p>
+    </li>{% empty %}<li class="empty">لا توجد إحالات مرفقة بهذا المصدر؛ الغياب لا يمثل تحققًا ناجحًا.</li>{% endfor %}</ol>
+  </section>
+  <section class="panel" id="revisions" tabindex="-1" aria-labelledby="revisions-heading">
+    <h2 id="revisions-heading">المراجعات المرتبطة بهذا السجل</h2>
+    <p>ترتيب حسب هوية المراجعة، وقد تتباعد الأرقام. لا تمثل الأرقام أوقاتًا أو ترتيب مستخدمين.</p>
+    <ol>{% for row in history_rows %}<li class="reference">
+      <h3>المراجعة {{ row.entry.revision.number }}</h3>
+      <p>{{ row.entry.action_label }} · <code>{{ row.entry.revision.state }}</code></p>
+      <nav aria-label="روابط المراجعة {{ row.entry.revision.number }}"><a href="{{ row.url }}">فتح لقطة المراجعة {{ row.entry.revision.number }}</a><a href="{{ row.history_url }}">موضعها في تاريخ مساحة العمل</a><a href="#audit-{{ row.entry.revision.number }}">ملاحظة تدقيق هذه اللقطة</a></nav>
+    </li>{% empty %}<li class="empty">لا توجد مسودة أو مراجعات لهذا المدخل. راجع السؤال وملاحظات الاستلام أعلاه.</li>{% endfor %}</ol>
+  </section>
+  <section class="panel" id="audit" tabindex="-1" aria-labelledby="audit-heading">
+    <h2 id="audit-heading">تدقيق وصفي للقطات</h2>
+    <p class="notice">اختلافات لقطات اصطناعية؛ لا تثبت انتقال عمل أو إذنًا أو حدثًا موثقًا. وسم النسبة ليس مستخدمًا مسجلًا.</p>
+    <ol>{% for entry in audit.entries %}<li class="reference" id="audit-{{ entry.revision.number }}" tabindex="-1">
+      <h3>المراجعة {{ entry.revision.number }}</h3>
+      <dl><dt>وسم العملية</dt><dd><code>{{ entry.revision.action }}</code></dd><dt>وسم النسبة</dt><dd>{{ entry.revision.human_editor }}</dd><dt>ملاحظة اللقطة</dt><dd><pre dir="auto">{{ entry.revision.editorial_note|default:'حقل فارغ' }}</pre></dd></dl>
+      {% if entry.previous_revision %}<p>الحقول الوصفية المختلفة عن المراجعة {{ entry.previous_revision.number }}:</p><ul>{% for field in entry.changed_metadata %}<li><code>{{ field }}</code></li>{% empty %}<li>لا اختلاف وصفي.</li>{% endfor %}</ul>{% else %}<p>أول لقطة متاحة؛ لا يُستنتج لها سابق.</p>{% endif %}
+    </li>{% empty %}<li class="empty">لا توجد لقطات متاحة للتدقيق لهذا المدخل.</li>{% endfor %}</ol>
+    {% if audit %}<p><a href="{{ workbench_url }}#audit">عرض تدقيق اللقطات نفسه في مساحة العمل</a></p>{% endif %}
+  </section>
+{% else %}
+  <h1>قائمة الأسئلة والسجلات الاصطناعية</h1>
+  <p>اختر سجلًا لفحص الملاحظات والمراجع ومصدره ثم افتح لقطة بعينها في مساحة العمل. الترتيب ثابت حسب قائمة العينات؛ لا يمثل أولوية أو اعتمادًا.</p>
+  <section class="panel" aria-labelledby="filter-heading">
+    <h2 id="filter-heading">البحث والتصفية</h2>
+    <form method="get" action="{% url 'editorial_queue:index' %}" role="search" aria-label="تصفية قائمة المراجعة">
+      <div><label for="q">السؤال أو المعرّف أو مفتاح السجل</label><input type="search" name="q" id="q" value="{{ filters.q }}" maxlength="80" autocomplete="off"></div>
+      <div><label for="status">حالة المراجعة التقنية</label><select id="status" name="status"><option value="">كل الحالات</option>{% for code,label in statuses %}<option value="{{ code }}"{% if filters.status == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <div><label for="refs">حالة المراجع</label><select id="refs" name="refs"><option value="">كل المراجع</option>{% for code,label in reference_filters %}<option value="{{ code }}"{% if filters.refs == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+      <button type="submit">عرض النتائج</button><a href="{% url 'editorial_queue:index' %}">مسح التصفية</a>
+    </form>
+  </section>
+  <p role="status">السجلات المطابقة: {{ selection.rows|length }} من {{ total }}</p>
+  <ol class="case-list">{% for row in rows %}<li class="panel">
+    <p><bdi>{{ row.item.case.key }}</bdi> · <bdi>{{ row.item.case.external_id|default:'معرّف خارجي غير متاح أو غير صالح' }}</bdi></p>
+    <h2><a href="{{ row.url }}">{{ row.item.case.question|default:'سجل بلا سؤال نصي صالح' }}</a></h2>
+    {% include 'editorial_queue/_indicators.html' with item=row.item %}
+    <p>{{ row.item.case.fixture_label }}</p>
+    {% if row.item.case.issues %}<ul>{% for issue in row.item.case.issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% endif %}
+  </li>{% empty %}<li class="panel empty">لا توجد سجلات تطابق البحث والتصفية. <a href="{% url 'editorial_queue:index' %}">عرض جميع السجلات</a></li>{% endfor %}</ol>
+{% endif %}
+{% endblock %}

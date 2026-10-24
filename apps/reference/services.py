@@ -16,6 +16,10 @@ class HeadingNotFound(LookupError):
     pass
 
 
+class EditionNotFound(HeadingNotFound):
+    pass
+
+
 class CatalogUnavailable(RuntimeError):
     pass
 
@@ -80,7 +84,7 @@ def resolve_edition(edition_id: int | None) -> ReferenceEdition | None:
     if edition_id is not None:
         edition = editions.filter(pk=edition_id).first()
         if edition is None:
-            raise HeadingNotFound("Unknown edition")
+            raise EditionNotFound("Unknown edition")
         return edition
     candidates = list(editions.order_by("pk")[:2])
     if len(candidates) > 1:
@@ -146,6 +150,35 @@ def roots(edition: ReferenceEdition | None, page: Page) -> CatalogPage:
         .order_by("position", "source_order", "source_row_id"),
         page,
     )
+
+
+def root_page(
+    edition: ReferenceEdition | None,
+    page: Page,
+    anchor_id: int | None = None,
+) -> CatalogPage:
+    """Locate a breadcrumb root in its bounded page, preserving source order."""
+    if anchor_id is not None:
+        if page.offset:
+            raise InvalidQuery("Anchor and offset are mutually exclusive")
+        anchor = node(edition, anchor_id)
+        if anchor.edition_id != edition.pk or anchor.parent_id is not None or anchor.depth != 1:
+            raise HeadingNotFound("Anchor is not a root in this edition")
+        preceding = (
+            ReferenceHeading.objects.filter(edition=edition, parent__isnull=True)
+            .filter(
+                Q(position__lt=anchor.position)
+                | Q(position=anchor.position, source_order__lt=anchor.source_order)
+                | Q(
+                    position=anchor.position,
+                    source_order=anchor.source_order,
+                    source_row_id__lt=anchor.source_row_id,
+                )
+            )
+            .count()
+        )
+        page = Page(page.limit, preceding // page.limit * page.limit)
+    return roots(edition, page)
 
 
 def node(edition: ReferenceEdition | None, ident: int) -> ReferenceHeading:

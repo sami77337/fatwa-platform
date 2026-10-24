@@ -57,7 +57,7 @@ class IntakeTests(unittest.TestCase):
         rows[1]["question"] = "  "
         _, findings = normalize(rows)
         self.assertEqual({f["code"] for f in findings}, {"duplicate_id", "required"})
-        self.assertEqual({f["row"] for f in findings}, {2})
+        self.assertEqual({f["row"] for f in findings}, {1, 2})
 
     def test_missing_media_review(self):
         row = record()
