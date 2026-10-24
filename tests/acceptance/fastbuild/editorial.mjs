@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
 
 export const base = "/dev/editorial-workbench";
+// Nine original samples plus eleven prepared rows; malformed input adds no row.
+const worklistCount = 20;
 export function editorialCases(h) {
   const {navigate, evaluate: e, wait, key, focus, activate, type, select, viewport, noOverflow} = h;
   return [
-    ["Arabic RTL worklist exposes nine synthetic cases and development limits", async () => {
+    ["Arabic RTL worklist exposes original and prepared synthetic cases and development limits", async () => {
       await navigate(base);
       assert.equal(await e("document.documentElement.lang"), "ar");
       assert.equal(await e("document.documentElement.dir"), "rtl");
-      assert.equal(await e("document.querySelectorAll('.case-card').length"), 9);
+      assert.equal(await e("document.querySelectorAll('.case-card').length"), worklistCount);
       assert.match(await e("document.querySelector('footer').innerText"), /NOT_DEPLOYED.*Gate B NOT_PASSED/);
       assert.deepEqual(await e("[...document.forms].map(f=>f.method)"), ["get"]);
     }],
@@ -31,6 +33,8 @@ export function editorialCases(h) {
       assert.equal(await e("document.activeElement.id"), "status");
       await select("#status", 2);
       await key("Tab", 9);
+      assert.equal(await e("document.activeElement.id"), "batch");
+      await key("Tab", 9);
       assert.equal(await e("document.activeElement.type"), "submit");
       await key("Enter", 13);
       await wait("new URLSearchParams(location.search).get('status')==='review' && document.querySelectorAll('.case-card').length===1");
@@ -40,6 +44,58 @@ export function editorialCases(h) {
       await wait("location.pathname==='/dev/editorial-workbench' && document.querySelector('#q')?.value==='SYN-REVISION'");
       assert.equal(await e("document.querySelector('#status').value"), "review");
       assert.equal(await e("document.querySelectorAll('.case-card').length"), 1);
+    }],
+    ["prepared batches preserve selection, source identity and row-specific history", async () => {
+      await navigate(base);
+      await select("#batch", 1);
+      await key("Tab", 9);
+      assert.equal(await e("document.activeElement.type"), "submit");
+      await key("Enter", 13);
+      await wait("new URLSearchParams(location.search).get('batch')==='synthetic-csv' && document.querySelectorAll('.case-card').length===4");
+      assert.match(await e("document.querySelector('[aria-labelledby=batches-heading]').innerText"), /0e5d1bfe94c5f9abf5652a065b57212fcaa143abd738f95f2b233df5b68410f8/);
+      await activate(".case-card h2 a");
+      await wait("location.pathname.endsWith('/batch-synthetic-csv-1')");
+      assert.equal(await e("document.querySelector('#snapshot strong').textContent"), "1");
+      await activate("[aria-labelledby=batches-heading] nav a");
+      await wait("location.pathname.endsWith('/batch-synthetic-csv-2')");
+      assert.equal(await e("new URLSearchParams(location.search).get('batch')"), "synthetic-csv");
+      assert.equal(await e("document.querySelectorAll('#history li[id], #comparison select').length"), 0);
+      assert.match(await e("document.querySelector('[aria-labelledby=batches-heading]').innerText"), /duplicate_id/);
+      await activate("main>p>a");
+      await wait("document.querySelector('#batch')?.value==='synthetic-csv' && document.querySelectorAll('.case-card').length===4");
+      for (const [batch, count, hash] of [
+        ["synthetic-json",4,"d96eaabe7207a71ccdc1bc0426bf486f8448651ec34bf59e3ae96599b71c5aec"],
+        ["synthetic-jsonl",3,"e8caaf496a756df9a7867f6a8ff9f4b9074d85eb0374f51d5e4c742803456363"],
+        ["synthetic-malformed",0,"d4360bc841807dbc8d40aa57d52210c8b12413a8940b57310a8b3d14d1ca7086"]]) {
+        await navigate(base + "?batch=" + batch);
+        assert.equal(await e("document.querySelectorAll('.case-card').length"), count);
+        assert.ok((await e("document.querySelector('[aria-labelledby=batches-heading]').innerText")).includes(hash));
+      }
+    }],
+    ["review queue opens the same exact revision in the combined workbench", async () => {
+      await navigate("/dev/editorial-queue");
+      assert.equal(await e("document.querySelectorAll('.case-list>li').length"), 9);
+      await type("#q", "SYN-REVISION");
+      await key("Enter", 13);
+      await wait("document.querySelectorAll('.case-list>li').length===1");
+      await activate(".case-list h2 a");
+      await wait("location.pathname==='/dev/editorial-queue/history'");
+      assert.equal(await e("new URLSearchParams(location.search).get('q')"), "SYN-REVISION");
+      await activate('#revisions a[href*="revision=7"]');
+      await wait("location.pathname==='/dev/editorial-workbench/history' && document.querySelector('#snapshot strong')?.textContent==='7'");
+      assert.equal(await e("document.documentElement.dir"), "rtl");
+      await e("history.back()");
+      await wait("location.pathname==='/dev/editorial-queue/history'");
+      await activate("main>p>a");
+      await wait("document.querySelector('#q')?.value==='SYN-REVISION' && document.querySelectorAll('.case-list>li').length===1");
+      for (const width of [320,375]) {
+        await viewport(width);
+        for (const route of ["/dev/editorial-queue/history", base+"?batch=synthetic-csv", base+"/batch-synthetic-csv-1?batch=synthetic-csv"]) {
+          await navigate(route);
+          await noOverflow();
+        }
+      }
+      await viewport(1280);
     }],
     ["native revision selectors resolve sparse IDs and reverse comparison", async () => {
       await navigate(base + "/history");
@@ -84,7 +140,7 @@ export function editorialCases(h) {
       assert.equal(await e("document.querySelectorAll('.case-card').length"), 0);
       assert.match(await e("document.querySelector('.case-list').innerText"), /لا توجد سجلات/);
       await activate(".case-list .empty a");
-      await wait("document.querySelectorAll('.case-card').length===9");
+      await wait(`document.querySelectorAll('.case-card').length===${worklistCount}`);
     }],
     ["invalid record, absent sparse revision and malformed selection recover safely", async () => {
       for (const [route, status] of [["/missing-synthetic",404], ["/history?revision=3",404], ["/history?revision=07",400], ["/history?before=1",400]]) {
@@ -92,7 +148,7 @@ export function editorialCases(h) {
         assert.ok(await e("document.querySelector('[role=alert]').innerText.length>0"));
         assert.equal(await e("document.querySelector('#snapshot')"), null);
         await activate("main .button-link");
-        await wait("document.querySelectorAll('.case-card').length===9");
+        await wait(`document.querySelectorAll('.case-card').length===${worklistCount}`);
       }
     }],
     ["missing draft retains its source and never borrows another case history", async () => {
@@ -102,7 +158,7 @@ export function editorialCases(h) {
       assert.ok(await e("document.querySelector('#intake pre').textContent.length>0"));
       await navigate(base + "/intake-2?revision=1", 400);
       await activate("main .button-link");
-      await wait("document.querySelectorAll('.case-card').length===9");
+      await wait(`document.querySelectorAll('.case-card').length===${worklistCount}`);
     }],
     ["unresolved and technically verified references display their limits", async () => {
       await navigate(base + "/history");

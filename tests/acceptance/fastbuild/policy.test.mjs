@@ -5,9 +5,9 @@ import {allowedRequest, aggregateResult, catalogIdentity} from "./policy.mjs";
 test("read-only interception denies foreign origins, media, writes and unknown routes", () => {
   const origin = "http://127.0.0.1:8123";
   const request = (path, method = "GET") => ({url: origin + path, method});
-  for (const path of ["/dev/editorial-workbench", "/dev/editorial-workbench/history?revision=7", "/fiqh", "/api/v1/fiqh/search?q=x", "/assets/reference/catalog.js"])
+  for (const path of ["/dev/editorial-workbench", "/dev/editorial-workbench/history?revision=7", "/dev/editorial-queue", "/dev/editorial-queue/history", "/dev/editorial-queue/style.css", "/fiqh", "/api/v1/fiqh/search?q=x", "/assets/reference/catalog.js", "/assets/django_htmx/htmx-2.min.js"])
     assert.equal(allowedRequest(request(path), origin), true, path);
-  for (const item of [request("/fiqh", "POST"), request("/dev/editorial-workbench", "PATCH"), request("/admin"), request("/clip.mp4"), {url: "https://example.invalid/", method:"GET"}, {url:"http://127.0.0.1:8124/fiqh",method:"GET"}, {url:"file:///tmp/input",method:"GET"}])
+  for (const item of [request("/fiqh", "POST"), request("/dev/editorial-workbench", "PATCH"), request("/dev/editorial-queue/history", "POST"), request("/dev/editorial-queue/history/approve"), request("/assets/django_htmx/other.js"), request("/admin"), request("/clip.mp4"), {url: "https://example.invalid/", method:"GET"}, {url:"http://127.0.0.1:8124/fiqh",method:"GET"}, {url:"file:///tmp/input",method:"GET"}])
     assert.equal(allowedRequest(item, origin), false, item.url);
 });
 

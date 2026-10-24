@@ -1,8 +1,10 @@
 # Fastbuild real-browser acceptance
 
-QA additions only, based on PR #96's published parent branch
+QA additions originally based on PR #96's published parent branch
 `codex/20261024-fastbuild-editorial` at
-`b1653b20584052f36fba1b59565c7ed57d688215`. No production files change.
+`b1653b20584052f36fba1b59565c7ed57d688215`. FAST2 integration also covers the
+queue from PR #98 and prepared batches from both PR #99 commits. Integration
+adjustments here change acceptance tests only.
 
 The implementation reuses Wave7's protected CDP transport and keyboard helper.
 The default runner serves the actual Django WSGI application on an ephemeral
@@ -41,11 +43,18 @@ including NOT_RUN (read the JSON for the distinction); `run.py --catalog`
 exits 2 when its ownership/configuration preflight denies execution. Unselected scopes are
 explicitly listed; partial execution never becomes acceptance PASS.
 
-Twelve editorial cases cover Arabic RTL, nine source-bound records, keyboard
+Fourteen editorial cases cover Arabic RTL, nine original source-bound records
+plus eleven prepared rows, keyboard
 Tab/Enter/select navigation and visible skip-link focus, filtered return links,
 sparse revision selection, reverse/same comparison, snapshot focus/back/forward,
 source whitespace, empty/malformed/missing records, missing drafts, reference
 status limits, expanded source/diff details and actual 320/375 CSS-pixel layouts.
+The batch case checks all four original input hashes, exact row navigation,
+rejected duplicate isolation and preserved selection. The queue case opens
+revision 7 of the same record in the workbench and returns to filtered results.
+Queue and batch views also receive real 320/375 CSS-pixel checks. The catalog
+allowlist includes only the exact pinned `django_htmx/htmx-2.min.js` asset in
+that asset directory; foreign requests, other htmx paths and writes stay denied.
 The network gate intercepts before navigation and blocks foreign origins, writes,
 media and routes outside the QA allowlist. Unexpected HTTP errors, console errors
 and runtime exceptions fail the run. Expected recovery responses assert HTTP
@@ -81,7 +90,8 @@ Synthetic fixture identities:
   namespace `wave7-synthetic-toc`, edition `wave7-synthetic-edition-v1`, archive
   hash `b` repeated 64 and input hash `a` repeated 64 (asserted synthetic labels).
 
-Local validation on Windows/Chrome: 12 editorial browser cases PASS; catalog's
+Original PR #100 validation on Windows/Chrome, before FAST2 integration:
+12 editorial browser cases PASS; catalog's
 five cases NOT_RUN (`E6_ACCEPTANCE_OPT_IN_REQUIRED`, no owned E6 PostgreSQL
 configuration supplied). Also: 27 Python regressions (25 affected workbench plus
 two runner failure paths) and 11 Node policy/transport/keyboard tests PASS;

@@ -5,9 +5,11 @@ export function allowedRequest(request, origin) {
     if (!permittedRequest(request, origin)) return false;
     const {pathname} = new URL(request.url);
     return /^\/dev\/editorial-workbench(?:\/[a-zA-Z0-9_.-]+)?$/.test(pathname)
+      || /^\/dev\/editorial-queue(?:\/[a-zA-Z0-9_.-]+)?$/.test(pathname)
       || /^\/fiqh(?:\/nodes\/\d+(?:\/children)?)?$/.test(pathname)
       || /^\/api\/v1\/fiqh\/(?:books|roots|search|nodes\/\d+(?:\/children)?)$/.test(pathname)
       || /^\/assets\/reference\/[a-zA-Z0-9_.-]+$/.test(pathname)
+      || pathname === "/assets/django_htmx/htmx-2.min.js"
       || pathname === "/favicon.ico";
   } catch { return false; }
 }
