@@ -14,7 +14,7 @@ from apps.editorial_workbench.services import WorkbenchDataError
 from apps.fatwa_drafts.revision_audit import build_revision_audit
 from apps.revision_core.revision_history import HistoryDataError
 
-from .services import REFERENCE_FILTERS, STATUSES, QueueRow, build_queue, select_queue
+from .services import REFERENCE_FILTERS, STATUSES, QueueRow, build_queue_catalog, select_queue
 
 
 def _url(name: str, filters: dict[str, str], key: str | None = None) -> str:
@@ -31,17 +31,24 @@ def _error(request: HttpRequest, message: str, status: int) -> HttpResponse:
 def _filters(request: HttpRequest) -> dict[str, str]:
     query = request.GET
     q, status, refs = query.get("q", ""), query.get("status", ""), query.get("refs", "")
+    batch = query.get("batch", "")
     if (
-        set(query) - {"q", "status", "refs"}
+        set(query) - {"q", "status", "refs", "batch"}
         or any(len(query.getlist(key)) != 1 for key in query)
         or len(q) > 80
         or any(ord(char) < 32 or ord(char) == 127 for char in q)
         or status not in {"", *(code for code, _ in STATUSES)}
         or refs not in {"", *(code for code, _ in REFERENCE_FILTERS)}
+        or len(batch) > 100
+        or any(not (char.isascii() and (char.isalnum() or char == "-")) for char in batch)
     ):
         raise ValueError("invalid_filter")
     q.encode("utf-8", errors="strict")
-    return {key: value for key, value in (("q", q), ("status", status), ("refs", refs)) if value}
+    return {
+        key: value
+        for key, value in (("q", q), ("status", status), ("refs", refs), ("batch", batch))
+        if value
+    }
 
 
 @require_safe
@@ -54,7 +61,12 @@ def queue(request: HttpRequest, key: str | None = None) -> HttpResponse:
             request, "التصفية غير صالحة. اختر من الحالات المتاحة واستخدم بحثًا حتى ٨٠ حرفًا.", 400
         )
     try:
-        rows = build_queue()
+        catalog = build_queue_catalog()
+        rows = catalog.rows
+        if filters.get("batch") and filters["batch"] not in {
+            batch.batch_id for batch in catalog.batches
+        }:
+            return _error(request, "الدفعة غير معروفة. اختر دفعة اصطناعية من القائمة.", 400)
         selection = select_queue(rows, key=key, **filters)
         if key is not None and selection.selected is None:
             return _error(
@@ -85,6 +97,26 @@ def queue(request: HttpRequest, key: str | None = None) -> HttpResponse:
             "selected": selected,
             "rows": tuple({"item": row, "url": detail_url(row)} for row in selection.rows),
             "total": len(rows),
+            "batches": catalog.batches,
+            "batch_rows": tuple(
+                {
+                    "summary": batch,
+                    "url": _url("editorial_queue:index", {"batch": batch.batch_id}),
+                }
+                for batch in catalog.batches
+            ),
+            "selected_batch": next(
+                (batch for batch in catalog.batches if batch.batch_id == filters.get("batch")),
+                None,
+            ),
+            "record_batch": next(
+                (
+                    batch
+                    for batch in catalog.batches
+                    if selected and batch.batch_id == selected.batch_id
+                ),
+                None,
+            ),
             "filters": filters,
             "statuses": STATUSES,
             "reference_filters": REFERENCE_FILTERS,

@@ -7,4 +7,5 @@
     <span>غير محسومة أو متعارضة: {{ item.unresolved_count }}</span>
   {% endif %}
   <span>لقطات المسودة: {{ item.history|length }}</span>
+  {% if not item.case.record %}<span>لا توجد مسودة</span>{% endif %}
 </p>

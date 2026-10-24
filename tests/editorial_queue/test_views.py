@@ -11,7 +11,7 @@ from django.test import SimpleTestCase, override_settings
 from django.urls import reverse
 
 from apps.editorial_queue import views
-from apps.editorial_queue.services import build_queue
+from apps.editorial_queue.services import QueueCatalog, build_queue
 from apps.editorial_workbench.services import WorkbenchDataError
 from apps.revision_core.revision_history import HistoryDataError
 
@@ -39,8 +39,8 @@ class QueueViewsTests(SimpleTestCase):
     def test_list_is_rtl_connected_and_has_multiple_questions_and_status_indicators(self):
         response = self.get(reverse("editorial_queue:index"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["total"], 9)
-        self.assertEqual(len(response.context["rows"]), 9)
+        self.assertEqual(response.context["total"], 20)
+        self.assertEqual(len(response.context["rows"]), 20)
         for row in response.context["rows"]:
             self.assertContains(response, row["url"])
         for marker in (
@@ -151,14 +151,14 @@ class QueueViewsTests(SimpleTestCase):
         self.assertEqual(response.context["rows"], ())
         self.assertContains(response, "لا توجد سجلات تطابق البحث والتصفية")
         self.assertContains(response, f'href="{url}"')
-        with patch.object(views, "build_queue", return_value=()):
+        with patch.object(views, "build_queue_catalog", return_value=QueueCatalog((), ())):
             response = self.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["total"], 0)
         self.assertContains(response, "عرض جميع السجلات")
 
     def test_invalid_queries_fail_before_fixture_loading_on_list_and_detail(self):
-        with patch.object(views, "build_queue") as build:
+        with patch.object(views, "build_queue_catalog") as build:
             for base in (
                 reverse("editorial_queue:index"),
                 reverse("editorial_queue:detail", args=["history"]),
@@ -186,7 +186,7 @@ class QueueViewsTests(SimpleTestCase):
 
     @override_settings(DATA_UPLOAD_MAX_NUMBER_FIELDS=2)
     def test_too_many_query_fields_has_helpful_error_without_loading(self):
-        with patch.object(views, "build_queue") as build:
+        with patch.object(views, "build_queue_catalog") as build:
             response = self.get(
                 reverse("editorial_queue:index") + "?q=a&status=ready&refs=verified"
             )
@@ -198,7 +198,7 @@ class QueueViewsTests(SimpleTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, "السجل الاصطناعي غير موجود", status_code=404)
         for error in (WorkbenchDataError("internal-details"), HistoryDataError("internal-details")):
-            with patch.object(views, "build_queue", side_effect=error):
+            with patch.object(views, "build_queue_catalog", side_effect=error):
                 response = self.get(reverse("editorial_queue:index"))
             self.assertEqual(response.status_code, 503)
             self.assertContains(response, "تعذر تحميل قائمة العينات بأمان", status_code=503)
@@ -210,7 +210,7 @@ class QueueViewsTests(SimpleTestCase):
             reverse("editorial_queue:detail", args=["history"]),
             reverse("editorial_queue:style"),
         ]
-        with patch.object(views, "build_queue") as build:
+        with patch.object(views, "build_queue_catalog") as build:
             for url in urls:
                 for host, peer in (
                     ("remote.invalid", "127.0.0.1"),
@@ -258,7 +258,9 @@ class QueueViewsTests(SimpleTestCase):
         case = replace(
             row.case, question='<script>alert("x")</script>', raw_source="<svg onload=alert(1)>"
         )
-        with patch.object(views, "build_queue", return_value=(replace(row, case=case),)):
+        with patch.object(
+            views, "build_queue_catalog", return_value=QueueCatalog((replace(row, case=case),), ())
+        ):
             response = self.get(reverse("editorial_queue:detail", args=["history"]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "&lt;script&gt;")
