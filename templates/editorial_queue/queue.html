@@ -4,6 +4,7 @@
 {% if selected %}
   <p><a href="{{ return_url }}">العودة إلى النتائج مع التصفية</a></p>
   <h1>السجل <bdi>{{ selected.case.key }}</bdi></h1>
+  <p>الدفعة: {{ record_batch.label }} · <bdi>{{ selected.batch_id }}</bdi>{% if selected.case.row_ordinal %} · الصف {{ selected.case.row_ordinal }}{% endif %}</p>
   <p>المعرّف الخارجي: <bdi>{{ selected.case.external_id|default:'غير متاح أو غير صالح' }}</bdi></p>
   {% include 'editorial_queue/_indicators.html' with item=selected %}
   <nav class="record-nav panel" aria-label="التنقل بين السجلات المصفاة">
@@ -26,13 +27,16 @@
     <h2 id="provenance-heading">المصدر الدقيق وهوية العينة</h2>
     <dl>
       <dt>هوية العينة</dt><dd>{{ selected.case.fixture_label }}</dd>
+      <dt>هوية الدفعة</dt><dd><code>{{ selected.batch_id }}</code>{% if record_batch.source %} · صيغة <code>{{ record_batch.source.input_format }}</code>{% endif %}</dd>
+      {% if selected.case.intake_state %}<dt>نتيجة الاستلام</dt><dd><code>{{ selected.case.intake_state }}</code> · {{ selected.case.status_label }}</dd>{% endif %}
       <dt>مفتاح التنقل الثابت</dt><dd><code>{{ selected.case.key }}</code> — مستقل عن المعرّف الخارجي</dd>
       <dt>بصمة مدخل العينة SHA-256</dt><dd><code dir="ltr">{{ selected.case.payload_sha256 }}</code></dd>
-      <dt>بصمة نص هذا السجل الخام بترميز UTF-8</dt><dd><code dir="ltr">{{ selected.source_sha256 }}</code></dd>
+      <dt>{% if record_batch.source %}بصمة تسلسل الحقول المحللة بترميز UTF-8{% else %}بصمة نص هذا السجل الخام بترميز UTF-8{% endif %}</dt><dd><code dir="ltr">{{ selected.source_sha256 }}</code></dd>
       <dt>حدود السجل في المصدر</dt><dd>{% if selected.case.source_start != None %}البداية {{ selected.case.source_start }}؛ النهاية غير المشمولة {{ selected.case.source_end }} ببايتات UTF-8{% else %}تسلسل موضح للاستلام الاصطناعي؛ لا توجد حدود في ملف أصلي{% endif %}</dd>
       <dt>رابط المقطع الجاهز — نص اصطناعي فقط</dt><dd><pre dir="ltr">{{ selected.case.prepared_clip_url|default:'غير مرفق' }}</pre></dd>
     </dl>
-    <details><summary>عرض السجل الخام حرفيًا</summary><pre dir="auto">{{ selected.case.raw_source }}</pre></details>
+    <details><summary>{% if record_batch.source %}عرض تسلسل الحقول المحللة؛ ليس شريحة بايتات من الملف{% else %}عرض السجل الخام حرفيًا{% endif %}</summary><pre dir="auto">{{ selected.case.raw_source }}</pre></details>
+    {% if selected.case.csv_extra_cells %}<h3>خلايا CSV الزائدة المحفوظة</h3><ol>{% for cell in selected.case.csv_extra_cells %}<li><pre dir="auto">{{ cell }}</pre></li>{% endfor %}</ol>{% endif %}
     <p><a href="{{ workbench_url }}#intake">فحص الاستلام نفسه في مساحة العمل</a></p>
   </section>
   <section class="panel" id="references" tabindex="-1" aria-labelledby="references-heading">
@@ -68,9 +72,21 @@
 {% else %}
   <h1>قائمة الأسئلة والسجلات الاصطناعية</h1>
   <p>اختر سجلًا لفحص الملاحظات والمراجع ومصدره ثم افتح لقطة بعينها في مساحة العمل. الترتيب ثابت حسب قائمة العينات؛ لا يمثل أولوية أو اعتمادًا.</p>
+  <section class="panel" aria-labelledby="batches-heading">
+    <h2 id="batches-heading">الدفعات ومجاميع الحالات</h2>
+    <p>أعداد كل دفعة قبل البحث والتصفية؛ عدد النتائج المطابقة معروض أدناه. الحالات تقنية ولا تعني قبولًا علميًا.</p>
+    <ul class="batch-list">{% for row in batch_rows %}<li>
+      <h3><a href="{{ row.url }}"{% if filters.batch == row.summary.batch_id %} aria-current="true"{% endif %}>{{ row.summary.label }}</a></h3>
+      <p>الإجمالي: {{ row.summary.total }}{% if row.summary.source %} · صالح للاستلام: {{ row.summary.source.valid_count }} · مرفوض: {{ row.summary.source.rejected_count }} · معلّق: {{ row.summary.source.pending_count }}{% else %} · جاهز: {{ row.summary.ready }} · يحتاج مراجعة: {{ row.summary.review }} · متعذر الاستلام: {{ row.summary.blocked }}{% endif %}</p>
+      {% if row.summary.source %}<p>صيغة <code>{{ row.summary.source.input_format }}</code></p>
+      <details><summary>هوية ملف الدفعة الاصطناعية</summary><code dir="ltr">{{ row.summary.source.input_sha256 }}</code></details>{% endif %}
+      {% if row.summary.source.error_code %}<p class="notice"><code>{{ row.summary.source.error_code }}</code> · {{ row.summary.source.recovery }}</p>{% endif %}
+    </li>{% endfor %}</ul>
+  </section>
   <section class="panel" aria-labelledby="filter-heading">
     <h2 id="filter-heading">البحث والتصفية</h2>
     <form method="get" action="{% url 'editorial_queue:index' %}" role="search" aria-label="تصفية قائمة المراجعة">
+      <div><label for="batch">الدفعة الاصطناعية</label><select id="batch" name="batch"><option value="">كل الدفعات والمصادر</option>{% for batch in batches %}<option value="{{ batch.batch_id }}"{% if filters.batch == batch.batch_id %} selected{% endif %}>{{ batch.label }} ({{ batch.total }})</option>{% endfor %}</select></div>
       <div><label for="q">السؤال أو المعرّف أو مفتاح السجل</label><input type="search" name="q" id="q" value="{{ filters.q }}" maxlength="80" autocomplete="off"></div>
       <div><label for="status">حالة المراجعة التقنية</label><select id="status" name="status"><option value="">كل الحالات</option>{% for code,label in statuses %}<option value="{{ code }}"{% if filters.status == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
       <div><label for="refs">حالة المراجع</label><select id="refs" name="refs"><option value="">كل المراجع</option>{% for code,label in reference_filters %}<option value="{{ code }}"{% if filters.refs == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
@@ -78,7 +94,9 @@
     </form>
   </section>
   <p role="status">السجلات المطابقة: {{ selection.rows|length }} من {{ total }}</p>
+  {% if selected_batch %}<p>الدفعة المحددة: {{ selected_batch.label }} · المطابق: {{ selection.rows|length }} من {{ selected_batch.total }} داخل الدفعة.</p>{% endif %}
   <ol class="case-list">{% for row in rows %}<li class="panel">
+    <p>الدفعة: <bdi>{{ row.item.batch_id }}</bdi>{% if row.item.case.row_ordinal %} · الصف {{ row.item.case.row_ordinal }}{% endif %}</p>
     <p><bdi>{{ row.item.case.key }}</bdi> · <bdi>{{ row.item.case.external_id|default:'معرّف خارجي غير متاح أو غير صالح' }}</bdi></p>
     <h2><a href="{{ row.url }}">{{ row.item.case.question|default:'سجل بلا سؤال نصي صالح' }}</a></h2>
     {% include 'editorial_queue/_indicators.html' with item=row.item %}

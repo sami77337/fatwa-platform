@@ -6,17 +6,45 @@
 للبيئة المحلية والإنتاج وطرق HTTP مفعّلة. يمكن استخدام `runserver` المعتاد
 مع PostgreSQL مهيأ. لا يحتاج عرض هذه العينات إلى قاعدة بيانات.
 
-تُعاد قراءة عينات `apps.editorial_workbench.services.build_cases()` التسع كما هي:
-سجل المراجعات الثابت وثمانية صفوف من Wave7. لا توجد عينات خاصة جديدة أو
-مسار يستقبل حمولة أو اسم ملف. الخدمات الأصلية مسؤولة عن الاستلام والتحضير
-وتشخيص الإحالات؛ يعاد استخدام `build_history` و`build_revision_audit` للقطات.
+تُقرأ `apps.editorial_workbench.services.build_cases()` التسع كما هي، ثم
+`build_prepared_workbench()` للصفوف الأحد عشر المحضّرة في FAST2، بالترتيب
+الأصلي للخدمتين. لا توجد عينات جديدة أو مسار يستقبل حمولة أو اسم ملف.
+الخدمات الأصلية مسؤولة عن الاستلام والتحضير وتشخيص الإحالات؛ يعاد استخدام
+`build_history` و`build_revision_audit` للقطات دون تغيير ملفاتها.
 
-تعمل تصفية الحالة والمراجع والبحث معًا؛ يبقى ترتيب القائمة ثابتًا حسب خدمة
+قرار التنفيذ: تركيب فهرس قراءة واحد يحوي السجلات وملخصات الدفعات، مع إبقاء
+`build_queue()` واجهة الصفوف المتوافقة. لا يُعاد تنفيذ التحضير ولا يُربط أي
+سجل بمعرّفه الخارجي. مفتاح `original` يجمع العينات الأصلية في التصفية فقط؛
+تبقى مفاتيح السجلات وروابط منضدة العمل دون تغيير. يُرفض تصادم مفاتيح
+السجلات بين المصدرين أو هويات الدفعات بدل اختيار سجل بديل.
+
+خطة التحقق المنفذة: اختبارات فاشلة لغياب الأحد عشر سجلًا والتصفية والروابط،
+ثم تركيب الخدمة وإضافة عرض الدفعات، ثم اختبارات الطابور ومنضدة العمل
+المتأثرة ومراجعة مستقلة. نطاق الكتابة محصور في مجلدات الطابور الثلاثة.
+
+تعمل تصفية الدفعة والحالة والمراجع والبحث معًا؛ يبقى ترتيب القائمة ثابتًا حسب خدمة
 العينات. يحدد مفتاح السجل الرابط، مستقلًا عن المعرّف الخارجي الذي قد يتكرر
 أو يغيب. السابق والتالي هما أقرب سجلين مطابقين دون التفاف عند الحدود.
 يظل الرابط المباشر لسجل خارج التصفية قابلًا للفحص مع رسالة واضحة ودون جيران.
 تحفظ روابط القائمة والتفاصيل التصفية؛ تفتح روابط مساحة العمل السجل ذاته
 وهوية المراجعة الفعلية، بما فيها الأرقام غير المتتالية.
+
+الأعداد الإجمالية ثابتة قبل البحث، ويظهر عدد المطابقات منفصلًا. صفوف الدفعة
+المتعذّر تحليلها صفر، مع إظهار رمز الخطأ وتعليمات الاستعادة من الخدمة.
+روابط ملخص الدفعات تبدأ تصفية تلك الدفعة؛ أما روابط التفاصيل والعودة والسابق
+والتالي فتحفظ جميع المرشحات. لا تُمرّر مرشحات الطابور إلى منضدة العمل.
+
+| المصدر | الصفوف | جاهز | يحتاج مراجعة | متعذر الاستلام |
+| --- | ---: | ---: | ---: | ---: |
+| original | 9 | 1 | 2 | 6 |
+| synthetic-csv | 4 | 1 | 1 | 2 |
+| synthetic-json | 4 | 0 | 1 | 3 |
+| synthetic-jsonl | 3 | 2 | 0 | 1 |
+| synthetic-malformed | 0 | 0 | 0 | 0 |
+
+حالة الاستلام ووجود المسودة وحالة المراجع مؤشرات مستقلة: بعض المعلّق بلا
+مسودة، وبعضه بمسودة وإحالة غير محسومة؛ والمرفوض قد يحمل إحالة مطابقة
+تقنيًا. يظهر تكرار `SYN-SHARED` في CSV وJSON كسجلين مستقلين بلا مسودة.
 
 تُعرض بصمة الحمولة وبصمة نص الصف الخام وحدود UTF-8 دون تعديل المصدر.
 سجل `history` يعرض تسلسل الاستلام الاصطناعي، وليس شريحة ملف أصلي؛ مؤشرات
@@ -24,13 +52,16 @@
 عدم وجود مراجع يختلف عن المطابقة؛ كل نتيجة غير `verified` مؤشر غير محسوم.
 المطابقة تقنية مع الفهرس الاصطناعي فقط؛ ليست توثيقًا علميًا أو قبول مصدر مالك.
 تدقيق اللقطات وصفي وليس سجل أحداث موثقًا، ووسم النسبة ليس هوية مستخدم.
+في الصفوف المحضّرة، `raw_source` تسلسل حقول محللة وليس شريحة من الملف؛
+تُعرض خلايا CSV الزائدة منفصلة، ولا تُختلق حدود بايتات. تُحفظ التشكيلات
+والمسافات وCRLF والحروف المركبة في السؤال والعنوان البديل حرفيًا.
 
 التحقق المركّز:
 
 ```powershell
-python manage.py test tests.editorial_queue.test_services tests.editorial_queue.test_views tests.editorial_workbench.test_services tests.editorial_workbench.test_views tests.editorial_workbench.test_persisted --settings=config.settings.test
+python manage.py test tests.editorial_queue.test_services tests.editorial_queue.test_views tests.editorial_queue.test_cross_batch tests.editorial_workbench.test_services tests.editorial_workbench.test_views tests.editorial_workbench.test_batches tests.editorial_workbench.test_persisted --settings=config.settings.test --noinput
 python manage.py check --settings=config.settings.development
-python -m ruff check apps/editorial_queue tests/editorial_queue config/urls.py
+python -m ruff check apps/editorial_queue tests/editorial_queue
 python -m ruff format --check apps/editorial_queue tests/editorial_queue
 git diff --check
 ```
@@ -41,12 +72,34 @@ git diff --check
   `cfb2bebf24e9f11bab46787e8b5926e93627b616ce85f6457c6d3715a236c0cb`.
 - `serialize_intake((REVISION_HISTORY_RECORD.intake,))`:
   `75fc9bc0ebedbac1ae3b9cbe28cfc308ab25f5eeb6813aeb50156c27be655bb0`.
+- `batch_fixtures.synthetic_inputs()`، SHA-256 لبايتات كل ملف:
+  - `synthetic-csv`: `0e5d1bfe94c5f9abf5652a065b57212fcaa143abd738f95f2b233df5b68410f8`.
+  - `synthetic-json`: `d96eaabe7207a71ccdc1bc0426bf486f8448651ec34bf59e3ae96599b71c5aec`.
+  - `synthetic-jsonl`: `e8caaf496a756df9a7867f6a8ff9f4b9074d85eb0374f51d5e4c742803456363`.
+  - `synthetic-malformed`: `d4360bc841807dbc8d40aa57d52210c8b12413a8940b57310a8b3d14d1ca7086`.
+
+قاعدة FAST3 المتحقق منها: `codex/20261024-fast2-integration` عند
+`e64ebc0d219f975eb7be96042a4e8761b1a0e6e9`، وهي parent الـ Draft PR.
+أمر Django باستخدام أسماء الحزم فقط (`test tests.editorial_queue
+tests.editorial_workbench`) تعذّر قبل تشغيل الاختبارات بسبب namespace
+package و`module.__file__ = None` على Python 3.13؛ استخدام أسماء الوحدات
+الصريحة في الأمر أعلاه يشغّل المجموعة المطلوبة.
+
+نتيجة التحقق في 2026-10-24: نجح 70 اختبارًا مركّزًا، وفحص Django وRuff
+والتنسيق و`git diff --check`. المراجعة النهائية المستقلة لم تجد ملاحظات
+تستلزم إصلاحًا. فحص Chrome المحلي أكّد تصفية JSON + review + unresolved
++ `SYN-JSON-2` إلى نتيجة واحدة، ثم فتح المراجعة 1 للسجل نفسه في منضدة
+العمل. نجحت العودة والانتقال لدفعة `synthetic-malformed` بمفتاح Enter؛
+ظهرت صفر نتائج وتعليمات الاستعادة. في عرض 390 بكسل كان عرض المحتوى
+القابل للتمرير مساويًا لعرض الصفحة الداخلي (375 بكسل بسبب شريط التمرير)،
+دون تجاوز أفقي في التفاصيل والقائمة المصفاة وحالة الدفعة المتعذّرة.
+هذا فحص واجهة مركّز وليس قبولًا شاملًا لإتاحة الوصول.
 
 لا نماذج أو ترحيلات أو تغييرات إعدادات أو صلاحيات جديدة. لا عمليات كتابة
 أو انتقالات أو نشر أو اعتماد علمي. لا وصول إلى سجلات محفوظة أو تشغيل قارئها.
 اختبارات `SimpleTestCase` تمنع قاعدة البيانات؛ لا تثبت قبول PostgreSQL أو
 مصادر ZIP الأصلية، ولم يُجر هذا القبول ضمن المهمة.
-التغيير المشترك الوحيد هو URL include واحد؛ التراجع بإزالته وملفات هذه الميزة.
+لا تغيير لملفات مشتركة في FAST3؛ التراجع بعكس commit هذه الميزة فقط.
 
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; SCOPE_DEVIATION_HOLD;
 NOT_DEPLOYED / GATES_HOLD. Draft PR للمراجعة البشرية فقط.
