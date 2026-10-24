@@ -5,9 +5,10 @@ import csv
 import hashlib
 import io
 import json
-from pathlib import Path
 import sys
 import unicodedata
+from collections import Counter
+from pathlib import Path
 from urllib.parse import urlsplit
 
 SCHEMA = "fatwa.prepared-intake.v1"
@@ -16,6 +17,22 @@ MAX_ROWS = 1000
 MAX_REFERENCES = 100
 FIELDS = {"external_id", "question", "title", "prepared_clip_url", "staff_notes", "reference_links"}
 LINK_FIELDS = {"source_id", "heading_id"}
+TEXT_LIMITS = {"external_id": 100, "question": 20000, "title": 20000,
+               "prepared_clip_url": 2048, "staff_notes": 20000}
+
+
+class CSVRow(dict):
+    """Keep malformed CSV cells intact and diagnostics outside submitted fields."""
+
+    def __init__(self, row):
+        super().__init__(row)
+        self.missing_cells = tuple(field for field, value in row.items()
+                                   if field is not None and value is None)
+
+
+def csv_rows(reader):
+    for row in reader:
+        yield CSVRow(row) if None in row or None in row.values() else row
 
 
 def encoded(value):
@@ -64,7 +81,7 @@ def load(raw, suffix):
         headers = reader.fieldnames
         if not headers or len(headers) != len(set(headers)) or set(headers) - FIELDS:
             raise ValueError("missing, duplicate or unknown CSV columns")
-        return bounded_rows(reader)
+        return bounded_rows(csv_rows(reader))
     if suffix == ".jsonl":
         # Only physical CR/LF delimit records. Unicode separators inside JSON
         # strings are original question text, not JSONL record boundaries.
@@ -96,7 +113,11 @@ def valid_url(value):
 def normalize(rows):
     """Validate C1 rows; canonical original strings are never trimmed or searched."""
     rows = bounded_rows(rows)
-    items, findings, seen = [], [], set()
+    items, findings = [], []
+    # Count original, typed identities before accepting any row. A later invalid
+    # row cannot leave its earlier duplicate eligible for downstream intake.
+    identities = Counter(row["external_id"] for row in rows
+                         if isinstance(row, dict) and isinstance(row.get("external_id"), str))
 
     def finding(row, field, code, severity="error"):
         findings.append(dict(row=row, field=field, code=code, severity=severity))
@@ -108,35 +129,44 @@ def normalize(rows):
             continue
         if set(row) - FIELDS:
             finding(number, "", "unknown_columns_or_extra_cells")
+        if isinstance(row, CSVRow):
+            for field in row.missing_cells:
+                finding(number, field, "csv_missing_cell")
+            if None in row:
+                finding(number, "", "csv_extra_cells")
         item = {}
-        for field in ("external_id", "question", "prepared_clip_url", "staff_notes"):
+        for field in ("external_id", "question", "prepared_clip_url", "staff_notes", "title"):
+            if field == "title" and field not in row:
+                continue
             value = row.get(field, "")
             if field == "question" and "question" not in row:
                 value = row.get("title", "")
             if not isinstance(value, str):
                 finding(number, field, "must_be_string")
                 value = ""
+            if len(value) > TEXT_LIMITS[field]:
+                finding(number, field, f"too_long_max_{TEXT_LIMITS[field]}")
             # Prepared text keeps tabs/newlines; IDs follow D3's strict control rule.
             invalid_id_control = field == "external_id" and any(
                 ord(c) < 32 or ord(c) == 127 for c in value)
             if invalid_id_control or any(
                     unicodedata.category(c) == "Cs" or (ord(c) < 32 and c not in "\n\r\t") for c in value):
                 finding(number, field, "invalid_unicode_or_control")
-            item[field] = value
+            if field != "title":
+                item[field] = value
             if field == "external_id" and value != value.strip():
                 finding(number, field, "id_whitespace_not_allowed")
         if "title" in row:
             if not isinstance(row["title"], str) or not row["title"].strip():
                 finding(number, "title", "blank_or_invalid_title")
-            elif "question" in row and row["title"].strip() != item["question"].strip():
+            elif "question" in row and row["title"] != row["question"]:
                 finding(number, "title", "ambiguous_title_question")
         for field in ("external_id", "question"):
             if not item[field].strip():
                 finding(number, field, "required")
-        identity = item["external_id"]
-        if identity in seen:
+        identity = row.get("external_id")
+        if isinstance(identity, str) and identities[identity] > 1:
             finding(number, "external_id", "duplicate_id")
-        seen.add(identity)
         url = item["prepared_clip_url"]
         if not url:
             finding(number, "prepared_clip_url", "media_link_missing_review_required", "review")
