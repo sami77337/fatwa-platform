@@ -21,6 +21,7 @@ from apps.revision_core.revision_history import (
     select_revisions,
 )
 
+from .packets import build_packet
 from .services import WorkbenchDataError, build_cases, build_prepared_workbench
 
 STATUSES = (("ready", "جاهز للعرض التحريري"), ("review", "يحتاج مراجعة"), ("blocked", "مدخل محجوب"))
@@ -43,7 +44,9 @@ def failure(request: HttpRequest, message: str, status: int) -> HttpResponse:
 
 def _query(request: HttpRequest, *, detail: bool) -> tuple[str, str, str]:
     query = request.GET
-    allowed = {"q", "status", "batch"} | ({"revision", "before", "after"} if detail else set())
+    allowed = {"q", "status", "batch"} | (
+        {"revision", "before", "after", "packet"} if detail else set()
+    )
     q, status = query.get("q", ""), query.get("status", "")
     batch = query.get("batch", "")
     if (
@@ -55,6 +58,7 @@ def _query(request: HttpRequest, *, detail: bool) -> tuple[str, str, str]:
         or len(batch) > 100
         or any(not (c.isascii() and (c.isalnum() or c == "-")) for c in batch)
         or ("before" in query) != ("after" in query)
+        or ("packet" in query and query["packet"] not in {"html", "json", "print"})
     ):
         raise ValueError("invalid_query")
     q.encode("utf-8", errors="strict")
@@ -210,9 +214,77 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
         },
         "stored_url": reverse("editorial_workbench:stored"),
     }
+    if case is not None:
+        selection = (
+            {"revision": selected.number, "before": before.number, "after": after.number}
+            if selected is not None
+            else {}
+        )
+        packet_params = {**filters, **selection}
+        context["packet_url"] = _url(
+            "editorial_workbench:detail", {**packet_params, "packet": "html"}, key
+        )
+        if request.GET.get("packet"):
+            try:
+                packet = build_packet(
+                    case,
+                    selected_batch,
+                    **{name: str(value) for name, value in selection.items()},
+                )
+            except (WorkbenchDataError, HistoryDataError, ValueError, TypeError, UnicodeError):
+                return failure(
+                    request,
+                    "تعذر إنشاء حزمة السجل كاملة بأمان. عد إلى السجل وراجع مصدر العينة.",
+                    503,
+                )
+            if request.GET["packet"] == "json":
+                response = HttpResponse(
+                    packet.json_bytes, content_type="application/json; charset=utf-8"
+                )
+                response["Content-Disposition"] = (
+                    f'attachment; filename="case-{case.key}-packet.json"'
+                )
+                response["X-Content-Type-Options"] = "nosniff"
+            else:
+                payload = packet.payload()
+                context.update(
+                    {
+                        "packet": payload,
+                        "packet_sha256": packet.sha256,
+                        "packet_bytes": len(packet.json_bytes),
+                        "print_mode": request.GET["packet"] == "print",
+                        "workbench_url": _url("editorial_workbench:detail", packet_params, key),
+                        "packet_json_url": _url(
+                            "editorial_workbench:detail", {**packet_params, "packet": "json"}, key
+                        ),
+                        "packet_print_url": _url(
+                            "editorial_workbench:detail", {**packet_params, "packet": "print"}, key
+                        ),
+                        "packet_intake_json": _packet_text(payload["intake"]),
+                        "packet_reference_json": _packet_text(payload["reference_verification"]),
+                        "packet_snapshots": tuple(
+                            {
+                                "snapshot": snapshot,
+                                "references": _packet_text(snapshot["reference_links"]),
+                            }
+                            for snapshot in payload["snapshots"]
+                        ),
+                    }
+                )
+                response = render(request, "editorial_workbench/packet.html", context)
+            response["Cache-Control"] = "no-store"
+            response["X-Packet-SHA256"] = packet.sha256
+            return response
     response = HttpResponse(_owned_template("workbench.html").render(context, request))
     response["Cache-Control"] = "no-store"
     return response
+
+
+def _packet_text(value) -> str:
+    """Labeled JSON presentation only; canonical export uses packet.json_bytes."""
+    import json
+
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2)
 
 
 def _owned_template(name: str):
