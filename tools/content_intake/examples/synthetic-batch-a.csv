@@ -1,0 +1,3 @@
+external_id,question,prepared_clip_url,staff_notes,reference_links
+SYN-FAST3-001,  سُؤالٌ اصطناعيّ فقط  ,https://example.invalid/synthetic-001.mp4,ملاحظة اصطناعية,"[{""source_id"":""synthetic-source-a"",""heading_id"":""synthetic-heading-a""}]"
+SYN-FAST3-SHARED,سجل اصطناعي للمصالحة,https://example.invalid/synthetic-shared.mp4,,[]
