@@ -1,0 +1,7 @@
+{% extends 'editorial_queue/base.html' %}
+{% block title %}تعذر عرض قائمة المراجعة{% endblock %}
+{% block content %}
+  <h1>تعذر عرض الطلب</h1>
+  <p class="notice" role="alert">{{ message }}</p>
+  <p><a href="{% url 'editorial_queue:index' %}">العودة إلى القائمة ومسح التصفية</a></p>
+{% endblock %}
