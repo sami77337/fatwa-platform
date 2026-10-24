@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}مساحة المراجعة التحريرية الاصطناعية{% endblock %}</title>
+  <link rel="stylesheet" href="{% url 'editorial_workbench:style' %}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+<header class="site-header">
+  <div class="shell">
+    <p class="eyebrow">بيئة تطوير · بيانات اصطناعية · قراءة فقط</p>
+    <p class="site-title">مساحة المراجعة التحريرية</p>
+    <p>استلام المصدر ولقطات المسودة وسجلها في سياق واحد. لا تحرير أو اعتماد أو نشر من هذه المساحة.</p>
+    <nav aria-label="التنقل العام"><a href="{% url 'editorial_workbench:index' %}">قائمة العمل الاصطناعية</a>{% if stored_url %}<a href="{{ stored_url }}">تدقيق السجلات المحفوظة</a>{% endif %}</nav>
+  </div>
+</header>
+<main class="shell" id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
+<footer class="shell site-footer">
+  <p>عناوين الفهرس مراجع بحثية وليست فتاوى. وسوم النسبة والحالة في العينات ليست توثيقًا لهوية محرر أو صلاحية أو انتقال معتمد.</p>
+  <p class="gates" dir="ltr">NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p>
+</footer>
+</body>
+</html>
