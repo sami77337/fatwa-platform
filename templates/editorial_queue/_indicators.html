@@ -1,0 +1,10 @@
+<p class="indicators">
+  <span class="badge">{{ item.case.status_label }}</span>
+  {% if item.reference_status == 'missing' %}
+    <span>دون إحالات مرجعية</span>
+  {% else %}
+    <span>مطابقة اصطناعيًا: {{ item.verified_count }}</span>
+    <span>غير محسومة أو متعارضة: {{ item.unresolved_count }}</span>
+  {% endif %}
+  <span>لقطات المسودة: {{ item.history|length }}</span>
+</p>
