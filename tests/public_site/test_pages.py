@@ -197,7 +197,9 @@ class PublicPageTests(SimpleTestCase):
         response = self.client.get("/assets/reference/style.css")
         try:
             self.assertEqual(response.status_code, 200)
-            css = b"".join(response.streaming_content)
+            css = (
+                b"".join(response.streaming_content) if response.streaming else response.content
+            )
             self.assertIn(b":focus-visible", css)
             self.assertIn(b".skip-link:focus", css)
         finally:
