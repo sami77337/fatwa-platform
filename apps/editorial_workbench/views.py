@@ -1,0 +1,192 @@
+"""Read-only HTTP composition of existing synthetic editorial services."""
+
+from pathlib import Path
+from urllib.parse import urlencode
+
+from django.core.exceptions import TooManyFieldsSent
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
+from django.urls import reverse
+from django.views.decorators.http import require_safe
+
+from apps.editorial_demo.views import local_only
+from apps.fatwa_drafts.revision_audit import build_revision_audit
+from apps.revision_core.revision_comparison import compare_revisions
+from apps.revision_core.revision_history import (
+    HistoryDataError,
+    InvalidRevisionId,
+    UnknownRevisionId,
+    build_history,
+    select_revisions,
+)
+
+from .services import WorkbenchDataError, build_cases
+
+STATUSES = (("ready", "جاهز للعرض التحريري"), ("review", "يحتاج مراجعة"), ("blocked", "مدخل محجوب"))
+
+
+def failure(request: HttpRequest, message: str, status: int) -> HttpResponse:
+    response = render(
+        request,
+        "editorial_workbench/error.html",
+        {
+            "message": message,
+            "status_code": status,
+            "recovery_url": reverse("editorial_workbench:index"),
+        },
+        status=status,
+    )
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def _query(request: HttpRequest, *, detail: bool) -> tuple[str, str]:
+    query = request.GET
+    allowed = {"q", "status"} | ({"revision", "before", "after"} if detail else set())
+    q, status = query.get("q", ""), query.get("status", "")
+    if (
+        set(query) - allowed
+        or any(len(query.getlist(key)) != 1 for key in query)
+        or len(q) > 80
+        or any(ord(c) < 32 or ord(c) == 127 for c in q)
+        or status not in {"", *(code for code, _ in STATUSES)}
+        or ("before" in query) != ("after" in query)
+    ):
+        raise ValueError("invalid_query")
+    q.encode("utf-8", errors="strict")
+    return q, status
+
+
+def _url(name: str, params: dict, key: str | None = None, anchor: str = "") -> str:
+    base = reverse(name, args=[key] if key is not None else None)
+    return base + ("?" + urlencode(params) if params else "") + ("#" + anchor if anchor else "")
+
+
+@require_safe
+def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
+    local_only(request)
+    try:
+        q, status = _query(request, detail=key is not None)
+    except (ValueError, UnicodeError, TooManyFieldsSent):
+        return failure(
+            request, "معايير غير صالحة. استخدم بحثًا حتى ٨٠ حرفًا واختر حالتين للمقارنة.", 400
+        )
+    try:
+        all_cases = build_cases()
+    except WorkbenchDataError:
+        return failure(request, "تعذر تحميل العينات الاصطناعية. عد إلى القائمة وأعد المحاولة.", 503)
+    case = next((item for item in all_cases if item.key == key), None)
+    if key is not None and case is None:
+        return failure(request, "السجل الاصطناعي غير موجود. اختر سجلًا من القائمة.", 404)
+    term = q.strip().casefold()
+    cases = tuple(
+        item
+        for item in all_cases
+        if (not status or item.status == status)
+        and (not term or term in ((item.external_id or "") + (item.question or "")).casefold())
+    )
+    filters = {name: value for name, value in (("q", q), ("status", status)) if value}
+    history, history_rows, revisions = (), (), ()
+    selected = before = after = comparison = audit = None
+    if case is not None and case.record is not None:
+        try:
+            history = build_history(case.record)
+            revisions = tuple(entry.revision for entry in history)
+            selected_id = request.GET.get("revision", str(revisions[-1].number))
+            selected, _ = select_revisions(history, selected_id, selected_id)
+            before, after = select_revisions(
+                history,
+                request.GET.get("before", str(revisions[0].number)),
+                request.GET.get("after", str(revisions[-1].number)),
+            )
+            comparison = compare_revisions(before, after)
+            audit = build_revision_audit(case.record, synthetic_fixtures_only=True)
+        except InvalidRevisionId:
+            return failure(request, "هوية المراجعة غير صالحة. اختر رقمًا من سجل المراجعات.", 400)
+        except UnknownRevisionId:
+            return failure(request, "المراجعة المطلوبة غير موجودة في هذا السجل الاصطناعي.", 404)
+        except (HistoryDataError, ValueError, TypeError):
+            return failure(request, "تعذر عرض سجل المراجعات الاصطناعي بأمان.", 503)
+        history_rows = tuple(
+            {
+                "entry": entry,
+                "url": _url(
+                    "editorial_workbench:detail",
+                    {
+                        **filters,
+                        "revision": entry.revision.number,
+                        "before": before.number,
+                        "after": after.number,
+                    },
+                    key,
+                    "snapshot",
+                ),
+                "compare_url": _url(
+                    "editorial_workbench:detail",
+                    {
+                        **filters,
+                        "revision": selected.number,
+                        "before": entry.previous_number or entry.revision.number,
+                        "after": entry.revision.number,
+                    },
+                    key,
+                    "comparison",
+                )
+                if entry.previous_number is not None
+                else None,
+            }
+            for entry in history
+        )
+    elif case is not None and set(request.GET) & {"revision", "before", "after"}:
+        return failure(request, "لا توجد مسودة أو مراجعات لهذا المدخل. راجع ملاحظات الاستلام.", 400)
+    response = render(
+        request,
+        "editorial_workbench/workbench.html",
+        {
+            "cases": cases,
+            "case": case,
+            "q": q,
+            "status": status,
+            "statuses": STATUSES,
+            "list_url": reverse("editorial_workbench:index"),
+            "return_url": _url("editorial_workbench:index", filters),
+            "detail_rows": tuple(
+                {"case": item, "url": _url("editorial_workbench:detail", filters, item.key)}
+                for item in cases
+            ),
+            "history_rows": history_rows,
+            "revisions": revisions,
+            "selected_revision": selected,
+            "before_revision": before,
+            "after_revision": after,
+            "comparison": comparison,
+            "audit": audit,
+            "references": case.references if case else (),
+            "compare_url": reverse("editorial_workbench:detail", args=[key]) if case else "",
+            "hidden_filters": tuple(filters.items()),
+            "selected_url": _url("editorial_workbench:detail", filters, key) if case else "",
+            "summary": {
+                "total": len(all_cases),
+                **{code: sum(item.status == code for item in all_cases) for code, _ in STATUSES},
+            },
+            "stored_url": reverse("editorial_workbench:stored"),
+        },
+    )
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_safe
+def stylesheet(request: HttpRequest) -> HttpResponse:
+    local_only(request)
+    try:
+        if request.GET:
+            return failure(request, "ملف التنسيق لا يقبل معايير إضافية.", 400)
+        payload = Path(__file__).with_name("workbench.css").read_bytes()
+    except TooManyFieldsSent:
+        return failure(request, "معايير غير صالحة.", 400)
+    except OSError:
+        return failure(request, "تعذر تحميل تنسيق مساحة التحرير المحلية.", 503)
+    response = HttpResponse(payload, content_type="text/css; charset=utf-8")
+    response["Cache-Control"] = "no-store"
+    return response

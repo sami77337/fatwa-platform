@@ -1,10 +1,11 @@
-from django.urls import path
+from django.urls import include, path
 
 from apps.editorial_demo import views as editorial_views
 from apps.public_site import views as public_views
 from apps.reference import views
 
 urlpatterns = [
+    path("dev/editorial-workbench", include("apps.editorial_workbench.urls")),
     path("dev/editorial-preview", editorial_views.preview, name="editorial_demo"),
     path("dev/editorial-preview/style.css", editorial_views.stylesheet, name="editorial_demo_style"),
     path("dev/editorial-preview/pipeline", editorial_views.pipeline_preview, name="editorial_pipeline"),
