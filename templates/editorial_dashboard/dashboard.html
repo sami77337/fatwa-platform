@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>لوحة المتابعة التحريرية · عينات اصطناعية</title>
+  <link rel="stylesheet" href="{% url 'editorial_dashboard:style' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="page-header">
+    <div class="wrap">
+      <p class="eyebrow">منصة الفتوى · بيئة التطوير المحلية</p>
+      <h1>لوحة المتابعة التحريرية</h1>
+      <p>نظرة موحّدة إلى الاستلام والتحضير والتحقق المرجعي، مع الانتقال إلى السجل نفسه.</p>
+      <nav aria-label="مساحات العمل">
+        <a href="{{ dashboard_url }}" aria-current="page">لوحة المتابعة</a>
+        <a href="{{ queue_url }}">قائمة المراجعة</a>
+        <a href="{{ investigation_url }}">التحقيق المرجعي</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main-content" class="wrap" tabindex="-1">
+    <aside class="notice" aria-label="نطاق العرض">
+      <strong>عينات اصطناعية فقط · للقراءة المحلية</strong>
+      <p>هذه مؤشرات تقنية؛ لا تعني اعتمادًا علميًا أو اكتمال مراجعة بشرية أو نشرًا.</p>
+      <p class="gates" dir="ltr">Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; SCOPE_DEVIATION_HOLD; NOT_DEPLOYED</p>
+    </aside>
+    <form class="filter-panel" method="get" action="{{ dashboard_url }}">
+      <div class="filter-field">
+        <label for="batch">نطاق المؤشرات والسجلات</label>
+        <select id="batch" name="batch" aria-describedby="filter-help">
+          <option value="">جميع الدفعات</option>
+          {% for batch in batches %}
+          <option value="{{ batch.batch_id }}"{% if batch_id == batch.batch_id %} selected{% endif %}>{{ batch.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit">عرض النطاق</button>
+      {% if batch_id %}<a href="{{ dashboard_url }}">مسح التصفية</a>{% endif %}
+      <p id="filter-help">المؤشرات والسجلات تخص النطاق المختار؛ جدول الدفعات يعرض جميع الدفعات دائمًا.</p>
+    </form>
+    <nav class="section-nav" aria-label="أقسام اللوحة">
+      <a href="#overview">المؤشرات</a><a href="#batches">الدفعات</a>
+      <a href="#references">التحقق المرجعي</a><a href="#source-diagnostics">تشخيص المصادر</a>
+      <a href="#attention">الانتباه التقني</a><a href="#records">السجلات وروابطها</a>
+    </nav>
+    <section id="overview" aria-labelledby="overview-heading">
+      <h2 id="overview-heading">المؤشرات في النطاق المختار</h2>
+      <dl class="metrics">
+        <div class="metric"><dt>إجمالي الصفوف الاصطناعية</dt><dd>{{ dashboard.total_rows }}<p>يشمل الصفوف المرفوضة.</p></dd></div>
+        <div class="metric"><dt>الأسئلة النصية</dt><dd>{{ dashboard.questions }}<p>صفوف تحمل نص سؤال غير خالٍ.</p></dd></div>
+        <div class="metric"><dt>سجلات لها مسودة محضّرة</dt><dd>{{ dashboard.prepared_records }}<p>وجود المسودة لا يعني اعتمادها.</p></dd></div>
+        <div class="metric attention-metric"><dt>تحتاج انتباهًا تقنيًا</dt><dd><a href="#attention">{{ dashboard.attention_count }}</a><p>حالة غير جاهزة أو إحالات غير مكتملة المطابقة.</p></dd></div>
+      </dl>
+      <h3>حالة العرض والتحضير</h3>
+      <ul class="status-grid">
+        {% for metric in dashboard.statuses %}
+        <li><a href="{{ metric.url }}"><span>{{ metric.label }}</span><strong>{{ metric.count }}</strong></a></li>
+        {% endfor %}
+      </ul>
+      <p class="help">كل صف ينتمي إلى حالة تحضير واحدة. «جاهز» يعني قابلًا للعرض التحريري المحلي فقط.</p>
+    </section>
+    <section id="batches" aria-labelledby="batches-heading">
+      <h2 id="batches-heading">الدفعات وحالاتها</h2>
+      <div class="table-scroll" role="region" aria-label="أعداد جميع الدفعات" tabindex="0">
+        <table>
+          <caption>الأعداد في جميع الدفعات، بما فيها الدفعات التي تعذر تحليلها</caption>
+          <thead><tr><th scope="col">الدفعة</th><th scope="col">الصفوف</th><th scope="col">جاهزة</th><th scope="col">للمراجعة</th><th scope="col">محجوبة</th><th scope="col">لها مسودة</th><th scope="col">التشخيص والتنقل</th></tr></thead>
+          <tbody>
+          {% for item in dashboard.batches %}
+            <tr>
+              <th scope="row">{{ item.batch.label }}<br><bdi class="identity">{{ item.batch.batch_id }}</bdi></th>
+              <td>{{ item.batch.total }}</td><td>{{ item.batch.ready }}</td><td>{{ item.batch.review }}</td><td>{{ item.batch.blocked }}</td><td>{{ item.prepared_records }}</td>
+              <td>
+                <a href="{{ item.queue_url }}">طابور هذه الدفعة</a>
+                {% if item.workbench_url %}<a href="{{ item.workbench_url }}">مساحة عمل الدفعة</a>{% endif %}
+                {% if item.batch.source %}
+                  {% if item.batch.source.error_code %}<p class="problem"><strong>تعذر تحليل الدفعة</strong> · <bdi>{{ item.batch.source.error_code }}</bdi></p><p>{{ item.batch.source.recovery }}</p>{% endif %}
+                  <details><summary>هوية مصدر الدفعة</summary><p>الصيغة: <bdi>{{ item.batch.source.input_format }}</bdi></p><p>بصمة المدخل <span dir="ltr">SHA-256</span>:</p><code class="digest">{{ item.batch.source.input_sha256 }}</code></details>
+                {% else %}<p class="help">هويات المصادر الأصلية متاحة في تفاصيل كل سجل.</p>{% endif %}
+              </td>
+            </tr>
+          {% empty %}<tr><td colspan="7">لا توجد دفعات اصطناعية متاحة.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section id="references" aria-labelledby="references-heading">
+      <h2 id="references-heading">حالة التحقق المرجعي</h2>
+      <p>إجمالي المؤشرات المرجعية في النطاق: <strong>{{ dashboard.reference_total }}</strong>. المطابقة تقنية مع الفهرس الاصطناعي؛ لا تثبت صحة علمية أو ملاءمة استشهاد.</p>
+      <ul class="status-grid">
+        {% for metric in dashboard.references %}
+        <li>{% if metric.url %}<a href="{{ metric.url }}">{% else %}<div class="metric-label">{% endif %}<span>{{ metric.label }}</span><strong>{{ metric.count }}</strong>{% if metric.url %}</a>{% else %}</div>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      <p class="help">المطابق وغير المحسوم والمتعارض تُحسب كمؤشرات مرجعية؛ غياب المؤشرات يُحسب كسجلات. قد يحمل السجل أكثر من مؤشر.</p>
+      {% if batch_id == 'original' %}<p class="help">تجمع هذه الدفعة أكثر من مجموعة في شاشة التحقيق؛ استخدم رابط التحقيق المرجعي في كل سجل أدناه للوصول إلى هويته الدقيقة.</p>{% endif %}
+    </section>
+    <section id="source-diagnostics" aria-labelledby="source-diagnostics-heading">
+      <h2 id="source-diagnostics-heading">الصفوف المرفوضة وتشخيص المصادر</h2>
+      <p>أسباب الرفض والاحتياج إلى المراجعة ظاهرة في السجل نفسه أدناه. تشخيص المصادر التالي يخص دفعات التحضير فقط، وفق جرد المصادر الاصطناعية الصريح <bdi>W7-SOURCE</bdi>.</p>
+      <dl class="metrics source-metrics">
+        {% for metric in dashboard.source_diagnostics %}<div class="metric"><dt>{{ metric.label }}</dt><dd>{{ metric.count }}<p><bdi>{{ metric.code }}</bdi></p></dd></div>{% endfor %}
+      </dl>
+      <p class="help">الأعداد هنا لورود أسباب التشخيص، وليست عدد سجلات فريدة. وجود المصدر في الجرد لا يحقق الإحالة. تشخيص التحضير المستقل لا ينفذ المطابقة؛ تُعرض حالة التحقق من خدمة التحقيق المرجعي.</p>
+    </section>
+    <section id="attention" class="panel" aria-labelledby="attention-heading">
+      <h2 id="attention-heading">سجلات تحتاج انتباهًا تقنيًا <span class="count">{{ dashboard.attention_count }}</span></h2>
+      <p>تشمل الحالات غير الجاهزة والسجلات ذات الإحالات غير المحسومة أو الغائبة؛ لا تمثل قائمة قرارات أو موافقات معلّقة.</p>
+      <ul class="attention-list">
+        {% for item in dashboard.rows %}{% if item.needs_attention %}<li><a href="#record-{{ item.row.case.key }}"><bdi>{{ item.row.case.key }}</bdi></a><span>{{ item.row.case.status_label }}</span></li>{% endif %}{% endfor %}
+      </ul>
+      {% if not dashboard.attention_count %}<p class="empty">لا توجد سجلات تستوفي تعريف الانتباه التقني في النطاق المختار. لا يعني ذلك اعتمادًا علميًا أو انتهاء العمل.</p>{% endif %}
+    </section>
+    <section id="records" aria-labelledby="records-heading">
+      <h2 id="records-heading">السجلات وروابط المتابعة الدقيقة</h2>
+      <p>تستخدم الروابط مفتاح السجل وموضعه في الدفعة؛ تظل الصفوف ذات المعرّفات المكررة منفصلة.</p>
+      <div class="record-grid">
+      {% for item in dashboard.rows %}
+        <article class="record panel" id="record-{{ item.row.case.key }}" data-case-key="{{ item.row.case.key }}" aria-labelledby="heading-{{ item.row.case.key }}" tabindex="-1">
+          <div class="record-heading"><h3 id="heading-{{ item.row.case.key }}"><bdi>{{ item.row.case.key }}</bdi></h3>{% if item.needs_attention %}<span class="attention-tag">انتباه تقني</span>{% endif %}</div>
+          <p>الدفعة: <bdi>{{ item.row.batch_id }}</bdi>{% if item.row.case.row_ordinal %} · الصف {{ item.row.case.row_ordinal }}{% endif %}</p>
+          <p>المعرّف الخارجي: <bdi>{{ item.row.case.external_id|default:'غير متاح أو غير صالح' }}</bdi></p>
+          <p class="state">{{ item.row.case.status_label }} · {% if item.row.case.record %}توجد مسودة{% else %}لا توجد مسودة{% endif %}</p>
+          <pre class="question" dir="auto"><code>{{ item.question_html }}</code></pre>
+          <p class="help">المؤشرات المطابقة: {{ item.row.verified_count }} · غير المحسومة أو المتعارضة: {{ item.row.unresolved_count }}{% if item.row.reference_status == 'missing' %} · دون إحالات قابلة للعرض{% endif %}</p>
+          <nav class="record-links" aria-label="متابعة السجل {{ item.row.case.key }}">
+            <a href="{{ item.queue_url }}">السجل في الطابور</a>
+            <a href="{{ item.workbench_url }}">مساحة العمل</a>
+            <a href="{{ item.investigation_url }}">التحقيق المرجعي</a>
+            <a href="{{ item.packet_url }}">حزمة السجل</a>
+          </nav>
+          <details>
+            <summary>الأسباب وهوية المصدر</summary>
+            <h4>ملاحظات الاستلام والتحضير</h4>
+            <ul>{% for issue in item.row.case.issues %}<li>{{ issue }}</li>{% empty %}<li>لا توجد ملاحظات من خدمة الاستلام؛ هذا لا يثبت اكتمال المراجعة.</li>{% endfor %}</ul>
+            {% if item.diagnostics %}
+            <h4>تشخيص التحضير المستقل</h4>
+            <p class="help">أسباب التشخيص لا تستبدل حالة التحقق المرجعي المعروضة أعلاه.</p>
+            <ul class="diagnostics">{% for issue in item.diagnostics %}<li><p><bdi>{{ issue.field }}</bdi> · <bdi>{{ issue.code }}</bdi>{% if issue.reference_index %} · الإحالة {{ issue.reference_index }}{% endif %}{% if issue.source_id %} · المصدر <bdi>{{ issue.source_id }}</bdi>{% endif %}</p><p>{{ issue.recovery_ar }}</p></li>{% endfor %}</ul>
+            {% endif %}
+            <h4>المصدر المحفوظ</h4>
+            <p>{{ item.row.case.fixture_label }}</p>
+            <dl class="provenance"><dt>بصمة المدخل <span dir="ltr">SHA-256</span></dt><dd><code class="digest">{{ item.row.case.payload_sha256 }}</code></dd><dt>بصمة نص مصدر السجل <span dir="ltr">SHA-256</span></dt><dd><code class="digest">{{ item.row.source_sha256 }}</code></dd></dl>
+            <a href="{{ item.workbench_url }}#intake">فحص نص المصدر والاستلام في مساحة العمل</a>
+          </details>
+        </article>
+      {% empty %}<p class="empty">لا توجد صفوف قابلة للعرض في النطاق المختار. راجع تشخيص الدفعة في الجدول أو <a href="{{ dashboard_url }}">اعرض جميع الدفعات</a>.</p>{% endfor %}
+      </div>
+    </section>
+  </main>
+  <footer class="wrap"><p>عرض تطوير محلي للقراءة فقط · لا اعتماد علمي ولا نشر.</p><a href="#main-content">العودة إلى بداية المحتوى</a></footer>
+</body>
+</html>

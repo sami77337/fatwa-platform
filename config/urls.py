@@ -6,6 +6,7 @@ from apps.reference import views
 
 urlpatterns = [
     path("dev/editorial-search", include("apps.editorial_search.urls")),
+    path("dev/editorial-dashboard", include("apps.editorial_dashboard.urls")),
     path("dev/reference-triage", include("apps.reference_triage.urls")),
     path("dev/editorial-queue", include("apps.editorial_queue.urls")),
     path("dev/editorial-workbench", include("apps.editorial_workbench.urls")),
