@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}مكتب المتابعة التحريرية{% endblock %}</title>
+  <link rel="stylesheet" href="{% url 'editorial_followup:style' %}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">تجاوز التنقل إلى المحتوى</a>
+<header class="site-header">
+  <div class="shell">
+    {% include 'editorial_tools/nav.html' %}
+    <p class="site-name">منصة الفتوى · بيئة التطوير المحلية</p>
+    <nav class="site-nav" aria-label="أدوات الفحص المحلية">
+      <a href="{% url 'editorial_followup:index' %}" aria-current="page">مكتب المتابعة</a>
+      <a href="{% url 'editorial_workbench:index' %}">منضدة العمل</a>
+      <a href="{% url 'editorial_queue:index' %}">قائمة المراجعة</a>
+      <a href="{% url 'reference_triage:index' %}">التحقيق المرجعي</a>
+    </nav>
+  </div>
+</header>
+<main class="shell" id="main-content" tabindex="-1">
+  {% block content %}{% endblock %}
+</main>
+<footer class="shell site-footer">
+  <p>عرض محلي للقراءة فقط، مبني على عينات اصطناعية ثابتة. أسباب المتابعة تصف بيانات متاحة؛ لا تُسند عملًا إلى مستخدم، ولا تقرر موعدًا أو إجراءً تحريريًا أو اعتمادًا علميًا.</p>
+  <p class="gates" dir="ltr">Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD · NOT_DEPLOYED</p>
+</footer>
+</body>
+</html>
