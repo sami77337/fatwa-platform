@@ -9,11 +9,12 @@
 <body>
 <a class="skip" href="#main-content">انتقل إلى المحتوى</a>
 <header>
+  {% include 'editorial_tools/nav.html' %}
   <nav aria-label="التنقل"><a href="{% url 'editorial_search:index' %}">البحث الموحد</a> · <a href="{% url 'editorial_queue:index' %}">قائمة المراجعة</a> · <a href="{% url 'editorial_workbench:index' %}">مساحة التحرير</a></nav>
   <h1>البحث التحريري الموحد</h1>
   <p>عينات اصطناعية محلية للقراءة فقط. لا نشر ولا اعتماد علمي.</p>
 </header>
-<main id="main-content">{% block content %}{% endblock %}</main>
+<main id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
 <footer><p dir="ltr">Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD · NOT_DEPLOYED</p></footer>
 </body>
 </html>

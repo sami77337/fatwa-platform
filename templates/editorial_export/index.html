@@ -9,12 +9,13 @@
 <body>
 <a class="skip-link" href="#main">انتقل إلى المحتوى</a>
 <header class="site-header shell">
+  {% include 'editorial_tools/nav.html' %}
   <h1>تصدير المراجعة الاصطناعية</h1>
   <p>عينات اصطناعية ثابتة للتطوير المحلي فقط. هذه الملفات ليست فتاوى منشورة ولا اعتمادًا علميًا أو إذن تشغيل.</p>
   <p>لا تُحمّل مراجعات محفوظة أو بيانات مستخدمين، ولا تنفَّذ إجراءات تحرير أو نشر.</p>
   <nav aria-label="التنقل المحلي"><a href="{% url 'editorial_workbench:index' %}">مساحة المراجعة المحلية</a></nav>
 </header>
-<main id="main" class="shell">
+<main id="main" class="shell" tabindex="-1">
   <section class="panel" aria-labelledby="summary-title">
     <h2 id="summary-title">نطاق التصدير</h2>
     <p>عدد السجلات: <strong>{{ case_count }}</strong>؛ عدد دفعات التحضير: <strong>{{ batch_count }}</strong>.</p>
