@@ -1,5 +1,6 @@
 """Exact synthetic bridges; stock packets and permission boundaries stay intact."""
 
+import copy
 import json
 import os
 from dataclasses import replace
@@ -135,6 +136,28 @@ class IntegratedBridgeTests(TestCase):
             integration, "build_export", return_value=ExportBundle(tuple(files.items()))
         ):
             with self.assertRaises(ValueError):
+                self.run_report()
+
+    def test_failed_permission_probe_prevents_aggregate_success(self):
+        from apps.fast6_journey import integration
+
+        baseline = integration.build_report()
+        reports = [copy.deepcopy(baseline) for _ in range(4)]
+        reports[0]["adversarial_checks"].update(status="FAIL", failed=1)
+        reports[1]["requests"][0].update(allowed=True, effect="ALLOW")
+        reports[2]["adversarial_checks"]["checks"][0]["passed"] = False
+        reports[3]["adversarial_checks"].update(evaluated=0, checks=[])
+        for report in reports:
+            with self.subTest(report=reports.index(report)):
+                with patch.object(integration, "build_report", return_value=report):
+                    with self.assertRaisesRegex(ValueError, "permission"):
+                        self.run_report()
+
+    def test_invalid_owner_metadata_prevents_aggregate_success(self):
+        from apps.fast6_journey import integration
+
+        with patch.object(integration, "pinned_owner_manifest", return_value=b"{}"):
+            with self.assertRaisesRegex(ValueError, "readiness"):
                 self.run_report()
 
     def test_integrated_replay_refuses_tampering_and_bounded_wrong_types(self):

@@ -88,15 +88,32 @@ def run_integration(*, synthetic_fixtures_only: bool = False) -> JourneyReport:
             }
         )
     permissions = json.loads(canonical_json(build_report()))
+    negative = permissions["adversarial_checks"]
     _require(
         permissions["status"] == "SYNTHETIC_EVALUATED"
         and permissions["effect"] == "DENY"
         and permissions["allowed"] is False
-        and permissions["active_grants"] == 0,
+        and permissions["active_grants"] == 0
+        and bool(permissions["requests"])
+        and all(
+            row["effect"] == "DENY" and row["allowed"] is False for row in permissions["requests"]
+        )
+        and negative["status"] == "PASS"
+        and negative["failed"] == 0
+        and negative["evaluated"] == len(negative["checks"]) > 0
+        and all(check["passed"] is True for check in negative["checks"]),
         "integration_permission_evidence",
     )
     invariants = replay(scenario())
+    _require(invariants["invariants_passed"] is True, "integration_workflow_invariants")
     readiness = preflight(pinned_owner_manifest()).as_dict()
+    _require(
+        readiness["status"] == "BLOCKED"
+        and readiness["owner_acceptance"] == "NOT_RUN"
+        and readiness["observed_sha256"] == {}
+        and all(check["status"] != "FAIL" for check in readiness["checks"].values()),
+        "integration_source_readiness",
+    )
     connections = [dict(edge) for edge in baseline["connections"]]
     for edge in connections:
         if edge["id"] == "prepared_to_rehearsal":

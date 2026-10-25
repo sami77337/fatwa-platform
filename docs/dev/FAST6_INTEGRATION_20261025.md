@@ -119,8 +119,17 @@ operations, verified with the real integrated service under side-effect guards.
 
 No migration or data conversion. Rollback is code-only. No private records,
 publication, grants, deployment, main merge, or changes to official gates.
-One independent final read-only review is required before pushing; its outcome
-and final exact-head B6/C6/D6 status are recorded in the Draft PR.
+One independent final read-only review completed at `8d2e46a`: 55 focused tests
+passed independently. It found one P2: aggregate success did not propagate a
+permission negative-check failure or invalid source manifest. Two regressions
+failed before the fix; all 11 integration tests then passed (16.337 seconds).
+The aggregate now requires nonempty passing negative checks, every individual
+permission decision denied, successful invariant replay, and the expected owner
+readiness BLOCKED/NOT_RUN with no failed check or observed raw hash. Failure
+aborts before stdout. Expected missing owner evidence remains a gap, never PASS.
+No second review was performed. Final exact-head B6/C6/D6 status is recorded in
+the Draft PR. Review exclusions (owner evidence, historical policy acceptance,
+real PostgreSQL, production/deployment/main merge) remain outside acceptance.
 
 **Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED;
 SCOPE_DEVIATION_HOLD; NOT_DEPLOYED / GATES_HOLD.**
