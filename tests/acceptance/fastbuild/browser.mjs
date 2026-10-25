@@ -10,6 +10,7 @@ import {dispatchKey} from "../wave7/keyboard.mjs";
 import {allowedRequest, aggregateResult, catalogIdentity} from "./policy.mjs";
 import {editorialCases} from "./editorial.mjs";
 import {catalogCases} from "./catalog.mjs";
+import {fast3Cases} from "./fast3.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const artifacts = path.resolve(process.env.FATWA_FASTBUILD_ARTIFACTS ?? path.join(os.tmpdir(),"fatwa-fastbuild-qa"));
@@ -80,6 +81,7 @@ async function screenshot(name) {
 const expectedDocuments=new Map(),documentStatuses=new Map(), interceptions=new Set();
 const h={navigate,evaluate,wait,key,focus,activate,type,select,viewport,noOverflow,screenshot,get cdp(){return cdp;}};
 const cases=scope==="editorial"?editorialCases(h):catalogCases(h);
+if(scope==="editorial") cases.push(...fast3Cases(h));
 cases.push(["all observed browser requests are local read-only; no runtime or unexpected HTTP failures",async()=>{
   await Promise.all([...interceptions]);
   assert.ok(report.requests.length>0);

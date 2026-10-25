@@ -34,5 +34,6 @@ details { padding-block: .6rem; }
 summary { cursor: pointer; padding: .4rem; }
 .case-list { list-style: none; padding: 0; }
 .reference { border-bottom: 1px solid #b8cbd5; padding-block: .7rem; }
+.batch-list > li { border-bottom: 1px solid #b8cbd5; padding-block: .5rem; }
 ol, ul { padding-inline-start: 1.5rem; }
 @media (max-width: 36rem) { .shell, .panel { padding: .85rem; } .record-nav { align-items: start; flex-direction: column; } }

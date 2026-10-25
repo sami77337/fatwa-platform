@@ -18,6 +18,18 @@ test("partial execution never becomes PASS and an assertion failure takes preced
   assert.equal(aggregateResult([]), "NOT_RUN");
 });
 
+test("FAST3 reference investigation permits only bounded local read-only routes", () => {
+  const origin = "http://127.0.0.1:8123";
+  for (const path of ["/dev/reference-triage", "/dev/reference-triage/history?status=unresolved", "/dev/reference-triage/batch-synthetic-csv-1"])
+    for (const method of ["GET", "HEAD"])
+      assert.equal(allowedRequest({url: origin + path, method}, origin), true, path);
+  for (const path of ["/dev/reference-triage-extra", "/dev/reference-triage/history/approve", "/dev/reference-triage/"])
+    assert.equal(allowedRequest({url: origin + path, method:"GET"}, origin), false, path);
+  for (const method of ["POST", "PUT", "PATCH", "DELETE"])
+    assert.equal(allowedRequest({url: origin + "/dev/reference-triage/history", method}, origin), false);
+  assert.equal(allowedRequest({url:"https://example.invalid/dev/reference-triage",method:"GET"}, origin), false);
+});
+
 test("catalog refuses non-synthetic or mismatched inventories before browser navigation", () => {
   const edition = {work:{source_namespace:"wave7-synthetic-toc",source_book_id:"622"},heading_count:3,
     source_archive_sha256:"b".repeat(64),source_input_sha256:"a".repeat(64),edition_key:"wave7-synthetic-edition-v1"};

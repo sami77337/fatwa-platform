@@ -2,6 +2,85 @@
 
 Development only; synthetic data; no database or HTTP mutations.
 
+## FAST3 case review packet (2026-10-24)
+
+From any selected workbench record, follow **حزمة مراجعة السجل**. The existing
+guarded detail URL accepts `packet=html`, `packet=json` or `packet=print`, for
+example `/dev/editorial-workbench/history?revision=7&before=11&after=4&packet=html`.
+The packet and its return/export/print links retain exact snapshot IDs, comparison
+direction and list filters. All 20 existing synthetic cases are supported,
+including rejected/null inputs and duplicate external IDs; no fixture is added.
+
+The packet contains the original input text/digest, explicitly labeled row or
+intake serialization, stable case key, batch/ordinal or original UTF-8 offsets,
+prepared intake when available, receipt state, every immutable snapshot, selected
+comparison and adjacent snapshot observations. It preserves Arabic, combining
+characters, whitespace, CRLF and ordered reference identities. JSON preserves
+exact strings; HTML rendering may normalize line endings. CSV overflow cells are
+retained separately. No unavailable draft, byte offset, reference or conclusion
+is manufactured.
+
+Follow-up items point to actual intake issues and unresolved technical reference
+results, with preparation field/code/severity and recovery instructions. The
+technical diagnostics retain their original scope: original intake pointers, or
+the latest fixed history snapshot (revision 11), independently of a selected
+historical revision. Matching the fixed synthetic catalog is not scholarly
+verification or owner-archive acceptance.
+
+Persisted events deliberately have `status=not_loaded`, `events=null` and
+`snapshot_link=not_established`. This does not assert that events are absent.
+The existing separately guarded persisted reader remains linked; the packet
+never invokes it or joins records by external ID. Snapshot labels/differences
+do not establish actors, timestamps, workflow transitions or review conclusions.
+Both `review_conclusion` and `scholarly_decision` are null.
+
+`synthetic-case-review-packet.v1` JSON is UTF-8 with sorted keys, compact
+separators and one final LF, without a generation clock. Limits are 524,288
+encoded bytes, 131,072 characters per string, 4,096 traversal nodes (keys count),
+depth 16 and signed 63-bit integer magnitude. Oversized, unsupported or invalid
+UTF-8 representations fail closed without truncation. Existing history limits
+remain in force. `X-Packet-SHA256` hashes the exact downloadable bytes; the same
+digest and size appear in HTML. The download is an attachment with `nosniff` and
+`no-store`; every mode retains the existing GET/HEAD and loopback/production
+guards. There are no new routes, shared configuration changes, dependencies,
+database operations, uploads, media requests or domain writes.
+
+The print URL expands full source/intake/diagnostic serialization and contains
+all snapshots and comparison/reference details. Use the browser's Print menu or
+Ctrl+P. Print CSS hides navigation and lets long sections flow across pages.
+
+Focused validation command:
+
+```powershell
+python manage.py test tests.editorial_workbench.test_packets tests.editorial_workbench.test_packet_views tests.editorial_workbench.test_services tests.editorial_workbench.test_views tests.editorial_workbench.test_batches tests.editorial_workbench.test_persisted --settings=config.settings.test --noinput
+```
+
+46 tests passed (13 new, 33 affected), with database access forbidden by
+`SimpleTestCase`. Tests cover all 20 cases, exact source hashes and Unicode,
+snapshot identity, reversed/equal selection, rejection isolation, deterministic
+exports/bounds, HTML/JSON/print parity, escaping, GET/HEAD, production/peer guards
+and no persisted-reader/network calls. Django system check and owned-area Ruff
+lint/format and whitespace checks pass. Parent verified from the remote:
+`codex/20261024-fast2-integration` at
+`e64ebc0d219f975eb7be96042a4e8761b1a0e6e9`.
+
+One independent final read-only review reran the then-45 tests and identified
+an empty-ID fallback in direct builder calls (HTTP already rejected it). Defaults
+now apply only to `None`; the added regression first failed for empty/false IDs,
+then passed with the complete 46-test focused suite. No findings remain deferred.
+
+Chrome manual QA followed the packet link using Enter with selection 7 and
+comparison 11 → 4, verified six snapshots and return/print links, and checked
+the six print sections with all three full serialization panels expanded.
+Desktop (1920 px) and mobile (375 × 812 px) had no horizontal page overflow.
+The input identities are the unchanged synthetic digests listed below. No broad
+historical suite, PostgreSQL, owner ZIP acceptance or rendered PDF is claimed.
+Rollback removes this packet adapter/template/mode and navigation link; no
+migrations or stored data exist.
+
+Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; SCOPE_DEVIATION_HOLD;
+NOT_DEPLOYED. No real/private records, publication or scholarly approval actions.
+
 ## Multi-batch bridge (2026-10-24)
 
 The workbench now consumes `prepare_batches` from PR #95 at exact source commit

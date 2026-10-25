@@ -17,16 +17,16 @@ class QueueServicesTests(SimpleTestCase):
     def test_fixed_manifest_retains_every_row_even_duplicate_invalid_and_null_ids(self):
         rows = services.build_queue()
         self.assertEqual(
-            [row.case.key for row in rows],
+            [row.case.key for row in rows if row.batch_id == services.ORIGINAL_BATCH],
             ["history", *[f"intake-{number}" for number in range(1, 9)]],
         )
         self.assertEqual(rows, services.build_queue())
         self.assertEqual(rows[1].case.external_id, rows[4].case.external_id)
         self.assertNotEqual(rows[1].case.question, rows[4].case.question)
         self.assertEqual(rows[5].case.external_id, "BAD\tID")
-        self.assertIsNone(rows[-1].case.question)
-        self.assertIsNone(rows[-1].case.external_id)
-        self.assertEqual(rows[-1].case.raw_source, "null")
+        self.assertIsNone(rows[8].case.question)
+        self.assertIsNone(rows[8].case.external_id)
+        self.assertEqual(rows[8].case.raw_source, "null")
 
     def test_source_bytes_offsets_and_both_hashes_equal_original_fixed_payload(self):
         raw = fixtures.synthetic_payload()
@@ -34,7 +34,7 @@ class QueueServicesTests(SimpleTestCase):
             sha256(raw).hexdigest(),
             "cfb2bebf24e9f11bab46787e8b5926e93627b616ce85f6457c6d3715a236c0cb",
         )
-        for row in services.build_queue()[1:]:
+        for row in services.build_queue()[1:9]:
             case = row.case
             original_slice = raw[case.source_start : case.source_end]
             self.assertEqual(case.raw_source.encode("utf-8"), original_slice)
@@ -82,7 +82,14 @@ class QueueServicesTests(SimpleTestCase):
 
     def test_missing_drafts_never_borrow_history(self):
         rows = services.build_queue()
-        self.assertEqual([row.case.key for row in rows if row.history], ["history", "intake-7"])
+        self.assertEqual(
+            [
+                row.case.key
+                for row in rows
+                if row.history and row.batch_id == services.ORIGINAL_BATCH
+            ],
+            ["history", "intake-7"],
+        )
         for row in rows:
             if row.case.record is None:
                 self.assertEqual(row.history, ())
@@ -101,7 +108,7 @@ class QueueServicesTests(SimpleTestCase):
             )
         selected = services.select_queue(rows, q=" w7-ready-2 ", status="ready", refs="verified")
         self.assertEqual([row.case.key for row in selected.rows], ["intake-7"])
-        self.assertEqual(services.select_queue(rows, q="intake-8").rows, (rows[-1],))
+        self.assertEqual(services.select_queue(rows, q="intake-8").rows, (rows[8],))
         self.assertIn(rows[2], services.select_queue(rows, q="بلا مقطع").rows)
         self.assertEqual(services.select_queue(rows, q="not-in-fixed-fixtures").rows, ())
 

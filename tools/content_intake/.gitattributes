@@ -1,0 +1,3 @@
+# Keep the committed synthetic diagnostic fixtures byte-identical on Windows.
+examples/synthetic-batch-a.csv text eol=lf
+examples/synthetic-batch-b.jsonl text eol=lf
