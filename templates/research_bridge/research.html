@@ -1,0 +1,45 @@
+{% extends "research_bridge/base.html" %}
+{% block content %}
+<h1>{% if selected %}بحث إحالات السجل <bdi>{{ selected.case.key }}</bdi>{% else %}البحث المرجعي للحالات الثابتة{% endif %}</h1>
+{% if selected %}
+<nav class="section-nav" aria-label="تنقل البحث"><a href="{% url 'research_bridge:index' %}">العودة إلى القائمة</a>{% if previous_url %}<a href="{{ previous_url }}" rel="prev">السجل السابق</a>{% endif %}{% if next_url %}<a href="{{ next_url }}" rel="next">السجل التالي</a>{% endif %}<a href="{{ triage_url }}">التحقيق المرجعي للسجل نفسه</a><a href="{{ workbench_url }}#references">الإحالات في مساحة العمل المقابلة</a><a href="#references">نتائج الإحالات</a></nav>
+<section class="panel" aria-labelledby="case-title"><h2 id="case-title">سياق السجل الاصطناعي</h2>
+  <p>الدفعة: <bdi>{{ selected.batch_id }}</bdi> · حالة الاستلام الأصلية: {{ selected.case.status_label }}</p>
+  <pre class="exact-text" dir="auto"><code>{{ question }}</code></pre>
+  <p>مصدر العينة: {{ selected.case.fixture_label }}</p>
+  <p>بصمة الحمولة الأصلية: <code dir="ltr">{{ selected.case.payload_sha256 }}</code></p>
+  <p>قبول الاستلام مستقل عن نتيجة البحث المرجعي؛ لا يُنشأ استشهاد علمي من هذه الشاشة.</p>
+</section>
+<section class="panel" id="references" aria-labelledby="references-title"><h2 id="references-title">الانتقال إلى دليل الفهرس</h2>
+  {% if selected.case.key == "history" %}<p class="notice">المؤشرات تخص أحدث لقطة ثابتة لسجل المراجعات؛ لا تشمل جميع المراجعات.</p>{% endif %}
+  <ol class="reference-list">{% for entry in references %}<li class="reference-item" id="reference-{{ entry.ref.ordinal }}">
+    <h3>الإحالة {{ entry.ref.ordinal }} · {% if entry.result.status == "verified" %}مطابقة تقنية مع الفهرس المتاح{% else %}غير متحققة؛ الانتقال مغلق{% endif %}</h3>
+    <p>حالة التحقيق السابقة: {{ entry.ref.label }} · <code>{{ entry.ref.raw_status }}</code></p>
+    <p>سبب نتيجة الجسر: <code>{{ entry.result.reason }}</code></p>
+    <p class="notice">{{ entry.result.recovery }}</p>
+    <h4>نص المؤشر الأصلي دون تعديل</h4><pre class="exact-text" dir="auto"><code>{{ entry.source }}</code></pre>
+    <p>بصمة المؤشر UTF-8: <code dir="ltr">{{ entry.ref.source_sha256 }}</code></p>
+    {% if entry.result.status == "verified" %}
+    <section aria-labelledby="evidence-{{ entry.ref.ordinal }}"><h4 id="evidence-{{ entry.ref.ordinal }}">دليل عنوان الفهرس</h4>
+      <p>المرجع: <span class="exact-text">{{ entry.result.evidence.work_title }}</span></p>
+      <p>العنوان: <span class="exact-text">{{ entry.result.evidence.heading_title }}</span></p>
+      <p>المسار الكامل من الجذر إلى العنوان:</p><ol>{% for title in entry.result.evidence.path %}<li class="exact-text">{{ title }}</li>{% endfor %}</ol>
+      <p>الجزء: <span class="exact-text">{{ entry.result.evidence.printed_part }}</span> · الصفحة: {{ entry.result.evidence.printed_page }}</p>
+      <p>تثبت هذه البيانات عنوانًا وموقعًا في فهرس فقط. لا تمثل نص الكتاب أو فتوى أو اعتمادًا علميًا.</p>
+      <a href="{{ entry.result.catalog_url }}">فتح عنوان الفهرس المطابق</a>
+    </section>
+    {% else %}<p>لا يوجد رابط فهرس متحقق لهذه الإحالة. احتفظ بالمؤشر الأصلي وراجع سبب التعذر؛ لا تخمّن عنوانًا أو صفحة أو هوية بديلة.</p>{% endif %}
+    <details><summary>الهوية المدخلة كما وردت</summary><pre class="exact-text" dir="auto"><code>{{ entry.original }}</code></pre></details>
+    <p><a href="{{ triage_url }}#reference-{{ entry.ref.ordinal }}">دليل التحقيق السابق لهذه الإحالة</a> · <a href="#reference-{{ entry.ref.ordinal }}">رابط هذه الإحالة في البحث</a></p>
+  </li>{% empty %}<li class="empty">لا توجد مؤشرات إحالة قابلة للعرض. راجع المصدر الاصطناعي في مساحة العمل؛ لا تضف إحالة تخمينية.</li>{% endfor %}</ol>
+</section>
+{% else %}
+<section class="panel"><h2>عينات البحث الثابتة</h2><p>تضم القائمة {{ rows|length }} سجلًا اصطناعيًا. لا يُقرأ الفهرس عند عرض القائمة؛ تُفحص هوية كل إحالة وأدلتها عند فتح سجلها.</p><p>إذا غاب دليل الفهرس أو تعارض مع الهوية المثبتة يبقى الانتقال مغلقًا مع إرشاد للمتابعة.</p></section>
+<div class="case-list">{% for entry in rows %}<article class="case-card">
+  <h2><a href="{{ entry.url }}">بحث السجل <bdi>{{ entry.row.case.key }}</bdi></a></h2>
+  <pre class="exact-text" dir="auto"><code>{{ entry.question }}</code></pre>
+  <p>الدفعة: <bdi>{{ entry.row.batch_id }}</bdi> · عدد المؤشرات: {{ entry.row.references|length }}</p>
+  <a href="{{ entry.triage_url }}">التحقيق المرجعي للسجل</a> · <a href="{{ entry.workbench_url }}">السجل في مساحة العمل</a>
+</article>{% empty %}<p class="empty">لا توجد سجلات اصطناعية متاحة.</p>{% endfor %}</div>
+{% endif %}
+{% endblock %}

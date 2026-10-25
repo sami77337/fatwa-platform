@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}جسر البحث المرجعي الاصطناعي{% endblock %}</title>
+  <link rel="stylesheet" href="{% url 'editorial_workbench:style' %}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+<header class="site-header"><div class="shell">
+  <p class="eyebrow">بيئة تطوير محلية · بيانات اصطناعية · قراءة فقط</p>
+  <p class="site-title">جسر البحث المرجعي</p>
+  <p>مطابقة تقنية لهوية إحالة ثابتة مع الفهرس المتاح للقراءة؛ لا تثبت صحة علمية أو ملاءمة استشهاد أو فحص أي أرشيف.</p>
+  <nav aria-label="التنقل العام"><a href="{% url 'research_bridge:index' %}">كل سجلات البحث</a><a href="{% url 'reference_triage:index' %}">التحقيق المرجعي</a><a href="{% url 'editorial_workbench:index' %}">مساحة العمل التحريرية</a></nav>
+{% include 'editorial_tools/fast5_nav.html' %}
+</div></header>
+<main class="shell" id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
+<footer class="shell site-footer">
+  <p>عنوان فهرس كتاب، وليس نص فتوى أو تصنيفًا عامًا معتمدًا. لا تعديل أو استيراد أو نشر أو اعتماد علمي.</p>
+  <p class="gates" dir="ltr">NOT_DEPLOYED / GATES_HOLD · Gate B NOT_PASSED · C/D/E HOLD · Phase01 BLOCKED · SCOPE_DEVIATION_HOLD</p>
+</footer>
+</body>
+</html>

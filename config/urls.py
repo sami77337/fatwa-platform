@@ -5,6 +5,9 @@ from apps.public_site import views as public_views
 from apps.reference import views
 
 urlpatterns = [
+    path("dev/workflow-rehearsal", include("apps.workflow_rehearsal.urls")),
+    path("dev/research-bridge", include("apps.research_bridge.urls")),
+    path("dev/permission-lab", include("apps.permission_lab.urls")),
     path("dev/editorial-search", include("apps.editorial_search.urls")),
     path("dev/editorial-dashboard", include("apps.editorial_dashboard.urls")),
     path("dev/editorial-export", include("apps.editorial_export.urls")),

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تجربة سير العمل الاصطناعية</title>
+<link rel="stylesheet" href="{% url 'workflow_rehearsal:style' %}"></head>
+<body>
+<a class="skip" href="#main-content">انتقل إلى المحتوى</a>
+<header><h1>تجربة سير العمل الاصطناعية</h1>
+<p>بيانات تطوير مختلقة فقط. كل زيارة تعيد حساب التجربة الثابتة؛ لا تحفظ أي تغيير.</p>
+<nav aria-label="أدوات التطوير">
+<a href="{% url 'workflow_rehearsal:index' %}">قائمة التجارب</a>
+<a href="{% url 'editorial_dashboard:index' %}">لوحة التحرير</a>
+<a href="{% url 'editorial_workbench:index' %}">مكتب المسودات</a>
+<a href="{% url 'editorial_followup:index' %}">المتابعة</a>
+</nav>
+{% include 'editorial_tools/fast5_nav.html' %}</header>
+<main id="main-content" tabindex="-1">
+<p class="notice" id="review-disclaimer"><bdi>REVIEWED_INTERNAL</bdi> تعني اكتمال مراجعة داخلية اصطناعية فقط؛ ليست اعتماداً علمياً ولا إذناً بالنشر، ولا تثبت صحة الإحالات. حالة الإعداد مستقلة عن المراجعة.</p>
+{% if rehearsal %}
+<section aria-labelledby="case-heading"><h2 id="case-heading">السجل: <bdi>{{ rehearsal.case.key }}</bdi></h2>
+<p>{{ rehearsal.case.status_label }}</p>
+<nav aria-label="مصدر السجل">
+<a href="{% url 'editorial_workbench:detail' rehearsal.case.key %}">المسودة وتاريخها الأصلي</a>
+<a href="{% url 'reference_triage:detail' rehearsal.case.key %}">فحص الإحالات الأصلية</a>
+</nav>
+<h3>السؤال الأصلي</h3><pre id="question"><code>{{ question }}</code></pre>
+<p>{{ rehearsal.case.fixture_label }}</p>
+<p>بصمة المدخل الاصطناعي: <code id="source-sha">{{ rehearsal.fixture_sha256 }}</code></p>
+<details><summary>نص المصدر كما ورد</summary><pre id="source"><code>{{ source }}</code></pre></details>
+{% for issue in rehearsal.case.issues %}<p>{{ issue }}</p>{% endfor %}
+</section>
+<section aria-labelledby="replay-heading"><h2 id="replay-heading">فحص خطوات التجربة</h2>
+<p>اختيار الخطوة يعرض نتيجة إعادة تشغيل أحداث ثابتة في الذاكرة، ولا ينفذ إجراء تحرير.</p>
+<nav aria-label="خطوات التجربة">
+<a href="?step=0">البداية: RECEIVED / الحالة الأصلية</a>
+{% if previous_step != None %}<a href="?step={{ previous_step }}">الخطوة السابقة</a>{% endif %}
+{% if next_step != None %}<a href="?step={{ next_step }}">الخطوة التالية</a>{% endif %}
+<a href="{% url 'workflow_rehearsal:detail' rehearsal.case.key %}">جميع النتائج</a>
+</nav>
+<p>الخطوة {{ selected_step }} من {{ rehearsal.steps|length }}.</p>
+<dl><dt>الإعداد</dt><dd><bdi>{{ preparation|default:'لا توجد مسودة' }}</bdi></dd>
+<dt>المراجعة الداخلية</dt><dd><bdi>{{ review }}</bdi></dd>
+<dt>رقم المراجعة النصية في التجربة</dt><dd>{{ revision|default_if_none:'لا توجد مسودة' }}</dd></dl>
+<ol class="steps">
+{% for step in visible_steps %}
+<li id="step-{{ step.ordinal }}" data-step="{{ step.ordinal }}" data-accepted="{{ step.accepted|yesno:'true,false' }}"{% if step.ordinal == selected_step %} aria-current="step"{% endif %}>
+<h3><a href="?step={{ step.ordinal }}#step-{{ step.ordinal }}">خطوة {{ step.ordinal }}</a>: <bdi>{{ step.action }}</bdi></h3>
+<p><strong>{% if step.accepted %}انتقال مقبول في المحاكاة{% else %}انتقال مرفوض؛ الحالة لم تتغير{% endif %}</strong></p>
+<p>الإعداد: <bdi>{{ step.from_preparation|default:'لا توجد مسودة' }}</bdi> ← <bdi>{{ step.to_preparation|default:'لا توجد مسودة' }}</bdi></p>
+<p>المراجعة: <bdi>{{ step.from_review }}</bdi> ← <bdi>{{ step.to_review }}</bdi></p>
+<p>نتيجة العقد: <code>{{ step.reason }}</code></p>
+</li>
+{% empty %}<li>هذه نقطة البداية؛ لم تُعرض أي محاولة بعد.</li>{% endfor %}
+</ol>
+</section>
+<section id="original-history"><h2>تاريخ المسودة الأصلي، دون تعديل</h2>
+{% for entry in original_history %}<details><summary>مراجعة {{ entry.revision.number }} — <bdi>{{ entry.revision.state }}</bdi></summary>
+<pre><code>{{ entry.title }}</code></pre><pre><code>{{ entry.answer }}</code></pre>
+</details>{% empty %}<p>لا توجد مسودة لهذا السجل؛ لا تنشئ المحاكاة مسودة بديلة.</p>{% endfor %}
+</section>
+<section id="audit"><h2>تدقيق النسخ حتى الخطوة المختارة</h2>
+<p>يُعاد استخدام خدمة تدقيق تاريخ المسودة. أرقام النسخ ليست أوقاتاً ولا إسناداً إلى أشخاص حقيقيين.</p>
+<ul>{% for entry in audit %}<li>نسخة {{ entry.revision.number }}: <bdi>{{ entry.revision.state }}</bdi>؛ <bdi>{{ entry.revision.action }}</bdi></li>
+{% empty %}<li>لا توجد نسخ قابلة للتدقيق.</li>{% endfor %}</ul></section>
+<section><h2>التحقق المرجعي المستقل</h2>
+<p>هذه نتائج فحص الهوية التقنية للبيانات الاصطناعية القائمة؛ لا تُرقّيها انتقالات المراجعة.</p>
+{% for row in reference_rows %}<article><h3>إحالة {{ row.reference.reference_ordinal }}</h3>
+<p><bdi>{{ row.reference.contract_status }}</bdi> — {{ row.reference.explanation_ar }}</p>
+<pre><code>{{ row.source }}</code></pre>
+<a href="{% url 'reference_triage:detail' rehearsal.case.key %}#reference-{{ row.reference.reference_ordinal }}">تفاصيل هذه الإحالة</a>
+<a href="{% url 'research_bridge:detail' rehearsal.case.key %}#reference-{{ row.reference.reference_ordinal }}">مطابقة هذه الإحالة مع الفهرس</a>
+</article>{% empty %}<p>لا توجد إحالات مرفقة.</p>{% endfor %}</section>
+{% else %}
+<h2>اختر سجلاً اصطناعياً</h2>
+<p>السجل <bdi>intake-7</bdi> يوضح المسار المقبول والمرفوض. السجلات المحجوبة تبقى بلا مسودة.</p>
+<ul class="cases">{% for case in cases %}<li data-case-key="{{ case.key }}">
+<a href="{% url 'workflow_rehearsal:detail' case.key %}"><bdi>{{ case.key }}</bdi> — {{ case.status_label }}</a>
+</li>{% endfor %}</ul>
+{% endif %}
+</main>
+<footer><p>Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; SCOPE_DEVIATION_HOLD; NOT_DEPLOYED.</p></footer>
+</body></html>

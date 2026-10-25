@@ -1,0 +1,35 @@
+{
+  "source_commit": "88c411852d1a90e62ec71ab1c9ae2278f72d0c76",
+  "source_ref": "origin/codex/s3-contract-validators-20261013",
+  "fixture_kind": "SYNTHETIC",
+  "historical_inventory_available": false,
+  "actual_actions": 4,
+  "actual_transitions": 1,
+  "files": [
+    {
+      "original_path": "contracts/__init__.py",
+      "vendored_path": "__init__.py",
+      "sha256": "ae35be2a0ae110ebaaddd5e58f770d1002a20a22e6df4e3185d9c8dc55f13c81"
+    },
+    {
+      "original_path": "contracts/validator.py",
+      "vendored_path": "validator.py",
+      "sha256": "847118024daec38656a2829402af8cd8a2e7866b99ced3e382ad190538796834"
+    },
+    {
+      "original_path": "contracts/inventory.schema.json",
+      "vendored_path": "inventory.schema.json",
+      "sha256": "c0c64ab3454a9d6d4a153b9e7815aa91c7c842b7c07f0c6135f95966df7a3712"
+    },
+    {
+      "original_path": "tests/contracts/fixtures/synthetic_inventory.json",
+      "vendored_path": "synthetic_inventory.json",
+      "sha256": "40df94e24af7d64b4fac4285000aa928282ac25f2110b07dce055d2994820dd4"
+    },
+    {
+      "original_path": "tests/contracts/fixtures/synthetic_review_excerpt.json",
+      "vendored_path": "synthetic_review_excerpt.json",
+      "sha256": "266e07ae6b229a19df2d11b8a9aa986e9cd468a05ecacfd7d22de3ebdd7b760d"
+    }
+  ]
+}

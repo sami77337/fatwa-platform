@@ -1,0 +1,6 @@
+# Hash-pinned upstream artifacts retain original bytes on every platform.
+__init__.py -text
+validator.py -text
+inventory.schema.json -text
+synthetic_inventory.json -text
+synthetic_review_excerpt.json -text
