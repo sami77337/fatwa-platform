@@ -1,0 +1,54 @@
+{% extends 'permission_lab/base.html' %}
+{% block content %}
+  <section aria-labelledby="selection-heading">
+    <h2 id="selection-heading">اختر الحالة المراد فحصها</h2>
+    <form method="get" action="{% url 'permission_lab:index' %}">
+      <div class="field">
+        <label for="actor">الدور الافتراضي</label>
+        <select id="actor" name="actor" required aria-describedby="selection-help">
+          <option value=""{% if not selected %} selected{% endif %} disabled>اختر الدور الافتراضي</option>
+          {% for actor in catalog.actors %}<option value="{{ actor }}"{% if selected.actor == actor %} selected{% endif %}>{{ actor }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="action">الفعل المراد فحصه</label>
+        <select id="action" name="action" required>
+          <option value=""{% if not selected %} selected{% endif %} disabled>اختر الفعل</option>
+          {% for action in catalog.actions %}<option value="{{ action }}"{% if selected.action == action %} selected{% endif %}>{{ action }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="resource">المورد الاصطناعي وحالته</label>
+        <select id="resource" name="resource" required>
+          <option value=""{% if not selected %} selected{% endif %} disabled>اختر المورد الاصطناعي</option>
+          {% for resource in catalog.resources %}<option value="{{ resource.id }}"{% if selected.resource == resource.id %} selected{% endif %}>{{ resource.label }} · {{ resource.id }}{% if resource.state %} · {{ resource.state }}{% endif %}</option>{% endfor %}
+        </select>
+      </div>
+      <p id="selection-help">اختر القيم الثلاث كاملة. النتيجة تفسير تقني للمنع، ولا تنفذ الفعل المختار.</p>
+      <button type="submit">فحص سبب المنع</button>
+      <a href="{% url 'permission_lab:index' %}">مسح الاختيار</a>
+    </form>
+  </section>
+  {% if decision %}
+  <section id="decision" class="decision" aria-labelledby="decision-heading">
+    <h2 id="decision-heading">القرار: <bdi>{{ decision.effect }}</bdi> · ممنوع</h2>
+    <dl class="selection">
+      <dt>الدور الافتراضي المحدد</dt><dd><bdi>{{ selected.actor }}</bdi></dd>
+      <dt>الفعل المحدد</dt><dd><bdi>{{ selected.action }}</bdi></dd>
+      <dt>المورد المحدد</dt><dd><bdi>{{ selected.resource }}</bdi></dd>
+      <dt>إمكانية التنفيذ</dt><dd>{% if not decision.allowed %}غير مسموح{% endif %}</dd>
+      <dt>توافق الفعل والمورد تقنيًا</dt><dd>{% if decision.valid_combination %}تركيبة معروفة؛ لا تعني الإذن{% else %}تركيبة غير صالحة؛ لا تعني الإذن{% endif %}</dd>
+    </dl>
+    <h3>جميع أسباب القرار</h3>
+    <ul class="reasons">{% for reason in decision.reasons %}<li><strong><bdi>{{ reason.code }}</bdi></strong><p>{{ reason.message }}</p></li>{% endfor %}</ul>
+    <h3>الأدوار المرشحة في العقد فقط</h3>
+    <p>الترشيح توثيق غير ملزم؛ لا يمنح صلاحية ولا يثبت قبول المالك.</p>
+    <ul>{% for role in decision.candidate_roles %}<li><bdi>{{ role }}</bdi></li>{% empty %}<li>لا توجد أدوار مرشحة لهذه التركيبة.</li>{% endfor %}</ul>
+    {% if decision.workflow_target %}<p>هدف الانتقال النظري: <bdi>{{ decision.workflow_target }}</bdi>. لم يُنفذ أي انتقال أو تعديل.</p>{% endif %}
+  </section>
+  {% else %}<p class="empty">لم تُفحص حالة بعد. اختر الدور والفعل والمورد لعرض أسباب المنع.</p>{% endif %}
+  <section aria-labelledby="source-heading">
+    <h2 id="source-heading">هوية المصادر الثابتة</h2>
+    <dl><dt>التزام المصدر</dt><dd><code>{{ catalog.source_commit }}</code></dd><dt>بصمة جرد المصادر SHA-256</dt><dd><code>{{ catalog.inventory_sha256 }}</code></dd></dl>
+  </section>
+{% endblock %}

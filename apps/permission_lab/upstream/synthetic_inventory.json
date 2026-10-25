@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "fixture_kind": "SYNTHETIC",
+  "policy": {
+    "policy_token": "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013",
+    "owner_approval": "OWNER_APPROVAL_PENDING",
+    "gate_b": "NOT_PASSED",
+    "gates_c_d_e": "HOLD",
+    "phase01": "BLOCKED",
+    "role_hierarchy": {
+      "MUFTI": "ADMIN_PEER",
+      "ORGANIZER_ADMIN": "ADMIN_PEER",
+      "ORGANIZER": "CONFIGURABLE_LOWER"
+    },
+    "scholarly_authorities": [
+      "MUFTI"
+    ],
+    "ai_mode": "DISABLED",
+    "inline_citations": "V1_HUMAN_REVIEWED_SUGGESTIONS_DEFERRED",
+    "external_chatgpt": "V2_DEFERRED"
+  },
+  "source_documents": [
+    {
+      "document_id": "synthetic-review",
+      "sha256": "266e07ae6b229a19df2d11b8a9aa986e9cd468a05ecacfd7d22de3ebdd7b760d"
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "P00-03::case.project",
+      "row_type": "DOMAIN_STATE",
+      "mapping_status": "UNMAPPED_HOLD",
+      "record_kind": "INTERNAL_ATOMIC_EFFECT",
+      "operation": "INTERNAL_ATOMIC_EFFECT",
+      "deny_default": "DENY_DEFAULT",
+      "binding": "NONE_CANDIDATE_BINDING_ONLY",
+      "callable": false,
+      "parent_transaction": "P00-03",
+      "source_ref": {
+        "document_id": "synthetic-review",
+        "record_id": "P00-03::case.project"
+      },
+      "policy_token": "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013",
+      "candidate_principals": [],
+      "grant_effect": "NONE",
+      "historical_answer_mutable": false
+    },
+    {
+      "action_id": "P00-03::delivery.hold",
+      "row_type": "DOMAIN_STATE",
+      "mapping_status": "UNMAPPED_HOLD",
+      "record_kind": "INTERNAL_ATOMIC_EFFECT",
+      "operation": "INTERNAL_ATOMIC_EFFECT",
+      "deny_default": "DENY_DEFAULT",
+      "binding": "NONE_CANDIDATE_BINDING_ONLY",
+      "callable": false,
+      "parent_transaction": "P00-03",
+      "source_ref": {
+        "document_id": "synthetic-review",
+        "record_id": "P00-03::delivery.hold"
+      },
+      "policy_token": "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013",
+      "candidate_principals": [],
+      "grant_effect": "NONE",
+      "historical_answer_mutable": false
+    },
+    {
+      "action_id": "synthetic::answer.create",
+      "row_type": "DOMAIN_STATE",
+      "mapping_status": "MAPPED_DRAFT",
+      "record_kind": "ACTION",
+      "operation": "SCHOLARLY_CREATE",
+      "deny_default": "DENY_DEFAULT",
+      "binding": "NONE_CANDIDATE_BINDING_ONLY",
+      "callable": false,
+      "parent_transaction": null,
+      "source_ref": {
+        "document_id": "synthetic-review",
+        "record_id": "synthetic::answer.create"
+      },
+      "policy_token": "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013",
+      "candidate_principals": [
+        {
+          "kind": "ROLE",
+          "name": "MUFTI"
+        }
+      ],
+      "grant_effect": "NONE",
+      "historical_answer_mutable": false
+    },
+    {
+      "action_id": "synthetic::catalog.inspect",
+      "row_type": "UI",
+      "mapping_status": "UNMAPPED_HOLD",
+      "record_kind": "ACTION",
+      "operation": "OTHER_DOCUMENTED",
+      "deny_default": "DENY_DEFAULT",
+      "binding": "NONE_CANDIDATE_BINDING_ONLY",
+      "callable": false,
+      "parent_transaction": null,
+      "source_ref": {
+        "document_id": "synthetic-review",
+        "record_id": "synthetic::catalog.inspect"
+      },
+      "policy_token": "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013",
+      "candidate_principals": [],
+      "grant_effect": "NONE",
+      "historical_answer_mutable": false
+    }
+  ],
+  "transitions": [
+    {
+      "transition_id": "synthetic::answer.draft",
+      "from_state": "SYNTHETIC_DRAFT",
+      "to_state": "SYNTHETIC_REVIEW",
+      "action_id": "synthetic::answer.create",
+      "enabled": false,
+      "source_ref": {
+        "document_id": "synthetic-review",
+        "record_id": "synthetic::answer.draft"
+      },
+      "policy_token": "D-067:D-068:U03-U10:OWNER_APPROVAL_PENDING:20261013",
+      "candidate_principals": [
+        {
+          "kind": "ROLE",
+          "name": "MUFTI"
+        }
+      ],
+      "grant_effect": "NONE",
+      "historical_answer_mutable": false
+    }
+  ]
+}

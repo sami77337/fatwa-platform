@@ -1,0 +1,9 @@
+{% extends 'permission_lab/base.html' %}
+{% block content %}
+  <section class="decision" aria-labelledby="failure-heading">
+    <h2 id="failure-heading"><bdi>DENY</bdi> · تعذر الفحص</h2>
+    <p>{{ message }}</p>
+    <p>لا إذن بالتنفيذ ولا نتيجة قبول مستنتجة من هذا الخطأ.</p>
+    <a href="{% url 'permission_lab:index' %}">العودة إلى قوائم المختبر</a>
+  </section>
+{% endblock %}
