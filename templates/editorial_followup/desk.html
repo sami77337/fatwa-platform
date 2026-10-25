@@ -1,0 +1,109 @@
+{% extends "editorial_followup/base.html" %}
+{% block title %}{% if selected %}متابعة السجل {{ selected.row.case.key }}{% else %}مكتب المتابعة التحريرية{% endif %}{% endblock %}
+{% block content %}
+<header class="page-heading">
+  <p class="eyebrow">متابعة تقنية · قراءة فقط</p>
+  <h1>{% if selected %}تفاصيل متابعة السجل <bdi>{{ selected.row.case.key }}</bdi>{% else %}مكتب المتابعة التحريرية{% endif %}</h1>
+  <p>تعرّف إلى المدخلات التي تحتاج استكمالًا، والإحالات التي تحتاج فحصًا، وحالة إيصال المسودة من الوقائع المسجلة.</p>
+</header>
+<section class="panel" aria-labelledby="filters-heading">
+  <h2 id="filters-heading">تصفية أسباب المتابعة</h2>
+  <form class="filters" method="get" action="{% url 'editorial_followup:index' %}">
+    <div class="field"><label for="reason">سبب المتابعة</label><select id="reason" name="reason"><option value="">كل الأسباب</option>{% for code,label in reasons %}<option value="{{ code }}"{% if filters.reason == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="batch">الدفعة الاصطناعية</label><select id="batch" name="batch"><option value="">كل الدفعات</option>{% for batch in batches %}<option value="{{ batch.batch_id }}"{% if filters.batch == batch.batch_id %} selected{% endif %}>{{ batch.label }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="status">حالة الاستلام المسجلة</label><select id="status" name="status"><option value="">كل الحالات</option>{% for code,label in statuses %}<option value="{{ code }}"{% if filters.status == code %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="form-actions"><button type="submit">تطبيق التصفية</button><a href="{% url 'editorial_followup:index' %}">مسح التصفية</a></div>
+  </form>
+  <p class="help">تُجمع المرشحات معًا. حالة الاستلام مستقلة عن تحقق المراجع؛ وجود إيصال مسودة لا يثبت اكتمالها أو اعتمادها.</p>
+</section>
+{% if batch_errors %}
+<section class="panel notice" aria-labelledby="batch-errors-heading">
+  <h2 id="batch-errors-heading">تعذر تحليل دفعات</h2>
+  <p>هذه ملاحظات مستقلة عن نتائج السجلات، تتبع مرشح الدفعة فقط. لا يُنشأ صف بديل لدفعة تعذر تحليلها.</p>
+  {% for batch in batch_errors %}<article>
+    <h3>{{ batch.label }}</h3>
+    <p><code dir="ltr">{{ batch.source.error_code }}</code> · {{ batch.source.recovery }}</p>
+    <p>بصمة المدخل: <code dir="ltr">{{ batch.source.input_sha256 }}</code></p>
+  </article>{% endfor %}
+</section>
+{% endif %}
+{% if selected %}
+<nav class="detail-nav" aria-label="التنقل بين سجلات المتابعة">
+  <a href="{{ return_url }}">العودة إلى النتائج المصفاة</a>
+  {% if previous_url %}<a href="{{ previous_url }}" rel="prev">السجل السابق</a>{% endif %}
+  {% if next_url %}<a href="{{ next_url }}" rel="next">السجل التالي</a>{% endif %}
+  {% if selection.position %}<span>السجل {{ selection.position }} من {{ selection.rows|length }}</span>{% endif %}
+</nav>
+{% if not selection.position %}<p class="notice" role="status">هذا السجل خارج نتائج المتابعة المصفاة الحالية؛ لا يُعرض له سابق أو تالٍ ضمنها.</p>{% endif %}
+<section class="panel" aria-labelledby="record-heading">
+  <h2 id="record-heading">السجل وحالة الاستلام</h2>
+  <dl class="facts">
+    <dt>هوية السجل الثابتة</dt><dd><code dir="ltr">{{ selected.row.case.key }}</code></dd>
+    <dt>الدفعة</dt><dd><bdi>{{ selected.row.batch_id }}</bdi></dd>
+    <dt>المعرّف الخارجي كما ورد</dt><dd><bdi>{{ selected.row.case.external_id|default_if_none:"لم يرد معرّف نصي" }}</bdi></dd>
+    <dt>حالة الاستلام</dt><dd>{{ selected.row.case.status_label }} · <code dir="ltr">{{ selected.row.case.status }}</code></dd>
+    <dt>إيصال المسودة</dt><dd>{% if selected.row.case.record %}مسودة متاحة في الخدمة؛ أحدث لقطة {{ selected.row.case.record.current.number }}.{% else %}لا توجد مسودة متاحة لهذا السجل في الخدمة.{% endif %}</dd>
+  </dl>
+  <h3>السؤال كما ورد</h3>
+  <pre class="exact-text" dir="auto"><code>{{ question }}</code></pre>
+  <nav class="detail-nav" aria-label="فحص السجل نفسه">
+    <a href="{{ workbench_url }}#intake">فحص الاستلام في منضدة العمل</a>
+    <a href="{{ investigation_url }}#references">فتح التحقيق المرجعي للسجل</a>
+    {% if receipt_url %}<a href="{{ receipt_url }}">عرض أحدث لقطة للمسودة</a>{% endif %}
+  </nav>
+</section>
+<section aria-labelledby="reasons-heading" id="followup-reasons">
+  <h2 id="reasons-heading">أسباب المتابعة والخطوة التقنية المتاحة</h2>
+  <p>إرشادات للتحضير والفحص من الدليل الموجود؛ لا تنفّذ هذه الصفحة أي تصحيح أو انتقال.</p>
+  <div class="reason-grid">{% for reason in selected.reasons %}<article class="panel reason-card">
+    <h3>{{ reason.label }}</h3>
+    <p><strong>الواقعة المسجلة:</strong> {{ reason.evidence }}</p>
+    <p><strong>تحضير للفحص:</strong> {{ reason.guidance }}</p>
+  </article>{% empty %}<p class="empty">لا توجد ملاحظات متابعة مشتقة من الوقائع المعروضة لهذا السجل. لا يمثل ذلك اكتمالًا أو قرارًا تحريريًا أو اعتمادًا علميًا.</p>{% endfor %}</div>
+</section>
+{% if selected.preparation %}
+<section class="panel" aria-labelledby="preparation-heading" id="preparation">
+  <h2 id="preparation-heading">تفاصيل تشخيص المدخل</h2>
+  <ol class="diagnostics">{% for finding in selected.preparation %}<li>
+    <p>الحقل: <code dir="ltr">{{ finding.field|default:"صف كامل" }}</code> · رمز السبب: <code dir="ltr">{{ finding.code }}</code> · مستوى التشخيص: <code dir="ltr">{{ finding.severity }}</code>{% if finding.reference_index %} · موضع الإحالة {{ finding.reference_index }}{% endif %}</p>
+    <p>{{ finding.explanation }}</p><p><strong>التحضير المتاح:</strong> {{ finding.guidance }}</p>
+  </li>{% endfor %}</ol>
+  <a href="{{ workbench_url }}#intake">مقارنة التشخيص بالاستلام الأصلي</a>
+</section>
+{% endif %}
+<section class="panel" aria-labelledby="references-heading" id="references">
+  <h2 id="references-heading">الإحالات التي تحتاج تحقيقًا</h2>
+  {% if selected.row.case.key == "history" %}<p class="notice">هذه إحالات أحدث لقطة ثابتة، المراجعة {{ selected.row.case.record.current.number }}، وليست إحالات كل المراجعات أو مؤشرات الاستلام الأصلي.</p>{% else %}<p>هذه النتائج تخص مؤشرات الاستلام الأصلي لهذا السجل.</p>{% endif %}
+  <p>المطابقة التقنية مستقلة عن صلاحية الاستلام، ولا تثبت صحة علمية أو ملاءمة استشهاد أو فحص أرشيف.</p>
+  <ol class="diagnostics">{% for entry in reference_rows %}<li>
+    <h3>الإحالة {{ entry.ref.reference_ordinal }}</h3>
+    <p>حالة الخدمة: <code dir="ltr">{{ entry.ref.status }}</code> · {{ entry.ref.explanation_ar }}</p>
+    <ul>{% for reason in entry.ref.reasons %}<li><code dir="ltr">{{ reason }}</code></li>{% empty %}<li>لم تسجل الخدمة رمز سبب إضافيًا.</li>{% endfor %}</ul>
+    <a href="{{ entry.url }}">فحص الهوية والدليل الدقيق للإحالة {{ entry.ref.reference_ordinal }}</a>
+  </li>{% empty %}<li class="empty">{% if selected.row.case.references %}لم تُرجع الخدمة إحالات غير متحققة لهذا السجل. المطابقة التقنية المسجلة لا تمثل اعتمادًا علميًا.{% else %}لا توجد مؤشرات إحالة قابلة للعرض. قد تكون المراجع غائبة أو غير صالحة؛ راجع تشخيص المدخل وأصل السجل قبل استكمال أي معلومات.{% endif %}</li>{% endfor %}</ol>
+  <a href="{{ investigation_url }}#source">فحص مصدر السجل في التحقيق المرجعي</a>
+</section>
+{% if selected.row.case.issues %}
+<section class="panel" aria-labelledby="issues-heading"><h2 id="issues-heading">ملاحظات الخدمة الأصلية</h2><ul>{% for issue in selected.row.case.issues %}<li>{{ issue }}</li>{% endfor %}</ul></section>
+{% endif %}
+<section class="panel" aria-labelledby="source-heading" id="source">
+  <h2 id="source-heading">النص والمصدر المحفوظان</h2>
+  <p>{{ selected.row.case.fixture_label }}</p>
+  <dl class="facts"><dt>بصمة مدخل العينة SHA-256</dt><dd><code dir="ltr">{{ selected.row.case.payload_sha256 }}</code></dd><dt>بصمة نص تمثيل السجل SHA-256</dt><dd><code dir="ltr">{{ selected.row.source_sha256 }}</code></dd></dl>
+  {% if selected.row.case.source_start != None %}<p>حدود الشريحة ببايتات UTF-8: البداية {{ selected.row.case.source_start }}؛ النهاية غير المشمولة {{ selected.row.case.source_end }}.</p>{% else %}<p>هذا تسلسل نصي من الخدمة، ولا توجد له حدود بايتات في ملف أصلي. بصمة التمثيل مستقلة عن بصمة مدخل العينة.</p>{% endif %}
+  <pre class="exact-text" dir="auto"><code>{{ source }}</code></pre>
+</section>
+{% else %}
+<section aria-labelledby="results-heading">
+  <h2 id="results-heading">سجلات المتابعة</h2>
+  <p class="result-count" role="status">{{ selection.rows|length }} سجلًا مطابقًا للتصفية. إجمالي السجلات ذات أسباب المتابعة {{ followup_total }} من {{ total }} سجلًا في العينات الثابتة.</p>
+  <p>قد يجتمع أكثر من سبب في السجل نفسه؛ يُعرض مرة واحدة. الترتيب ثابت وفق ترتيب خدمة العينات.</p>
+  <div class="case-list">{% for entry in rows %}<article class="panel case-card">
+    <div class="case-heading"><h3><a href="{{ entry.url }}">تفاصيل السجل <bdi>{{ entry.item.row.case.key }}</bdi></a></h3><span class="status">{{ entry.item.row.case.status_label }}</span></div>
+    <p>الدفعة <bdi>{{ entry.item.row.batch_id }}</bdi> · المعرّف الخارجي <bdi>{{ entry.item.row.case.external_id|default_if_none:"لم يرد معرّف نصي" }}</bdi></p>
+    <pre class="exact-text" dir="auto"><code>{{ entry.question }}</code></pre>
+    <ul class="reason-tags" aria-label="أسباب متابعة السجل">{% for reason in entry.item.reasons %}<li>{{ reason.label }}</li>{% endfor %}</ul>
+  </article>{% empty %}<div class="panel empty"><p>لا توجد سجلات متابعة تطابق المرشحات الحالية.</p><a href="{% url 'editorial_followup:index' %}">عرض كل أسباب المتابعة</a></div>{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}
