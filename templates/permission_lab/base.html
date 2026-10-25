@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مختبر فحص الصلاحيات · تطوير محلي</title>
+  <link rel="stylesheet" href="{% url 'permission_lab:style' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="wrap">
+    <p>منصة الفتوى · بيئة التطوير المحلية</p>
+    <h1>مختبر فحص الصلاحيات</h1>
+    <p>فحص تفسير المنع على موارد اصطناعية ثابتة، للقراءة فقط.</p>
+    <nav aria-label="التنقل"><a href="/dev/editorial-dashboard">العودة إلى لوحة المتابعة التحريرية</a></nav>
+  </header>
+  <main class="wrap" id="main-content" tabindex="-1">
+    <aside class="notice" aria-label="نطاق المختبر والبوابات">
+      <strong>عينات اصطناعية فقط · لا يمنح هذا المختبر أي صلاحية</strong>
+      <p>الدور المختار تسمية افتراضية للفحص، وليس هوية مستخدم مسجل الدخول أو انتحالًا لدور.</p>
+      <p>صفوف الصلاحيات التاريخية البالغ عددها 70 والانتقالات التاريخية البالغ عددها 58 غير متاحة هنا. لقطة العقود الاصطناعية تتضمن 4 صفوف صلاحيات وانتقالًا واحدًا فقط؛ وتُفحص حالات المراجعة التقنية الثابتة على نحو منفصل.</p>
+      <p>لا اعتماد للسياسات أو فتوى أو نشر أو تنفيذ انتقال. بنود U03/U10 البالغ عددها 76 ما زالت بانتظار قبول المالك.</p>
+      <p class="gates" dir="ltr">Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; SCOPE_DEVIATION_HOLD; NOT_DEPLOYED</p>
+    </aside>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="wrap"><p>عرض محلي للقراءة فقط · لا تعديل للمستخدمين أو البيانات أو الأذونات.</p></footer>
+</body>
+</html>
