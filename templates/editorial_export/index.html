@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تصدير المراجعة الاصطناعية</title>
+  <link rel="stylesheet" href="{% url 'editorial_workbench:style' %}">
+</head>
+<body>
+<a class="skip-link" href="#main">انتقل إلى المحتوى</a>
+<header class="site-header shell">
+  <h1>تصدير المراجعة الاصطناعية</h1>
+  <p>عينات اصطناعية ثابتة للتطوير المحلي فقط. هذه الملفات ليست فتاوى منشورة ولا اعتمادًا علميًا أو إذن تشغيل.</p>
+  <p>لا تُحمّل مراجعات محفوظة أو بيانات مستخدمين، ولا تنفَّذ إجراءات تحرير أو نشر.</p>
+  <nav aria-label="التنقل المحلي"><a href="{% url 'editorial_workbench:index' %}">مساحة المراجعة المحلية</a></nav>
+</header>
+<main id="main" class="shell">
+  <section class="panel" aria-labelledby="summary-title">
+    <h2 id="summary-title">نطاق التصدير</h2>
+    <p>عدد السجلات: <strong>{{ case_count }}</strong>؛ عدد دفعات التحضير: <strong>{{ batch_count }}</strong>.</p>
+    <p>تظل السجلات الأصلية التي لا تنتمي إلى دفعات التحضير مميزة بهويتها؛ لا تُجمع السجلات بالمعرّف الخارجي.</p>
+    <p>مخطط التقرير: <bdi>{{ report.schema }}</bdi></p>
+    <ul>{% for hold in report.holds %}<li><bdi>{{ hold }}</bdi></li>{% endfor %}</ul>
+  </section>
+  <section class="panel" aria-labelledby="files-title">
+    <h2 id="files-title">ملفات التصدير</h2>
+    <p>التقرير وملف سجلات CSV يحتفظان بتفاصيل الحزم كاملة. كل خلية بيانات في ملفات CSV قيمة JSON تحتاج إلى فك ترميز JSON بعد قراءة CSV لاستعادة الأنواع والنصوص وفواصل الأسطر الأصلية. هذا الترميز يمنع تفسير النصوص الشبيهة بالصيغ كصيغ جداول بيانات. ملف البيان يتيح فحص سلامة الملفات.</p>
+    <ul>
+      {% for file in files %}
+      <li>
+        <a href="{{ file.url }}" download>تنزيل <bdi>{{ file.filename }}</bdi></a>
+        <p>الحجم بالبايت: {{ file.bytes }}</p>
+        <details><summary>بصمة SHA256 للملف</summary><p><bdi>{{ file.sha256 }}</bdi></p></details>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  <section class="panel" aria-labelledby="batches-title">
+    <h2 id="batches-title">دفعات التحضير، بما فيها الدفعات المتعذرة</h2>
+    {% for batch in report.batches %}
+    <article aria-labelledby="batch-{{ forloop.counter }}">
+      <h3 id="batch-{{ forloop.counter }}">دفعة <bdi>{{ batch.batch_id }}</bdi></h3>
+      <dl>
+        <dt>صيغة الإدخال</dt><dd><bdi>{{ batch.input_format }}</bdi></dd>
+        <dt>إجمالي الصفوف</dt><dd>{{ batch.record_count }}</dd>
+        <dt>صفوف صالحة للتحضير</dt><dd>{{ batch.valid_count }}</dd>
+        <dt>صفوف مرفوضة</dt><dd>{{ batch.rejected_count }}</dd>
+        <dt>صفوف معلقة</dt><dd>{{ batch.pending_count }}</dd>
+        <dt>بصمة إدخال الدفعة SHA256</dt><dd><bdi>{{ batch.input_sha256 }}</bdi></dd>
+      </dl>
+      {% if batch.error_code %}
+      <p>تعذر تحضير الدفعة؛ بقيت في الجرد دون اختلاق سجلات: <bdi>{{ batch.error_code }}</bdi>.</p>
+      <p>{{ batch.recovery }}</p>
+      {% endif %}
+    </article>
+    {% empty %}<p>لا توجد دفعات تحضير.</p>{% endfor %}
+  </section>
+  <section class="panel" aria-labelledby="cases-title">
+    <h2 id="cases-title">هويات السجلات ومصادرها</h2>
+    {% for entry in report.cases %}
+    <article aria-labelledby="case-{{ forloop.counter }}">
+      <h3 id="case-{{ forloop.counter }}"><a href="{{ entry.navigation.packet_path }}">حزمة السجل <bdi>{{ entry.navigation.case_key }}</bdi></a></h3>
+      <dl>
+        <dt>المعرّف الخارجي، وليس مفتاح الربط</dt><dd class="exact-text"><bdi>{{ entry.packet.identity.external_id|default_if_none:"غير موجود" }}</bdi></dd>
+        <dt>الدفعة</dt><dd><bdi>{{ entry.packet.identity.batch_id|default_if_none:"سجل أصلي خارج دفعات التحضير" }}</bdi></dd>
+        <dt>ترتيب الصف في الدفعة</dt><dd>{{ entry.packet.identity.row_ordinal|default_if_none:"لا ينطبق" }}</dd>
+        <dt>حالة الاستلام</dt><dd>{{ entry.packet.receipt.label_ar }}</dd>
+        <dt>وصف المصدر الاصطناعي</dt><dd>{{ entry.packet.source.label_ar }}</dd>
+        <dt>نوع تمثيل المصدر</dt><dd><bdi>{{ entry.packet.source.kind }}</bdi></dd>
+        <dt>بصمة إدخال المصدر SHA256</dt><dd><bdi>{{ entry.packet.source.input_sha256 }}</bdi></dd>
+        <dt>بصمة حزمة السجل SHA256</dt><dd><bdi>{{ entry.packet_sha256 }}</bdi></dd>
+        <dt>عدد اللقطات الثابتة</dt><dd>{{ entry.packet.snapshots|length }}</dd>
+        <dt>عدد الإحالات للفحص</dt><dd>{{ entry.packet.reference_verification.results|length }}</dd>
+      </dl>
+      <p>{{ entry.packet.reference_verification.limit_ar }}</p>
+    </article>
+    {% empty %}<p>لا توجد سجلات اصطناعية.</p>{% endfor %}
+  </section>
+</main>
+</body>
+</html>

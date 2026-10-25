@@ -5,6 +5,7 @@ from apps.public_site import views as public_views
 from apps.reference import views
 
 urlpatterns = [
+    path("dev/editorial-export", include("apps.editorial_export.urls")),
     path("dev/reference-triage", include("apps.reference_triage.urls")),
     path("dev/editorial-queue", include("apps.editorial_queue.urls")),
     path("dev/editorial-workbench", include("apps.editorial_workbench.urls")),
