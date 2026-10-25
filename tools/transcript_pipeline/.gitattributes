@@ -1,0 +1,2 @@
+# Keep the documented synthetic fixture byte hash stable on Windows checkouts.
+examples/*.json text eol=lf
