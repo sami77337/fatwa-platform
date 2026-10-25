@@ -23,8 +23,8 @@
 - [x] Cherry-pick only the four verified missing commits with provenance; inspect any real conflicts.
 - [x] Run combined queue/workbench/triage/pipeline/intake/revision regressions and focused browser flows, including keyboard, mobile, packets and malformed recovery.
 - [x] Resolve integration failures with observed regression evidence; preserve existing services and protections.
-- [ ] Perform one independent final read-only review; address material findings and rerun affected checks.
-- [ ] Verify final ancestry/protected-path diff, record actual SHA and fixture identities, push the branch and create one Draft PR to FAST2.
+- [x] Perform one independent final read-only review; address material findings and rerun affected checks.
+- [x] Verify final ancestry/protected-path diff, record actual SHA and fixture identities, and prepare delivery as one Draft PR to FAST2. Remote delivery metadata is recorded in the PR.
 
 ## Review focus
 
@@ -109,3 +109,13 @@ Ran the documented `diagnose` report/preview/`--show-row a 2`/export/check comma
 | `rows.jsonl` | 6771 | `7fc57835ab24916b744c88065f70bb11b6c45ea758af40f4f0901abd40ae12ae` |
 
 The diff against FAST2 is empty for `AGENTS.md`, coordination records, settings, catalog implementation/tests/assets, Wave7 browser transport, workflows, dependencies and intake workflow. Shared `config/urls.py` changes by exactly the reference-triage include from #103. No migrations. Rollback is code-only by reverting this integration branch's commits; no data conversion is required.
+
+## المراجعة النهائية ونتيجة النسخة المثبتة
+
+النسخة البرمجية النهائية `1f741c0db9dd45a0c7a314ccbad1069edab7e8e0` اجتازت تشغيل المتصفح المحمي من شجرة نظيفة: **17/17 PASS** على Chrome `155.0.8059.85`، دون مخالفات شبكة أو أخطاء runtime/console أو HTTP غير متوقعة. يشمل التشغيل مقارنة النصوص المعروضة لكل اللقطات مع JSON والتحقق من CRLF في حزمة الحالة العربية. التقرير المحلي: `C:/Users/S.AlAttar/.codex/tmp/fast3-qa/committed-1f741c0/editorial-result.json`. فحوص Ruff والتنسيق للملفات الـ48 وفحوص الأسلاف والملفات المحمية أعيدت بنجاح عند الالتزام نفسه. حُسبت بصمات العينات الست من الخدمات فعليًا وطابقت السجل.
+
+أُجريت **مراجعة نهائية مستقلة واحدة للقراءة فقط** على المدى `e64ebc0…1f741c0`، دون تعديل الشجرة أو تشغيل مراجع آخر. النتيجة: جاهز لمراجعة Draft PR، ولا توجد ملاحظات وظيفية أو أمنية أو تكاملية تستلزم إصلاحًا، ولا ملاحظات مؤجلة. أعاد المراجع مستقلًا تشغيل **76 اختبار Python و4 اختبارات Node لسياسة الطلبات**، وتحقق من نظافة الفرع، وأسلاف Wave3/FAST2، والفارق المحمي الفارغ، وinclude المسار الوحيد، وبصمتي مدخلي التشخيص.
+
+حدود المراجعة الصريحة: لم يُصدر المراجع حكمًا على جاهزية الإنتاج أو الدمج، أو قبول PostgreSQL وأرشيفات المالك، أو صحة عمليات الأحداث المحفوظة، أو موافقات المالك. هذه خارج نطاق FAST3 المصرح به وتبقى غير مقبولة/غير منفذة؛ ولم يُعِد المراجع تشغيل المتصفح، بل اختبره المنفذ كما هو موثق. لا تُستنتج موافقة بوابة من نجاح الاختبارات.
+
+هذا التحديث اللاحق يثبت الأدلة فقط، دون تغيير النسخة البرمجية المراجَعة. الفرع والـDraft PR يستهدفان `codex/20261024-fast2-integration` فقط. **NOT_DEPLOYED / GATES_HOLD؛ Gate B NOT_PASSED؛ C/D/E HOLD؛ Phase01 BLOCKED؛ SCOPE_DEVIATION_HOLD.**
