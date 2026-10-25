@@ -12,7 +12,8 @@
 <a href="{% url 'editorial_dashboard:index' %}">لوحة التحرير</a>
 <a href="{% url 'editorial_workbench:index' %}">مكتب المسودات</a>
 <a href="{% url 'editorial_followup:index' %}">المتابعة</a>
-</nav></header>
+</nav>
+{% include 'editorial_tools/fast5_nav.html' %}</header>
 <main id="main-content" tabindex="-1">
 <p class="notice" id="review-disclaimer"><bdi>REVIEWED_INTERNAL</bdi> تعني اكتمال مراجعة داخلية اصطناعية فقط؛ ليست اعتماداً علمياً ولا إذناً بالنشر، ولا تثبت صحة الإحالات. حالة الإعداد مستقلة عن المراجعة.</p>
 {% if rehearsal %}
@@ -67,6 +68,7 @@
 <p><bdi>{{ row.reference.contract_status }}</bdi> — {{ row.reference.explanation_ar }}</p>
 <pre><code>{{ row.source }}</code></pre>
 <a href="{% url 'reference_triage:detail' rehearsal.case.key %}#reference-{{ row.reference.reference_ordinal }}">تفاصيل هذه الإحالة</a>
+<a href="{% url 'research_bridge:detail' rehearsal.case.key %}#reference-{{ row.reference.reference_ordinal }}">مطابقة هذه الإحالة مع الفهرس</a>
 </article>{% empty %}<p>لا توجد إحالات مرفقة.</p>{% endfor %}</section>
 {% else %}
 <h2>اختر سجلاً اصطناعياً</h2>

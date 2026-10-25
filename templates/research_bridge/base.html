@@ -13,6 +13,7 @@
   <p class="site-title">جسر البحث المرجعي</p>
   <p>مطابقة تقنية لهوية إحالة ثابتة مع الفهرس المتاح للقراءة؛ لا تثبت صحة علمية أو ملاءمة استشهاد أو فحص أي أرشيف.</p>
   <nav aria-label="التنقل العام"><a href="{% url 'research_bridge:index' %}">كل سجلات البحث</a><a href="{% url 'reference_triage:index' %}">التحقيق المرجعي</a><a href="{% url 'editorial_workbench:index' %}">مساحة العمل التحريرية</a></nav>
+{% include 'editorial_tools/fast5_nav.html' %}
 </div></header>
 <main class="shell" id="main-content" tabindex="-1">{% block content %}{% endblock %}</main>
 <footer class="shell site-footer">
