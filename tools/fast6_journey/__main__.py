@@ -17,12 +17,18 @@ def main(argv: list[str] | None = None) -> int:
         allow_abbrev=False,
     )
     parser.add_argument("--synthetic-fixtures-only", action="store_true", required=True)
+    parser.add_argument("--integrated", action="store_true", help="Include offline FAST6 bridges")
     arguments = parser.parse_args(argv)
 
     from apps.fast6_journey.services import JourneyError, run_journey
 
     try:
-        report = run_journey(synthetic_fixtures_only=arguments.synthetic_fixtures_only)
+        if arguments.integrated:
+            from apps.fast6_journey.integration import run_integration
+
+            report = run_integration(synthetic_fixtures_only=arguments.synthetic_fixtures_only)
+        else:
+            report = run_journey(synthetic_fixtures_only=arguments.synthetic_fixtures_only)
         sys.stdout.buffer.write(report.json_bytes)
         sys.stdout.buffer.flush()
     except (JourneyError, ValueError, OSError):

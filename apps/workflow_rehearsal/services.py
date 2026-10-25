@@ -101,6 +101,33 @@ def build_rehearsal(key: str = "intake-7") -> Rehearsal:
     if type(key) is not str or key not in CASE_KEYS:
         raise RehearsalError("rehearsal: unknown_fixed_case")
     case = next(case for case in build_cases() if case.key == key)
+    return _rehearse(case)
+
+
+def build_prepared_rehearsal(key: str, *, synthetic_fixtures_only: bool = False) -> Rehearsal:
+    """Offline bridge for exact, fixed prepared rows, including rejected receipts.
+
+    No arbitrary record, source path, actor or transition is accepted. Missing
+    drafts remain missing. The original HTTP selector remains unchanged.
+    """
+    from apps.editorial_export.services import require_development
+    from apps.editorial_workbench.services import build_prepared_workbench
+
+    require_development(synthetic_fixtures_only)
+    if type(key) is not str or key not in (
+        *(f"batch-synthetic-csv-{n}" for n in range(1, 5)),
+        *(f"batch-synthetic-json-{n}" for n in range(1, 5)),
+        *(f"batch-synthetic-jsonl-{n}" for n in range(1, 4)),
+    ):
+        raise RehearsalError("rehearsal: unknown_fixed_prepared_case")
+    matches = [case for case in build_prepared_workbench().cases if case.key == key]
+    if len(matches) != 1:
+        raise RehearsalError("rehearsal: prepared_identity_set")
+    return _rehearse(matches[0])
+
+
+def _rehearse(case: WorkbenchCase) -> Rehearsal:
+    """Shared fixed attempts over an internally selected synthetic case."""
     case = replace(case, references=_freeze(case.references))
     source = record = case.record
     review = "UNREVIEWED"

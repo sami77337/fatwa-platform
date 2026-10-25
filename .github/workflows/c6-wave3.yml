@@ -28,6 +28,17 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Dispatcher regressions
         run: python -m unittest discover -s tests/dev -p 'test_*.py' -v
+      - name: FAST6 combined offline engines, bridges and guarded HTTP
+        run: >-
+          python -B manage.py test
+          tests.workflow_invariants.test_engine tests.workflow_invariants.test_cli
+          tests.policy_gap_engine.test_evidence tests.policy_gap_engine.test_services tests.policy_gap_engine.test_cli
+          tests.source_readiness.test_service tests.source_readiness.test_cli
+          tests.fast6_journey.test_services tests.fast6_journey.test_cli
+          tests.fast6_journey.test_http tests.fast6_journey.test_integration
+          tests.workflow_rehearsal.test_services tests.workflow_rehearsal.test_views
+          tests.editorial_export.test_services tests.integration.test_fast5
+          --settings=config.settings.test --noinput --verbosity=2
       - name: Require every actual Wave7 pure module and nonzero execution
         run: python -B tools/dev/wave7_qa.py --suite pure --json .local/qa/c6/wave7-pure.json
       - name: E2 default-off boundary with unreachable database
