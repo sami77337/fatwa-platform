@@ -1,0 +1,9 @@
+{% extends "editorial_followup/base.html" %}
+{% block title %}تعذر عرض مكتب المتابعة{% endblock %}
+{% block content %}
+<section class="panel error-panel" aria-labelledby="error-heading">
+  <h1 id="error-heading">تعذر عرض مكتب المتابعة</h1>
+  <p role="alert">{{ message }}</p>
+  <a href="{% url 'editorial_followup:index' %}">العودة إلى مكتب المتابعة</a>
+</section>
+{% endblock %}
