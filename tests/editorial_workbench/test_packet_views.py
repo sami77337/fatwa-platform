@@ -14,6 +14,7 @@ class Links(HTMLParser):
         super().__init__()
         self.links = []
         self.ids = []
+        self.details = []
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
@@ -22,6 +23,8 @@ class Links(HTMLParser):
             self.ids.append(attrs["id"])
         if tag == "a":
             self.links.append(attrs.get("href", ""))
+        if tag == "details":
+            self.details.append("open" in attrs)
 
 
 @override_settings(ALLOWED_HOSTS=["localhost", "remote.invalid"])
@@ -62,6 +65,7 @@ class PacketViewsTests(SimpleTestCase):
         printable = self.get(html.context["packet_print_url"])
         self.assertEqual(printable.context["packet"], html.context["packet"])
         self.assertContains(printable, "Ctrl+P")
+        self.assertTrue(all(Links(printable.content.decode()).details))
         self.assertNotContains(printable, "<script")
         parsed = Links(html.content.decode())
         self.assertEqual(len(parsed.ids), len(set(parsed.ids)))
@@ -80,6 +84,25 @@ class PacketViewsTests(SimpleTestCase):
                 html = self.get(self.detail(case.key) + "?packet=html")
                 self.assertEqual(html.status_code, 200)
                 self.assertContains(html, case.key)
+                printable = self.get(self.detail(case.key) + "?packet=print")
+                self.assertEqual(printable.status_code, 200)
+                self.assertTrue(all(Links(printable.content.decode()).details))
+
+    def test_packet_preserves_carriage_returns_and_initial_newline_in_escaped_html(self):
+        from apps.editorial_workbench import views
+        from apps.editorial_workbench.services import build_cases
+
+        case = replace(
+            build_cases()[0], question="\nسؤال\r\n<script>synthetic</script>", record=None
+        )
+        with patch.object(views, "build_cases", return_value=(case,)):
+            for mode in ("html", "print"):
+                with self.subTest(mode=mode):
+                    response = self.get(self.detail() + "?packet=" + mode)
+                    self.assertContains(
+                        response, "<code>\nسؤال&#13;\n&lt;script&gt;synthetic&lt;/script&gt;</code>"
+                    )
+                    self.assertNotContains(response, "<script>")
 
     def test_packet_query_validation_and_missing_case_or_revision(self):
         for query, status in (

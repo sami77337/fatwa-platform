@@ -74,7 +74,7 @@ export function editorialCases(h) {
     }],
     ["review queue opens the same exact revision in the combined workbench", async () => {
       await navigate("/dev/editorial-queue");
-      assert.equal(await e("document.querySelectorAll('.case-list>li').length"), 9);
+      assert.equal(await e("document.querySelectorAll('.case-list>li').length"), worklistCount);
       await type("#q", "SYN-REVISION");
       await key("Enter", 13);
       await wait("document.querySelectorAll('.case-list>li').length===1");

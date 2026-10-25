@@ -43,7 +43,7 @@ including NOT_RUN (read the JSON for the distinction); `run.py --catalog`
 exits 2 when its ownership/configuration preflight denies execution. Unselected scopes are
 explicitly listed; partial execution never becomes acceptance PASS.
 
-Fourteen editorial cases cover Arabic RTL, nine original source-bound records
+Seventeen editorial cases cover Arabic RTL, nine original source-bound records
 plus eleven prepared rows, keyboard
 Tab/Enter/select navigation and visible skip-link focus, filtered return links,
 sparse revision selection, reverse/same comparison, snapshot focus/back/forward,
@@ -59,6 +59,16 @@ The network gate intercepts before navigation and blocks foreign origins, writes
 media and routes outside the QA allowlist. Unexpected HTTP errors, console errors
 and runtime exceptions fail the run. Expected recovery responses assert HTTP
 400/404 as well as usable content.
+
+FAST3 adds three combined scenarios: a filtered prepared queue opens the exact
+row/revision and packet and recovers from the malformed batch; the sparse history
+packet preserves revision 7 and comparison 11→4, verifies the downloaded JSON
+digest and exact snapshot DOM text, opens complete print details and returns to
+the same selection; reference investigation opens the corresponding prepared
+workbench and packet with exact Arabic/CRLF on mobile. The queue now exposes all
+20 existing cases. The request allowlist adds only bounded local
+`/dev/reference-triage` routes; writes, external origins and action subpaths remain
+denied. The missing-browser test retains all 17 cases as NOT_RUN.
 
 ## Optional real PostgreSQL catalog gate
 

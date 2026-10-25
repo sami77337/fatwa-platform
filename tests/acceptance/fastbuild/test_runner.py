@@ -53,5 +53,5 @@ class RunnerFailureTests(SimpleTestCase):
             report = json.loads(Path(directory, "editorial-result.json").read_text())
             self.assertEqual(report["result"], "NOT_RUN")
             self.assertEqual(report["phase"], "browser-startup")
-            self.assertEqual(report["counts"], {"PASS": 0, "FAIL": 0, "NOT_RUN": 14})
+            self.assertEqual(report["counts"], {"PASS": 0, "FAIL": 0, "NOT_RUN": 17})
             self.assertEqual(report["requests"], [])

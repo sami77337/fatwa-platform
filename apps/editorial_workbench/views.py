@@ -8,6 +8,8 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.template import engines
 from django.urls import reverse
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_safe
 
 from apps.editorial_demo.views import local_only
@@ -250,6 +252,17 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
                 context.update(
                     {
                         "packet": payload,
+                        "packet_external_id": _packet_exact(
+                            payload["identity"]["external_id"], "غير موجود"
+                        ),
+                        "packet_question": _packet_exact(
+                            payload["intake"]["question"], "لا يوجد سؤال نصي صالح"
+                        ),
+                        "packet_clip_url": _packet_exact(
+                            payload["intake"]["prepared_clip_url"], "غير مرفق"
+                        ),
+                        "packet_source_text": _packet_exact(payload["source"]["text"]),
+                        "packet_input_text": _packet_exact(payload["source"]["input_text"]),
                         "packet_sha256": packet.sha256,
                         "packet_bytes": len(packet.json_bytes),
                         "print_mode": request.GET["packet"] == "print",
@@ -260,12 +273,28 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
                         "packet_print_url": _url(
                             "editorial_workbench:detail", {**packet_params, "packet": "print"}, key
                         ),
-                        "packet_intake_json": _packet_text(payload["intake"]),
-                        "packet_reference_json": _packet_text(payload["reference_verification"]),
+                        "packet_intake_json": _packet_exact(_packet_text(payload["intake"])),
+                        "packet_reference_json": _packet_exact(
+                            _packet_text(payload["reference_verification"])
+                        ),
                         "packet_snapshots": tuple(
                             {
-                                "snapshot": snapshot,
-                                "references": _packet_text(snapshot["reference_links"]),
+                                "snapshot": {
+                                    name: _packet_exact(value)
+                                    if name
+                                    in {
+                                        "human_editor",
+                                        "editorial_note",
+                                        "title",
+                                        "answer",
+                                        "reviewer_notes",
+                                    }
+                                    else value
+                                    for name, value in snapshot.items()
+                                },
+                                "references": _packet_exact(
+                                    _packet_text(snapshot["reference_links"])
+                                ),
                             }
                             for snapshot in payload["snapshots"]
                         ),
@@ -278,6 +307,12 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
     response = HttpResponse(_owned_template("workbench.html").render(context, request))
     response["Cache-Control"] = "no-store"
     return response
+
+
+def _packet_exact(value: str | None, missing: str = "") -> str:
+    """Escape source first; preserve CR and initial LF through HTML parsing."""
+    escaped = str(escape(missing if value is None else value)).replace("\r", "&#13;")
+    return mark_safe("<code>" + escaped + "</code>")
 
 
 def _packet_text(value) -> str:
