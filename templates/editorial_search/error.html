@@ -1,0 +1,2 @@
+{% extends "editorial_search/base.html" %}
+{% block content %}<h2>تعذر عرض البحث</h2><p role="alert">{{ message }}</p><a href="{% url 'editorial_search:index' %}">العودة إلى البحث ومسح التصفية</a>{% endblock %}

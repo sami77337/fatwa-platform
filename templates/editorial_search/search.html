@@ -1,0 +1,35 @@
+{% extends "editorial_search/base.html" %}
+{% block content %}
+<form method="get" action="{% url 'editorial_search:index' %}" role="search">
+  <div><label for="q">كلمات البحث</label><input id="q" name="q" type="search" maxlength="80" value="{{ filters.q }}" aria-describedby="search-help"></div>
+  <div><label for="source">نوع المصدر</label><select id="source" name="source"><option value="">جميع الأنواع</option>{% for value, label in sources %}<option value="{{ value }}"{% if filters.source == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div><label for="batch">الدفعة</label><select id="batch" name="batch"><option value="">جميع الدفعات</option>{% for batch in batches %}<option value="{{ batch.batch_id }}"{% if filters.batch == batch.batch_id %} selected{% endif %}>{{ batch.label }}</option>{% endfor %}</select></div>
+  <button type="submit">بحث</button><a href="{% url 'editorial_search:index' %}">مسح البحث</a>
+</form>
+<p id="search-help">تُطابق الكلمات معًا مع تجاهل التشكيل والتطويل واختلاف الألف والياء المقصورة. تبقى النصوص المعروضة كما وردت، دون إعادة صياغة. يشمل البحث المراجعات السابقة؛ وقد يتكرر النص في مراجعات مختلفة.</p>
+<p>المراجع المتاحة هويات وإحالات وفهرس اصطناعي فقط؛ ليست توثيقًا علميًا أو بحثًا في الكتب الأصلية.</p>
+<section aria-labelledby="results-title">
+<h2 id="results-title">النتائج: {{ result.total }}{% if result.truncated %} على الأقل{% endif %}</h2>
+{% if result.truncated %}<p role="status">عُرضت أول ٢٠٠ نتيجة فقط. ضيّق البحث أو اختر دفعة أو نوع مصدر.</p>{% endif %}
+{% for row in rows %}
+<article>
+  <h3><a href="{{ row.url }}">{{ row.hit.source_label }} — {% if row.hit.case_key %}<bdi>{{ row.hit.case_key }}</bdi>{% else %}<bdi>{{ row.hit.batch_id }}</bdi>{% endif %}</a></h3>
+  <p>الدفعة: <bdi>{{ row.hit.batch_id }}</bdi> · {% if row.hit.revision %}المراجعة: {{ row.hit.revision }}{% else %}مصدر الاستلام أو الدفعة؛ بلا هوية مراجعة{% endif %}</p>
+  <dl>{% for field in row.fields %}<dt>{{ field.label }}</dt><dd><pre>{{ field.text }}</pre></dd>{% endfor %}</dl>
+  <details><summary>هوية المصدر وبصمته</summary>
+    <p>{{ row.hit.fixture_label }}</p>
+    {% if row.hit.input_sha256 %}<p>SHA-256 للحمولة: <bdi>{{ row.hit.input_sha256 }}</bdi></p>{% endif %}
+    {% if row.hit.source_sha256 %}<p>SHA-256 لنص صف المصدر: <bdi>{{ row.hit.source_sha256 }}</bdi></p>{% endif %}
+    <p>البصمة تخص مصدر الاستلام، ولا تمثل بصمة نص المراجعة.</p>
+  </details>
+</article>
+{% empty %}
+<p role="status">لا توجد نتائج. أدخل كلمات ذات معنى أو عدّل المرشحات؛ البحث الفارغ لا يعرض جميع السجلات.</p>
+{% endfor %}
+</section>
+{% if result.total %}<nav class="pagination" aria-label="صفحات نتائج البحث">
+{% if previous_url %}<a rel="prev" href="{{ previous_url }}">الصفحة السابقة</a>{% endif %}
+<span>الصفحة {{ result.page }} من {{ result.pages }}</span>
+{% if next_url %}<a rel="next" href="{{ next_url }}">الصفحة التالية</a>{% endif %}
+</nav>{% endif %}
+{% endblock %}
