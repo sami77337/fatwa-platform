@@ -28,6 +28,28 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Dispatcher regressions
         run: python -m unittest discover -s tests/dev -p 'test_*.py' -v
+      - name: FAST7B+C eight-lane suites and exact identity compatibility
+        run: >-
+          python -B manage.py test
+          tests.editorial_queue.test_cross_batch tests.editorial_queue.test_review_filters
+          tests.editorial_queue.test_services tests.editorial_queue.test_views
+          tests.editorial_search.test_services tests.editorial_search.test_views
+          tests.editorial_export.test_cli tests.editorial_export.test_comparison
+          tests.editorial_export.test_comparison_cli tests.editorial_export.test_services
+          tests.editorial_export.test_views
+          tests.fiqh_reading_trail.test_boundaries tests.fiqh_reading_trail.test_cli
+          tests.fiqh_reading_trail.test_services
+          tests.revision_lineage_inspector.test_cli tests.revision_lineage_inspector.test_inspector
+          tests.arabic_text_quality.test_cli tests.arabic_text_quality.test_dependencies
+          tests.arabic_text_quality.test_service
+          tests.editorial_duplicate_candidates.test_cli
+          tests.editorial_duplicate_candidates.test_normalization
+          tests.editorial_duplicate_candidates.test_services
+          tests.acceptance.fastbuild.test_runner tests.acceptance.fastbuild.test_browser_supervisor
+          tests.integration.test_fast7bc
+          --settings=config.settings.test --noinput --verbosity=2
+      - name: FAST7B guarded browser startup and request policy
+        run: python tools/dev/wave4_node.py tests/acceptance/fastbuild/startup.test.mjs tests/acceptance/fastbuild/policy.test.mjs
       - name: FAST6 combined offline engines, bridges and guarded HTTP
         run: >-
           python -B manage.py test
