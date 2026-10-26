@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 from apps.intake_workflow import fixtures as f, guards as g
 from .test_assets import E6LiveServer
@@ -16,8 +17,10 @@ class BrowserBaselineTests(E6LiveServer):
     def test_protected_engine_catalog_desktop_and_mobile(self):
         g.require_synthetic_write(synthetic_fixtures_only=True)
         f.seed_reference_catalog(synthetic_fixtures_only=True)  # outside any outer atomic
+        environment = os.environ.copy()
+        environment["E6_PYTHON"] = sys.executable
         result = subprocess.run(["node", str(Path(__file__).with_name("browser.mjs")),
-            self.live_server_url], check=False, timeout=180)
+            self.live_server_url], env=environment, check=False, timeout=180)
         self.assertEqual(result.returncode, 0, "Baseline browser BLOCKED/FAIL; read browser-result.json. Persisted workflow not implied.")
 
 
@@ -39,7 +42,7 @@ class PersistedWorkflowBrowserTests(E6LiveServer):
         manifest = artifacts / "scenario.json"
         manifest.write_text(json.dumps(asdict(scenario), ensure_ascii=False) + "\n")
         environment = os.environ.copy()
-        environment["E6_PYTHON"] = __import__("sys").executable
+        environment["E6_PYTHON"] = sys.executable
         result = subprocess.run(["node", str(Path(__file__).with_name("persisted_browser.mjs")),
             self.live_server_url, str(manifest)], env=environment, timeout=240, check=False)
         self.assertEqual(result.returncode, 0, "Actual persisted browser gate FAIL/BLOCKED; no fallback")
