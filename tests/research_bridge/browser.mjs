@@ -1,42 +1,25 @@
 // Browser checks use a labeled synthetic read-only catalog double in test_browser.py.
 import assert from "node:assert/strict";
-import {spawn} from "node:child_process";
-import {mkdtemp, readFile, writeFile, rm} from "node:fs/promises";
+import {writeFile} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {CDP, loopbackOrigin} from "../acceptance/wave7/cdp.mjs";
 import {dispatchKey} from "../acceptance/wave7/keyboard.mjs";
+import {runResearchBrowser} from "./startup.mjs";
 
 const origin = loopbackOrigin(process.argv[2]);
 const temp = path.resolve(os.tmpdir());
-const profile = await mkdtemp(path.join(temp, "fatwa-research-bridge-browser-"));
-const executable = process.env.FATWA_FASTBUILD_BROWSER ??
-  (process.platform === "win32" ? "C:/Program Files/Google/Chrome/Application/chrome.exe" : "/usr/bin/chromium");
-const browser = spawn(executable, ["--headless=new", "--no-first-run", "--no-default-browser-check",
-  "--disable-background-networking", "--disable-component-update", "--disable-sync",
-  "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0", "--user-data-dir=" + profile,
-  "about:blank"], {windowsHide: true, stdio: "ignore"});
-let launchError, socket, cdp, loads = 0;
-browser.on("error", error => { launchError = error; });
+const report = await runResearchBrowser(async (socket, signal) => {
+let cdp, loads = 0;
 const errors = [], violations = [], requests = [];
 const pending = new Set();
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(check) {
   const deadline = Date.now() + 10000;
-  while (Date.now() < deadline) { if (await check()) return; await pause(30); }
+  while (Date.now() < deadline) { signal.throwIfAborted(); if (await check()) return; await pause(30); }
   throw Error("Browser check timed out");
 }
-const watchdog = setTimeout(() => { socket?.close(); browser.kill(); }, 75000);
 try {
-  let port;
-  await until(async () => {
-    if (launchError) throw launchError;
-    try { port = Number((await readFile(path.join(profile, "DevToolsActivePort"), "utf8")).split("\n")[0]); return !!port; }
-    catch { return false; }
-  });
-  const tabs = await fetch(`http://127.0.0.1:${port}/json/list`).then(r => r.json());
-  socket = new WebSocket(tabs.find(tab => tab.type === "page").webSocketDebuggerUrl);
-  await until(() => socket.readyState === WebSocket.OPEN);
   cdp = new CDP(socket, message => {
     if (message.method === "Page.loadEventFired") loads++;
     if (message.method === "Runtime.exceptionThrown") errors.push(message.params.exceptionDetails.text);
@@ -52,7 +35,8 @@ try {
       const task = favicon ? cdp.send("Fetch.fulfillRequest", {requestId, responseCode:204}) :
         cdp.send(allowed ? "Fetch.continueRequest" : "Fetch.failRequest",
           allowed ? {requestId} : {requestId, errorReason: "BlockedByClient"});
-      pending.add(task); task.finally(() => pending.delete(task));
+      pending.add(task);
+      task.then(() => pending.delete(task), error => { errors.push(error.message); pending.delete(task); });
     }
   });
   await cdp.send("Page.enable");
@@ -125,16 +109,14 @@ try {
   assert.deepEqual(errors, []);
   assert.deepEqual(violations, []);
   assert.ok(requests.length > 0);
-  console.log(JSON.stringify({result:"PASS",catalog:"fixed synthetic test double; no database",checks:[
+  return {checks:[
     "desktop RTL", "keyboard skip and previous/next", "320/375px no overflow", "exact Arabic CRLF",
     "verified catalog href", "closed unverified", "triage/workbench anchors", "query recovery",
-    "GET/HEAD local only"], screenshot}));
+    "GET/HEAD local only"], screenshot};
 } finally {
-  clearTimeout(watchdog); socket?.close(); cdp?.close();
-  const ended = new Promise(resolve => browser.once("exit", resolve));
-  if (browser.exitCode === null && !launchError) { browser.kill(); await ended; }
-  const target = path.resolve(profile);
-  assert.equal(path.dirname(target), temp);
-  assert.ok(path.basename(target).startsWith("fatwa-research-bridge-browser-"));
-  await rm(target, {recursive:true,force:true,maxRetries:5,retryDelay:100});
+  cdp?.close();
 }
+});
+// A clean browser exit alone is not acceptance; print PASS only after cleanup.
+console.log(JSON.stringify(report));
+process.exitCode = report.result === "PASS" ? 0 : report.result === "NOT_RUN" ? 2 : 1;

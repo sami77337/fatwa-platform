@@ -1,6 +1,8 @@
 """Real browser UI over explicit synthetic catalog test double; no database."""
 
+import os
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -23,6 +25,7 @@ class ResearchBrowserTests(SimpleTestCase):
         ):
             result = subprocess.run(
                 ["node", str(Path(__file__).with_name("browser.mjs")), origin],
+                env={**os.environ, "FATWA_FASTBUILD_PYTHON": sys.executable},
                 check=False,
                 capture_output=True,
                 text=True,

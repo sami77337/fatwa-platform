@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -15,6 +16,24 @@ from tests.acceptance.fastbuild.test_browser import editorial_server
 
 
 class ConnectedJourneyBrowserTests(SimpleTestCase):
+    def test_research_browser_startup_and_failure_contracts(self):
+        root = Path(__file__).resolve().parents[2]
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(root / "tools/dev/wave4_node.py"),
+                str(root / "tests/research_bridge/startup.test.mjs"),
+            ],
+            env={**os.environ, "FATWA_FASTBUILD_PYTHON": sys.executable},
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=90,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        print(result.stdout.strip())
+
     def test_existing_research_triage_workbench_browser_journey(self):
         node = shutil.which("node")
         browser = os.environ.get("FATWA_FASTBUILD_BROWSER") or (
@@ -37,6 +56,7 @@ class ConnectedJourneyBrowserTests(SimpleTestCase):
         ):
             result = subprocess.run(
                 [node, str(script), origin],
+                env={**os.environ, "FATWA_FASTBUILD_PYTHON": sys.executable},
                 check=False,
                 capture_output=True,
                 text=True,
