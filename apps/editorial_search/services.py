@@ -3,6 +3,7 @@
 import unicodedata
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass
+from heapq import nsmallest
 
 from apps.editorial_queue.services import QueueCatalog, QueueRow
 from apps.reference.normalization import normalize_title
@@ -200,23 +201,29 @@ def search_catalog(
     batch: str = "",
     page: int = 1,
 ) -> SearchPage:
-    """Bounded deterministic AND matching, never a write/index persistence path."""
+    """Exact normalized fields first, then stable AND matches; no persistent index."""
     validate_query(q, source, batch, page)
     if batch and batch not in {item.batch_id for item in catalog.batches}:
         raise ValueError("unknown_batch")
-    terms = normalize_title(q).split()
-    matches = []
-    truncated = False
-    if terms:
-        for document in _documents(catalog, batch):
+    normalized_query = normalize_title(q)
+    terms = normalized_query.split()
+
+    def ranked_matches() -> Iterator[tuple[bool, int, SearchHit]]:
+        if not terms:
+            return
+        for position, document in enumerate(_documents(catalog, batch)):
             if source and document.source != source:
                 continue
-            searchable = " ".join(normalize_title(field.text) for field in document.fields)
+            fields = tuple(normalize_title(field.text) for field in document.fields)
+            searchable = " ".join(fields)
             if all(term in searchable for term in terms):
-                if len(matches) == MAX_RESULTS:
-                    truncated = True
-                    break
-                matches.append(document)
+                yield normalized_query not in fields, position, document
+
+    # Scan every eligible document so a late exact match cannot be lost to the cap.
+    # Retain only the best 201 entries; the extra entry detects actual truncation.
+    ranked = nsmallest(MAX_RESULTS + 1, ranked_matches())
+    truncated = len(ranked) > MAX_RESULTS
+    matches = [document for _, _, document in ranked[:MAX_RESULTS]]
     pages = max(1, (len(matches) + PAGE_SIZE - 1) // PAGE_SIZE)
     if page > pages:
         raise ValueError("page_out_of_range")

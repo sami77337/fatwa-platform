@@ -82,6 +82,61 @@ class SearchViewTests(SimpleTestCase):
             self.assertEqual(revision.number, row["hit"].revision)
             self.assertIn("SYN-REMOVE", [ref.source_id for ref in revision.reference_links])
 
+    def test_ranked_exact_hits_open_their_original_case_and_section(self):
+        for q, source, key, anchor in (
+            ("سُؤَالٌ اصطناعي", "question", "intake-3", "intake"),
+            ("verified", "reference", "intake-1", "references"),
+        ):
+            with self.subTest(source=source):
+                response = self.get(data={"q": q, "source": source})
+                self.assertEqual(response.status_code, 200)
+                row = response.context["rows"][0]
+                self.assertEqual(row["hit"].case_key, key)
+                self.assertEqual(
+                    row["url"], reverse("editorial_workbench:detail", args=[key]) + "#" + anchor
+                )
+                self.assertIn(row["url"], SearchMarkup(response.content.decode()).links)
+                detail = self.get(row["url"])
+                self.assertEqual(detail.status_code, 200)
+                self.assertContains(detail, f'id="{anchor}"')
+                case = detail.context["case"]
+                self.assertEqual(case.key, key)
+                self.assertEqual(case.payload_sha256, row["hit"].input_sha256)
+                if source == "question":
+                    self.assertEqual(case.question, row["hit"].fields[0].text)
+                else:
+                    self.assertEqual(case.references[0]["status"], "verified")
+                    self.assertIsNone(row["hit"].revision)
+
+    def test_exact_draft_title_keeps_gapped_revision_links_and_original_text(self):
+        title = "مثال تقني لسجل المراجعات"
+        response = self.get(data={"q": title, "source": "draft"})
+        self.assertEqual(response.status_code, 200)
+        rows = response.context["rows"]
+        self.assertEqual([row["hit"].revision for row in rows], [4, 7, 9, 11])
+        for row in rows:
+            detail = self.get(row["url"])
+            self.assertEqual(detail.status_code, 200)
+            self.assertEqual(detail.context["case"].key, "history")
+            self.assertEqual(detail.context["selected_revision"].number, row["hit"].revision)
+            self.assertEqual(detail.context["selected_revision"].title, title)
+            self.assertEqual(urlsplit(row["url"]).fragment, "snapshot")
+            self.assertContains(detail, 'id="snapshot"')
+
+    def test_negative_queries_do_not_join_distinct_sources_or_invent_evidence(self):
+        for q, source in (
+            ("محفوظ مقطع", "question"),
+            ("منقح غيرموجود", "draft"),
+            ("SYN-ADD SYN-REMOVE", "reference"),
+            ("verified missing-evidence-xyz", "reference"),
+            ("َـ", ""),
+        ):
+            with self.subTest(q=q):
+                response = self.get(data={"q": q, "source": source})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["result"].total, 0)
+                self.assertEqual(response.context["rows"], ())
+
     def test_prepared_batch_filter_and_rejected_record_link(self):
         response = self.get(data={"q": "اصطناعي", "source": "question", "batch": "synthetic-csv"})
         self.assertEqual(response.status_code, 200)
