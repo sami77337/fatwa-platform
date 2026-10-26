@@ -41,6 +41,12 @@ jobs:
         env:
           FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
         run: python -B manage.py test tests.fast6_journey.test_browser --settings=config.settings.test --noinput --verbosity=2
+      - name: FAST7B guarded real Chrome editorial acceptance
+        if: runner.os == 'Linux'
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+          FATWA_FASTBUILD_ARTIFACTS: .local/qa/d6/fast7bc
+        run: python -B manage.py test tests.acceptance.fastbuild.test_browser --settings=config.settings.test --noinput --verbosity=2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -48,5 +54,6 @@ jobs:
           path: |
             wave4-summary.json
             .local/qa/d6/*.json
+            .local/qa/d6/fast7bc/
           include-hidden-files: true
           if-no-files-found: error

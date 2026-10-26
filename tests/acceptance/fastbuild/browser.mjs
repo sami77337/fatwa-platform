@@ -1,7 +1,7 @@
 // Existing protected CDP transport, actual Django pages, no browser security bypass.
 import assert from "node:assert/strict";
-import {spawn, execFileSync} from "node:child_process";
-import {mkdir, mkdtemp, readFile, writeFile, rm} from "node:fs/promises";
+import {execFileSync} from "node:child_process";
+import {mkdir, writeFile} from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import {fileURLToPath} from "node:url";
@@ -11,6 +11,7 @@ import {allowedRequest, aggregateResult, catalogIdentity} from "./policy.mjs";
 import {editorialCases} from "./editorial.mjs";
 import {catalogCases} from "./catalog.mjs";
 import {fast3Cases} from "./fast3.mjs";
+import {ProtectedBrowser, failureResult} from "./startup.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const artifacts = path.resolve(process.env.FATWA_FASTBUILD_ARTIFACTS ?? path.join(os.tmpdir(),"fatwa-fastbuild-qa"));
@@ -26,10 +27,12 @@ const report = {schema:"fatwa.fastbuild.browser.v1", scope, result:"NOT_RUN", sh
   tests:[], requests:[], violations:[], exceptions:[], console_errors:[], http_failures:[], screenshots:[],
   not_run:[scope==="editorial"?"PostgreSQL catalog (run --catalog separately)":"editorial (run default suite separately)","persisted workflow", "owner source ZIP acceptance"],
   environment:{node:process.version,platform:os.platform()},status:"NOT_DEPLOYED / GATES_HOLD / SCOPE_DEVIATION_HOLD"};
-let origin, browser, socket, cdp, profile, loads=0, stderr="", phase="preflight", viewportWidth=1280;
+let origin, browser, socket, cdp, loads=0, phase="preflight", viewportWidth=1280;
+const deadline = new AbortController();
 // End before Python's outer timeout so the normal finally always gets cleanup time.
 const watchdog=setTimeout(()=>{
-  report.deadline_exceeded=true; socket?.close(); cdp?.close(); browser?.kill();
+  report.deadline_exceeded=true; deadline.abort(); socket?.close(); cdp?.close();
+  void browser?.close();
 },180000);
 const pause = ms => new Promise(resolve=>setTimeout(resolve,ms));
 async function until(check,label) {
@@ -110,21 +113,8 @@ try {
   }
   phase="browser-startup";
   const executable=process.env.FATWA_FASTBUILD_BROWSER ?? (process.platform==="win32"?"C:/Program Files/Google/Chrome/Application/chrome.exe":"/usr/bin/chromium");
-  profile=await mkdtemp(path.join(os.tmpdir(),"fatwa-fastbuild-profile-"));
-  browser=spawn(executable,["--headless=new","--no-first-run","--no-default-browser-check","--disable-background-networking","--disable-component-update","--disable-sync","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{windowsHide:true,stdio:["ignore","ignore","pipe"]});
-  let launchError; browser.on("error",error=>{launchError=error;});
-  browser.stderr.on("data",data=>{stderr=(stderr+data).slice(-1500);});
-  let port;
-  await until(async()=>{
-    if(launchError) throw launchError;
-    if(browser.exitCode!==null||browser.signalCode!==null) throw Error("Protected browser exited before DevTools");
-    try {port=Number((await readFile(path.join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0]);return !!port;}catch{return false;}
-  },"protected DevTools startup");
-  const tabs=await fetch(`http://127.0.0.1:${port}/json/list`,{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
-  socket=new WebSocket(tabs.find(tab=>tab.type==="page").webSocketDebuggerUrl);
-  let socketError;
-  socket.addEventListener("error",()=>{socketError=Error("CDP WebSocket failed");});
-  await until(()=>{if(socketError) throw socketError;return socket.readyState===WebSocket.OPEN;},"CDP WebSocket open");
+  browser=new ProtectedBrowser({executable,signal:deadline.signal});
+  socket=await browser.start();
   cdp=new CDP(socket,message=>{
     const p=message.params;
     if(message.method==="Page.loadEventFired") loads++;
@@ -157,21 +147,20 @@ try {
   }
   report.result=aggregateResult(report.tests);
 } catch(error) {
-  report.result=["browser-startup","not-run"].includes(phase)?"NOT_RUN":"FAIL";
+  report.result=failureResult(phase);
   report.blocker=error.message; report.phase=phase;
-  report.browser_stderr=profile?stderr.replaceAll(profile,"<temporary-profile>"):stderr;
+  report.failure={code:error.code??(phase==="browser-startup"?"CDP_SETUP_FAILED":"RUN_FAILED"),
+    stage:error.stage??phase,cause_code:error.causeCode??null};
 } finally {
   clearTimeout(watchdog);
   socket?.close(); cdp?.close();
-  if(browser&&browser.exitCode===null&&browser.signalCode===null) {
-    browser.kill(); await Promise.race([new Promise(resolve=>browser.once("exit",resolve)),pause(3000)]);
+  if(browser) {
+    report.cleanup=await browser.close();
+    report.startup={stage:browser.stage,elapsed_ms:browser.elapsedMs,timeout_ms:browser.timeoutMs};
+    report.browser_stderr=browser.profile?browser.stderr.replaceAll(browser.profile,"<temporary-profile>"):browser.stderr;
+    if(report.cleanup.result!=="PASS") report.result=failureResult(phase,true);
   }
-  if(profile) {
-    const resolved=path.resolve(profile);
-    assert.equal(path.dirname(resolved),path.resolve(os.tmpdir()));
-    assert.ok(path.basename(resolved).startsWith("fatwa-fastbuild-profile-"));
-    await rm(resolved,{recursive:true,force:true,maxRetries:5,retryDelay:200}).catch(()=>{report.cleanup="temporary profile retained";});
-  }
+  if(report.deadline_exceeded) report.result="FAIL";
   report.counts=Object.fromEntries(["PASS","FAIL","NOT_RUN"].map(result=>[result,report.tests.filter(t=>t.result===result).length]));
   await writeFile(path.join(artifacts,`${scope}-result.json`),JSON.stringify(report,null,2)+"\n");
   console.log(JSON.stringify({result:report.result,scope,counts:report.counts,report:path.join(artifacts,`${scope}-result.json`)}));

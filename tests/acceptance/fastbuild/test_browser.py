@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 import threading
 from contextlib import contextmanager
 from pathlib import Path
@@ -19,7 +20,7 @@ class QuietHandler(WSGIRequestHandler):
 def run_browser(origin, scope):
     return subprocess.run(
         ["node", str(Path(__file__).with_name("browser.mjs")), origin, scope],
-        env=os.environ.copy(),
+        env={**os.environ, "FATWA_FASTBUILD_PYTHON": sys.executable},
         check=False,
         timeout=240,
     ).returncode
