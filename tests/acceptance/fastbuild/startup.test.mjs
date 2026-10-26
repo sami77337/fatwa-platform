@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import {access, readFile} from "node:fs/promises";
+import {spawn} from "node:child_process";
+import {once} from "node:events";
+import {access, open, readFile} from "node:fs/promises";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {test} from "node:test";
@@ -8,6 +10,43 @@ import {ProtectedBrowser, failureResult} from "./startup.mjs";
 
 const fixture = fileURLToPath(new URL("./startup_fixture.mjs", import.meta.url));
 const browser = mode => new ProtectedBrowser({executable:process.execPath, args:[fixture, mode], startupTimeoutMs:1500});
+
+async function linuxProcessRunning(pid, read = readFile) {
+  try { return (await read(`/proc/${pid}/stat`, "utf8")).split(") ")[1][0] !== "Z"; }
+  catch (error) {
+    // Reaping before open yields ENOENT; reaping between open and read yields ESRCH.
+    if (error.code === "ENOENT" || error.code === "ESRCH") return false;
+    throw error;
+  }
+}
+
+test("Linux liveness detects a process reaped before opening or reading proc stat", {skip:process.platform !== "linux"}, async () => {
+  const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {stdio:"ignore"});
+  const closed = once(child, "close");
+  let stat;
+  try {
+    await once(child, "spawn");
+    assert.equal(await linuxProcessRunning(child.pid), true);
+    stat = await open(`/proc/${child.pid}/stat`, "r");
+    child.kill("SIGKILL");
+    await closed; // Reaped after open, before read: Linux reports ESRCH, not ENOENT.
+    await assert.rejects(stat.readFile("utf8"), {code:"ESRCH"});
+    assert.equal(await linuxProcessRunning(child.pid, () => stat.readFile("utf8")), false);
+    assert.equal(await linuxProcessRunning(child.pid), false);
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    await closed;
+    await stat?.close();
+  }
+});
+
+test("Linux liveness treats zombies as stopped and preserves unexpected read errors", async () => {
+  assert.equal(await linuxProcessRunning(123, async () => "123 (synthetic) Z 1 2 3"), false);
+  for (const code of ["EACCES", "EPERM", "EIO"]) {
+    const error = Object.assign(Error("proc read failed"), {code});
+    await assert.rejects(linuxProcessRunning(123, async () => { throw error; }), actual => actual === error);
+  }
+});
 
 for (const [mode, code, stage] of [
   ["exit", "BROWSER_EXITED", "port-file"],
@@ -66,10 +105,7 @@ test("Linux cleanup kills its group after the supervisor and all pipes close", {
   const session = browser("closed-stderr");
   const failed = assert.rejects(session.start(), {code:"SUPERVISOR_EXITED"});
   let pid;
-  const running = async () => {
-    try { return (await readFile(`/proc/${pid}/stat`, "utf8")).split(") ")[1][0] !== "Z"; }
-    catch (error) { if (error.code === "ENOENT") return false; throw error; }
-  };
+  const running = () => linuxProcessRunning(pid);
   try {
     const deadline = performance.now() + 1200;
     while (!pid && performance.now() < deadline) {
