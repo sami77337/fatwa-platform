@@ -1,0 +1,1 @@
+"""Focused recovery adapter QA."""
