@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تنقل المشغّل المحلي</title><link rel="stylesheet" href="{% url 'fast8_operator_nav:style' %}"></head>
+<body>
+<a class="skip" href="#main-content">انتقل إلى المحتوى</a>
+<header><h1>تنقل المشغّل المحلي</h1><p>عينات تطوير اصطناعية فقط — قراءة دون تعديل</p>
+<p dir="ltr">NOT_DEPLOYED · GATES_HOLD · Gate B NOT_PASSED · Phase01 BLOCKED</p></header>
+<main id="main-content" tabindex="-1">
+{% if error %}<h2>تعذر عرض الصفحة</h2><p role="alert">{{ error }}</p><a href="{{ index_url }}">العودة إلى البداية</a>
+{% else %}
+<nav aria-label="خدمات التحرير"><ul class="services">{% for link in links %}<li>
+{% if link.url %}<a href="{{ link.url }}">{{ link.label }}</a>{% else %}<strong>{{ link.label }}</strong> <span dir="ltr">NOT_CONNECTED</span>{% endif %}
+<p>{{ link.scope }}</p></li>{% endfor %}</ul></nav>
+<p>وحدات FAST8 الشقيقة: <b dir="ltr">NOT_CONNECTED</b> — لم تُدمج في هذا المسار.</p>
+{% if selected %}
+<a id="return" href="{{ return_url }}">العودة إلى القائمة ونتائج البحث</a>
+<section aria-labelledby="case-title" data-case="{{ selected.case.key }}" data-revision="{{ revision.number }}">
+<h2 id="case-title">السجل <bdi>{{ selected.case.key }}</bdi></h2>
+<p>الدفعة: <bdi>{{ selected.batch_id }}</bdi> · الحالة: {{ selected.case.status }}</p>
+<pre class="question">{{ question }}</pre>
+<dl><dt>هوية ملف الإدخال SHA256</dt><dd dir="ltr">{{ selected.case.payload_sha256 }}</dd>
+<dt>هوية نص المصدر SHA256</dt><dd dir="ltr">{{ selected.source_sha256 }}</dd></dl>
+{% if revision %}<h3>المراجعة المحددة: <bdi>{{ revision.number }}</bdi></h3>
+<p>توقيت المراجعة: <bdi>NOT_SUPPLIED</bdi> — أرقام العينات تصف ترتيبًا اصطناعيًا فقط.</p>
+<nav aria-label="مراجعات السجل"><ul class="revisions">{% for item in revisions %}<li><a href="{{ item.url }}" {% if item.number == revision.number %}aria-current="page"{% endif %}>مراجعة {{ item.number }}</a></li>{% endfor %}</ul></nav>
+{% else %}<p>لا توجد مراجعات لهذا السجل؛ روابط الاستلام لا تفترض وجود مسودة.</p>{% endif %}
+</section>
+{% else %}
+<form method="get" action="{{ index_url }}"><label for="q">البحث في السجلات والمراجعات الاصطناعية</label>
+<input id="q" name="q" value="{{ q }}" maxlength="80" type="search"><button type="submit">بحث</button></form>
+{% if q %}<section data-total="{{ result.total }}"><h2>نتائج البحث: {{ result.total }}</h2>
+{% if result.truncated %}<p>بلغ البحث الحد الأقصى؛ ضيّق عبارة البحث.</p>{% endif %}
+<ul>{% for item in hits %}<li>{% if item.url %}<a href="{{ item.url }}">{{ item.hit.source_label }} — <bdi>{{ item.hit.case_key|default:item.hit.batch_id }}</bdi>{% if item.hit.revision %} — مراجعة {{ item.hit.revision }}{% endif %}</a>{% else %}<span>NOT_CONNECTED</span>{% endif %}
+<p>{{ item.hit.fixture_label }}</p></li>{% empty %}<li>لا توجد نتائج مطابقة.</li>{% endfor %}</ul>
+<nav aria-label="صفحات النتائج">{% if previous_page %}<a href="{{ previous_page }}">الصفحة السابقة</a>{% endif %} <span>{{ result.page }} / {{ result.pages }}</span> {% if next_page %}<a href="{{ next_page }}">الصفحة التالية</a>{% endif %}</nav>
+<a href="{{ index_url }}">إلغاء البحث</a></section>
+{% else %}<h2>السجلات المتاحة</h2><ul class="cases">{% for item in rows %}<li><a href="{{ item.url }}"><bdi>{{ item.row.case.key }}</bdi></a><p>{{ item.row.case.question|default:"لم يرد نص سؤال" }}</p><span>الدفعة: <bdi>{{ item.row.batch_id }}</bdi></span></li>{% endfor %}</ul>{% endif %}
+{% endif %}{% endif %}
+</main><footer><p dir="ltr">C/D/E HOLD · SCOPE_DEVIATION_HOLD · U03/U10 OWNER_APPROVAL_PENDING</p></footer>
+</body></html>

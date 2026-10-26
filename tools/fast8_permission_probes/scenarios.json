@@ -1,0 +1,1054 @@
+{
+  "schema": "fatwa.fast8-permission-probes.v1",
+  "fixture_kind": "SYNTHETIC",
+  "description": "Invented development scenarios only; no owner sources or accepted policies.",
+  "scenarios": [
+    {
+      "id": "candidate_still_denied",
+      "category": "candidate",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "CANDIDATE_ONLY"
+          ],
+          "valid_combination": true
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "CANDIDATE_ONLY",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "impersonation_superuser",
+      "category": "impersonation",
+      "request": {
+        "actor": "SUPERUSER",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_ACTOR"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_ACTOR",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "internal_principal",
+      "category": "impersonation",
+      "request": {
+        "actor": "DOMAIN_TRANSACTION",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INTERNAL_PRINCIPAL_FORBIDDEN"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INTERNAL_PRINCIPAL_FORBIDDEN",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "hidden_actor",
+      "category": "impersonation",
+      "request": {
+        "actor": "MUFTI​",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INVALID_IDENTIFIER"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INVALID_IDENTIFIER",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "fullwidth_actor",
+      "category": "impersonation",
+      "request": {
+        "actor": "\uff2d\uff35\uff26\uff34\uff29",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INVALID_IDENTIFIER"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INVALID_IDENTIFIER",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "whitespace_actor",
+      "category": "impersonation",
+      "request": {
+        "actor": "MUFTI ",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INVALID_IDENTIFIER"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "INVALID_IDENTIFIER",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "admin_scholarly_mismatch",
+      "category": "actor_mismatch",
+      "request": {
+        "actor": "ORGANIZER_ADMIN",
+        "action": "synthetic::answer.create",
+        "resource": "synthetic::answer"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "ACTOR_NOT_CANDIDATE",
+            "SCHOLARLY_AUTHORITY_RESTRICTED"
+          ],
+          "valid_combination": true
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "ACTOR_NOT_CANDIDATE",
+            "SCHOLARLY_AUTHORITY_RESTRICTED",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "organizer_candidate_mismatch",
+      "category": "actor_mismatch",
+      "request": {
+        "actor": "ORGANIZER",
+        "action": "synthetic::answer.create",
+        "resource": "synthetic::answer"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "ACTOR_NOT_CANDIDATE"
+          ],
+          "valid_combination": true
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "ACTOR_NOT_CANDIDATE",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown_action",
+      "category": "action_mismatch",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::invented",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_ACTION"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_ACTION",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "action_resource_mismatch",
+      "category": "resource_mismatch",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::answer"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "ACTION_RESOURCE_MISMATCH"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "ACTION_RESOURCE_MISMATCH",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown_resource",
+      "category": "resource_mismatch",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::absent"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        }
+      }
+    },
+    {
+      "id": "invalid_review_transition",
+      "category": "review",
+      "request": {
+        "actor": "MUFTI",
+        "action": "complete_review",
+        "resource": "workflow::UNREVIEWED"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "WORKFLOW_TRANSITION_INVALID"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "WORKFLOW_TRANSITION_INVALID",
+            "EVIDENCE_MISSING",
+            "TRANSITION_UNAUTHORIZED"
+          ]
+        }
+      }
+    },
+    {
+      "id": "valid_review_still_denied",
+      "category": "review",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "workflow::UNREVIEWED"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "WORKFLOW_NOT_AUTHORIZATION"
+          ],
+          "valid_combination": true
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "WORKFLOW_NOT_AUTHORIZATION",
+            "EVIDENCE_MISSING",
+            "TRANSITION_UNAUTHORIZED"
+          ]
+        }
+      }
+    },
+    {
+      "id": "wrong_review_target",
+      "category": "review",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "workflow::UNREVIEWED",
+        "target_state": "REVIEWED_INTERNAL"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "WORKFLOW_NOT_AUTHORIZATION"
+          ],
+          "valid_combination": true
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "WORKFLOW_NOT_AUTHORIZATION",
+            "EVIDENCE_MISSING",
+            "TRANSITION_TARGET_MISMATCH"
+          ]
+        }
+      }
+    },
+    {
+      "id": "stale_case_key",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-7"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: source_identity_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-7",
+        "edits": [
+          {
+            "path": [
+              "source_identity",
+              "case_key"
+            ],
+            "value": "intake-7:stale"
+          }
+        ]
+      }
+    },
+    {
+      "id": "different_source_sha",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-7"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: source_identity_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-7",
+        "edits": [
+          {
+            "path": [
+              "source_identity",
+              "source_sha256"
+            ],
+            "value": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        ]
+      }
+    },
+    {
+      "id": "different_payload_sha",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-7"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: source_identity_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-7",
+        "edits": [
+          {
+            "path": [
+              "source_identity",
+              "payload_sha256"
+            ],
+            "value": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reference_source_substitution",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-7"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: source_identity_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-7",
+        "edits": [
+          {
+            "path": [
+              "source_identity",
+              "reference_identities",
+              0,
+              "verified_identity",
+              "source_input_sha256"
+            ],
+            "value": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stale_state",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-7"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: state_before_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-7",
+        "edits": [
+          {
+            "path": [
+              "expected_state",
+              "state_sha256"
+            ],
+            "value": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source_offset_substitution",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-7"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: source_identity_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-7",
+        "edits": [
+          {
+            "path": [
+              "source_identity",
+              "source_start"
+            ],
+            "value": 999
+          }
+        ]
+      }
+    },
+    {
+      "id": "duplicate_external_id_substitution",
+      "category": "identity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-1"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "event: source_identity_mismatch"
+          ],
+          "accepted": false,
+          "disposition": "REJECTED",
+          "state_unchanged": true
+        }
+      },
+      "domain": {
+        "kind": "replay",
+        "case_key": "intake-1",
+        "event_case_key": "intake-4"
+      }
+    },
+    {
+      "id": "duplicate_external_id",
+      "category": "duplicate",
+      "request": {
+        "actor": "MUFTI",
+        "action": "start_review",
+        "resource": "intake-1"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE"
+          ],
+          "valid_combination": false
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "UNKNOWN_RESOURCE",
+            "EVIDENCE_MISSING"
+          ]
+        },
+        "domain_boundary": {
+          "reason_codes": [
+            "duplicate_id"
+          ],
+          "row_ordinals": [
+            1,
+            4
+          ],
+          "statuses": [
+            "BLOCKED_INVALID",
+            "BLOCKED_INVALID"
+          ],
+          "external_ids_equal": true,
+          "source_preserved": true
+        }
+      },
+      "domain": {
+        "kind": "duplicate_external_id"
+      }
+    },
+    {
+      "id": "substitute_inventory",
+      "category": "source_integrity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "SOURCE_UNAVAILABLE",
+          "effect": null,
+          "allowed": null,
+          "reason_codes": [
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "EVIDENCE_MISSING",
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        }
+      },
+      "source_file": "synthetic_inventory.json"
+    },
+    {
+      "id": "substitute_validator",
+      "category": "source_integrity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "SOURCE_UNAVAILABLE",
+          "effect": null,
+          "allowed": null,
+          "reason_codes": [
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "EVIDENCE_MISSING",
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        }
+      },
+      "source_file": "validator.py"
+    },
+    {
+      "id": "substitute_schema",
+      "category": "source_integrity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "SOURCE_UNAVAILABLE",
+          "effect": null,
+          "allowed": null,
+          "reason_codes": [
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "EVIDENCE_MISSING",
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        }
+      },
+      "source_file": "inventory.schema.json"
+    },
+    {
+      "id": "substitute_excerpt",
+      "category": "source_integrity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "SOURCE_UNAVAILABLE",
+          "effect": null,
+          "allowed": null,
+          "reason_codes": [
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "EVIDENCE_MISSING",
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        }
+      },
+      "source_file": "synthetic_review_excerpt.json"
+    },
+    {
+      "id": "substitute_initializer",
+      "category": "source_integrity",
+      "request": {
+        "actor": "MUFTI",
+        "action": "synthetic::catalog.inspect",
+        "resource": "synthetic::catalog"
+      },
+      "expected": {
+        "permission_lab": {
+          "outcome": "SOURCE_UNAVAILABLE",
+          "effect": null,
+          "allowed": null,
+          "reason_codes": [
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        },
+        "policy_gap_engine": {
+          "outcome": "DECISION",
+          "effect": "DENY",
+          "allowed": false,
+          "reason_codes": [
+            "DENY_DEFAULT",
+            "POLICY_PENDING",
+            "EVIDENCE_MISSING",
+            "SOURCE_CONTRACT_UNAVAILABLE"
+          ]
+        }
+      },
+      "source_file": "__init__.py"
+    }
+  ]
+}

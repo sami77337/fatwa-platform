@@ -41,6 +41,21 @@ jobs:
         env:
           FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
         run: python -B manage.py test tests.fast6_journey.test_browser --settings=config.settings.test --noinput --verbosity=2
+      - name: FAST8 explicit operator and browser conformance suites
+        if: runner.os == 'Linux'
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p .local/qa/d6
+          python -B manage.py test tests.fast8_operator_nav.test_browser tests.fast8_browser_conformance.test_conformance --settings=config.settings.test --noinput --verbosity=2 2>&1 | tee .local/qa/d6/fast8-browser.log
+          python - <<'PYCODE'
+          from pathlib import Path
+          text = Path('.local/qa/d6/fast8-browser.log').read_text(encoding='utf-8')
+          assert 'Ran 14 tests' in text, 'FAST8 browser collection changed or did not execute'
+          assert 'skipped' not in text.lower().replace('# skipped 0', ''), 'FAST8 browser suite must execute without skips'
+          PYCODE
       - name: FAST7B guarded real Chrome editorial acceptance
         if: runner.os == 'Linux'
         env:
@@ -54,6 +69,7 @@ jobs:
           path: |
             wave4-summary.json
             .local/qa/d6/*.json
+            .local/qa/d6/fast8-browser.log
             .local/qa/d6/fast7bc/
           include-hidden-files: true
           if-no-files-found: error
