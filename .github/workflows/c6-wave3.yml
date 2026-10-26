@@ -28,6 +28,45 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Dispatcher regressions
         run: python -m unittest discover -s tests/dev -p 'test_*.py' -v
+      - name: FAST8 explicit offline suites and cross-lane identity contracts
+        run: >-
+          python -B manage.py test
+          tests.fast8_acceptance_evidence.test_cli
+          tests.fast8_acceptance_evidence.test_services
+          tests.fast8_case_permission.test_cli
+          tests.fast8_case_permission.test_services
+          tests.fast8_case_references.test_cli
+          tests.fast8_case_references.test_services
+          tests.fast8_fiqh_navigation.test_cli
+          tests.fast8_fiqh_navigation.test_django_adapter
+          tests.fast8_fiqh_navigation.test_preflight
+          tests.fast8_fiqh_navigation.test_services
+          tests.fast8_ingest_adversarial.test_boundaries
+          tests.fast8_ingest_adversarial.test_cli_fail_closed
+          tests.fast8_ingest_adversarial.test_transcript_revisions
+          tests.fast8_intake_recovery.test_cli
+          tests.fast8_intake_recovery.test_services
+          tests.fast8_journey_conformance.test_cli
+          tests.fast8_journey_conformance.test_http
+          tests.fast8_journey_conformance.test_services
+          tests.fast8_operator_nav.test_views
+          tests.fast8_packet_verifier.test_cli
+          tests.fast8_packet_verifier.test_services
+          tests.fast8_permission_probes.test_runner
+          tests.fast8_prepared_review.test_cli
+          tests.fast8_prepared_review.test_services
+          tests.fast8_review_export.test_cli
+          tests.fast8_review_export.test_services
+          tests.fast8_segment_timeline.test_cli
+          tests.fast8_segment_timeline.test_service
+          tests.fast8_source_preflight.test_cli
+          tests.fast8_source_preflight.test_service
+          tests.fast8_transcript_queue.test_cli
+          tests.fast8_transcript_queue.test_contracts
+          tests.fast8_transcript_queue.test_services
+          tests.integration.test_fast8 tests.integration.test_fast8_mount
+          tests.integration.test_fast8_diagnostics
+          --settings=config.settings.test --noinput --verbosity=2
       - name: FAST7B+C eight-lane suites and exact identity compatibility
         run: >-
           python -B manage.py test

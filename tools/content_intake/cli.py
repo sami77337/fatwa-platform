@@ -47,7 +47,7 @@ def unique_object(pairs):
     result = {}
     for key, value in pairs:
         if key in result:
-            raise ValueError(f"duplicate JSON key: {key}")
+            raise ValueError("duplicate JSON key")
         result[key] = value
     return result
 
@@ -212,6 +212,34 @@ def artifacts(raw, suffix):
     return outputs, manifest
 
 
+def safe_diagnostic(exc):
+    """Only fixed contract messages may cross the CLI diagnostic boundary."""
+    if isinstance(exc, OSError):
+        return "local file operation failed"
+    if isinstance(exc, UnicodeError):
+        return "input contains invalid Unicode"
+    if isinstance(exc, json.JSONDecodeError):
+        return f"invalid JSON at line {exc.lineno}, column {exc.colno}"
+    if isinstance(exc, csv.Error):
+        return "invalid CSV input"
+    fixed = {
+        "duplicate JSON key",
+        "JSON nesting exceeds parser bounds",
+        "items: expected_at_most_1000",
+        "input: invalid_size_or_type",
+        "missing, duplicate or unknown CSV columns",
+        "input extension must be .csv, .json or .jsonl",
+        "invalid prepared-intake envelope",
+        "JSON input must be an array or prepared-intake envelope",
+        "bundle differs from deterministic input-derived output",
+        "bundle must be a new directory beneath the current working directory",
+    }
+    message = exc.args[0] if exc.args else None
+    if type(message) is str and message in fixed:
+        return message
+    return "invalid input or bundle"
+
+
 def main(argv=None):
     arguments = sys.argv[1:] if argv is None else list(argv)
     if arguments and arguments[0] == "diagnose":
@@ -270,5 +298,5 @@ def main(argv=None):
             sys.stdout.buffer.write(encoded(manifest))
         return 1 if manifest["status"] == "INVALID" else 0
     except (OSError, ValueError, csv.Error, UnicodeError) as exc:
-        sys.stdout.buffer.write(encoded({"status": "INVALID", "error": str(exc)}))
+        sys.stdout.buffer.write(encoded({"status": "INVALID", "error": safe_diagnostic(exc)}))
         return 1
