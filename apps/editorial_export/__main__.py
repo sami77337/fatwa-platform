@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from . import services
+from .comparison import compare_exports
 from .services import ExportError, build_export, require_development, verify_export
 
 
@@ -58,6 +59,13 @@ def main(argv: list[str] | None = None) -> int:
         command = commands.add_parser(name)
         command.add_argument("--synthetic-fixtures-only", action="store_true", required=True)
         command.add_argument(option, type=Path, required=True)
+    compare = commands.add_parser(
+        "compare", help="Compare two bundles after exact synthetic replay"
+    )
+    compare.add_argument("--synthetic-fixtures-only", action="store_true", required=True)
+    compare.add_argument("--before", type=Path, required=True)
+    compare.add_argument("--after", type=Path, required=True)
+    compare.add_argument("--output", type=Path, required=True, help="New comparison JSON file")
     args = parser.parse_args(argv)
     try:
         require_development(args.synthetic_fixtures_only)
@@ -70,15 +78,26 @@ def main(argv: list[str] | None = None) -> int:
                 with (args.output / name).open("xb") as stream:
                     stream.write(raw)
             print("EXPORTED: 4 files; synthetic fixtures only; NOT_DEPLOYED")
-        else:
+        elif args.command == "verify":
             verify_export(read_bundle(args.input), synthetic_fixtures_only=True)
             print("VERIFIED: exact synthetic replay; NOT_DEPLOYED")
+        else:
+            # Validate both inputs and encode the complete bounded report before
+            # touching output. Never add a fifth file to either input bundle.
+            if args.output.parent.resolve() in (args.before.resolve(), args.after.resolve()):
+                raise ExportError("compare: output_inside_input")
+            raw = compare_exports(
+                read_bundle(args.before), read_bundle(args.after), synthetic_fixtures_only=True
+            )
+            with args.output.open("xb") as stream:
+                stream.write(raw)
+            print("COMPARED: both inputs verified; synthetic fixtures only; NOT_DEPLOYED")
     except (ExportError, OSError):
         # Do not echo arbitrary filesystem paths or fixture contents. An I/O
         # failure may leave a new partial directory; replay rejects it. Never
         # remove files or retry by overwriting: choose a fresh output directory.
         print(
-            "Export failed: guard, bounds, replay or filesystem check. Use a new output directory for export.",
+            "Export failed: guard, bounds, replay or filesystem check. Use a new output path for export or comparison.",
             file=sys.stderr,
         )
         return 1
