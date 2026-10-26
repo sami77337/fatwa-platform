@@ -1,0 +1,27 @@
+{
+  "schema": "fatwa.synthetic-transcript.v1",
+  "items": [
+    {
+      "source_id": "fabricated-timing-demo",
+      "segment_id": "question-1",
+      "pair_id": "pair-1",
+      "kind": "question",
+      "start_ms": 0,
+      "end_ms": 1001,
+      "text": "  سُؤالٌ اصطناعيٌّ\r\nلاختبار التوقيت فقط؟  ",
+      "provenance": "Entirely fabricated timing demonstration; no recording or person",
+      "fabricated": true
+    },
+    {
+      "source_id": "fabricated-timing-demo",
+      "segment_id": "answer-1",
+      "pair_id": "pair-1",
+      "kind": "answer",
+      "start_ms": 1003,
+      "end_ms": 2007,
+      "text": "نص اصطناعي لا يمثل جواباً شرعياً.",
+      "provenance": "Entirely fabricated timing demonstration; no recording or person",
+      "fabricated": true
+    }
+  ]
+}
