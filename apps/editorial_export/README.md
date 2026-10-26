@@ -80,7 +80,75 @@ manifest cannot bypass replay. Use the same commit for future replay; fixture or
 schema changes intentionally invalidate older bundles. This is not a generic
 importer, an archive authenticity check, or verification of real fatwa content.
 
+## Offline comparison (FAST7B)
+
+```powershell
+python -m apps.editorial_export compare --synthetic-fixtures-only --before C:/temp/export-before --after C:/temp/export-after --output C:/temp/new-comparison.json
+```
+
+Both directories must contain exactly the existing four export files. **Both
+bundles are verified again through `services.verify_export` before any input JSON
+is parsed or compared.** A previous verification claim or matching manifest
+hashes is insufficient. Tampered, incompatible, missing, oversized, extra-file,
+and ambiguous inputs fail closed. Existing production guards and all fixed input
+bounds remain unchanged. This command needs neither a database nor network access.
+
+**Current limitation:** exact replay accepts only the fixed snapshot produced by
+this checkout. Consequently, two currently accepted bundles are byte-identical
+and report `identical: true` with empty changes. An older/different snapshot fails
+replay; there is no cross-version verification, custom verifier, alternate source
+loader, or bypass. Changed-value tests exercise the private differ with explicitly
+invented in-memory reports; they are not evidence of accepting different bundles.
+The command is useful now for recording reproducibility with both complete input
+inventories and rejecting drift. Supporting historical pairs would require a
+separately authorized change to the authoritative verification contract.
+
+The new output file is canonical strict UTF-8 JSON, schema
+`synthetic-editorial-export-comparison.v1`, with no timestamps or local paths:
+
+| Field | Meaning |
+| --- | --- |
+| `inputs.before`, `inputs.after` | Byte count and SHA-256 of every file, including each manifest |
+| `cases.added`, `cases.removed` | Complete case identities and immutable packet digests, sorted by exact `case_key` |
+| `cases.changed` | Before/after identities and packet digests, digest-change flag, and categorized exact changes |
+| `batches.added`, `batches.removed` | Full batch overviews and member identities, including zero-row failed batches |
+| `batches.changed` | Exact batch field changes and before/after membership, even when only membership changes |
+| `report_metadata`, `manifest` | Exact metadata and provenance differences |
+
+Case changes are grouped into `preparation` (receipt statuses, errors, intake
+issues), `reference` (complete technical reference findings), `source_provenance`
+(identity, source text/digests/offsets, original and prepared intake), and `packet`
+(remaining immutable packet content, revisions, digests and navigation). Every
+changed value is retained; reference provenance and revision metadata are included.
+`case_key` is the sole join key, never `external_id`; a changed identity field on
+the same key is explicit, while a changed key is an addition/removal. Duplicate
+case keys, batch IDs and mismatched navigation identities are rejected.
+
+Change paths are arrays of literal object-key tokens, not dotted strings. Each
+side contains `present` and `value` to distinguish absence from explicit null.
+Changed arrays are preserved whole and in service order; no heuristic matching of
+references or revisions. Arabic diacritics, decomposed Unicode, whitespace and
+CR/LF remain exact. Nothing is normalized, silently truncated or executed.
+
+Comparison output obeys the existing 2 MiB JSON limit, node/depth/text limits, and
+fails as a whole if exceeded. The parent output directory must already exist and
+the output file must be new. Output inside either input directory is rejected;
+inputs are read only. Validation and full serialization finish before exclusive
+output creation. I/O failure may leave a partial **new** output file; choose a new
+path rather than overwriting it. Exit codes remain 0 success, 1 validation/I/O
+failure, 2 usage error. No HTTP endpoint, schema migration, authorization,
+scholarly decision, publication or shared configuration changes are introduced.
+Rollback this extension by reverting its owned comparison module, CLI addition,
+tests and documentation; original export and verification contracts are unchanged.
+
 ## Focused verification
+
+For the FAST7B offline comparison change, run only the new and directly affected
+export tests (35 tests); the broader historical command below is not required:
+
+```powershell
+python manage.py test tests.editorial_export.test_comparison tests.editorial_export.test_comparison_cli tests.editorial_export.test_services tests.editorial_export.test_cli tests.editorial_export.test_views --settings=config.settings.test --noinput
+```
 
 ```powershell
 python manage.py test tests.editorial_export.test_services tests.editorial_export.test_cli tests.editorial_export.test_views tests.editorial_workbench.test_packets tests.editorial_workbench.test_packet_views tests.editorial_workbench.test_batches tests.prepared_pipeline.test_batches tests.prepared_pipeline.test_pipeline --settings=config.settings.test --noinput
