@@ -21,7 +21,8 @@ Chromium installed; no npm packages or browser downloads):
 
 ```powershell
 python tests/acceptance/fastbuild/run.py
-node --test tests/acceptance/fastbuild/policy.test.mjs tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs
+node --test tests/acceptance/fastbuild/startup.test.mjs tests/acceptance/fastbuild/policy.test.mjs tests/acceptance/wave7/cdp.test.mjs tests/acceptance/wave7/keyboard.test.mjs
+python -m unittest tests.acceptance.fastbuild.test_browser_supervisor
 python manage.py test tests.acceptance.fastbuild.test_runner tests.editorial_workbench.test_services tests.editorial_workbench.test_views tests.editorial_workbench.test_persisted --settings=config.settings.test
 python -m ruff check tests/acceptance/fastbuild
 python -m ruff format --check tests/acceptance/fastbuild
@@ -30,8 +31,23 @@ python -m ruff format --check tests/acceptance/fastbuild
 `FATWA_FASTBUILD_BROWSER` accepts one executable path, with no extra flags. Default:
 Chrome's standard Windows installation or `/usr/bin/chromium` on Linux. Sandbox,
 web security and CSP remain enabled. A temporary dedicated browser profile is
-removed after exit. A 180-second watchdog closes the transport/browser ahead of
-Python's 240-second timeout, leaving time for normal cleanup.
+removed after tree cleanup. Startup has one monotonic 30-second budget covering
+the port file, page-target discovery and WebSocket handshake. Missing files,
+connection refusal and an empty target list are polled within that same budget;
+invalid ports, read errors, HTTP errors and invalid/foreign endpoints fail with
+distinct codes. Application interactions retain their existing 12-second waits.
+No application scenario is retried.
+
+An owned Python supervisor contains the browser before it can create children:
+a kill-on-close Windows Job Object or an isolated Linux process group. Closing
+the control pipe terminates descendants even if the browser parent exited first.
+Cleanup waits three seconds, then escalates with a further two-second bound;
+profile-removal retries are bounded. Failed cleanup makes the run FAIL.
+The Django wrapper supplies its own interpreter via `FATWA_FASTBUILD_PYTHON`;
+direct Node invocation defaults to `python` on Windows and `python3` on Linux.
+A 180-second watchdog closes the transport/browser ahead of Python's 240-second
+timeout, leaving time for normal cleanup. Unexpected Node termination closes the
+supervisor's control pipe; no global process-name kill is used.
 
 `FATWA_FASTBUILD_ARTIFACTS` selects a local report directory; default is
 `<OS temporary directory>/fatwa-fastbuild-qa`. JSON records tested SHA, dirty paths,
@@ -42,6 +58,39 @@ The Python/Django test wrapper exits 1 for any unsuccessful browser test,
 including NOT_RUN (read the JSON for the distinction); `run.py --catalog`
 exits 2 when its ownership/configuration preflight denies execution. Unselected scopes are
 explicitly listed; partial execution never becomes acceptance PASS.
+The v1 report also includes additive `failure` (stable code, stage, cause code),
+`startup` (stage, elapsed milliseconds, budget), and `cleanup` fields where
+applicable. Browser unavailability remains NOT_RUN with exit 2; application
+preflight/assertion failures, watchdog expiration and cleanup failures remain
+FAIL with exit 1. Diagnostic elapsed times and temporary paths are not stable
+identifiers. The synthetic DevTools peer in `startup_fixture.mjs` is used only
+by negative lifecycle tests, never by the acceptance entrypoint.
+
+## FAST7B focused evidence
+
+Base: `667fd70217d794169c23569ce2df0396dcd27f7c` (FAST6 PR #121).
+Fixture identities remain the immutable synthetic hashes below. No application,
+shared configuration, policy gates or protected source hashes changed.
+
+Baseline Windows/Chrome execution reached interactions: 16 PASS, one FAIL in
+`FAST3 filtered prepared queue preserves exact record, revision and malformed recovery`
+(`Timed out: !!document.querySelector('.case-packet')`). The post-change run
+completed 17 PASS. This does **not** establish that the unrelated interaction
+flake is fixed, nor reproduce the historical intermittent startup timeout.
+The new negative tests exercise startup failures deterministically instead.
+
+Final focused checks: Windows Node 24.16.0 tests 26 PASS + one Linux-only SKIP;
+Python 3.13/Django targeted tests nine PASS + one Linux-only SKIP (including the
+17-case Chrome 155 acceptance run). Ubuntu/WSL Node lifecycle/policy tests:
+19 PASS; Python 3.14.4 supervisor tests: four PASS + one Windows-only SKIP.
+Ruff lint/format and diff checks passed. Independent review reproduced a Linux
+orphan surviving supervisor/pipe closure, then verified its dedicated regression
+after explicit owned-process-group cleanup was added; no remaining blocker.
+
+Windows Chrome acceptance is exercised against actual Django pages. Linux
+lifecycle and process-tree tests run on Ubuntu/WSL using real Linux Node 24;
+Linux Chrome/Chromium is unavailable, so Linux real-browser acceptance remains
+NOT_RUN. PostgreSQL catalog/owner-source acceptance was not rerun or claimed.
 
 Seventeen editorial cases cover Arabic RTL, nine original source-bound records
 plus eleven prepared rows, keyboard
