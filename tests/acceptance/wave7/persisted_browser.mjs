@@ -1,13 +1,14 @@
 // Mandatory actual persisted browser journeys. Services/commands never write over HTTP.
 import assert from "node:assert/strict";
-import {spawn,execFile,execFileSync} from "node:child_process";
+import {execFile,execFileSync} from "node:child_process";
 import {promisify} from "node:util";
-import {mkdir,mkdtemp,readFile,writeFile,rm} from "node:fs/promises";
+import {mkdir,readFile,writeFile} from "node:fs/promises";
 import {fileURLToPath} from "node:url";
 import path from "node:path";
 import os from "node:os";
 import {CDP,loopbackOrigin,permittedRequest} from "./cdp.mjs";
 import {dispatchKey} from "./keyboard.mjs";
+import {ProtectedBrowser,recordBrowserFailure,closeBrowser} from "./startup.mjs";
 import {assertVerifiedReference,readReferenceDetail} from "./reference_assertions.mjs";
 
 const root=fileURLToPath(new URL("../../../",import.meta.url));
@@ -34,8 +35,7 @@ const report={schema:"fatwa.e6.wave7.persisted-browser.v1",sha:git("rev-parse","
   console_errors:[],exceptions:[],requests:[],unwanted_requests:[]};
 try{report.environment.browser=execFileSync(executable,["--version"],{encoding:"utf8"}).trim();}
 catch{report.environment.browser="unavailable";}
-let browser,socket,cdp,stderr="",phase="service-preflight",loads=0;
-const profile=await mkdtemp(path.join(os.tmpdir(),"fatwa-wave7-e6-persisted-"));
+let browser,socket,cdp,phase="service-preflight",loads=0;
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function until(check,label){const end=Date.now()+12000;while(Date.now()<end){if(await check())return;await pause(40);}throw Error("Timed out: "+label);}
 const evaluate=expression=>cdp.evaluate(expression);
@@ -157,12 +157,8 @@ try{
   assert.deepEqual(Buffer.from(await stylesheet.arrayBuffer()),await readFile(path.join(root,"apps/editorial_demo/preview.css")));
   report.asset_preflight.push({name:"editorial preview.css",status:200,mime:"text/css",result:"PASS"});
   phase="browser-startup";
-  browser=spawn(executable,["--headless=new","--no-first-run","--no-default-browser-check","--disable-background-networking","--disable-component-update","--disable-sync","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:["ignore","ignore","pipe"]});
-  let launchError;browser.on("error",error=>{launchError=error;});browser.stderr.on("data",data=>{stderr=(stderr+data).slice(-2000);});
-  let port;await until(async()=>{if(launchError)throw launchError;if(browser.exitCode!==null||browser.signalCode!==null)throw Error("Protected browser exited before DevTools");try{port=Number((await readFile(path.join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0]);return !!port;}catch{return false;}},"DevTools");
-  const tabs=await fetch(`http://127.0.0.1:${port}/json/list`).then(result=>result.json());
-  socket=new WebSocket(tabs.find(tab=>tab.type==="page").webSocketDebuggerUrl);
-  await new Promise((resolve,reject)=>{socket.addEventListener("open",resolve,{once:true});socket.addEventListener("error",reject,{once:true});});
+  browser=new ProtectedBrowser({executable,python:process.env.E6_PYTHON});
+  socket=await browser.start();
   cdp=new CDP(socket,message=>{
     if(message.method==="Page.loadEventFired")loads++;
     if(message.method==="Runtime.exceptionThrown")report.exceptions.push(message.params.exceptionDetails.text);
@@ -182,10 +178,10 @@ try{
     catch(error){report.tests[index].result="FAIL";report.tests[index].error=error.message;await screenshot(`persisted-failure-${index+1}.png`).catch(()=>{});}
   }
   report.result=report.tests.some(test=>test.result==="FAIL")?"FAIL":"PASS";
-}catch(error){report.result=phase==="browser-startup"?"BLOCKED":"FAIL";report.blocker=error.message;report.phase=phase;report.browser_stderr=stderr.replaceAll(profile,"<temporary-profile>");}
+}catch(error){recordBrowserFailure(report,error,phase);}
 finally{
-  socket?.close();cdp?.close();if(browser&&browser.exitCode===null&&browser.signalCode===null){browser.kill();await Promise.race([new Promise(resolve=>browser.once("exit",resolve)),pause(3000)]);}
-  await rm(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});
+  socket?.close();cdp?.close();
+  await closeBrowser(report,browser);
   report.counts=Object.fromEntries(["PASS","FAIL","NOT_RUN"].map(status=>[status,report.tests.filter(test=>test.result===status).length]));report.counts.SKIP=0;
   await writeFile(path.join(artifacts,"workflow-result.json"),JSON.stringify(report,null,2)+"\n");
 }
