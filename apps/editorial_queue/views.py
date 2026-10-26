@@ -14,7 +14,7 @@ from apps.editorial_workbench.services import WorkbenchDataError
 from apps.fatwa_drafts.revision_audit import build_revision_audit
 from apps.revision_core.revision_history import HistoryDataError
 
-from .services import REFERENCE_FILTERS, STATUSES, QueueRow, build_queue_catalog, select_queue
+from .services import REFERENCE_FILTERS, STATUS_FILTERS, QueueRow, build_queue_catalog, select_queue
 
 
 def _url(name: str, filters: dict[str, str], key: str | None = None) -> str:
@@ -37,7 +37,7 @@ def _filters(request: HttpRequest) -> dict[str, str]:
         or any(len(query.getlist(key)) != 1 for key in query)
         or len(q) > 80
         or any(ord(char) < 32 or ord(char) == 127 for char in q)
-        or status not in {"", *(code for code, _ in STATUSES)}
+        or status not in {"", *(code for code, _ in STATUS_FILTERS)}
         or refs not in {"", *(code for code, _ in REFERENCE_FILTERS)}
         or len(batch) > 100
         or any(not (char.isascii() and (char.isalnum() or char == "-")) for char in batch)
@@ -118,7 +118,7 @@ def queue(request: HttpRequest, key: str | None = None) -> HttpResponse:
                 None,
             ),
             "filters": filters,
-            "statuses": STATUSES,
+            "statuses": STATUS_FILTERS,
             "reference_filters": REFERENCE_FILTERS,
             "return_url": _url("editorial_queue:index", filters),
             "previous_url": detail_url(selection.previous),
