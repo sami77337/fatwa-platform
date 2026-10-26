@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import {execFile} from "node:child_process";
-import {access, mkdtemp, readFile, rm} from "node:fs/promises";
+import {execFile, spawn} from "node:child_process";
+import {once} from "node:events";
+import {access, mkdtemp, open, readFile, rm} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
@@ -12,14 +13,39 @@ import {runResearchBrowser} from "./startup.mjs";
 const script = fileURLToPath(new URL("./browser.mjs", import.meta.url));
 const fixture = fileURLToPath(new URL("./startup_fixture.mjs", import.meta.url));
 
-async function running(pid) {
+async function running(pid, read = readFile) {
   if (process.platform === "linux") {
-    try { return (await readFile(`/proc/${pid}/stat`, "utf8")).split(") ")[1][0] !== "Z"; }
-    catch (error) { if (error.code === "ENOENT") return false; throw error; }
+    try { return (await read(`/proc/${pid}/stat`, "utf8")).split(") ")[1][0] !== "Z"; }
+    catch (error) { if (error.code === "ENOENT" || error.code === "ESRCH") return false; throw error; }
   }
   try { process.kill(pid, 0); return true; }
   catch (error) { if (error.code === "ESRCH") return false; throw error; }
 }
+
+test("research Linux liveness handles an open proc handle reaped before read", {skip:process.platform !== "linux"}, async () => {
+  const child = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)"], {stdio:"ignore"});
+  const closed = once(child, "close");
+  let stat;
+  try {
+    await once(child, "spawn");
+    assert.equal(await running(child.pid), true);
+    stat = await open(`/proc/${child.pid}/stat`, "r");
+    child.kill("SIGKILL");
+    await closed;
+    await assert.rejects(stat.readFile("utf8"), {code:"ESRCH"});
+    assert.equal(await running(child.pid, () => stat.readFile("utf8")), false);
+    assert.equal(await running(child.pid), false);
+    assert.equal(await running(123, async () => "123 (synthetic) Z 1 2 3"), false);
+    for (const code of ["EACCES", "EPERM", "EIO"]) {
+      const error = Object.assign(Error("proc read failed"), {code});
+      await assert.rejects(running(123, async () => { throw error; }), actual => actual === error);
+    }
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+    await closed;
+    await stat?.close();
+  }
+});
 
 async function withFixture(mode, interact, options = {}) {
   const temp = await mkdtemp(path.join(os.tmpdir(), "fatwa-research-startup-test-"));

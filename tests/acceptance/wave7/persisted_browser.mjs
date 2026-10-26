@@ -8,7 +8,7 @@ import path from "node:path";
 import os from "node:os";
 import {CDP,loopbackOrigin,permittedRequest} from "./cdp.mjs";
 import {dispatchKey} from "./keyboard.mjs";
-import {ProtectedBrowser,recordBrowserFailure,closeBrowser} from "./startup.mjs";
+import {ProtectedBrowser,recordBrowserFailure,closeBrowser,serializeBrowserReport} from "./startup.mjs";
 import {assertVerifiedReference,readReferenceDetail} from "./reference_assertions.mjs";
 
 const root=fileURLToPath(new URL("../../../",import.meta.url));
@@ -183,7 +183,7 @@ finally{
   socket?.close();cdp?.close();
   await closeBrowser(report,browser);
   report.counts=Object.fromEntries(["PASS","FAIL","NOT_RUN"].map(status=>[status,report.tests.filter(test=>test.result===status).length]));report.counts.SKIP=0;
-  await writeFile(path.join(artifacts,"workflow-result.json"),JSON.stringify(report,null,2)+"\n");
+  await writeFile(path.join(artifacts,"workflow-result.json"),serializeBrowserReport(report));
 }
 console.log(JSON.stringify({result:report.result,counts:report.counts,blocker:report.blocker,artifacts}));
 process.exitCode=report.result==="PASS"?0:report.result==="BLOCKED"?2:1;

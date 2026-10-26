@@ -8,13 +8,31 @@ import path from "node:path";
 import {test} from "node:test";
 import {fileURLToPath} from "node:url";
 import {promisify} from "node:util";
-import {ProtectedBrowser, recordBrowserFailure, closeBrowser} from "./startup.mjs";
+import {ProtectedBrowser, recordBrowserFailure, closeBrowser, serializeBrowserReport} from "./startup.mjs";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const route = "/dev/editorial-preview/persisted";
 const scenario = {worklist_path:route, batch_ids:["synthetic-a", "synthetic-b"],
   detail_paths:[route, route], blocked_detail_path:route, reviewed_detail_path:route,
   missing_media_detail_path:route, invalid_media_detail_path:route, unresolved_detail_path:route};
+
+test("Wave7 artifact serialization excludes sensitive stderr and preserves failure evidence", async () => {
+  for (const result of ["PASS", "PASS_BASELINE_ONLY", "BLOCKED", "FAIL"]) {
+    const report = {result, failure:{code:"BROWSER_EXITED", stage:"port-file", cause_code:23},
+      counts:{PASS:0, FAIL:0, NOT_RUN:4, SKIP:0}, source_acceptance:"NOT_RUN"};
+    await closeBrowser(report, {close:async () => ({result:"PASS", errors:[]}),
+      profile:"/synthetic/profile", stderr:"/synthetic/profile /private/marker-secret https://user:token-secret@example.invalid No usable sandbox"});
+    const encoded = serializeBrowserReport(report);
+    for (const marker of ["browser_stderr", "/synthetic/profile", "/private/", "marker-secret", "token-secret", "example.invalid"])
+      assert.equal(encoded.includes(marker), false);
+    const artifact = JSON.parse(encoded);
+    assert.deepEqual(artifact.diagnostics, {stderr_present:true, stderr_hints:["SANDBOX_UNAVAILABLE"]});
+    for (const key of ["result", "failure", "counts", "source_acceptance", "cleanup"])
+      assert.deepEqual(artifact[key], report[key]);
+  }
+  assert.deepEqual(JSON.parse(serializeBrowserReport({result:"FAIL"})).diagnostics,
+    {stderr_present:false, stderr_hints:[]});
+});
 
 for (const [script, filename, count] of [
   ["browser.mjs", "browser-result.json", 4],
@@ -49,6 +67,7 @@ for (const [script, filename, count] of [
           E6_PYTHON:process.env.FATWA_FASTBUILD_PYTHON ?? (process.platform === "win32" ? "python" : "python3"),
           E6_WAVE7_ARTIFACTS:artifacts}, windowsHide:true}), {code:invalidAsset ? 1 : 2});
       const report = JSON.parse(await readFile(path.join(artifacts, filename), "utf8"));
+      assert.equal(Object.hasOwn(report, "browser_stderr"), false, "artifacts must omit free-form browser stderr");
       assert.equal(report.result, invalidAsset ? "FAIL" : "BLOCKED");
       assert.equal(report.phase, invalidAsset ? "service-preflight" : "browser-startup");
       assert.deepEqual(report.counts, {PASS:0, FAIL:0, NOT_RUN:count, SKIP:0});
