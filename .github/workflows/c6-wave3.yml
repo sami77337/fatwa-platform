@@ -46,6 +46,7 @@ jobs:
           tests.editorial_duplicate_candidates.test_normalization
           tests.editorial_duplicate_candidates.test_services
           tests.acceptance.fastbuild.test_runner tests.acceptance.fastbuild.test_browser_supervisor
+          tests.acceptance.fastbuild.test_process_probe
           tests.integration.test_fast7bc
           --settings=config.settings.test --noinput --verbosity=2
       - name: FAST7B guarded browser startup and request policy

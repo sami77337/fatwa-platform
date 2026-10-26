@@ -33,7 +33,8 @@ def running(pid):
         # An orphan awaiting init's reap is no longer an executing child.
         stat = Path(f"/proc/{pid}/stat")
         return not stat.exists() or stat.read_text().split(") ", 1)[1][0] != "Z"
-    except ProcessLookupError:
+    except (ProcessLookupError, FileNotFoundError):
+        # The child can be reaped after exists() but before reading /proc/stat.
         return False
 
 

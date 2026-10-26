@@ -25,10 +25,13 @@ without conflicts:
 | Duplicate detection | `be257803bf3d1cdb20998f03ad76af561710b7cc` | `c08b59699112709f323c32c24446fef5a6300d91` |
 
 All eight stable patch IDs, author names/emails/dates and `-x` trailers were
-checked. All 70 imported file blobs match their respective original commits.
-The only integration additions are this evidence, three cross-lane tests and
-explicit C6/D6 coverage. No application code, source fixture, schema, settings,
-dependency or migration was changed after cherry-picking.
+checked. All 70 imported file blobs matched their respective original commits
+at the integration/review head. Final CI exposed one test-helper race described
+below; 69 remain identical, and the sole difference is the narrow exception
+handling in `tests/acceptance/fastbuild/test_browser_supervisor.py`. Original
+cherry-pick commits remain intact. Integration additions are this evidence,
+cross-lane/process-probe tests and explicit C6/D6 coverage. No application code,
+source fixture, schema, settings, dependency or migration changed after picking.
 
 ## Verified behavior and limits
 
@@ -144,7 +147,8 @@ No checks, security guards, timeouts or platform matrices were removed/weakened.
    confirmed. The reviewer independently checked eight patch/author/trailer
    identities and all 70 blobs, then ran the exact C6 selection: 251 tests,
    250 PASS/1 POSIX skip (11.927s), and Node: 26 PASS/1 Linux skip (7.917s).
-   No second review or unverified fix was made.
+   No second review was made. A later CI finding was fixed with red/green
+   regression evidence as recorded below.
 7. Final commit/push, one Draft PR and exact-head B6/C6/D6 checks are recorded
    in the PR after this evidence commit, so its own SHA need not be self-referential.
 
@@ -155,6 +159,37 @@ operations remain outside this local synthetic scope. Distinct historical export
 snapshots remain unsupported by the unchanged verifier. The four PC2 lanes remain
 excluded. These boundaries prevent unsupported acceptance claims; they do not
 turn missing functionality/evidence into PASS. No deferred minor findings.
+
+### CI investigation and confirmed fix
+
+At initial delivery SHA `2eda8b9ed464cced7dfd54644403c3b346d01e0a`, PR-triggered
+B6/C6/D6 eventually passed, but the parallel push C6 exposed a real race in the
+test helper: the child disappeared between `/proc/<pid>/stat` existence and read.
+`FileNotFoundError` escaped `running()` after successful process termination.
+The deterministic `test_reaped_between_exists_and_read_is_stopped` reproduced
+that exact failure before the fix. The helper now treats that disappearance,
+like `ProcessLookupError`, as stopped. Live children still return true and
+permission errors still propagate. Five focused regression tests cover these
+cases. Browser supervision, cleanup assertions, deadlines and security are
+unchanged. This is a confirmed test-harness fix, not a Chrome startup fix.
+After the fix, the combined feature/compatibility/affected suites ran 643 tests:
+642 PASS, one POSIX-only Windows skip, 31.653s. The five probe regressions plus
+five real supervisor tests also ran under Ubuntu/WSL Python 3.14.4: nine PASS,
+one Windows-only skip, 0.208s. WSL is supplemental Linux lifecycle evidence,
+not a replacement for the required Python 3.13 CI or real Chrome acceptance.
+
+The initial PR B6 PG17 and D6 Linux runs also failed before DevTools was ready:
+Wave6 reported BLOCKED/ten NOT_RUN cases; research-browser startup timed out
+before interactions. The B6 artifact contained D-Bus connection errors, which
+are an observation, not a proven cause. Push B6/D6 passed on the identical SHA;
+one controlled rerun of only the failed PR jobs also passed (Wave6 10/10,
+FAST7B editorial 17/17). No flags, timeouts, security or application scenarios
+were changed/retried inside the harness. These intermittent legacy startup
+failures remain recorded, not represented as fixed or initial passes.
+
+The final fixed SHA and its fresh B6/C6/D6 evidence are recorded in the same
+Draft PR #130. The independent review was performed once before these CI
+findings; the narrow fix is validated by regression tests, not a second review.
 
 No migration or data conversion; rollback is code-only. Owner source acceptance,
 real private cases, scholarly approvals, publication and permission grants remain
