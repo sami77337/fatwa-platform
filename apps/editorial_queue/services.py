@@ -17,6 +17,11 @@ STATUSES = (
     ("review", "يحتاج مراجعة"),
     ("blocked", "متعذر الاستلام"),
 )
+STATUS_FILTERS = (
+    *STATUSES,
+    ("review-with-draft", "يحتاج مراجعة · توجد مسودة"),
+    ("review-without-draft", "يحتاج مراجعة · لا توجد مسودة"),
+)
 REFERENCE_FILTERS = (
     ("unresolved", "إحالات غير محسومة أو متعارضة"),
     ("missing", "دون إحالات"),
@@ -65,6 +70,15 @@ class QueueSelection:
     previous: QueueRow | None
     next: QueueRow | None
     position: int | None
+
+
+def _matches_status(row: QueueRow, status: str) -> bool:
+    """Review subsets describe this row only; they never change source/workflow state."""
+    if status in {"review-with-draft", "review-without-draft"}:
+        return row.case.status == "review" and (row.case.record is not None) == (
+            status == "review-with-draft"
+        )
+    return not status or row.case.status == status
 
 
 def build_queue() -> tuple[QueueRow, ...]:
@@ -137,7 +151,7 @@ def select_queue(
     matches = tuple(
         row
         for row in rows
-        if (not status or row.case.status == status)
+        if _matches_status(row, status)
         and (not batch or row.batch_id == batch)
         and (not refs or row.reference_status == refs)
         and (
