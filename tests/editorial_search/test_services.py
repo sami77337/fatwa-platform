@@ -34,6 +34,98 @@ class SearchTests(SimpleTestCase):
         self.assertTrue(all(hit.case_key == "history" for hit in result.hits))
         self.assertEqual(self.search("منقح", source="question").total, 0)
 
+    def test_exact_question_precedes_partial_matches_without_losing_them(self):
+        result = self.search("سُؤَالٌ اصطناعي", source="question")
+        self.assertEqual(result.total, 12)
+        self.assertEqual(
+            [hit.case_key for hit in result.hits[:5]],
+            ["intake-3", "history", "intake-1", "intake-2", "intake-7"],
+        )
+
+    def test_exact_technical_status_precedes_unverified_substrings(self):
+        result = self.search("verified", source="reference")
+        self.assertEqual(result.hits[0].case_key, "intake-1")
+        self.assertIn("verified", [field.text for field in result.hits[0].fields])
+        self.assertEqual(self.search("verified missing-evidence-xyz", source="reference").total, 0)
+
+    def test_unified_ranking_keeps_source_and_batch_filters(self):
+        result = self.search("سؤال اصطناعي")
+        self.assertEqual((result.hits[0].source, result.hits[0].case_key), ("question", "intake-3"))
+        filtered = self.search("سؤال اصطناعي", source="question", batch="synthetic-csv")
+        self.assertEqual(
+            [hit.case_key for hit in filtered.hits],
+            ["batch-synthetic-csv-1", "batch-synthetic-csv-3", "batch-synthetic-csv-4"],
+        )
+
+    def test_exact_draft_field_ranks_before_distributed_terms_and_preserves_bytes(self):
+        from apps.editorial_search.services import search_catalog
+
+        row = self.catalog.rows[0]
+        original = "\n  إِجَابَةٌ عَـلَى ﻻ e\u0301\r\n"
+        history = tuple(
+            replace(
+                entry,
+                revision=replace(
+                    entry.revision,
+                    title="إجابة",
+                    answer="على لا e\u0301",
+                    reviewer_notes=original if entry.revision.number in (4, 9) else "",
+                    editorial_note="",
+                ),
+            )
+            for entry in row.history
+        )
+        catalog = replace(self.catalog, rows=(replace(row, history=history),))
+        before = asdict(catalog)
+        result = search_catalog(catalog, q="اجابة علي لا é", source="draft")
+        self.assertEqual([hit.revision for hit in result.hits], [4, 9, 1, 2, 7, 11])
+        self.assertEqual(result.hits[0].fields[2].text.encode("utf-8"), original.encode("utf-8"))
+        self.assertEqual(asdict(catalog), before)
+        self.assertEqual(result, search_catalog(catalog, q="اجابة علي لا é", source="draft"))
+        for q in ("اجابة غيرموجود", "إجابة علي لا è", "َـ"):
+            with self.subTest(q=q):
+                self.assertEqual(search_catalog(catalog, q=q, source="draft").total, 0)
+
+    def test_exact_match_after_cap_is_retained_with_stable_pages(self):
+        from apps.editorial_search.services import search_catalog
+
+        row = self.catalog.rows[0]
+        catalog = replace(
+            self.catalog,
+            rows=tuple(
+                replace(row, case=replace(row.case, key=f"partial-{i}", question="سؤال مشترك"))
+                for i in range(210)
+            )
+            + (replace(row, case=replace(row.case, key="exact", question="مُشْتَرَك")),),
+        )
+        first = search_catalog(catalog, q="مشترك", source="question")
+        last = search_catalog(catalog, q="مشترك", source="question", page=20)
+        self.assertEqual((first.total, first.pages, first.truncated), (200, 20, True))
+        self.assertEqual(
+            [hit.case_key for hit in first.hits],
+            ["exact", *(f"partial-{i}" for i in range(9))],
+        )
+        self.assertEqual(
+            [hit.case_key for hit in last.hits], [f"partial-{i}" for i in range(189, 199)]
+        )
+
+    def test_exactly_full_result_cap_is_not_truncated(self):
+        from apps.editorial_search.services import search_catalog
+
+        row = self.catalog.rows[0]
+        catalog = replace(
+            self.catalog,
+            rows=tuple(
+                replace(row, case=replace(row.case, key=f"exact-{i}", question="مشترك"))
+                for i in range(200)
+            ),
+        )
+        result = search_catalog(catalog, q="مشترك", source="question", page=20)
+        self.assertEqual((result.total, result.pages, result.truncated), (200, 20, False))
+        self.assertEqual(
+            [hit.case_key for hit in result.hits], [f"exact-{i}" for i in range(190, 200)]
+        )
+
     def test_historical_reference_is_not_assigned_current_revision(self):
         result = self.search("SYN-REMOVE", source="reference")
         revisions = {hit.revision for hit in result.hits if hit.revision is not None}

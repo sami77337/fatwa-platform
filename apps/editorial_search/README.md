@@ -14,7 +14,8 @@ batches, validated revision history and reference diagnostics. Build ephemeral
 search documents by question, draft revision, reference, record, batch and
 technical status. Reuse `normalize_title()` on matching copies only. Preserve
 source strings in results and escaped HTML, including CR/LF and combining marks.
-Return 10 results per page, at most 200 results, in deterministic source order.
+Return 10 results per page, at most 200 results, with exact normalized field
+matches first and deterministic source order within each relevance tier.
 Explicitly report truncation. Link snapshots by revision number, not position;
 intake diagnostics and batches have no invented revision identity.
 
@@ -66,3 +67,41 @@ documents / 48 unique target links (HTTP 200, valid anchors, exact revisions).
 Chrome smoke check submitted `منقح` with the draft filter, showed revisions
 2/4/7/9/11, and opened revision 2 in the existing workbench. This is a focused
 desktop check, not a full accessibility or mobile acceptance claim.
+
+## FAST7B exact-match relevance (2026-10-26)
+
+Base: FAST6 PR #121, `667fd70217d794169c23569ce2df0396dcd27f7c`.
+Scope: `apps/editorial_search/` and `tests/editorial_search/` only.
+
+Reproduced on the fixed synthetic catalog: `سؤال اصطناعي` placed the exact
+question `intake-3` fourth; reference query `verified` showed `UNVERIFIED`
+substring matches before exact technical statuses. Exact normalized whole-field
+matches now come first. All existing AND substring matches remain eligible;
+equal relevance retains original catalog/document order, including gapped
+revision numbers. This is text relevance, never scholarly verification.
+
+Ranking runs before pagination and the 200-result cap. A bounded selection
+retains at most 201 candidates while scanning all eligible documents, so a late
+exact hit can displace an earlier partial hit; the extra candidate detects
+truncation. Matching still uses ephemeral normalized copies, with no changes
+to source bytes, record IDs, reference evidence, query limits or target URLs.
+No stemming, fuzzy matching, external index, new dependencies or migrations.
+
+Validation uses the existing synthetic fixture identities documented above,
+plus explicitly constructed in-memory ranking/cap/Unicode cases in search tests.
+Four new regressions failed before implementation (question, draft, technical
+reference ordering and a late exact hit beyond the cap). Exact question and
+reference links and gapped draft links are followed through the real local HTTP
+views; negative queries must not combine separate reference occurrences.
+Only focused search and directly affected navigation tests are rerun. No
+PostgreSQL, owner-source acceptance or new browser acceptance is claimed.
+Rollback is code-only by reverting this change. Official gates remain unchanged.
+
+Measured result: Python 3.13.15 / Django 5.2.18, 40 tests passed (27 search and
+13 directly affected workbench-view/navigation tests). Scoped Ruff lint/format
+and whitespace checks passed. One independent final read-only review found no
+issues, reran the 27 search tests and checked 199/200/201-match boundaries.
+
+```powershell
+python -B manage.py test tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_workbench.test_views tests.integration.test_fast4 tests.integration.test_fast5.Fast5IntegrationTests.test_shared_navigation_connects_fast5_and_existing_fast4 --settings=config.settings.test --noinput
+```
