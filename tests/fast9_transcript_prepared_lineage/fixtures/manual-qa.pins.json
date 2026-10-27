@@ -1,0 +1,8 @@
+{
+  "schema": "fatwa.fast9-transcript-prepared-lineage.pins.v1",
+  "input_sha256": "684f14643df41a4e155b651763b710ab98c2aace35d01a7fce2e9120d5ad415b",
+  "sources": {
+    "fabricated-source-b": "f3d30dd8085820ad3235744a5bbc6e1978b393cd573f687639e286a75b89b2e8",
+    "مصدر-مختلق-٩": "6c18f4bcb51366afd60159676fec874596d417f577c2858f378c0662a7e419cb"
+  }
+}
