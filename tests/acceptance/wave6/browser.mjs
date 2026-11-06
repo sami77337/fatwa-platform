@@ -29,6 +29,15 @@ catch { report.environment.browser = "unavailable"; }
 
 let browser, socket, cdp, stderr = "", injectSearchFailure = false, documentsLoaded = 0;
 let phase = "service-preflight";
+let startup, startedAt;
+const elapsed = () => Math.round(performance.now() - startedAt);
+function finishStartup() {
+  if (!startup || report.startup) return;
+  // Take the process snapshot before cleanup can change the observed exit status.
+  report.startup = {...startup, elapsed_ms:elapsed(), child:{
+    pid:browser?.pid ?? null, exit_code:browser?.exitCode ?? null, signal:browser?.signalCode ?? null,
+  }};
+}
 const profile = await mkdtemp(path.join(os.tmpdir(), "fatwa-e6-browser-"));
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(check, label, milliseconds=12000) {
@@ -229,17 +238,43 @@ try {
   }
   // Keep Chromium's sandbox enabled. No user overrides can add bypass flags.
   phase="browser-startup";
+  startedAt = performance.now();
+  const portFile = {attempts:0, last_state:null, last_error_code:null, first_seen_ms:{}};
+  startup = {stage:"spawn", port_file:portFile};
   browser=spawn(executable,["--headless=new","--no-first-run","--no-default-browser-check","--disable-background-networking","--disable-component-update","--disable-sync","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:["ignore","ignore","pipe"]});
   let launchError;
-  browser.on("error",error=>{launchError=error;});
+  browser.once("spawn", () => { startup.spawned_ms = elapsed(); });
+  browser.once("exit", () => { startup.exit_ms = elapsed(); });
+  browser.once("close", () => { startup.close_ms = elapsed(); });
+  browser.on("error", error => {
+    launchError = error;
+    startup.spawn_error = {code:error.code ?? null, at_ms:elapsed()};
+  });
   browser.stderr.on("data",data=>{stderr=(stderr+data).slice(-4000);});
   let port;
+  startup.stage = "port-file";
   await until(async()=>{
     if (launchError) throw launchError;
     if (browser.exitCode!==null || browser.signalCode!==null) throw Error("Browser exited before DevTools: sandbox/startup gate blocked");
-    try {port=Number((await readFile(path.join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0]);return !!port;}catch{return false;}
+    portFile.attempts++;
+    let state;
+    try {
+      const [raw] = (await readFile(path.join(profile,"DevToolsActivePort"),"utf8")).split(/\r?\n/);
+      port = Number(raw);
+      const valid = /^\d+$/.test(raw) && port >= 1 && port <= 65535;
+      state = !raw ? "empty" : valid ? "valid" : "invalid";
+    } catch (error) {
+      state = error.code === "ENOENT" ? "missing" : "read_error";
+      portFile.last_error_code = error.code ?? null;
+    }
+    // Fixed categories retain no path, port number or DevTools session token.
+    portFile.last_state = state;
+    portFile.first_seen_ms[state] ??= elapsed();
+    return state === "valid";
   },"DevTools launch");
+  startup.stage = "target-discovery";
   const tabs=await fetch(`http://127.0.0.1:${port}/json/list`).then(r=>r.json());
+  startup.stage = "websocket";
   socket=new WebSocket(tabs.find(tab=>tab.type==="page").webSocketDebuggerUrl);
   await new Promise((resolve,reject)=>{socket.addEventListener("open",resolve,{once:true});socket.addEventListener("error",reject,{once:true});});
   cdp=new CDP(socket,message=>{
@@ -263,6 +298,8 @@ try {
     }
   });
   report.browser=await cdp.send("Browser.getVersion");
+  startup.stage = "ready";
+  finishStartup();
   phase="browser-interactions";
   for(const domain of ["Page","Runtime","Network"]) await cdp.send(domain+".enable");
   await cdp.send("Fetch.enable",{patterns:[{urlPattern:"*"}]});
@@ -285,18 +322,26 @@ try {
   report.review_batch_acceptance=report.tests.find(t=>t.name.startsWith("PR51 "))?.result??"NOT_RUN";
 }catch(error){report.result=phase==="browser-startup"?"BLOCKED":"FAIL";report.blocker=error.message;report.phase=phase;report.browser_stderr=stderr.replaceAll(profile,"<temporary-profile>").slice(-2000);}
 finally {
+  finishStartup();
   socket?.close();cdp?.close();
   if(browser && browser.exitCode===null && browser.signalCode===null) {
     browser.kill(); await Promise.race([new Promise(resolve=>browser.once("exit",resolve)),pause(3000)]);
   }
-  await rm(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});
+  try {
+    await rm(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});
+  } catch (error) {
+    report.cleanup_error = error.code ?? "PROFILE_REMOVAL_FAILED";
+    report.result_before_cleanup = report.result;
+    report.result = "FAIL";
+  }
   report.counts=Object.fromEntries(["PASS","FAIL","NOT_RUN"].map(status=>[status,report.tests.filter(t=>t.result===status).length]));
   report.counts.SKIP=0;
   await writeFile(path.join(artifacts,"browser-result.json"),JSON.stringify(report,null,2)+"\n");
 }
 console.log(JSON.stringify({result:report.result,counts:report.counts,blocker:report.blocker,artifacts}));
 console.log("E6_BROWSER_EVIDENCE "+JSON.stringify({sha:report.sha,dirty_paths:report.dirty_paths,
-  browser:report.browser,environment:report.environment,result:report.result,counts:report.counts,
+  browser:report.browser,environment:report.environment,startup:report.startup,result:report.result,counts:report.counts,
+  cleanup_error:report.cleanup_error,result_before_cleanup:report.result_before_cleanup,
   tests:report.tests,asset_preflight:report.asset_preflight,screenshots:report.screenshots,
   request_count:report.requests.length,console_errors:report.console_errors,
   exceptions:report.exceptions,unwanted_requests:report.unwanted_requests}));
