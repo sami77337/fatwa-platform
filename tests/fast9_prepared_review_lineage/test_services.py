@@ -21,9 +21,9 @@ class LineageTests(unittest.TestCase):
         cls.source = dict(exports.build_export(synthetic_fixtures_only=True).files)
         cls.preview = dict(review.build_preview(cls.source, synthetic_fixtures_only=True).files)
 
-    def build(self, key=KEY, **kwargs):
+    def build(self, key=KEY, *, request=None, **kwargs):
         return lineage.build_evidence(
-            prepared.scenario(key, synthetic_fixtures_only=True),
+            prepared.scenario(key, synthetic_fixtures_only=True) if request is None else request,
             source_files=self.source,
             review_files=self.preview,
             synthetic_fixtures_only=True,
@@ -230,9 +230,36 @@ class LineageTests(unittest.TestCase):
             with self.subTest(section=section, field=field):
                 with patch.object(prepared, "project", return_value=changed):
                     with self.assertRaises(lineage.LineageError):
-                        self.build()
+                        self.build(request=req)
         changed = copy.deepcopy(original)
         changed["initial"]["record"]["history"][0]["editorial_note"] = "synthetic drift"
         with patch.object(prepared, "project", return_value=changed):
             with self.assertRaisesRegex(lineage.LineageError, "initial_snapshot_mismatch"):
-                self.build()
+                self.build(request=req)
+
+    def test_substituted_projection_rejects_before_export_selection(self):
+        key = "batch-synthetic-csv-2"
+        request = prepared.scenario(key, synthetic_fixtures_only=True)
+        correct = prepared.project(request)
+        other = prepared.project(
+            prepared.scenario("batch-synthetic-json-1", synthetic_fixtures_only=True)
+        )
+        self.assertEqual(
+            correct["source_identity"]["external_id"], other["source_identity"]["external_id"]
+        )
+        stale = prepared.project({**request, "commands": []})
+        for name, projection in (
+            ("other row", other),
+            ("different request", stale),
+            (
+                "other row with copied request hash",
+                {**other, "request_sha256": correct["request_sha256"]},
+            ),
+            ("reordered attempts", {**correct, "steps": list(reversed(correct["steps"]))}),
+        ):
+            with (
+                self.subTest(name=name),
+                patch.object(prepared, "project", return_value=projection),
+            ):
+                with self.assertRaisesRegex(lineage.LineageError, "prepared_request_mismatch"):
+                    self.build(request=request)
