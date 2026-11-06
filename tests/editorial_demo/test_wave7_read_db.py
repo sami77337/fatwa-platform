@@ -1,5 +1,6 @@
 """E2 persisted GET-only worklist and exact-source read regressions; PG17/18 only."""
 import json
+import os
 import subprocess
 import sys
 from unittest.mock import patch
@@ -146,6 +147,9 @@ sys.stdout.buffer.write(row.original_row.encode('utf-8'))
         self.assertNotContains(response,'مرجع <اصطناعي>')
         self.assertContains(response,'لا توجد إجابة أو اعتماد شرعي أو نشر')
         self.assertEqual(response.context['stored'].row.events[0].id,result.event_id)
+        if os.environ.get('FAST9_CHECK_EXISTING_B6_AUDIT') == '1':
+            from tests.fast9_pg_workflow_audit.producer_check import verify_existing_audit
+            verify_existing_audit(self.batch, self.items[6], result, response.context['stored'])
 
     def test_detail_history_is_bounded_and_explicitly_marks_older_events(self):
         status='UNREVIEWED'
