@@ -1,0 +1,66 @@
+name: FAST9 guard tests and collection only
+on:
+  push:
+    branches:
+      - codex/20261029-fast9-v5-03-ci-pc1
+
+permissions:
+  contents: read
+
+jobs:
+  guards-and-collection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - name: Install pinned dependencies
+        run: python -m pip install --no-deps -r requirements.txt
+
+      - name: Run the 22 collector guard tests
+        run: |
+          python -B -m unittest tests.dev.fast9_ci_tests -v 2>&1 | tee fast9-guards.log
+          grep -Eq '^Ran 22 tests in ' fast9-guards.log
+          grep -Fxq 'OK' fast9-guards.log
+
+      - name: Collect the eight pinned sources and verify zero executions
+        run: |
+          python -B tools/dev/fast9_ci_offline.py --collect-only \
+            --json tests/dev/fast9_ci_collection.json 2>&1 | tee fast9-collection.log
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("tests/dev/fast9_ci_collection.json").read_bytes())
+          fields = ("status", "collected", "run", "passed", "offline_guard_events")
+          if tuple(report[key] for key in fields) != ("COLLECTED", 195, 0, 0, 0):
+              raise SystemExit("Collection totals or offline guard events mismatch")
+          if [source["pr"] for source in report["sources"]] != list(range(152, 160)):
+              raise SystemExit("Expected frozen PRs 152 through 159")
+          if len(report["suites"]) != 10 or any(
+              suite["status"] != "COLLECTED" or suite["collected"] != suite["expected"]
+              or suite["run"] != 0 or suite["passed"] != 0 for suite in report["suites"]
+          ):
+              raise SystemExit("Per-suite collection mismatch")
+          PY
+      - name: Upload guard and collection evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fast9-guards-and-collection
+          if-no-files-found: error
+          path: |
+            fast9-guards.log
+            fast9-collection.log
+            tests/dev/fast9_ci_collection.json
