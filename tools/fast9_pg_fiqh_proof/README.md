@@ -13,8 +13,11 @@ metadata, source pins, and unchanged persisted fields including timestamps.
 Additional probes check stale and coherently recomputed checksums, missing rows,
 foreign parents, unknown editions, disconnected readers, and nested transactions.
 Three attempted DML verbs must return actual PostgreSQL SQLSTATE `25006`.
-A second synthetic connection commits a change while the reader snapshot remains
-stable; a later read must reject the changed catalog.
+Negative fixtures seed mismatched editions with first INSERTs and assert that
+updates/deletes against existing catalog rows are rejected with SQLSTATE 23514.
+The foreign-parent INSERT is rejected by the existing hierarchy trigger. A second
+synthetic connection commits an extra heading while the reader snapshot remains
+stable. A later read must reject the extra row.
 
 ## Exact fixture
 

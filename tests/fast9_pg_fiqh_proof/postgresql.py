@@ -7,7 +7,7 @@ runner.require_discovery()
 
 from dataclasses import asdict, replace  # noqa: E402
 
-from django.db import connection, transaction  # noqa: E402
+from django.db import IntegrityError, connection, transaction  # noqa: E402
 from django.test import TransactionTestCase  # noqa: E402
 from django.test.utils import CaptureQueriesContext  # noqa: E402
 
@@ -171,6 +171,39 @@ class PostgreSQLSourceTrailTests(TransactionTestCase):
             sqlstate="25006",
         )
 
+    def fixture_contract(self, key):
+        return prepare_catalog(replace(self.prepared.spec, edition_key=key), self.prepared.records)
+
+    def insert_edition(self, pin, *, edition_fields=None, heading_fields=None, omit=None):
+        """Seed an independent inconsistent snapshot with ordinary first INSERTs."""
+        runner.require_running_database()
+        fields = ReferenceEdition.objects.values().get(pk=self.edition_id)
+        del fields["id"], fields["ingested_at"]
+        fields.update(edition_key=pin.spec.edition_key, ingest_checksum=pin.checksum)
+        edition = ReferenceEdition.objects.create(**(fields | (edition_fields or {})))
+        new_pks = {}
+        originals = ReferenceHeading.objects.filter(edition_id=self.edition_id).order_by(
+            "source_order"
+        )
+        for row in originals.values():
+            source_row = row["source_row_id"]
+            if source_row == omit:
+                continue
+            old_pk = row.pop("id")
+            row.update(edition_id=edition.pk, parent_id=new_pks.get(row["parent_id"]))
+            row.update((heading_fields or {}).get(source_row, {}))
+            new_pks[old_pk] = ReferenceHeading.objects.create(**row).pk
+        return edition.pk
+
+    def assert_pin_rejects(self, pin, edition):
+        before = self.state()
+        result = CatalogNavigation(pin, edition).navigate(
+            {"edition": str(edition), "source_row_id": "40"}, self.reader
+        )
+        self.assert_closed(result)
+        self.assertEqual(before, self.state())
+        return result
+
     def test_stale_checksum_refuses_mutated_original_fields(self):
         row = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=40)
         for field, value in (
@@ -184,60 +217,73 @@ class PostgreSQLSourceTrailTests(TransactionTestCase):
             ("source_entry_number", 99),
         ):
             with self.subTest(field=field):
-                try:
-                    ReferenceHeading.objects.filter(pk=row.pk).update(**{field: value})
-                    mutated = self.state()
-                    self.assert_closed(self.navigate())
-                    self.assertEqual(self.state(), mutated)
-                finally:
-                    ReferenceHeading.objects.filter(pk=row.pk).update(
-                        **{field: getattr(row, field)}
-                    )
-        self.assertEqual(self.navigate().trail.status, "verified")
+                pin = self.fixture_contract("stale-" + field)
+                edition = self.insert_edition(pin, heading_fields={40: {field: value}})
+                self.assert_pin_rejects(pin, edition)
 
     def test_recomputed_checksum_cannot_replace_independent_source_contract(self):
-        changed_records = tuple(
-            replace(row, source_page_number=4) if row.source_row_id == 40 else row
-            for row in self.prepared.records
+        pin = self.fixture_contract("recomputed")
+        changed = prepare_catalog(
+            pin.spec,
+            tuple(
+                replace(r, source_page_number=4) if r.source_row_id == 40 else r
+                for r in pin.records
+            ),
         )
-        changed = prepare_catalog(self.prepared.spec, changed_records)
-        ReferenceHeading.objects.filter(edition_id=self.edition_id, source_row_id=40).update(
-            source_page_number=4,
+        edition = self.insert_edition(
+            pin,
+            edition_fields={"ingest_checksum": changed.checksum},
+            heading_fields={40: {"source_page_number": 4}},
         )
-        ReferenceEdition.objects.filter(pk=self.edition_id).update(ingest_checksum=changed.checksum)
-        with self.reader.snapshot(self.edition_id) as snapshot:
+        with self.reader.snapshot(edition) as snapshot:
             self.assertEqual(snapshot.prepared, changed)
-        before = self.state()
-        result = self.navigate()
-        self.assert_closed(result)
+        result = self.assert_pin_rejects(pin, edition)
         self.assertEqual(result.trail.reason, "catalog_evidence_mismatch")
-        self.assertEqual(self.state(), before)
 
     def test_topology_drift_missing_row_and_foreign_parent_fail_closed(self):
-        row = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=40)
-        root = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=8)
-        # A DB-valid edge with incorrect depth cannot become a navigable trail.
-        ReferenceHeading.objects.filter(pk=row.pk).update(parent=root)
-        self.assert_closed(self.navigate())
-        ReferenceHeading.objects.filter(pk=row.pk).update(parent_id=row.parent_id)
-        # Foreign edition parent with the same source row ID must be rejected.
-        other = prepare_catalog(
-            replace(self.prepared.spec, edition_key="fast9-other-synthetic"), self.prepared.records
-        )
-        other_id = ingest_catalog(
-            other.spec, other.records, dry_run=False, expected_checksum=other.checksum
-        ).edition_id
-        foreign = ReferenceHeading.objects.get(edition_id=other_id, source_row_id=2)
-        ReferenceHeading.objects.filter(pk=row.pk).update(parent=foreign)
-        self.assert_closed(self.navigate())
-        ReferenceHeading.objects.filter(pk=row.pk).update(parent_id=row.parent_id)
-        ReferenceHeading.objects.filter(edition_id=self.edition_id, source_row_id=42).delete()
+        missing = self.fixture_contract("missing-leaf")
+        edition = self.insert_edition(missing, omit=42)
+        self.assert_pin_rejects(missing, edition)
         before = self.state()
-        self.assert_closed(self.navigate())
-        self.assertEqual(self.state(), before)
+        target = ReferenceHeading.objects.filter(edition_id=self.edition_id, source_row_id=42)
+        with self.assertRaises(IntegrityError) as caught:
+            target.delete()
+        self.assertEqual(caught.exception.__cause__.sqlstate, "23514")
+        self.assertEqual(before, self.state())
+
+        # Only an INSERT can exercise the parent trigger with the schema's
+        # update/delete protection intact. This parent has the correct depth.
+        foreign = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=2)
+        with self.assertRaises(IntegrityError) as caught:
+            self.insert_edition(
+                self.fixture_contract("foreign-parent"),
+                heading_fields={40: {"parent_id": foreign.pk}},
+            )
+        self.assertEqual(caught.exception.__cause__.sqlstate, "23514")
+        self.assertIn("Parent must exist in the same edition", str(caught.exception))
+        # A depth-correct but wrong parent within an edition is structurally
+        # allowed. Recompute the stored checksum so only the independent pin
+        # can reject the alternate hierarchy.
+        pin = self.fixture_contract("alternate-parent")
+        changed = prepare_catalog(
+            pin.spec,
+            tuple(
+                replace(r, parent_source_row_id=8) if r.source_row_id == 2 else r
+                for r in pin.records
+            ),
+        )
+        edition = ingest_catalog(
+            changed.spec, changed.records, dry_run=False, expected_checksum=changed.checksum
+        ).edition_id
+        self.assert_pin_rejects(pin, edition)
 
     def test_source_identity_metadata_and_checksum_drift_fail_closed(self):
-        edition = ReferenceEdition.objects.get(pk=self.edition_id)
+        original = ReferenceEdition.objects.filter(pk=self.edition_id)
+        before = self.state()
+        with self.assertRaises(IntegrityError) as caught:
+            original.update(publisher="آخر")
+        self.assertEqual(caught.exception.__cause__.sqlstate, "23514")
+        self.assertEqual(before, self.state())
         for field, value in (
             ("source_archive_sha256", "c" * 64),
             ("source_input_sha256", "d" * 64),
@@ -251,15 +297,9 @@ class PostgreSQLSourceTrailTests(TransactionTestCase):
             ("max_depth", 4),
         ):
             with self.subTest(field=field):
-                try:
-                    ReferenceEdition.objects.filter(pk=edition.pk).update(**{field: value})
-                    before = self.state()
-                    self.assert_closed(self.navigate())
-                    self.assertEqual(self.state(), before)
-                finally:
-                    ReferenceEdition.objects.filter(pk=edition.pk).update(
-                        **{field: getattr(edition, field)},
-                    )
+                pin = self.fixture_contract("metadata-" + field)
+                edition = self.insert_edition(pin, edition_fields={field: value})
+                self.assert_pin_rejects(pin, edition)
 
     def test_unknown_unjoined_and_nested_transactions_never_supply_evidence(self):
         before = self.state()
@@ -285,35 +325,40 @@ class PostgreSQLSourceTrailTests(TransactionTestCase):
         try:
             with writer.cursor() as cursor:
                 runner.verify_identity(cursor, runner.TEST_DATABASE)
-            row = self.prepared.records[2]
-            before = self.state()
+            extra = ReferenceHeading.objects.filter(
+                edition_id=self.edition_id, source_id="fast9-committed-extra"
+            )
+            self.assertFalse(extra.exists())
             with self.reader.snapshot(self.edition_id) as snapshot:
                 with writer.cursor() as cursor:
                     cursor.execute(
-                        "UPDATE reference_referenceheading SET title_original = %s "
-                        "WHERE edition_id = %s AND source_row_id = 40",
-                        ["عنوان اصطناعي متغير", self.edition_id],
+                        "INSERT INTO reference_referenceheading "
+                        "(edition_id, source_id, source_row_id, parent_id, source_order, position,"
+                        " depth, source_page_id, source_part, source_page_number, title_original,"
+                        " title_normalized) SELECT edition_id,'fast9-committed-extra',999,parent_id,"
+                        "999,999,depth,source_page_id,source_part,source_page_number,title_original,"
+                        "title_normalized FROM reference_referenceheading WHERE edition_id=%s "
+                        "AND source_row_id=40",
+                        [self.edition_id],
                     )
                     self.assertEqual(cursor.rowcount, 1)
-                # Real DjangoCatalog evidence, read after the writer commits.
+                self.assertFalse(extra.exists())
                 from apps.fiqh_reading_trail.services import ReadingTrail
 
                 result = ReadingTrail(self.prepared, self.edition_id).navigate(
                     40, snapshot.evidence
                 )
                 self.assertEqual(result.status, "verified")
-                self.assertEqual(result.current.evidence.heading_title, row.title_original)
+                self.assertEqual(
+                    result.current.evidence.heading_title, self.prepared.records[2].title_original
+                )
                 self.assertEqual(asdict(snapshot.prepared), asdict(self.prepared))
+            self.assertTrue(extra.exists())
             self.assert_closed(self.navigate())
-            ReferenceHeading.objects.filter(edition_id=self.edition_id, source_row_id=40).update(
-                title_original=row.title_original,
-            )
-            self.assertEqual(self.state(), before)
-            self.assertEqual(self.navigate().trail.status, "verified")
             emit(
                 "snapshot_stability",
                 concurrent_commit_visible_inside=False,
-                subsequent_snapshot="unverified_before_restore",
+                subsequent_snapshot="unverified_after_committed_insert",
             )
         finally:
             writer.close()
