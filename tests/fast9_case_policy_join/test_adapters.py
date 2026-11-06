@@ -157,11 +157,13 @@ class CliTests(SimpleTestCase):
         for args, env in (
             (self.args("select")[1:], {}),
             (self.args("select"), {"FATWA_PRODUCTION": "1"}),
+            (self.args("select"), {"DJANGO_SETTINGS_MODULE": "config.settings.production"}),
             ((*self.args("select"), "--actor", "ORGANIZER"), {}),
             ((*self.args("select"), "--policy-file", "secret-location"), {}),
         ):
             result = self.run_cli(*args, env=env)
-            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, b"")
             self.assertNotIn(b"secret-location", result.stdout + result.stderr)
 
     def test_cli_bounds_stdin_and_rejects_bad_utf8_and_extra_grants(self):

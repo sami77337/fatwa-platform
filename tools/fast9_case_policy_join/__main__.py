@@ -28,7 +28,9 @@ def main(argv=None):
     parsed = parser.parse_args(args)
     if parsed.receipt_stdin != (parsed.command == "evaluate"):
         parser.error("receipt mode")
-    if os.environ.get("FATWA_PRODUCTION", "0") != "0":
+    if os.environ.get("FATWA_PRODUCTION", "0") != "0" or os.environ.get(
+        "DJANGO_SETTINGS_MODULE", ""
+    ).endswith(".production"):
         parser.error("production disabled")
     from apps.fast9_case_policy_join import services
 
