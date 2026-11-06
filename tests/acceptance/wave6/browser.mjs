@@ -239,6 +239,7 @@ try {
   // Keep Chromium's sandbox enabled. No user overrides can add bypass flags.
   phase="browser-startup";
   startedAt = performance.now();
+  const startupDeadline = AbortSignal.timeout(12000);
   const portFile = {attempts:0, last_state:null, last_error_code:null, first_seen_ms:{}};
   startup = {stage:"spawn", port_file:portFile};
   browser=spawn(executable,["--headless=new","--no-first-run","--no-default-browser-check","--disable-background-networking","--disable-component-update","--disable-sync","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:["ignore","ignore","pipe"]});
@@ -259,11 +260,12 @@ try {
     portFile.attempts++;
     let state;
     try {
-      const [raw] = (await readFile(path.join(profile,"DevToolsActivePort"),"utf8")).split(/\r?\n/);
+      const [raw] = (await readFile(path.join(profile,"DevToolsActivePort"), {encoding:"utf8", signal:startupDeadline})).split(/\r?\n/);
       port = Number(raw);
       const valid = /^\d+$/.test(raw) && port >= 1 && port <= 65535;
       state = !raw ? "empty" : valid ? "valid" : "invalid";
     } catch (error) {
+      if (startupDeadline.aborted) throw Error("Timed out: DevTools launch");
       state = error.code === "ENOENT" ? "missing" : "read_error";
       portFile.last_error_code = error.code ?? null;
     }
@@ -273,10 +275,35 @@ try {
     return state === "valid";
   },"DevTools launch");
   startup.stage = "target-discovery";
-  const tabs=await fetch(`http://127.0.0.1:${port}/json/list`).then(r=>r.json());
+  let tabs;
+  try {
+    const response = await fetch(`http://127.0.0.1:${port}/json/list`, {redirect:"error", signal:startupDeadline});
+    if (response.status !== 200) throw Error("DevTools target discovery failed");
+    tabs = await response.json();
+  } catch (error) {
+    if (startupDeadline.aborted) throw Error("Timed out: DevTools target discovery");
+    throw error;
+  }
+  // Only attach to the page socket advertised on this run's loopback port.
+  const endpoint = Array.isArray(tabs) && tabs.find(tab => tab?.type === "page")?.webSocketDebuggerUrl;
+  const prefix = `ws://127.0.0.1:${port}/devtools/page/`;
+  if (typeof endpoint !== "string" || !endpoint.startsWith(prefix) || !/^[a-zA-Z0-9-]+$/.test(endpoint.slice(prefix.length)))
+    throw Error("Invalid DevTools page endpoint");
   startup.stage = "websocket";
-  socket=new WebSocket(tabs.find(tab=>tab.type==="page").webSocketDebuggerUrl);
-  await new Promise((resolve,reject)=>{socket.addEventListener("open",resolve,{once:true});socket.addEventListener("error",reject,{once:true});});
+  socket = new WebSocket(endpoint);
+  const handshake = new AbortController();
+  try {
+    await new Promise((resolve, reject) => {
+      const options = {signal:handshake.signal};
+      const fail = () => reject(Error("DevTools WebSocket failed to open"));
+      const timeout = () => reject(Error("Timed out: DevTools WebSocket"));
+      socket.addEventListener("open", resolve, options);
+      socket.addEventListener("error", fail, options);
+      socket.addEventListener("close", fail, options);
+      startupDeadline.addEventListener("abort", timeout, options);
+      if (startupDeadline.aborted) timeout();
+    });
+  } finally { handshake.abort(); }
   cdp=new CDP(socket,message=>{
     if(message.method==="Page.loadEventFired") documentsLoaded++;
     if(message.method==="Runtime.exceptionThrown") report.exceptions.push(message.params.exceptionDetails.text);

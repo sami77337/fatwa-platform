@@ -21,9 +21,16 @@ const fixtureBytes = Buffer.from("synthetic asset bytes; NOT browser evidence");
 
 async function simulate({portRead, exitCode = null, signalCode = null,
   spawnError = false, namespace = "wave6-e6-synthetic", headingCount = 47,
-  assetFailure, stderr = "", cleanupError, exitDuringRead = false} = {}) {
+  assetFailure, stderr = "", cleanupError, exitDuringRead = false, target, socketEvent} = {}) {
   let now = 0;
-  const state = {polls: [], spawns: [], kills: 0, removals: [], http: [], logs: [], profiles: 0};
+  const deadlines = [];
+  function advance(ms) {
+    now += ms;
+    for (const {at, controller} of deadlines) {
+      if (now >= at) controller.abort(new DOMException("fixture timeout", "TimeoutError"));
+    }
+  }
+  const state = {sockets: [], polls: [], spawns: [], kills: 0, removals: [], http: [], logs: [], profiles: 0};
   const temporaryRoot = path.resolve("synthetic-e6-no-disk");
   const profile = path.join(temporaryRoot, "fatwa-e6-browser-fixture");
   const artifacts = path.join(temporaryRoot, "reports");
@@ -74,14 +81,14 @@ async function simulate({portRead, exitCode = null, signalCode = null,
       },
       async readFile(target, encoding) {
         if (target === path.join(profile, "DevToolsActivePort")) {
-          assert.equal(encoding, "utf8");
+          assert.equal(encoding?.encoding ?? encoding, "utf8");
           state.polls.push(now);
           if (exitDuringRead && now === 100) {
             browser.exitCode = 23;
             browser.emit("exit", 23, null);
             browser.emit("close", 23, null);
           }
-          if (portRead) return portRead(now);
+          if (portRead) return portRead(now, encoding?.signal, advance);
           throw Object.assign(Error("synthetic missing port file"), {code: "ENOENT"});
         }
         assert.ok(["catalog.js", "django-api.mjs", "tree.js", "style.css", "catalog.css"].some(
@@ -111,12 +118,16 @@ async function simulate({portRead, exitCode = null, signalCode = null,
     setTimeout(callback, ms) {
       assert.ok([50, 3000].includes(ms), "Unexpected timer outside startup polling/cleanup");
       assert.ok(now < 20000, "Startup exceeded the deterministic fixture budget");
-      now += ms;
+      advance(ms);
       callback();
     },
-    AbortSignal: {timeout: () => undefined},
+    AbortController, AbortSignal: {timeout: ms => {
+      const controller = new AbortController();
+      deadlines.push({at: now + ms, controller});
+      return controller.signal;
+    }},
     console: {log: value => state.logs.push(value)},
-    async fetch(url) {
+    async fetch(url, options = {}) {
       state.http.push(url);
       if (url === origin + "/api/v1/fiqh/books") return {
         json: async () => ({items: [{work: {source_namespace: namespace}, heading_count: headingCount}]}),
@@ -128,9 +139,23 @@ async function simulate({portRead, exitCode = null, signalCode = null,
       };
       assert.equal(url, "http://127.0.0.1:9222/json/list", "Unexpected network request");
       state.discoveryAt = now;
+      state.discoveryRedirect = options.redirect;
+      if (target) return target(options, advance);
       throw Error("synthetic target discovery blocked"); // Never connect, even on loopback.
     },
-    WebSocket: class { constructor() { throw Error("Offline fixture forbids WebSocket construction"); } },
+    WebSocket: class extends EventTarget {
+      constructor(url) {
+        super();
+        state.sockets.push(String(url));
+        if (!socketEvent) throw Error("Offline fixture forbids WebSocket construction");
+        queueMicrotask(() => {
+          socketEvent(this, advance);
+          // Prevent an unbounded old implementation from hanging this test.
+          setImmediate(() => this.dispatchEvent(new Event("error")));
+        });
+      }
+      close() { state.socketClosed = true; }
+    },
   });
   const modules = new Map();
   function moduleAt(identifier) {
@@ -321,3 +346,90 @@ test("profile-removal failure preserves the startup report and fails the gate", 
   assert.deepEqual(state.report.counts, {PASS: 0, FAIL: 0, NOT_RUN: 10, SKIP: 0});
   assert.ok(!JSON.stringify(state.report).includes("redact-me"));
 });
+
+const portAvailable = () => "9222\n/devtools/browser/synthetic\n";
+const pageEndpoint = "ws://127.0.0.1:9222/devtools/page/synthetic";
+const pageList = endpoint => ({status: 200, json: async () => [{type: "page", webSocketDebuggerUrl: endpoint}]});
+
+// No outstanding real I/O. Simulate a pending operation and advance the same
+// virtual clock used by polling. A missing signal must fail on the old source.
+function stallUntilAborted(signal, advance, remaining) {
+  if (!signal) throw Error("fixture observed unbounded operation");
+  return new Promise((resolve, reject) => {
+    signal.addEventListener("abort", () => reject(signal.reason), {once:true});
+    advance(remaining);
+    if (!signal.aborted) reject(Error("fixture observed an extended deadline"));
+  });
+}
+
+test("an in-flight port read cannot defeat the startup deadline", async () => {
+  const state = await simulate({portRead(now, signal, advance) {
+    return stallUntilAborted(signal, advance, 12000);
+  }});
+  assertNoAcceptance(state);
+  assert.equal(state.polls.length, 1);
+  assert.equal(state.cleanupAt, 12000);
+  assert.equal(state.report.blocker, "Timed out: DevTools launch");
+});
+
+for (const blocked of ["headers", "body"]) {
+  test(`discovery ${blocked} stall uses the remaining startup budget`, async () => {
+    const state = await simulate({portRead: now => now < 11950 ? "" : portAvailable(),
+      target(options, advance) {
+        const pending = () => stallUntilAborted(options.signal, advance, 50);
+        return blocked === "headers" ? pending() : {status: 200, json: pending};
+      },
+    });
+    assertNoAcceptance(state);
+    assert.equal(state.discoveryAt, 11950);
+    assert.equal(state.cleanupAt, 12000);
+    assert.equal(state.report.startup.stage, "target-discovery");
+    assert.equal(state.report.blocker, "Timed out: DevTools target discovery");
+    assert.deepEqual(state.sockets, []);
+  });
+}
+
+test("target discovery disables HTTP redirects", async () => {
+  const state = await simulate({portRead: portAvailable});
+  assertNoAcceptance(state);
+  assert.equal(state.discoveryRedirect, "error");
+});
+
+test("discovery refuses non-200 responses and malformed target lists", async () => {
+  for (const response of [{...pageList(pageEndpoint), status: 403}, {status: 200, json: async () => ({})}]) {
+    const state = await simulate({portRead: portAvailable, target: () => response});
+    assertNoAcceptance(state);
+    assert.equal(state.report.startup.stage, "target-discovery");
+    assert.deepEqual(state.sockets, []);
+  }
+});
+
+test("a foreign or malformed debugger URL is never opened or reported", async () => {
+  for (const url of ["ws://example.invalid:9222/devtools/page/secret", "ws://127.0.0.1:9223/devtools/page/secret",
+    "wss://127.0.0.1:9222/devtools/page/secret", pageEndpoint + "?token=secret",
+    "ws://user@127.0.0.1:9222/devtools/page/secret", pageEndpoint.replace("/page/", "/browser/"),
+  ]) {
+    const state = await simulate({portRead: portAvailable, target: () => pageList(url)});
+    assertNoAcceptance(state);
+    assert.deepEqual(state.sockets, []);
+    assert.equal(state.report.blocker, "Invalid DevTools page endpoint");
+    assert.doesNotMatch(JSON.stringify(state.report), /secret/);
+  }
+});
+
+for (const mode of ["close", "error", "stall"]) {
+  test(`early websocket ${mode} blocks before CDP and releases the socket`, async () => {
+    const state = await simulate({portRead: now => now < 11950 ? "" : portAvailable(),
+      target: () => pageList(pageEndpoint), socketEvent(socket, advance) {
+        if (mode === "stall") advance(50);
+        else socket.dispatchEvent(new Event(mode));
+      },
+    });
+    assertNoAcceptance(state);
+    assert.deepEqual(state.sockets, [pageEndpoint]);
+    assert.equal(state.socketClosed, true);
+    assert.equal(state.report.startup.stage, "websocket");
+    assert.equal(state.report.blocker, mode === "stall" ? "Timed out: DevTools WebSocket" : "DevTools WebSocket failed to open");
+    assert.equal(state.cleanupAt, mode === "stall" ? 12000 : 11950);
+  });
+}

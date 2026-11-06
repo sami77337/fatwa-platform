@@ -174,3 +174,11 @@ Focused validation on Linux with Node v24.22.1 and Django 5.2.18:
 The mock suite includes four follow-up cases. Two initially failed against the
 original launcher; one additional cleanup case failed before the evidence write
 was fixed. No Chrome process, database or CI job was started by these checks.
+
+### Bound discovery and the WebSocket handshake
+
+The PR #161 head `a867e34507769e8abc847ef1baf62dc403f91301` could wait past the port deadline on an in-flight read, a stalled target-list response or a WebSocket that closed before opening. Its target discovery also followed HTTP redirects and accepted a debugger URL on another host or port. The virtual launcher tests reproduced these paths with in-memory fixtures. No foreign network connection was attempted.
+
+The port-file read, HTTP target discovery and WebSocket opening now share one 12-second deadline starting at browser spawn. Discovery requires HTTP 200 and an exact `ws://127.0.0.1:<discovered-port>/devtools/page/<id>` target. Early close or error produces a blocked startup report and enters cleanup. Existing CDP commands retain their own 10-second deadlines. No new launch attempt or application retry is added.
+
+On Node 24.22.1 the original launcher passed its 21 startup checks and failed all nine new regressions. The revised launcher passed all 30 startup checks and six CDP tests. The six offline Python guard tests passed separately. These checks do not identify the cause of the earlier PG17 port-file timeout. The focused run did not start a database or a real browser.
