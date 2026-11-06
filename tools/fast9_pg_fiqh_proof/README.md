@@ -87,10 +87,17 @@ Before creation, read-only queries verify live `b6_ephemeral` identity and check
 that the exact test database is unused. The maintenance connection is verified
 as `postgres` on the same role/version; its usual fallback is rejected. The
 creation path never drops or reuses an occupied name, even if a create race occurs.
-The newly created database identity is checked before Django's existing migrations,
-then again before every fixture write and before teardown. Only the successfully
-created test database is dropped after the run. A setup failure is a failure;
-there is no automatic retry or destructive cleanup of a suspect database.
+The runner rejects inherited host-address and service overrides, and requires the
+pinned Django connection options. After successful creation, the maintenance
+connection records the target database OID and fatwa_ci ownership. Both must
+match before migrations, fixture writes, and on the maintenance cursor Django
+uses for teardown. Any mismatch stops the operation.
+
+Use an exclusively reserved disposable service for the entire run. PostgreSQL
+drops a database by name, so the OID check and the following DROP are separate
+statements. A concurrent administrator could replace the target between them.
+A failed setup or identity check requires manual review of the disposable
+service. The runner does not retry or clean up a suspect target.
 
 Capture the complete log as a CI artifact. `FAST9_PROOF` JSON lines report actual
 Git SHA/dirty state, literal fixture pins, live database/role/server version,

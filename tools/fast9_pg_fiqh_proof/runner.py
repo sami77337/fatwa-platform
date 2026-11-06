@@ -6,6 +6,7 @@ an occupied name, including a create race, raises without DROP or reuse.
 """
 
 import os
+from contextlib import contextmanager
 from unittest.mock import patch
 
 from django.conf import settings
@@ -19,6 +20,7 @@ LABEL = "tests.fast9_pg_fiqh_proof.postgresql"
 EXPECTED_CASES = 8
 _discovering = False
 _running = False
+_created_oid = None
 
 
 class SyntheticGuardError(RuntimeError):
@@ -40,6 +42,8 @@ def require_configuration():
         raise SyntheticGuardError("Explicit B6 disposable synthetic configuration required")
     if os.environ.get("EXPECTED_PG_MAJOR") not in {"17", "18"}:
         raise SyntheticGuardError("Explicit PostgreSQL 17/18 identity required")
+    if any(os.environ.get(key) for key in ("PGHOSTADDR", "PGSERVICE")):
+        raise SyntheticGuardError("PostgreSQL target override forbidden")
     db = connection.settings_dict
     if (
         connection.vendor != "postgresql"
@@ -55,6 +59,11 @@ def require_configuration():
             }.items()
         )
         or db["NAME"] not in {"b6_ephemeral", TEST_DATABASE}
+        or db.get("OPTIONS")
+        != {
+            "connect_timeout": 5,
+            "options": "-c statement_timeout=3000 -c lock_timeout=3000",
+        }
         or db["TEST"]["NAME"] != TEST_DATABASE
         or db["TEST"].get("MIRROR")
     ):
@@ -76,7 +85,27 @@ def verify_identity(cursor, database):
         or int(version) // 10000 != int(os.environ["EXPECTED_PG_MAJOR"])
     ):
         raise SyntheticGuardError("Live synthetic PostgreSQL identity mismatch")
-    return {"database": name, "role": role, "server_version_num": int(version)}
+    identity = {"database": name, "role": role, "server_version_num": int(version)}
+    if database == TEST_DATABASE:
+        identity["database_oid"] = require_created_oid(cursor)
+    return identity
+
+
+def target_oid(cursor):
+    cursor.execute(
+        "SELECT oid FROM pg_database WHERE datname = %s AND datdba = current_user::regrole",
+        [TEST_DATABASE],
+    )
+    row = cursor.fetchone()
+    if row is None or type(row[0]) is not int or row[0] <= 0:
+        raise SyntheticGuardError("Owned synthetic test database not found")
+    return row[0]
+
+
+def require_created_oid(cursor):
+    if _created_oid is None or target_oid(cursor) != _created_oid:
+        raise SyntheticGuardError("Created synthetic database OID mismatch")
+    return _created_oid
 
 
 def require_unused(cursor):
@@ -86,6 +115,7 @@ def require_unused(cursor):
 
 
 def create_without_reuse(verbosity, autoclobber, keepdb=False):
+    global _created_oid
     require_configuration()
     if keepdb or connection.settings_dict["NAME"] != "b6_ephemeral":
         raise SyntheticGuardError("Fresh synthetic creation only")
@@ -97,7 +127,8 @@ def create_without_reuse(verbosity, autoclobber, keepdb=False):
         # The name is a constant; no caller-supplied SQL identifiers or suffixes.
         # A duplicate-name race propagates. Never call the base retry/drop path.
         cursor.execute(f'CREATE DATABASE "{TEST_DATABASE}"')
-    emit("created_unused_database", **identity, test_database=TEST_DATABASE)
+        _created_oid = target_oid(cursor)
+    emit("created_unused_database", **identity, test_database=TEST_DATABASE, test_oid=_created_oid)
     # Verify the actual new connection before Django records/applies migrations.
     probe = connection.copy(alias="fast9_creation_probe")
     probe.settings_dict["NAME"] = TEST_DATABASE
@@ -148,8 +179,11 @@ class SyntheticRunner(DiscoverRunner):
         return suite
 
     def setup_databases(self, **kwargs):
-        global _running
+        global _running, _created_oid
         require_configuration()
+        if _running:
+            raise SyntheticGuardError("Synthetic database already in use by this runner")
+        _created_oid = None
         revision_evidence()
         with connection.cursor() as cursor:
             identity = verify_identity(cursor, "b6_ephemeral")
@@ -158,8 +192,9 @@ class SyntheticRunner(DiscoverRunner):
         # Replace only creation's unsafe retry path; migrations remain Django's.
         with patch.object(connection.creation, "_create_test_db", create_without_reuse):
             old_config = super().setup_databases(**kwargs)
+        with connection.cursor() as cursor:
+            verify_identity(cursor, TEST_DATABASE)
         _running = True
-        require_running_database()
         return old_config
 
     def run_suite(self, suite, **kwargs):
@@ -177,11 +212,23 @@ class SyntheticRunner(DiscoverRunner):
         return result
 
     def teardown_databases(self, old_config, **kwargs):
-        global _running
+        global _running, _created_oid
         try:
-            # Recheck before Django drops only the database created in this run.
             require_running_database()
-            super().teardown_databases(old_config, **kwargs)
+            if old_config != [(connections["default"], "b6_ephemeral", True)]:
+                raise SyntheticGuardError("Unexpected Django teardown target")
+            maintenance_cursor = connection.creation._nodb_cursor
+
+            @contextmanager
+            def checked_cursor():
+                with maintenance_cursor() as cursor:
+                    verify_identity(cursor, "postgres")
+                    require_created_oid(cursor)
+                    yield cursor
+
+            with patch.object(connection.creation, "_nodb_cursor", checked_cursor):
+                super().teardown_databases(old_config, **kwargs)
         finally:
             _running = False
+            _created_oid = None
             connections.close_all()
