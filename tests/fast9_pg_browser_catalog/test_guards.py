@@ -354,6 +354,35 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(report["teardown"], "FAIL")
         self.assertEqual(aggregate(report), "FAIL")
 
+    def test_rejected_new_session_cannot_be_reused_without_rechecking(self):
+        from django.db import connections
+
+        # Exercise Django's real connect/signal/ensure_connection sequence with
+        # a fake driver, so no PostgreSQL connection can be opened.
+        for expected, answers in (
+            ("IDENTITY", [("foreign", "wave7_synthetic")]),
+            ("READ_ONLY", [(db.TEST, "wave7_synthetic"), ("off",)]),
+        ):
+            with self.subTest(reason=expected):
+                wrapper = connections["default"].copy()
+                wrapper.settings_dict["NAME"] = db.TEST
+                cursor = Mock()
+                cursor.fetchone.side_effect = answers * 2
+                with (
+                    patch.object(wrapper, "get_connection_params", return_value={}),
+                    patch.object(wrapper, "get_new_connection") as open_driver,
+                    patch.object(wrapper, "set_autocommit"),
+                    patch.object(wrapper, "init_connection_state"),
+                    patch.object(wrapper, "cursor", return_value=nullcontext(cursor)),
+                    db.read_only_connections(),
+                ):
+                    for _ in range(2):
+                        with self.assertRaisesRegex(AssertionError, expected):
+                            wrapper.ensure_connection()
+                        self.assertIsNone(wrapper.connection)
+                self.assertEqual(open_driver.call_count, 2)
+                self.assertEqual(open_driver.return_value.close.call_count, 2)
+
     def test_readonly_receiver_checks_actual_identity_and_setting(self):
         with (
             patch("django.db.backends.signals.connection_created.connect") as connect,

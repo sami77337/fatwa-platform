@@ -169,17 +169,22 @@ def read_only_connections():
     from django.db.backends.signals import connection_created
 
     def protect(sender, connection, **kwargs):
-        if connection.alias != "default" or connection.settings_dict["NAME"] != TEST:
-            connection.close()
-            raise AssertionError("BROWSER_DATABASE_IDENTITY_MISMATCH")
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT current_database(),current_user")
-            if cursor.fetchone() != (TEST, "wave7_synthetic"):
+        try:
+            if connection.alias != "default" or connection.settings_dict["NAME"] != TEST:
                 raise AssertionError("BROWSER_DATABASE_IDENTITY_MISMATCH")
-            cursor.execute("SET default_transaction_read_only = on")
-            cursor.execute("SHOW default_transaction_read_only")
-            if cursor.fetchone() != ("on",):
-                raise AssertionError("BROWSER_READ_ONLY_REQUIRED")
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT current_database(),current_user")
+                if cursor.fetchone() != (TEST, "wave7_synthetic"):
+                    raise AssertionError("BROWSER_DATABASE_IDENTITY_MISMATCH")
+                cursor.execute("SET default_transaction_read_only = on")
+                cursor.execute("SHOW default_transaction_read_only")
+                if cursor.fetchone() != ("on",):
+                    raise AssertionError("BROWSER_READ_ONLY_REQUIRED")
+        except Exception:
+            # Django sets wrapper.connection before emitting connection_created.
+            # A rejected session must never satisfy a later ensure_connection().
+            connection.close()
+            raise
 
     connections.close_all()
     connection_created.connect(protect, weak=False)
