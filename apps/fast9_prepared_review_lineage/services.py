@@ -104,6 +104,13 @@ def build_evidence(
     try:
         exports.require_development(synthetic_fixtures_only)
         projection = prepared.project(request)
+        key = request["case_key"]
+        if (
+            projection["source_identity"]["case_key"] != key
+            or projection["request_sha256"] != sha256(engine.canonical_bytes(request)).hexdigest()
+            or not _same([step["command"] for step in projection["steps"]], request["commands"])
+        ):
+            raise LineageError("lineage: prepared_request_mismatch")
         if source_files is None:
             source_files = dict(exports.build_export(synthetic_fixtures_only=True).files)
         elif type(source_files) is dict:
@@ -123,7 +130,6 @@ def build_evidence(
         # Decode only after exact-byte verification of both complete bundles.
         report = json.loads(source_files["report.json"])
         preview = json.loads(review_files["preview.json"])
-        key = projection["source_identity"]["case_key"]
         entries = [e for e in report["cases"] if e["packet"]["identity"]["case_key"] == key]
         cases = [c for c in preview["cases"] if c["case_key"] == key]
         if len(entries) != 1 or len(cases) != 1:
