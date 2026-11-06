@@ -10,6 +10,7 @@ import {dispatchKey} from "../wave7/keyboard.mjs";
 import {allowedRequest, aggregateResult, catalogIdentity} from "./policy.mjs";
 import {editorialCases} from "./editorial.mjs";
 import {catalogCases} from "./catalog.mjs";
+import {focusCommand, navigationTrace, observation, packetSelector, tracedCase} from "./navigation_trace.mjs";
 import {fast3Cases} from "./fast3.mjs";
 import {ProtectedBrowser, failureResult} from "./startup.mjs";
 
@@ -28,6 +29,7 @@ const report = {schema:"fatwa.fastbuild.browser.v1", scope, result:"NOT_RUN", sh
   not_run:[scope==="editorial"?"PostgreSQL catalog (run --catalog separately)":"editorial (run default suite separately)","persisted workflow", "owner source ZIP acceptance"],
   environment:{node:process.version,platform:os.platform()},status:"NOT_DEPLOYED / GATES_HOLD / SCOPE_DEVIATION_HOLD"};
 let origin, browser, socket, cdp, loads=0, phase="preflight", viewportWidth=1280;
+let trace, inspectAfterEnter=false;
 const deadline = new AbortController();
 // End before Python's outer timeout so the normal finally always gets cleanup time.
 const watchdog=setTimeout(()=>{
@@ -44,7 +46,13 @@ async function until(check,label) {
   throw Error("Timed out: "+label);
 }
 const evaluate = expression => cdp.evaluate(expression);
-const wait = expression => until(()=>evaluate(expression),expression);
+const wait = expression => until(async()=>{
+  if (!inspectAfterEnter) return evaluate(expression);
+  inspectAfterEnter=false;
+  const [matched, state]=await evaluate(`[(${expression}),${observation(packetSelector)}]`);
+  trace.dom("after_enter",state);
+  return matched;
+},expression);
 async function navigate(route,status=200) {
   const before=loads;
   // Network response is independently checked, including expected 400/404 recovery pages.
@@ -56,11 +64,24 @@ async function navigate(route,status=200) {
   assert.equal(documentStatuses.get(origin+route.split("#")[0]),status,"document HTTP status");
 }
 const key=(name,code)=>dispatchKey(cdp,name,code);
-async function focus(selector) {
+async function focus(selector, activeTrace) {
   assert.equal(await evaluate(`!!document.querySelector(${JSON.stringify(selector)})`),true,"missing control: "+selector);
-  await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+  const states=await evaluate(focusCommand(selector,!!activeTrace));
+  if(activeTrace) {
+    activeTrace.dom("before_focus",states[0]);
+    activeTrace.dom("after_focus",states[1]);
+  }
 }
-async function activate(selector) { await focus(selector); await key("Enter",13); }
+async function activate(selector) {
+  const activeTrace=selector===packetSelector ? trace : undefined;
+  await focus(selector,activeTrace);
+  activeTrace?.add("enter_start");
+  await key("Enter",13);
+  if(activeTrace) {
+    activeTrace.add("enter_complete");
+    inspectAfterEnter=true;
+  }
+}
 async function type(selector,text) { await focus(selector); await cdp.send("Input.insertText",{text}); }
 async function select(selector,steps) {
   await focus(selector); await key("Home",36);
@@ -117,6 +138,7 @@ try {
   socket=await browser.start();
   cdp=new CDP(socket,message=>{
     const p=message.params;
+    if(trace) trace.cdp(message);
     if(message.method==="Page.loadEventFired") loads++;
     if(message.method==="Runtime.exceptionThrown") report.exceptions.push(p.exceptionDetails.text);
     if(message.method==="Runtime.consoleAPICalled"&&p.type==="error") report.console_errors.push("console.error");
@@ -141,8 +163,21 @@ try {
   await viewport(1280); phase="interactions";
   for(let index=0;index<cases.length;index++) {
     if(report.deadline_exceeded) throw Error("QA runner deadline exceeded");
+    if(scope==="editorial" && cases[index][0]===tracedCase) {
+      trace=navigationTrace(origin);
+      report.tests[index].navigation=trace.report;
+    }
     try {await cases[index][1]();report.tests[index].result="PASS";}
-    catch(error) {report.tests[index].result="FAIL";report.tests[index].error=error.message;await screenshot(`${scope}-failure-${index+1}.png`).catch(()=>{});}
+    catch(error) {
+      const item=report.tests[index], name=`${scope}-failure-${index+1}.png`;
+      item.result="FAIL"; item.error=error.message;
+      if(trace) {
+        const state=await evaluate(observation(packetSelector)).catch(()=>null);
+        trace.dom("failure",state);
+        item.report_path=path.join(artifacts,`${scope}-result.json`);
+      }
+      await screenshot(name).then(()=>{if(trace) item.screenshot_path=path.join(artifacts,name);}).catch(()=>{});
+    } finally { trace=undefined; inspectAfterEnter=false; }
     console.log(report.tests[index].result+" "+cases[index][0]);
   }
   report.result=aggregateResult(report.tests);
