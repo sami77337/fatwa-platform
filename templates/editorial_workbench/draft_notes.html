@@ -74,6 +74,18 @@
     {% endif %}
     {% endif %}
   </section>
+  {% if handoffs %}
+  <section class="panel" aria-labelledby="handoff-history-heading">
+    <h2 id="handoff-history-heading">تاريخ تسليم المسودة والفحص الفني</h2>
+    <ol class="timeline">
+      {% for event in handoffs %}<li>
+        <strong>{% if event.action == "submit" %}تسليم المؤلف للمراجعة{% else %}إتمام فحص فني داخلي{% endif %}</strong>
+        · النسخة {{ event.revision }}
+        · <time datetime="{{ event.recorded_at }}">{{ event.recorded_at }}</time>
+      </li>{% endfor %}
+    </ol>
+  </section>
+  {% endif %}
   {% if history %}
   <section class="panel" aria-labelledby="previous-heading">
     <h2 id="previous-heading">الملاحظات السابقة</h2>

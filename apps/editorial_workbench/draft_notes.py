@@ -108,17 +108,23 @@ def draft_notes(request):
     if snapshot.drafts:
         latest = snapshot.drafts[-1]
         notes = snapshot.draft_notes
-        # The journal verifies the alternating request and resolution events.
+        # Change requests must be paired with their own resolution; author
+        # submissions and technical checks are independent audit events.
         history = []
-        for original, decision in zip(notes[::2], notes[1::2]):
-            history.append(
-                {
-                    "original": original,
-                    "text": _packet_exact(original.text),
-                    "decision": decision,
-                    "decision_time": datetime.fromisoformat(decision.recorded_at),
-                }
-            )
+        pending_request = None
+        for event in notes:
+            if event.action == "request":
+                pending_request = event
+            elif event.action in {"withdraw", "close"} and pending_request is not None:
+                history.append(
+                    {
+                        "original": pending_request,
+                        "text": _packet_exact(pending_request.text),
+                        "decision": event,
+                        "decision_time": datetime.fromisoformat(event.recorded_at),
+                    }
+                )
+                pending_request = None
         active = notes[-1] if notes and notes[-1].action == "request" else None
         fresh = (
             latest.source_count == len(snapshot.events)
@@ -151,5 +157,6 @@ def draft_notes(request):
             active_text=_packet_exact(active.text) if active else "",
             newer=bool(active and latest.revision > active.revision),
             history=history[::-1],
+            handoffs=[e for e in notes if e.action in {"submit", "confirm"}],
         )
     return render(request, TEMPLATE, context, status=status)
