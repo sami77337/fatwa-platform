@@ -136,11 +136,15 @@ def fingerprint():
         )
         relations = cursor.fetchall()
         for name, kind in relations:
-            cursor.execute(
-                sql.SQL("SELECT row_to_json(t)::text FROM {}.{} t").format(
-                    sql.Identifier("public"), sql.Identifier(name)
+            relation = sql.Identifier("public", name)
+            if kind == "S":
+                # Sequences expose these columns but have no named composite row type.
+                cursor.execute(
+                    sql.SQL("SELECT last_value, log_cnt, is_called FROM {}").format(relation)
                 )
-            )
+                evidence.append((name, kind, cursor.fetchall()))
+                continue
+            cursor.execute(sql.SQL("SELECT row_to_json(t)::text FROM {} t").format(relation))
             evidence.append((name, kind, sorted(row[0] for row in cursor.fetchall())))
         for query in (
             "SELECT table_name,column_name,ordinal_position,column_default,is_nullable,data_type "

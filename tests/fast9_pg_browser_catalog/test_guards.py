@@ -26,6 +26,23 @@ def authorized():
 
 
 class AuthorizationTests(unittest.TestCase):
+    def test_sequence_fingerprint_reads_without_advancing_and_binds_all_state(self):
+        def digest(state):
+            cursor = Mock()
+            cursor.fetchall.side_effect = [[("probe_id_seq", "S")], [state], [], [], []]
+            with patch("django.db.connection.cursor", return_value=nullcontext(cursor)):
+                result = db.fingerprint()
+            query = cursor.execute.call_args_list[1].args[0].as_string(None)
+            self.assertEqual(
+                query, 'SELECT last_value, log_cnt, is_called FROM "public"."probe_id_seq"'
+            )
+            return result
+
+        original = digest((1, 0, False))
+        for state in ((2, 0, False), (1, 1, False), (1, 0, True)):
+            with self.subTest(state=state):
+                self.assertNotEqual(original, digest(state))
+
     def test_exact_opt_in(self):
         db.authorize(authorized())
 
