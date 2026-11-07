@@ -61,6 +61,53 @@ jobs:
         with:
           node-version: '24'
       - run: python -m pip install -r requirements.txt
+      - name: FAST9 guarded fiqh proof on the disposable B6 service
+        if: >-
+          github.repository == 'sami77337/fatwa-platform' &&
+          (github.ref == 'refs/heads/codex/20261029-fast9-v5-05-pg-proof-pc1' ||
+           (github.event.pull_request.head.repo.full_name == github.repository &&
+            github.head_ref == 'codex/20261029-fast9-v5-05-pg-proof-pc1'))
+        env:
+          FAST9_PG_FIQH_SYNTHETIC_ONLY: '1'
+          PGTESTDATABASE: test_fast8_fiqh_navigation_synthetic
+          EXPECTED_PG_MAJOR: ${{ matrix.postgres }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .local/qa/fast9-fiqh
+          exec > >(tee .local/qa/fast9-fiqh/proof.log) 2>&1
+          base_state() {
+            python -B - <<'PYCODE'
+          import django
+          django.setup()
+          import json
+          from django.db import connection
+          from tools.fast9_pg_fiqh_proof import runner
+
+          runner.require_configuration()
+          with connection.cursor() as cursor:
+              cursor.execute("SET default_transaction_read_only = on")
+              identity = runner.verify_identity(cursor, "b6_ephemeral")
+              runner.require_unused(cursor)
+              cursor.execute("""
+                  SELECT oid, EXISTS (SELECT 1 FROM pg_class WHERE relnamespace = 'public'::regnamespace)
+                  FROM pg_database WHERE datname = current_database()
+              """)
+              oid, occupied_schema = cursor.fetchone()
+              if occupied_schema:
+                  raise RuntimeError("Expected an empty public schema in the B6 base")
+              print(json.dumps(dict(identity, base_oid=oid, public_schema_empty=True, test_name_unused=True),
+                               sort_keys=True))
+          PYCODE
+          }
+          before=$(base_state)
+          echo "FAST9_BASE_BEFORE $before"
+          python -B manage.py test tests.fast9_pg_fiqh_proof.postgresql \
+            --testrunner=tools.fast9_pg_fiqh_proof.runner.SyntheticRunner \
+            --settings=config.settings.test --noinput --verbosity=2
+          after=$(base_state)
+          echo "FAST9_BASE_AFTER $after"
+          test "$before" = "$after"
       - name: Record exact tested revision
         run: git rev-parse HEAD > b6-tested-sha.txt
       - name: Confirm isolated PostgreSQL version
@@ -234,6 +281,7 @@ jobs:
             b6-tested-sha.txt
             b6-postgres.log
             .local/qa/e6/
+            .local/qa/fast9-fiqh/proof.log
           include-hidden-files: true
           if-no-files-found: error
 

@@ -131,6 +131,21 @@ class Wave4Tests(unittest.TestCase):
             result = w.execute([sys.executable, str(ROOT / "tools/dev/wave4_node.py"), str(file)], self.root)
             self.assertEqual(result["exit_code"], expected, result)
 
+    def test_socket_probe_diagnostic_preserves_failure_count_and_hides_raw_details(self):
+        file = self.root / "synthetic.test.mjs"
+        line = "C6_SOCKET_HANG rejection=wrong-stage stage=port-file cleanup=PASS elapsed_ms=1501 profile=unchecked"
+        file.write_text(
+            "import test from 'node:test'; test('synthetic probe', t => {"
+            f"t.diagnostic('{line}'); t.diagnostic('{line} private-sentinel');"
+            "throw Error('private-sentinel'); });"
+        )
+        result = w.execute([sys.executable, str(ROOT / "tools/dev/wave4_node.py"), str(file)], self.root)
+        self.assertEqual(result["exit_code"], 1)
+        lines = result["output_tail"].splitlines()
+        self.assertEqual(lines.count(line), 1)
+        self.assertIn("D6_REGISTERED_TESTS=1", lines)
+        self.assertNotIn("private-sentinel", result["output_tail"])
+
     def test_cli_options_and_invalid_argument(self):
         with patch.object(w, "dispatch", return_value=(4, {"acceptance": "NOT_RUN"})) as run:
             self.assertEqual(w.main(["--isolated", "--wave3", "--manifest", str(self.manifest)]), 4)

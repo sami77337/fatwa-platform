@@ -69,6 +69,101 @@ with patch.object(connection, 'ensure_connection', side_effect=AssertionError('D
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("SyntheticGuardError", result.stderr)
 
+    def test_connection_overrides_refused_before_driver(self):
+        for field in ("PGHOSTADDR", "PGSERVICE"):
+            with self.subTest(field=field):
+                result = self.probe(
+                    "from tools.fast9_pg_fiqh_proof.runner import SyntheticRunner\nSyntheticRunner()",
+                    **{field: "synthetic-override"},
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("SyntheticGuardError", result.stderr)
+        result = self.probe("""
+connection.settings_dict['OPTIONS']['hostaddr'] = '192.0.2.1'
+from tools.fast9_pg_fiqh_proof.runner import SyntheticRunner
+SyntheticRunner()
+""")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("SyntheticGuardError", result.stderr)
+
+    def test_replaced_same_name_database_refused_before_fixture_io(self):
+        result = self.probe("""
+from contextlib import nullcontext
+from unittest.mock import Mock, patch
+from tools.fast9_pg_fiqh_proof import runner
+connection.settings_dict['NAME'] = runner.TEST_DATABASE
+runner._running = True
+runner._created_oid = 41
+cursor = Mock()
+cursor.fetchone.side_effect = [(runner.TEST_DATABASE, 'fatwa_ci', '170000'), (42,)]
+with patch.object(connection, 'cursor', return_value=nullcontext(cursor)):
+    try:
+        runner.require_running_database()
+    except runner.SyntheticGuardError:
+        pass
+    else:
+        raise AssertionError('same-name replacement accepted')
+assert all(c.args[0].startswith('SELECT') for c in cursor.execute.call_args_list)
+""")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_create_probe_rejects_replacement_before_migrations(self):
+        result = self.probe("""
+from contextlib import nullcontext
+from unittest.mock import Mock, patch
+from tools.fast9_pg_fiqh_proof import runner
+maintenance = Mock()
+maintenance.fetchone.side_effect = [('postgres', 'fatwa_ci', '170000'), None, (41,)]
+target = Mock()
+target.fetchone.side_effect = [(runner.TEST_DATABASE, 'fatwa_ci', '170000'), (42,)]
+probe = Mock(settings_dict={})
+probe.cursor.return_value = nullcontext(target)
+with patch.object(connection.creation, '_nodb_cursor', return_value=nullcontext(maintenance)), \
+     patch.object(connection, 'copy', return_value=probe):
+    try:
+        runner.create_without_reuse(0, True)
+    except runner.SyntheticGuardError:
+        pass
+    else:
+        raise AssertionError('replacement accepted before migrations')
+assert runner._created_oid == 41
+assert all(c.args[0].startswith('SELECT') for c in target.execute.call_args_list)
+assert all('DROP' not in c.args[0] for c in maintenance.execute.call_args_list)
+probe.close.assert_called_once()
+""")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_teardown_checks_maintenance_identity_before_django_can_drop(self):
+        result = self.probe("""
+from contextlib import nullcontext
+from unittest.mock import Mock, patch
+from django.db import connections
+from tools.fast9_pg_fiqh_proof import runner
+instance = runner.SyntheticRunner(verbosity=0)
+connection.settings_dict['NAME'] = runner.TEST_DATABASE
+old_config = [(connections['default'], 'b6_ephemeral', True)]
+for maintenance_rows in ([('postgres', 'fatwa_ci', '170000'), (42,)],
+                         [('postgres', 'fatwa_ci', '170000'), None],
+                         [('b6_ephemeral', 'fatwa_ci', '170000')]):
+    runner._running = True
+    runner._created_oid = 41
+    target = Mock()
+    target.fetchone.side_effect = [(runner.TEST_DATABASE, 'fatwa_ci', '170000'), (41,)]
+    maintenance = Mock()
+    maintenance.fetchone.side_effect = maintenance_rows
+    with patch.object(connection, 'cursor', return_value=nullcontext(target)), \
+         patch.object(connection.creation, '_nodb_cursor', return_value=nullcontext(maintenance)):
+        try:
+            instance.teardown_databases(old_config)
+        except runner.SyntheticGuardError:
+            pass
+        else:
+            raise AssertionError('unsafe teardown accepted')
+    assert all(c.args[0].startswith('SELECT') for c in maintenance.execute.call_args_list)
+    assert not runner._running and runner._created_oid is None
+""")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_direct_discovery_is_rejected_before_setup_databases(self):
         result = self.probe(
             "from django.test.runner import DiscoverRunner\n"
