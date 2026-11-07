@@ -50,6 +50,12 @@ class RelevanceEvaluationTests(SimpleTestCase):
         )
         self.assertEqual(rows["gapped-revisions"]["recall_at_k"], 3 / 5)
         self.assertTrue(rows["no-match-control"]["correct_empty"])
+        self.assertEqual(
+            rows["no-clip-paraphrase"]["returned_at_k"][0],
+            ("intake-2", None),
+        )
+        self.assertEqual(rows["no-clip-paraphrase"]["recall_at_k"], 1)
+        self.assertEqual(report["query_coverage_at_k"], 1)
         positives = [r for r in rows.values() if r["relevant_ids"]]
         for field in ("precision_at_k", "recall_at_k", "reciprocal_rank_at_k"):
             self.assertAlmostEqual(
