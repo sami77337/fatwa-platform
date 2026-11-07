@@ -59,17 +59,32 @@ for (const [mode, code, stage] of [
   ["invalid-json", "DEVTOOLS_PROTOCOL_INVALID", "target-discovery"],
   ["foreign-socket", "DEVTOOLS_ENDPOINT_INVALID", "target-discovery"],
   ["socket-hang", "BROWSER_STARTUP_TIMEOUT", "websocket"],
-]) test(`${mode} has a bounded, specific failure and removes its profile`, async () => {
+]) test(`${mode} has a bounded, specific failure and removes its profile`, async t => {
   const session = browser(mode);
   const start = performance.now();
+  let rejection = "none", cleanupStatus = "pending", profile = "unchecked";
+  let elapsedMs;
+  if (mode === "socket-hang") t.after(() => {
+    const elapsed = Math.floor(elapsedMs ?? (performance.now() - start));
+    t.diagnostic(`C6_SOCKET_HANG rejection=${rejection} stage=${session.stage} cleanup=${cleanupStatus} elapsed_ms=${elapsed} profile=${profile}`);
+  });
   try {
-    await assert.rejects(session.start(), error => error.code === code && error.stage === stage);
+    await assert.rejects(session.start(), error => {
+      if (error.code !== code) rejection = "wrong-code";
+      else if (error.stage !== stage) rejection = "wrong-stage";
+      else rejection = "matched";
+      return rejection === "matched";
+    });
   } finally {
     const cleanup = await session.close();
+    cleanupStatus = cleanup.result;
     assert.equal(cleanup.result, "PASS", JSON.stringify(cleanup));
   }
-  assert.ok(performance.now() - start < 7000, "startup plus cleanup exceeded bound");
+  elapsedMs = performance.now() - start;
+  assert.ok(elapsedMs < 7000, "startup plus cleanup exceeded bound");
+  profile = "checking";
   await assert.rejects(access(session.profile), {code:"ENOENT"});
+  profile = "removed";
 });
 
 test("missing executable is spawn failure, never a DevTools timeout", async () => {
