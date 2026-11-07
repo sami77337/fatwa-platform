@@ -96,7 +96,8 @@ class OutboxTests(unittest.TestCase):
         self.assertEqual(self.reconcile(claim, "DELIVERED").state, "DELIVERED")
         with self.assertRaises(OutboxConflict):
             self.reconcile(claim, "ACCEPTED")
-        self.assertEqual(list_intents(self.dir, synthetic_fixtures_only=True)[0].state, "DELIVERED")
+        latest = {r.intent_key: r.state for r in list_intents(self.dir, synthetic_fixtures_only=True)}
+        self.assertEqual(latest[key], "DELIVERED")
 
     def test_unsafe_receipt_and_changed_source_are_denied(self):
         key = self.stage()[0].intent_key
@@ -114,8 +115,9 @@ class OutboxTests(unittest.TestCase):
                 verify_provider_receipt=lambda proof: False,
                 synthetic_fixtures_only=True,
             )
+        self.assertEqual(self.reconcile(claim, "ACCEPTED", "provider-01").state, "SENT_UNCONFIRMED")
         with self.assertRaises(OutboxConflict):
-            self.reconcile(claim, "ACCEPTED", "provider-02")
+            self.reconcile(claim, "DELIVERED", "provider-02")
 
     def test_production_is_never_activated(self):
         with patch.dict(os.environ, {"FATWA_PRODUCTION": "1"}):
