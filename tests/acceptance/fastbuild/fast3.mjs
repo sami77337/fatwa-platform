@@ -17,7 +17,8 @@ export function fast3Cases(h) {
       await wait("location.pathname.endsWith('/batch-synthetic-csv-1')");
       assert.equal(await e("new URLSearchParams(location.search).get('batch')"), "synthetic-csv");
       await activate('#revisions a[href*="revision=1"]');
-      await wait("location.pathname==='/dev/editorial-workbench/batch-synthetic-csv-1' && document.querySelector('#snapshot strong')?.textContent==='1'");
+      // Chrome may focus the revision fragment after the document has loaded.
+      await wait("location.pathname==='/dev/editorial-workbench/batch-synthetic-csv-1' && document.querySelector('#snapshot strong')?.textContent==='1' && document.activeElement===document.getElementById('snapshot')");
       await activate('a[href*="packet=html"]');
       await wait("!!document.querySelector('.case-packet')");
       assert.ok(await e("document.querySelector('#packet-intake').textContent.includes('batch-synthetic-csv-1')"));
