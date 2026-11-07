@@ -2,17 +2,20 @@
 
 import json
 import os
+import re
 import sqlite3
 import stat
 import tempfile
 from contextlib import closing
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from hashlib import sha256
 from itertools import groupby
 from pathlib import Path
 
 from apps.editorial_export.services import require_development
 
+from .draft_source_review import inspect_draft_source
 from .source_history import SourceEvent, replay_source_history, source_receipt, validate_event_shape
 
 JOURNAL_FILENAME = "synthetic-source-history.sqlite3"
@@ -36,6 +39,40 @@ for _operation in ("UPDATE", "DELETE"):
         f"CREATE TRIGGER {_name} BEFORE {_operation} ON source_events "
         "BEGIN SELECT RAISE(ABORT, 'append_only'); END"
     )
+
+
+_REVIEW_CASE = "intake-7"
+_REVIEWER = "synthetic-reviewer"
+_DIGEST = re.compile(r"[0-9a-f]{64}")
+_REVIEW_SCHEMA = {
+    "source_reviews": "CREATE TABLE source_reviews (case_key TEXT NOT NULL, draft_revision INTEGER NOT NULL, "
+    "reviewer TEXT NOT NULL, count INTEGER NOT NULL, source_digest TEXT NOT NULL, "
+    "draft_digest TEXT NOT NULL, recorded_at TEXT NOT NULL, "
+    "PRIMARY KEY(case_key,draft_revision,reviewer,count,draft_digest)) WITHOUT ROWID",
+    "prevent_review_replace": "CREATE TRIGGER prevent_review_replace BEFORE INSERT ON source_reviews "
+    "WHEN EXISTS (SELECT 1 FROM source_reviews WHERE case_key=NEW.case_key AND "
+    "draft_revision=NEW.draft_revision AND reviewer=NEW.reviewer AND count=NEW.count AND "
+    "draft_digest=NEW.draft_digest) BEGIN SELECT RAISE(ABORT, 'append_only'); END",
+}
+for _operation in ("UPDATE", "DELETE"):
+    _name = "prevent_review_" + _operation.lower()
+    _REVIEW_SCHEMA[_name] = (
+        f"CREATE TRIGGER {_name} BEFORE {_operation} ON source_reviews "
+        "BEGIN SELECT RAISE(ABORT, 'append_only'); END"
+    )
+
+
+class ReviewConflict(ValueError):
+    """The supplied snapshot is no longer the current reviewable version."""
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewReceipt:
+    reviewer: str
+    count: int
+    source_digest: str
+    draft_digest: str
+    recorded_at: str
 
 
 class JournalError(ValueError):
@@ -132,16 +169,17 @@ def history_digest(history: tuple[SourceEvent, ...]) -> str | None:
     return tip or None
 
 
-def _verified(con: sqlite3.Connection) -> tuple[dict, dict]:
+def _verified(con: sqlite3.Connection) -> tuple[dict, dict, tuple[ReviewReceipt, ...]]:
+    (version,) = con.execute("PRAGMA user_version").fetchone()
+    expected = _SCHEMA | _REVIEW_SCHEMA if version == 2 else _SCHEMA
     entries = con.execute(
-        "SELECT name,sql FROM sqlite_schema LIMIT ?", (len(_SCHEMA) + 1,)
+        "SELECT name,sql FROM sqlite_schema LIMIT ?", (len(expected) + 1,)
     ).fetchall()
-    schema = dict(entries)
     if (
-        len(entries) != len(_SCHEMA)
-        or schema != _SCHEMA
+        version not in (1, 2)
+        or len(entries) != len(expected)
+        or dict(entries) != expected
         or con.execute("PRAGMA application_id").fetchone() != (_APP_ID,)
-        or con.execute("PRAGMA user_version").fetchone() != (1,)
     ):
         raise JournalError("journal_schema_mismatch")
     histories, heads = {}, {}
@@ -182,7 +220,43 @@ def _verified(con: sqlite3.Connection) -> tuple[dict, dict]:
     }
     if stored_heads != heads:
         raise JournalError("journal_head_mismatch")
-    return histories, heads
+    receipts = []
+    if version == 2:
+        rows = con.execute(
+            "SELECT r.case_key,r.draft_revision,r.reviewer,r.count,r.source_digest,r.draft_digest,"
+            "r.recorded_at,e.digest FROM source_reviews r LEFT JOIN source_events e ON "
+            "e.case_key=r.case_key AND e.seq=r.count ORDER BY r.count,r.recorded_at LIMIT 129"
+        ).fetchall()
+        if not 1 <= len(rows) <= 128:
+            raise JournalError("journal_review_count_invalid")
+        for (
+            case_key,
+            revision,
+            reviewer,
+            count,
+            source_digest,
+            draft_digest,
+            recorded,
+            event_digest,
+        ) in rows:
+            if (
+                case_key != _REVIEW_CASE
+                or revision != 1
+                or reviewer != _REVIEWER
+                or source_digest != event_digest
+                or type(draft_digest) is not str
+                or not _DIGEST.fullmatch(draft_digest)
+                or type(recorded) is not str
+            ):
+                raise JournalError("journal_review_invalid")
+            try:
+                stamp = datetime.fromisoformat(recorded)
+                if stamp.tzinfo != UTC or stamp.isoformat(timespec="microseconds") != recorded:
+                    raise ValueError
+            except ValueError as exc:
+                raise JournalError("journal_review_timestamp_invalid") from exc
+            receipts.append(ReviewReceipt(reviewer, count, source_digest, draft_digest, recorded))
+    return histories, heads, tuple(receipts)
 
 
 def _connect(path: Path, writable: bool) -> sqlite3.Connection:
@@ -202,21 +276,89 @@ def _connect(path: Path, writable: bool) -> sqlite3.Connection:
         raise
 
 
-def read_source_history(
-    directory: Path, case_key: str, *, synthetic_fixtures_only: bool = False
-) -> tuple[SourceEvent, ...]:
-    """Read a verified committed snapshot; an absent case/file returns an empty tuple."""
+def _read_state(directory, case_key, synthetic_fixtures_only):
     require_development(synthetic_fixtures_only)
     source_receipt(case_key)
     try:
         path = _path(directory)
         if not _exists(path):
-            return ()
+            return (), None
         with closing(_connect(path, False)) as con:
-            histories, _ = _verified(con)
-            return histories.get(case_key, ())
+            histories, _, receipts = _verified(con)
+            latest = receipts[-1] if receipts and case_key == _REVIEW_CASE else None
+            return histories.get(case_key, ()), latest
     except (OSError, sqlite3.Error) as exc:
         raise JournalError("journal_read_unavailable") from exc
+
+
+def read_source_history(
+    directory: Path, case_key: str, *, synthetic_fixtures_only: bool = False
+) -> tuple[SourceEvent, ...]:
+    """Read a verified committed snapshot; an absent case/file returns an empty tuple."""
+    return _read_state(directory, case_key, synthetic_fixtures_only)[0]
+
+
+def read_review_state(
+    directory: Path, *, synthetic_fixtures_only: bool = False
+) -> tuple[tuple[SourceEvent, ...], ReviewReceipt | None]:
+    """Read the fixed case and its last recorded review from the same transaction."""
+    return _read_state(directory, _REVIEW_CASE, synthetic_fixtures_only)
+
+
+def acknowledge_review(
+    directory: Path,
+    *,
+    reviewer: str,
+    count: int,
+    source_digest: str,
+    draft_digest: str,
+    synthetic_fixtures_only: bool = False,
+) -> ReviewReceipt:
+    """Compare-and-record one observation. The caller authenticates the fixed dev reviewer."""
+    require_development(synthetic_fixtures_only)
+    if type(reviewer) is not str or reviewer != _REVIEWER:
+        raise ValueError("unknown_synthetic_reviewer")
+    if (
+        type(count) is not int
+        or not 1 <= count <= 128
+        or type(source_digest) is not str
+        or not _DIGEST.fullmatch(source_digest)
+        or type(draft_digest) is not str
+        or not _DIGEST.fullmatch(draft_digest)
+    ):
+        raise ValueError("invalid_review_version")
+    try:
+        path = _path(directory)
+        if not _exists(path):
+            raise ReviewConflict("source_history_missing")
+        with closing(_connect(path, True)) as con:
+            histories, heads, receipts = _verified(con)
+            if heads.get(_REVIEW_CASE) != (count, source_digest):
+                raise ReviewConflict("source_version_changed")
+            obs = inspect_draft_source(
+                _REVIEW_CASE, 1, histories[_REVIEW_CASE], synthetic_fixtures_only=True
+            )
+            if obs.draft_revision_sha256 != draft_digest:
+                raise ReviewConflict("draft_version_changed")
+            for receipt in receipts:
+                if receipt.count == count and receipt.draft_digest == draft_digest:
+                    return receipt
+            if len(receipts) == 128:
+                raise JournalError("journal_review_capacity_exceeded")
+            # The exact v1 schema stays untouched until a confirmed first review.
+            if not receipts:
+                for sql in _REVIEW_SCHEMA.values():
+                    con.execute(sql)
+                con.execute("PRAGMA user_version=2")
+            stamp = datetime.now(UTC).isoformat(timespec="microseconds")
+            con.execute(
+                "INSERT INTO source_reviews VALUES (?,?,?,?,?,?,?)",
+                (_REVIEW_CASE, 1, reviewer, count, source_digest, draft_digest, stamp),
+            )
+            con.commit()
+            return ReviewReceipt(reviewer, count, source_digest, draft_digest, stamp)
+    except (OSError, sqlite3.Error) as exc:
+        raise JournalError("journal_write_unavailable") from exc
 
 
 def append_source_event(
@@ -232,7 +374,7 @@ def append_source_event(
             _initialize(path)
             _exists(path)
         with closing(_connect(path, True)) as con:
-            histories, heads = _verified(con)
+            histories, heads, _ = _verified(con)
             old = histories.get(event.case_key, ())
             # Validate retries even at capacity without adding a 129th replay element.
             prior = next((e for e in old if e.event_id == event.event_id), None)

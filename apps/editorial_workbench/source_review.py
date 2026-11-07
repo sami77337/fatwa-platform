@@ -7,7 +7,7 @@ from django.views.decorators.http import require_safe
 from apps.editorial_demo.views import local_only
 from apps.fast9_case_source_join import draft_source_review
 from apps.fast9_case_source_join.source_history import sample_source_events
-from apps.fast9_case_source_join.source_journal import JournalError, read_source_history
+from apps.fast9_case_source_join.source_journal import JournalError, read_review_state
 
 from .views import _packet_exact, _source_journal_directory, failure
 
@@ -54,15 +54,24 @@ def source_journal_review(request):
     if directory is None:
         return failure(request, "لم يُضبط مسار مطلق لسجل المصدر المحلي.", 503)
     try:
-        events = read_source_history(directory, CASE_KEY, synthetic_fixtures_only=True)
+        events, receipt = read_review_state(directory, synthetic_fixtures_only=True)
     except (JournalError, OSError):
         return failure(request, "تعذّرت قراءة سجل المصدر أو التحقق من سلامة أحداثه.", 503)
     if not events:
         return failure(request, "لا توجد أحداث محفوظة لهذه القضية في السجل المحلي.", 404)
-    return _render_review(request, events)
+    return _render_review(request, events, receipt=receipt)
 
 
-def _render_review(request, events, *, sample=None):
+def reading_state(receipt, count, draft_digest):
+    # The journal validates every receipt against its case and source prefix.
+    if receipt is None:
+        return "unseen"
+    if receipt.draft_digest != draft_digest:
+        return "draft_changed"
+    return "current" if receipt.count == count else "changed"
+
+
+def _render_review(request, events, *, sample=None, receipt=None):
     try:
         observation = draft_source_review.inspect_draft_source(
             CASE_KEY, DRAFT_REVISION, events, synthetic_fixtures_only=True
@@ -87,6 +96,8 @@ def _render_review(request, events, *, sample=None):
             "samples": SAMPLES,
             "source_journal_enabled": _source_journal_directory() is not None,
             "selected": sample,
+            "reading_state": reading_state(receipt, len(events), observation.draft_revision_sha256),
+            "read_through": receipt.count if receipt else None,
             "timeline": timeline,
             "original": timeline[0]["body"],
             "latest": timeline[-1]["body"],

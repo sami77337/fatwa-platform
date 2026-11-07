@@ -1,12 +1,15 @@
 """Exercise #177's case comparison against a local, disposable saved event journal."""
 
 import os
+import secrets
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from urllib.parse import urlencode
 
-from django.test import SimpleTestCase, override_settings
+from django.test import Client, SimpleTestCase, override_settings
 
 from apps.fast9_case_source_join.source_history import sample_source_events, source_receipt
 from apps.fast9_case_source_join.source_journal import JOURNAL_FILENAME, append_source_event
@@ -46,6 +49,50 @@ class SourceJournalReviewTests(SimpleTestCase):
             response = self.read()
             self.assertContains(response, "لم يُضبط", status_code=503)
             self.assertNotIn(b"data-status=", response.content)
+
+    def test_desk_acknowledges_only_the_displayed_version_and_updates_the_readonly_workbench(self):
+        from apps.editorial_workbench import reviewer_settings as desk
+
+        received, correction = sample_source_events("intake-7", "corrected")
+        self.append(received)
+        token = secrets.token_hex(32)
+        self.enterContext(
+            patch.dict(
+                os.environ,
+                {"FATWA_SYNTHETIC_REVIEWER_TOKEN_SHA256": sha256(token.encode()).hexdigest()},
+            )
+        )
+        with self.settings(
+            SETTINGS_MODULE=desk.__name__,
+            ROOT_URLCONF=desk.ROOT_URLCONF,
+            MIDDLEWARE=desk.MIDDLEWARE,
+            ALLOWED_HOSTS=["127.0.0.1"],
+        ):
+            client = Client(enforce_csrf_checks=True, HTTP_HOST="127.0.0.1")
+            url = "/review/"
+            ctx = client.get(url).context
+            fields = {
+                "count": ctx["current_count"],
+                "source_digest": ctx["source_digest"],
+                "draft_digest": ctx["draft_digest"],
+                "token": token,
+            }
+
+            def post():
+                return client.post(
+                    url, urlencode(fields), content_type="application/x-www-form-urlencoded"
+                )
+
+            self.assertEqual(post().status_code, 403)
+            fields["csrfmiddlewaretoken"] = str(ctx["csrf_token"])
+            fields["token"] = "bad-token"
+            self.assertEqual(post().status_code, 403)
+            fields["token"] = token
+            self.assertEqual(post().status_code, 303)
+            self.assertContains(client.get(url), 'data-state="current"')
+            self.append(correction)
+            self.assertContains(post(), 'href="#event-2"', status_code=409)
+        self.assertContains(self.read(), 'data-state="changed"')
 
     def test_empty_history_does_not_create_a_store_or_imply_the_source_is_unchanged(self):
         response = self.read()
@@ -120,7 +167,7 @@ class SourceJournalReviewTests(SimpleTestCase):
         self.assertEqual(db.read_bytes(), b"synthetic-private-error-marker")
 
     def test_guards_reject_overrides_writes_remote_peers_and_production_before_storage_read(self):
-        target = "apps.editorial_workbench.source_review.read_source_history"
+        target = "apps.editorial_workbench.source_review.read_review_state"
         with patch(target, side_effect=AssertionError("must not read storage")):
             for q in ("sample=received", "path=/tmp/stash", "case_key=intake-1", "revision=1"):
                 self.assertEqual(self.read(self.url + "?" + q).status_code, 400)

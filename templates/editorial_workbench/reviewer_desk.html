@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مراجعة نسخة السؤال</title>
+  <link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">انتقل إلى السؤال</a>
+<header class="site-header">
+  <div class="shell">
+    <p class="eyebrow">بيئة تطوير محلية · سؤال اصطناعي · هوية مراجع تدريبية</p>
+    <h1>مراجعة نسخة السؤال</h1>
+  </div>
+</header>
+<main class="shell" id="main" tabindex="-1">
+  {% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
+  {% if current_count %}
+  <p>القضية <bdi>{{ case_key }}</bdi> · المسودة رقم {{ revision }} · سجل السؤال حتى الحدث {{ current_count }}</p>
+  <section class="panel" aria-labelledby="review-state">
+    <h2 id="review-state">حالة القراءة</h2>
+    <p class="notice" role="status" id="reading-status" data-state="{{ review_state }}">
+      {% if review_state == "current" %}سُجّلت قراءة هذه النسخة من السؤال، ورُبطت بالمسودة رقم {{ revision }}.
+      {% elif review_state == "changed" %}وصل تحديث للسؤال بعد آخر قراءة مسجّلة. شملت القراءة السابقة الأحداث حتى الرقم {{ reviewed_count }}.
+      <a href="#event-{{ reviewed_count|add:'1' }}">انتقل إلى أول تحديث جديد</a>
+      {% elif review_state == "draft_changed" %}تغيّرت المسودة منذ آخر قراءة مسجّلة. راجع نص السؤال قبل تسجيل قراءة ترتبط بالمسودة الحالية.
+      {% else %}لم تُسجّل قراءة هذه النسخة بعد.{% endif %}
+    </p>
+    {% if recorded_at %}<p>سجّل المراجع التجريبي آخر قراءة في <time datetime="{{ recorded_at|date:'c' }}">{{ recorded_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان.</p>{% endif %}
+  </section>
+  <section class="panel" aria-labelledby="text-heading">
+    <h2 id="text-heading">نص السؤال</h2>
+    <p>{{ source_status }}</p>
+    <div class="comparison-grid">
+      <div>
+        <h3>النص عند الاستلام</h3>
+        <pre id="original-question" class="exact-text" dir="auto">{{ original }}</pre>
+      </div>
+      <div>
+        <h3>النص بعد آخر تحديث</h3>
+        {% if latest != None %}<pre id="latest-question" class="exact-text" dir="auto">{{ latest }}</pre>
+        {% else %}<p id="latest-question">حُذفت الرسالة من المصدر. يمكنك قراءة نصها عند الاستلام وتتبع تصحيحاتها أدناه.</p>{% endif %}
+      </div>
+    </div>
+  </section>
+  <section class="panel" aria-labelledby="history-heading">
+    <h2 id="history-heading">تاريخ السؤال</h2>
+    <ol class="timeline">
+      {% for event in events %}<li id="event-{{ event.number }}">
+        <strong>{{ event.label }}</strong>
+        {% if event.is_new and reviewed_count %}<span> · جديد منذ آخر قراءة</span>{% endif %}
+        {% if event.body != None %}<pre class="exact-text" dir="auto">{{ event.body }}</pre>{% endif %}
+      </li>{% endfor %}
+    </ol>
+  </section>
+  {% if can_ack and review_state != "current" %}
+  <section class="panel" aria-labelledby="record-heading">
+    <h2 id="record-heading">تسجيل القراءة</h2>
+    <p id="record-help">بعد الاطّلاع على الأحداث حتى الرقم {{ current_count }}، أدخل رمز المراجع التجريبي لحفظ إقرار قراءة هذه النسخة وربطه بالمسودة رقم {{ revision }}.</p>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="count" value="{{ current_count }}">
+      <input type="hidden" name="source_digest" value="{{ source_digest }}">
+      <input type="hidden" name="draft_digest" value="{{ draft_digest }}">
+      <label for="review-token">رمز المراجع التجريبي</label>
+      <input type="password" id="review-token" name="token" dir="ltr" required minlength="64" maxlength="64" pattern="[a-f0-9]{64}" autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="record-help">
+      <button type="submit">تسجيل أنني قرأت هذه النسخة</button>
+    </form>
+  </section>
+  {% endif %}
+  {% endif %}
+</main>
+</body>
+</html>

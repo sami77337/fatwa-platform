@@ -11,6 +11,7 @@
 {% if source_journal_enabled %}<p><a id="source-journal-link" href="{% url 'editorial_workbench:source_journal' %}">فتح سجل المصدر المحفوظ</a></p>{% endif %}
 {% else %}
 <p>هذه قراءة لسجل التدريب المحلي وقت فتح الصفحة. تُقارن المسودة بالأحداث المحفوظة حتى الحدث <bdi id="source-journal-tip">{{ observation.last_supplied_event_id }}</bdi>.</p>
+<p id="saved-reading-status" data-state="{{ reading_state }}">{% if reading_state == "current" %}سجّل المراجع التجريبي قراءة نسخة السؤال المعروضة مع هذه المسودة.{% elif reading_state == "changed" %}وصل تحديث بعد القراءة المسجّلة. آخر قراءة شملت الأحداث حتى الرقم {{ read_through }}.{% elif reading_state == "draft_changed" %}تغيّرت المسودة منذ القراءة المسجّلة.{% else %}لم تُسجّل قراءة لهذه النسخة في مكتب المراجع التجريبي.{% endif %}</p>
 <p><a href="{% url 'editorial_workbench:source_review' %}">فتح أمثلة تغيّر نص السؤال</a></p>
 {% endif %}
 <section class="panel" aria-labelledby="source-review-heading">
