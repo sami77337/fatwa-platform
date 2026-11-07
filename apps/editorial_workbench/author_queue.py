@@ -9,6 +9,7 @@ from django.views.decorators.http import require_safe
 from apps.fast9_case_source_join.source_journal import JournalError, history_digest, read_desk_cases
 from apps.reference.normalization import normalize_title
 
+from .search_terms import case_search_matches
 from .author_access import draft_history_required
 from .reviewer_access import signed_in
 from .services import build_cases
@@ -142,7 +143,7 @@ def author_queue(request, key=None):
         if draft:
             search_fields.extend((draft.title, draft.body))
         search_fields.extend(turn.text for turn in snapshot.clarifications)
-        if needle and not any(needle in normalize_title(value) for value in search_fields):
+        if needle and not case_search_matches(needle, *search_fields):
             continue
         for facet in facets:
             counts[facet] += 1
