@@ -17,8 +17,11 @@
 <main class="shell" id="main" tabindex="-1">
   {% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
   {% if current_count %}
-  <p>القضية <bdi>{{ case_key }}</bdi> · المسودة رقم {{ revision }} · سجل السؤال حتى الحدث {{ current_count }}</p>
+  <p>القضية <bdi>{{ case_key }}</bdi> · لقطة الاستلام رقم {{ revision }} · سجل السؤال حتى الحدث {{ current_count }}</p>
   <nav class="section-nav" aria-label="أقسام القضية">
+    <a href="{% url 'author_queue' %}">قائمة عمل القضايا</a>
+    <a href="{% url 'answer_history' %}">نسخ مسودة الجواب{% if answer_revision %} ({{ answer_revision }}){% endif %}</a>
+    {% if answer_revision %}<a href="{% url 'draft_notes' %}">مراجعة المسودة وطلب تعديلها</a>{% endif %}
     <a href="#text-heading">نص السؤال</a>
     <a href="#clarification-thread">الاستيضاحات والردود</a>
     <a href="#history-heading">تاريخ السؤال</a>
@@ -29,11 +32,11 @@
       {% if has_new_reply %}
       ورد ردّ جديد على الاستيضاح منذ آخر قراءة. <a href="#clarification-thread">اقرأ الردّ على الاستيضاح</a>.
       {% if reviewed_count and reviewed_count < current_count %}وتحدّث نصّ المصدر أيضًا. <a href="#event-{{ reviewed_count|add:'1' }}">انتقل إلى أول تحديث في السؤال</a>.{% endif %}
-      {% if review_state == "draft_changed" %}تغيّرت المسودة أيضًا منذ آخر قراءة.{% endif %}
-      {% elif review_state == "current" %}سُجّلت قراءة هذه النسخة من السؤال{% if thread %} والردود المتاحة{% endif %}، ورُبطت بالمسودة رقم {{ revision }}.
+      {% if review_state == "draft_changed" %}تغيّرت لقطة الاستلام أيضًا منذ آخر قراءة.{% endif %}
+      {% elif review_state == "current" %}سُجّلت قراءة هذه النسخة من السؤال{% if thread %} والردود المتاحة{% endif %}، ورُبطت بلقطة الاستلام رقم {{ revision }}.
       {% elif review_state == "changed" %}وصل تحديث للسؤال بعد آخر قراءة مسجّلة. شملت القراءة السابقة الأحداث حتى الرقم {{ reviewed_count }}.
       <a href="#event-{{ reviewed_count|add:'1' }}">انتقل إلى أول تحديث جديد</a>
-      {% elif review_state == "draft_changed" %}تغيّرت المسودة منذ آخر قراءة مسجّلة. راجع نص السؤال قبل تسجيل قراءة ترتبط بالمسودة الحالية.
+      {% elif review_state == "draft_changed" %}تغيّرت لقطة الاستلام منذ آخر قراءة مسجّلة. راجع نص السؤال قبل تسجيل قراءة ترتبط بالمسودة الحالية.
       {% else %}لم تُسجّل قراءة هذه النسخة بعد.{% endif %}
     </p>
     {% if recorded_at %}<p>سجّل المراجع التجريبي آخر قراءة في <time datetime="{{ recorded_at|date:'c' }}">{{ recorded_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان.</p>{% endif %}
@@ -178,7 +181,7 @@
   {% if can_ack and review_state != "current" or can_ack and has_new_reply %}
   <section class="panel" aria-labelledby="record-heading">
     <h2 id="record-heading">تسجيل القراءة</h2>
-    <p id="record-help">بعد الاطّلاع على أحداث السؤال حتى الرقم {{ current_count }}{% if has_new_reply %} وقراءة الردّ الجديد{% endif %}، سجّل قراءتك لربطها بالمسودة رقم {{ revision }}.</p>
+    <p id="record-help">بعد الاطّلاع على أحداث السؤال حتى الرقم {{ current_count }}{% if has_new_reply %} وقراءة الردّ الجديد{% endif %}، سجّل قراءتك لربطها بلقطة الاستلام رقم {{ revision }}.</p>
     <form method="post">
       {% csrf_token %}
       {% if prompt_value and not waiting and not thread_full %}<input type="hidden" name="resume_prompt" value="{{ prompt_value }}">{% endif %}

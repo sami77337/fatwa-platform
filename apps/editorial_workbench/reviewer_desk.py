@@ -31,9 +31,13 @@ from apps.fast9_case_source_join.source_journal import (
     revoke_reply_code,
 )
 
+from .answer_editor import answer_editor
+from .answer_history import answer_history
+from .author_queue import author_queue
+from .draft_notes import draft_notes
 from .reading_diff import reading_diff
 from .requester_reply import requester_reply
-from .reviewer_access import reviewer_login, reviewer_logout, signed_in
+from .reviewer_access import desk_login, desk_logout, signed_in
 from .source_review import (
     CASE_KEY,
     DRAFT_REVISION,
@@ -57,7 +61,16 @@ class DeskGuard:
         local_only(request)
         if settings.SETTINGS_MODULE != DESK_SETTINGS:
             raise Http404
-        form_paths = {"/review/", "/review/login/", "/review/logout/", "/review/respond/"}
+        form_paths = {
+            "/review/",
+            "/review/login/",
+            "/review/logout/",
+            "/review/respond/",
+            "/review/author/login/",
+            "/review/author/logout/",
+            "/review/author/draft/",
+            "/review/author/notes/",
+        }
         methods = ("GET", "HEAD", "POST") if request.path in form_paths else ("GET", "HEAD")
         response = (
             self.get_response(request)
@@ -275,6 +288,7 @@ def reviewer_desk(request):
         {
             "case_key": CASE_KEY,
             "revision": DRAFT_REVISION,
+            "answer_revision": snapshot.drafts[-1].revision if snapshot.drafts else None,
             "current_count": len(events),
             "source_digest": digest,
             "draft_digest": observation.draft_revision_sha256,
@@ -313,9 +327,16 @@ def reviewer_desk(request):
 
 urlpatterns = [
     path("review/", reviewer_desk, name="reviewer_desk"),
-    path("review/login/", reviewer_login, name="reviewer_login"),
-    path("review/logout/", reviewer_logout, name="reviewer_logout"),
+    path("review/login/", desk_login, name="reviewer_login"),
+    path("review/logout/", desk_logout, name="reviewer_logout"),
     path("review/respond/", requester_reply, name="requester_reply"),
+    path("review/author/login/", desk_login, {"role": "author"}, name="author_login"),
+    path("review/author/logout/", desk_logout, {"role": "author"}, name="author_logout"),
+    path("review/author/queue/", author_queue, name="author_queue"),
+    path("review/author/source/<slug:key>/", author_queue, name="desk_source"),
+    path("review/author/draft/", answer_editor, name="answer_editor"),
+    path("review/author/history/", answer_history, name="answer_history"),
+    path("review/author/notes/", draft_notes, name="draft_notes"),
     path(
         "dev/editorial-workbench/style.css",
         require_safe(serve),

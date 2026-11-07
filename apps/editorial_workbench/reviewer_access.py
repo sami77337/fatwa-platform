@@ -1,6 +1,5 @@
 """Short-lived reviewer access for the separate loopback training desk."""
 
-import os
 from hmac import compare_digest
 
 from django.core.exceptions import SuspiciousOperation
@@ -12,9 +11,9 @@ from django.utils.crypto import salted_hmac
 from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .source_review_identity import authenticate_fixture_reviewer
+from .source_review_identity import authenticate_fixture_role, credential_digest
 
-_COOKIE = "fatwa_training_reviewer"
+_COOKIE_PREFIX = "fatwa_training_"
 _TTL = 30 * 60
 
 
@@ -26,23 +25,28 @@ def browser_proof(request, purpose, value):
     ).hexdigest()
 
 
-def _cookie_salt():
-    return "training.desk.login." + os.environ.get("FATWA_SYNTHETIC_REVIEWER_TOKEN_SHA256", "")
+def _cookie_salt(role):
+    return "training.desk.login." + credential_digest(role)
 
 
-def signed_in(request):
-    saved = request.get_signed_cookie(_COOKIE, default="", salt=_cookie_salt(), max_age=_TTL)
-    return bool(saved) and compare_digest(
-        saved, browser_proof(request, "training.staff", "reviewer")
+def signed_in(request, role="reviewer"):
+    if not credential_digest(role):
+        return False
+    saved = request.get_signed_cookie(
+        _COOKIE_PREFIX + role, default="", salt=_cookie_salt(role), max_age=_TTL
     )
+    return bool(saved) and compare_digest(saved, browser_proof(request, "training.staff", role))
 
 
 @sensitive_post_parameters("token")
 @require_http_methods(["GET", "HEAD", "POST"])
-def reviewer_login(request):
+def desk_login(request, role="reviewer"):
     def page(message="", status=200):
         return render(
-            request, "editorial_workbench/reviewer_login.html", {"message": message}, status=status
+            request,
+            "editorial_workbench/reviewer_login.html",
+            {"message": message, "author_login": role == "author"},
+            status=status,
         )
 
     if request.META.get("QUERY_STRING"):
@@ -57,17 +61,25 @@ def reviewer_login(request):
             len(fields.getlist(k)) != 1 for k in fields
         ):
             return page("تعذّرت قراءة نموذج الدخول.", 400)
-        authenticate_fixture_reviewer(fields["token"])
+        authenticate_fixture_role(fields["token"], role)
     except SuspiciousOperation:
         return page("تعذّرت قراءة نموذج الدخول.", 400)
     except ValueError:
-        return page("تعذّر التحقق من رمز المراجع.", 403)
+        return page("تعذّر التحقق من رمز الدخول لهذا المكتب.", 403)
     rotate_token(request)
-    response = HttpResponse(status=303, headers={"Location": reverse("reviewer_desk")})
+    response = HttpResponse(
+        status=303,
+        headers={"Location": reverse("author_queue" if role == "author" else "reviewer_desk")},
+    )
+    return set_role_cookie(request, response, role)
+
+
+def set_role_cookie(request, response, role):
+    """Attach the role cookie only after authenticating and rotating the CSRF secret."""
     response.set_signed_cookie(
-        _COOKIE,
-        browser_proof(request, "training.staff", "reviewer"),
-        salt=_cookie_salt(),
+        _COOKIE_PREFIX + role,
+        browser_proof(request, "training.staff", role),
+        salt=_cookie_salt(role),
         max_age=_TTL,
         httponly=True,
         samesite="Strict",
@@ -77,8 +89,11 @@ def reviewer_login(request):
 
 
 @require_POST
-def reviewer_logout(request):
+def desk_logout(request, role="reviewer"):
     rotate_token(request)
-    response = HttpResponse(status=303, headers={"Location": reverse("reviewer_login")})
-    response.delete_cookie(_COOKIE, path="/review/", samesite="Strict")
+    response = HttpResponse(
+        status=303,
+        headers={"Location": reverse("author_login" if role == "author" else "reviewer_login")},
+    )
+    response.delete_cookie(_COOKIE_PREFIX + role, path="/review/", samesite="Strict")
     return response

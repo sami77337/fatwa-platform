@@ -1,0 +1,36 @@
+<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if case %}سجل السؤال{% else %}قائمة عمل القضايا{% endif %}</title>
+<link rel="stylesheet" href="/dev/editorial-workbench/style.css"></head>
+<body><a class="skip-link" href="#main">انتقل إلى المحتوى</a>
+<header class="site-header"><div class="shell"><p class="eyebrow">مكتب الفتاوى · تدريب محلي</p>
+<h1>{% if case %}سجل السؤال{% else %}قائمة عمل القضايا{% endif %}</h1>
+<nav>{% if case %}<a href="{% url 'author_queue' %}">العودة إلى قائمة القضايا</a>{% endif %}
+{% if is_author %}<form method="post" action="{% url 'author_logout' %}">{% csrf_token %}<button type="submit">خروج المؤلف</button></form>
+{% else %}<a href="{% url 'reviewer_desk' %}">مكتب المراجع</a>{% endif %}</nav></div></header>
+<main class="shell" id="main">
+{% if message %}<p role="alert" class="notice">{{ message }}</p>
+{% elif case %}
+<section class="panel"><h2>قضية <bdi>{{ case.key }}</bdi></h2><p>معرّف المصدر <bdi>{{ case.external_id }}</bdi> · {{ case.fixture_label }}</p>
+<p>{{ case.status_label }}</p>{% if case.issues %}<ul>{% for issue in case.issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% endif %}
+<ol>{% for event in timeline %}<li><strong>{{ event.label }}</strong>{% if event.text != None %}<pre class="exact-text" dir="auto">{{ event.text }}</pre>{% else %}<p>حُذف النص من المصدر.</p>{% endif %}</li>{% endfor %}</ol>
+{% if can_compose %}{% if is_author %}<a href="{% url 'answer_editor' %}">فتح محرّر الجواب</a>{% else %}<a href="{% url 'reviewer_desk' %}">فتح مراجعة القضية</a>{% endif %}{% endif %}
+</section>
+{% else %}
+<section class="panel"><h2>البحث والتصفية</h2><form method="get" action="{% url 'author_queue' %}">
+<label for="case-q">ابحث بالمعرّف، أو بكلمة في السؤال أو الردود أو أحدث مسودة</label>
+<input type="search" id="case-q" name="q" maxlength="100" value="{{ q }}">
+<label for="case-filter">حالة القضية</label><select id="case-filter" name="state">{% for tab in tabs %}<option value="{{ tab.key }}"{% if tab.key == selected %} selected{% endif %}>{{ tab.label }} ({{ tab.count }})</option>{% endfor %}</select>
+<button type="submit">عرض القضايا</button> <a href="{% url 'author_queue' %}">مسح التصفية</a></form></section>
+<p role="status">القضايا المطابقة {{ rows|length }}</p>
+{% for row in rows %}<article class="panel" data-case="{{ row.key }}">
+<p class="eyebrow">قضية <bdi>{{ row.key }}</bdi> · معرّف المصدر <bdi>{{ row.external_id }}</bdi></p>
+<h2><a href="{{ row.source_url }}">{{ row.title|default:row.question|truncatechars:110 }}</a></h2>
+{% if row.title %}<p>{{ row.question|truncatechars:150 }}</p>{% endif %}
+{% if row.deleted %}<p>أُزيل النص من المصدر. المعروض هو نص الاستلام المحفوظ.</p>{% endif %}
+<p>{% for label in row.badges %}<span class="badge">{{ label }}</span> {% endfor %}</p>
+<nav aria-label="إجراءات القضية {{ row.key }}"><a href="{{ row.source_url }}">سجل السؤال</a>
+{% if row.reviewable %}{% if is_author %}<a href="{% url 'answer_editor' %}">{% if row.draft %}متابعة المسودة{% else %}كتابة الجواب{% endif %}</a>{% else %}<a href="{% url 'reviewer_desk' %}">مراجعة السؤال والردود</a>{% endif %}
+{% if row.draft %}<a href="{% url 'answer_history' %}">تاريخ مسودة الجواب</a> <a href="{% url 'draft_notes' %}">{% if row.open_note %}متابعة طلب التعديل{% else %}ملاحظات المراجعة{% endif %}</a>{% endif %}{% endif %}</nav>
+</article>{% empty %}<p class="notice">لا توجد قضايا محفوظة تطابق هذه التصفية.</p>{% endfor %}
+{% endif %}</main></body></html>

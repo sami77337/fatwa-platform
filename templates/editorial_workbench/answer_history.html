@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>سجل نسخ مسودة الجواب</title>
+  <link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">انتقل إلى السجل</a>
+<header class="site-header"><div class="shell">
+  <p class="eyebrow">مكتب التدريب المحلي</p>
+  <h1>سجل نسخ مسودة الجواب</h1>
+  <nav class="section-nav" aria-label="التنقل في المكتب">
+    <a href="/review/author/queue/">قائمة المسودات</a>
+    {% if can_author %}<a href="/review/author/draft/">محرّر الجواب</a>{% endif %}
+  </nav>
+</div></header>
+<main class="shell" id="main" tabindex="-1">
+  {% if message %}<p class="notice" role="alert">{{ message }} <a href="/review/author/history/">العودة إلى السجل</a></p>
+  {% elif not versions %}
+  <section class="panel"><h2>لا توجد نسخ محفوظة لهذه القضية</h2><p>تظهر النسخة الأولى هنا عندما يحفظ المحرّر مسودة الجواب.</p></section>
+  {% else %}
+  <p>القضية <bdi>{{ case_key }}</bdi> · عدد النسخ المحفوظة {{ versions|length }}</p>
+  <section class="panel" aria-labelledby="history-heading">
+    <h2 id="history-heading">النسخ المحفوظة</h2>
+    <form method="get" role="search">
+      <label for="history-query">ابحث عن عبارة في عنوان سابق أو نص الجواب</label>
+      <input id="history-query" name="q" type="search" maxlength="80" dir="auto" value="{{ query }}">
+      <input type="hidden" name="before" value="{{ before.revision }}"><input type="hidden" name="after" value="{{ after.revision }}">
+      <button type="submit">بحث</button>
+      {% if query %}<a href="?before={{ before.revision }}&amp;after={{ after.revision }}">عرض كل النسخ</a>{% endif %}
+    </form>
+    <ol class="timeline" reversed>
+      {% for row in history %}<li value="{{ row.item.revision }}">
+        <a href="?after={{ row.item.revision }}&amp;q={{ query|urlencode }}#comparison">النسخة {{ row.item.revision }}</a> ·
+        <time datetime="{{ row.time|date:'c' }}">{{ row.time|date:"Y-m-d H:i" }}</time> بتوقيت عمّان
+        {% if row.item.title %}<p dir="auto">{{ row.item.title }}</p>{% endif %}
+        <p>{% if row.first %}أول حفظ للمسودة.{% else %}
+          {% if row.text_changed %}عُدّل نص المسودة أو عنوانها.{% else %}حُفظ النص والعنوان بصيغتهما السابقة.{% endif %}
+          {% if row.source_changed %}تحدّث سجل مصدر السؤال.{% endif %}{% if row.reply_changed %}دخل ردّ جديد على استيضاح ضمن معلومات هذه النسخة.{% endif %}
+        {% endif %}</p>
+      </li>{% empty %}<li>لا توجد نسخة تطابق عبارة البحث.</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section class="panel" aria-labelledby="comparison">
+    <h2 id="comparison" tabindex="-1">عرض النسخ ومقارنتها</h2>
+    <form method="get" class="selection-form">
+      <label>نسخة الأساس <select name="before">{% for r in versions %}<option value="{{ r.revision }}"{% if r.revision == before.revision %} selected{% endif %}>النسخة {{ r.revision }}</option>{% endfor %}</select></label>
+      <label>نسخة المقارنة <select name="after">{% for r in versions %}<option value="{{ r.revision }}"{% if r.revision == after.revision %} selected{% endif %}>النسخة {{ r.revision }}</option>{% endfor %}</select></label>
+      {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+      <button type="submit">عرض الاختيار</button>
+    </form>
+    {% if distinct %}
+    <p class="notice" role="status">
+      {% if text_changed %}اختلف عنوان الجواب أو نصه بين النسختين.{% else %}تطابق عنوان الجواب ونصه في النسختين.{% endif %}
+      {% if source_changed %}اختلفت نسخة سجل السؤال.{% endif %}{% if reply_changed %}اختلفت الردود على الاستيضاحات.{% endif %}
+      {% if not source_changed and not reply_changed %}استندت النسختان إلى المعلومات نفسها.{% endif %}
+    </p>
+    {% else %}<p>تُعرض النسخة {{ after.revision }} وحدها.</p>{% endif %}
+    {% if can_author %}
+      <p><a href="/review/author/draft/?from={{ after.revision }}">بدء مسودة من هذه النسخة ({{ after.revision }})</a></p>
+    {% endif %}
+    {% for field in fields %}
+      <h3>{{ field.label }}</h3>
+      {% if distinct and field.changed %}
+      <div class="comparison-grid">
+        <div><h4>نسخة الأساس {{ before.revision }}</h4>
+          {% if field.segments %}<pre class="exact-text" dir="auto"><code>{% for part in field.segments %}{% if part.kind == "removed" %}<del>{{ part.text }}</del>{% elif part.kind == "kept" %}{{ part.text }}{% endif %}{% endfor %}</code></pre>{% else %}<pre class="exact-text" dir="auto">{{ field.before }}</pre>{% endif %}
+        </div>
+        <div><h4>نسخة المقارنة {{ after.revision }}</h4>
+          {% if field.segments %}<pre class="exact-text" dir="auto"><code>{% for part in field.segments %}{% if part.kind == "added" %}<ins>{{ part.text }}</ins>{% elif part.kind == "kept" %}{{ part.text }}{% endif %}{% endfor %}</code></pre>{% else %}<pre class="exact-text" dir="auto">{{ field.after }}</pre>{% endif %}
+        </div>
+      </div>
+      {% else %}
+        {% if distinct %}<p>نص متطابق في النسختين.</p>{% endif %}
+        <pre class="exact-text" dir="auto">{{ field.after }}</pre>
+      {% endif %}
+    {% endfor %}
+  </section>
+
+  <section class="panel" aria-labelledby="evidence-heading">
+    <h2 id="evidence-heading">المعلومات التي استند إليها الجواب وقت الحفظ</h2>
+    {% for item in evidence %}<details>
+      <summary>{% if distinct and evidence|length == 1 %}السؤال والردود المشتركة بين النسختين{% else %}السؤال والردود للنسخة {{ item.revision }}{% endif %}</summary>
+      <h3>نص السؤال عند الحدث {{ item.source_count }}</h3>
+      {% if item.question != None %}<pre class="exact-text" dir="auto">{{ item.question }}</pre>{% else %}<p>كان آخر حدث محفوظ للمصدر حذف نص السؤال.</p>{% endif %}
+      <h3>الاستيضاحات التي وردت إجاباتها حتى الحفظ</h3>
+      {% if item.replies %}<ol class="timeline">{% for turn in item.replies %}<li><strong>{% if turn.is_request %}طلب استيضاح{% else %}الردّ{% endif %}</strong><pre class="exact-text" dir="auto">{{ turn.text }}</pre></li>{% endfor %}</ol>
+      {% else %}<p>لم يكن هناك ردّ محفوظ على استيضاح عند حفظ هذه النسخة.</p>{% endif %}
+    </details>{% endfor %}
+  </section>
+  {% endif %}
+</main>
+</body>
+</html>

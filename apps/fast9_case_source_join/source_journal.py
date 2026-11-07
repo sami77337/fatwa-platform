@@ -15,6 +15,7 @@ from pathlib import Path
 
 from apps.editorial_export.services import require_development
 
+from . import answer_drafts as answers
 from . import clarifications as clar
 from . import reply_access as access
 from .draft_source_review import inspect_draft_source
@@ -86,6 +87,8 @@ class CaseReview:
     clarifications: tuple[clar.ClarificationEvent, ...] = ()
     grant_revision: int = 0
     grant_expires_at: datetime | None = None
+    drafts: tuple[answers.AnswerDraft, ...] = ()
+    draft_notes: tuple[answers.DraftNote, ...] = ()
 
     @property
     def thread_digest(self):
@@ -192,18 +195,32 @@ def history_digest(history: tuple[SourceEvent, ...]) -> str | None:
 
 def _verified(con: sqlite3.Connection):
     (version,) = con.execute("PRAGMA user_version").fetchone()
+    all_objects = _SCHEMA | _REVIEW_SCHEMA | clar.SCHEMA | access.SCHEMA | answers.SCHEMA
+    entries = con.execute(
+        "SELECT name,sql FROM sqlite_schema LIMIT ?", (len(all_objects) + 1,)
+    ).fetchall()
+    schema = dict(entries)
+    if len(schema) != len(entries):
+        raise JournalError("journal_schema_mismatch")
+    draft_head = None
+    if version == 5:
+        if any(schema.get(k) != sql for k, sql in answers.SCHEMA.items()):
+            raise JournalError("journal_schema_mismatch")
+        try:
+            draft_head = answers.head(con)
+        except ValueError as exc:
+            raise JournalError("journal_draft_head_invalid") from exc
+        version = draft_head[0]
     expected = _SCHEMA | _REVIEW_SCHEMA if version >= 2 else _SCHEMA
     if version >= 3:
         expected |= clar.SCHEMA
     if version == 4:
         expected |= access.SCHEMA
-    entries = con.execute(
-        "SELECT name,sql FROM sqlite_schema LIMIT ?", (len(expected) + 1,)
-    ).fetchall()
+    if draft_head is not None:
+        expected = expected | answers.SCHEMA
     if (
         version not in (1, 2, 3, 4)
-        or len(entries) != len(expected)
-        or dict(entries) != expected
+        or schema != expected
         or con.execute("PRAGMA application_id").fetchone() != (_APP_ID,)
     ):
         raise JournalError("journal_schema_mismatch")
@@ -307,7 +324,11 @@ def _verified(con: sqlite3.Connection):
         )
     except ValueError as exc:
         raise JournalError("journal_reply_grant_invalid") from exc
-    return histories, heads, receipts, thread, grant
+    try:
+        archive = answers.read(con, thread, draft_head) if draft_head is not None else ((), ())
+    except (ValueError, TypeError) as exc:
+        raise JournalError("journal_answer_draft_invalid") from exc
+    return histories, heads, receipts, thread, grant, archive
 
 
 def _connect(path: Path, writable: bool) -> sqlite3.Connection:
@@ -327,25 +348,29 @@ def _connect(path: Path, writable: bool) -> sqlite3.Connection:
         raise
 
 
-def _read_state(directory, case_key, synthetic_fixtures_only):
+def read_desk_cases(
+    directory: Path, *, synthetic_fixtures_only: bool = False
+) -> dict[str, CaseReview]:
+    """Read all present training cases and their permitted desk state in one snapshot."""
     require_development(synthetic_fixtures_only)
-    source_receipt(case_key)
     try:
         path = _path(directory)
         if not _exists(path):
-            return CaseReview((), None)
+            return {}
         with closing(_connect(path, False)) as con:
-            histories, _, receipts, thread, grant = _verified(con)
-            events = histories.get(case_key, ())
-            if case_key != _REVIEW_CASE:
-                return CaseReview(events, None)
-            return CaseReview(
-                events,
-                receipts[-1] if receipts else None,
-                thread,
-                grant.revision,
-                grant.active_deadline(),
-            )
+            histories, _, receipts, thread, grant, (drafts, notes) = _verified(con)
+            cases = {key: CaseReview(events, None) for key, events in histories.items()}
+            if _REVIEW_CASE in cases:
+                cases[_REVIEW_CASE] = CaseReview(
+                    histories[_REVIEW_CASE],
+                    receipts[-1] if receipts else None,
+                    thread,
+                    grant.revision,
+                    grant.active_deadline(),
+                    drafts,
+                    notes,
+                )
+            return cases
     except (OSError, sqlite3.Error) as exc:
         raise JournalError("journal_read_unavailable") from exc
 
@@ -354,7 +379,10 @@ def read_source_history(
     directory: Path, case_key: str, *, synthetic_fixtures_only: bool = False
 ) -> tuple[SourceEvent, ...]:
     """Read a verified committed snapshot; an absent case/file returns an empty tuple."""
-    return _read_state(directory, case_key, synthetic_fixtures_only).events
+    require_development(synthetic_fixtures_only)
+    source_receipt(case_key)
+    cases = read_desk_cases(directory, synthetic_fixtures_only=synthetic_fixtures_only)
+    return cases[case_key].events if case_key in cases else ()
 
 
 def read_review_state(
@@ -367,7 +395,8 @@ def read_review_state(
 
 def read_case_review(directory: Path, *, synthetic_fixtures_only: bool = False) -> CaseReview:
     """Read the source, latest reading and clarification thread in one snapshot."""
-    return _read_state(directory, _REVIEW_CASE, synthetic_fixtures_only)
+    cases = read_desk_cases(directory, synthetic_fixtures_only=synthetic_fixtures_only)
+    return cases.get(_REVIEW_CASE, CaseReview((), None))
 
 
 @contextmanager
@@ -389,7 +418,7 @@ def _locked_case(directory, reviewer, count, source_digest, draft_digest):
         if not _exists(path):
             raise ReviewConflict("source_history_missing")
         with closing(_connect(path, True)) as con:
-            histories, heads, receipts, thread, grant = _verified(con)
+            histories, heads, receipts, thread, grant, _ = _verified(con)
             if heads.get(_REVIEW_CASE) != (count, source_digest):
                 raise ReviewConflict("source_version_changed")
             obs = inspect_draft_source(
@@ -400,6 +429,13 @@ def _locked_case(directory, reviewer, count, source_digest, draft_digest):
             yield con, receipts, thread, grant
     except (OSError, sqlite3.Error) as exc:
         raise JournalError("journal_write_unavailable") from exc
+
+
+def _advance_base_schema(con, version):
+    if con.execute("PRAGMA user_version").fetchone() == (5,):
+        con.execute("UPDATE answer_draft_head SET base_schema=? WHERE id=1", (version,))
+    else:
+        con.execute(f"PRAGMA user_version={version}")
 
 
 def acknowledge_review(
@@ -434,7 +470,7 @@ def acknowledge_review(
         if not receipts:
             for sql in _REVIEW_SCHEMA.values():
                 con.execute(sql)
-            con.execute("PRAGMA user_version=2")
+            _advance_base_schema(con, 2)
         stamp = datetime.now(UTC).isoformat(timespec="microseconds")
         if reply_digest:
             con.execute(
@@ -501,7 +537,7 @@ def record_clarification(
         if not thread:
             for sql in clar.SCHEMA.values():
                 con.execute(sql)
-            con.execute("PRAGMA user_version=3")
+            _advance_base_schema(con, 3)
         turn = _append_turn(con, thread, kind, value, count, source_digest, draft_digest, _REVIEWER)
         access.clear(con, grant)
         con.commit()
@@ -540,7 +576,7 @@ def append_source_event(
             _initialize(path)
             _exists(path)
         with closing(_connect(path, True)) as con:
-            histories, heads, _, _, grant = _verified(con)
+            histories, heads, _, _, grant, _ = _verified(con)
             old = histories.get(event.case_key, ())
             # Validate retries even at capacity without adding a 129th replay element.
             prior = next((e for e in old if e.event_id == event.event_id), None)
@@ -614,6 +650,8 @@ def issue_reply_code(
         ):
             raise ReviewConflict("review_current_evidence_before_issue")
         result = access.issue(con, grant.revision, thread_digest, source_digest, draft_digest)
+        if grant.revision == 0:
+            _advance_base_schema(con, 4)
         con.commit()
         return result
 
@@ -649,7 +687,7 @@ def _requester_snapshot(directory, code, writable):
         if not _exists(path):
             raise ReplyCodeUnavailable("reply_code_unavailable")
         with closing(_connect(path, writable)) as con:
-            histories, heads, _, thread, grant = _verified(con)
+            histories, heads, _, thread, grant, _ = _verified(con)
             if not grant.accepts(supplied):
                 raise ReplyCodeUnavailable("reply_code_unavailable")
             # _verified matched the grant to the still-open request and current source head.
@@ -696,3 +734,106 @@ def submit_requester_reply(
         access.clear(con, grant)
         con.commit()
         return turn
+
+
+def save_answer_draft(
+    directory: Path,
+    *,
+    author: str,
+    base_revision: int,
+    count: int,
+    source_digest: str,
+    reply_digest: str,
+    title: str,
+    body: str,
+    evidence_seen: bool,
+    synthetic_fixtures_only: bool = False,
+) -> answers.AnswerDraft:
+    """Append a human draft against the source and received replies displayed to its author."""
+    require_development(synthetic_fixtures_only)
+    if type(author) is not str or author != answers.AUTHOR:
+        raise answers.DraftInputError("unknown_training_author")
+    if (
+        evidence_seen is not True
+        or type(base_revision) is not int
+        or not 0 <= base_revision <= answers.MAX_DRAFTS
+    ):
+        raise answers.DraftInputError("invalid_draft_confirmation")
+    if type(count) is not int or type(source_digest) is not str or type(reply_digest) is not str:
+        raise answers.DraftInputError("invalid_draft_evidence")
+    answers.validate_text(title, body)
+    try:
+        path = _path(directory)
+        if not _exists(path):
+            raise ReviewConflict("source_history_missing")
+        with closing(_connect(path, True)) as con:
+            _, heads, _, thread, _, (versions, _) = _verified(con)
+            if (
+                heads.get(_REVIEW_CASE) != (count, source_digest)
+                or clar.last_reply_digest(thread) != reply_digest
+            ):
+                raise ReviewConflict("draft_evidence_changed")
+            # A retry of the last save has already succeeded; never infer success for older forms.
+            if versions and base_revision in (len(versions), len(versions) - 1):
+                prev = versions[-1]
+                if (prev.title, prev.body, prev.source_digest, prev.reply_digest) == (
+                    title,
+                    body,
+                    source_digest,
+                    reply_digest,
+                ):
+                    return prev
+            if base_revision != len(versions):
+                raise ReviewConflict("answer_draft_changed")
+            draft = answers.append(con, versions, title, body, count, source_digest, reply_digest)
+            con.commit()
+            return draft
+    except (sqlite3.Error, OSError) as exc:
+        raise JournalError("journal_write_unavailable") from exc
+
+
+def record_draft_note(
+    directory: Path,
+    *,
+    reviewer: str,
+    action: str,
+    text: str,
+    revision: int,
+    draft_digest: str,
+    note_count: int,
+    synthetic_fixtures_only: bool = False,
+) -> answers.DraftNote:
+    """Request, withdraw or close a change on an exact answer version; no publication effect."""
+    require_development(synthetic_fixtures_only)
+    if type(reviewer) is not str or reviewer != _REVIEWER:
+        raise answers.DraftInputError("unknown_training_reviewer")
+    if (
+        type(revision) is not int
+        or type(draft_digest) is not str
+        or type(note_count) is not int
+        or not 0 <= note_count <= answers.MAX_NOTES
+    ):
+        raise answers.DraftInputError("invalid_draft_note_version")
+    answers.validate_note(action, text)
+    try:
+        path = _path(directory)
+        if not _exists(path):
+            raise ReviewConflict("answer_draft_missing")
+        with closing(_connect(path, True)) as con:
+            *_, (versions, notes) = _verified(con)
+            if not versions or (revision, draft_digest) != (
+                versions[-1].revision,
+                versions[-1].digest,
+            ):
+                raise ReviewConflict("answer_draft_changed")
+            if notes and note_count == len(notes) - 1:
+                last = notes[-1]
+                if (last.action, last.text, last.draft_digest) == (action, text, draft_digest):
+                    return last
+            if note_count != len(notes) or not answers.note_action_allowed(notes, action, revision):
+                raise ReviewConflict("draft_note_changed")
+            note = answers.append_note(con, notes, action, text, revision, draft_digest)
+            con.commit()
+            return note
+    except (OSError, sqlite3.Error) as exc:
+        raise JournalError("journal_write_unavailable") from exc

@@ -2,18 +2,19 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>دخول المراجع</title><link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+  <title>دخول {% if author_login %}مؤلف الجواب{% else %}المراجع{% endif %}</title><link rel="stylesheet" href="/dev/editorial-workbench/style.css">
 </head>
 <body><main class="shell">
-  <p class="eyebrow">مكتب المراجعة · تدريب محلي</p>
-  <h1>دخول المراجع</h1>
+  <p class="eyebrow">مكتب الفتاوى · تدريب محلي</p>
+  <h1>دخول {% if author_login %}مؤلف الجواب{% else %}المراجع{% endif %}</h1>
   {% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
   <form method="post" class="panel">
     {% csrf_token %}
-    <label for="reviewer-token">رمز دخول المراجع</label>
+    <label for="reviewer-token">رمز دخول {% if author_login %}مؤلف الجواب{% else %}المراجع{% endif %}</label>
     <input id="reviewer-token" name="token" type="password" dir="ltr" required maxlength="64" autocomplete="current-password" aria-describedby="login-help">
-    <p id="login-help">أدخل رمز المراجع الذي أُعدّ عند تشغيل المكتب. تستمر جلسة المراجعة نصف ساعة.</p>
-    <button type="submit">فتح مكتب المراجعة</button>
+    <p id="login-help">أدخل رمز هذه الهوية الذي أُعدّ عند تشغيل المكتب. تستمر الجلسة نصف ساعة.</p>
+    <button type="submit">{% if author_login %}فتح قائمة التأليف{% else %}فتح مكتب المراجعة{% endif %}</button>
   </form>
+  <p>{% if author_login %}<a href="{% url 'reviewer_login' %}">دخول المراجع</a>{% else %}<a href="{% url 'author_login' %}">دخول مؤلف الجواب التدريبي</a>{% endif %}</p>
   <p>هل لديك رمز ردّ على استيضاح؟ <a href="{% url 'requester_reply' %}">افتح صفحة صاحب السؤال</a>.</p>
 </main></body></html>

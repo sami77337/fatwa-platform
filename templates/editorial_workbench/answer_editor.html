@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>كتابة مسودة الجواب</title>
+  <link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body class="answer-editor">
+<a class="skip-link" href="#draft-main">انتقل إلى المحرّر</a>
+<header class="site-header"><div class="shell">
+  <p class="eyebrow">مكتب المؤلف التدريبي · قضية تدريبية</p>
+  <h1>كتابة مسودة الجواب</h1>
+  <nav class="section-nav" aria-label="مكتب المؤلف">
+    <a href="/review/author/queue/">العودة إلى قائمة العمل</a>
+    {% if case_ready %}<a href="#answer-fields">الانتقال إلى الكتابة</a><a href="/review/author/history/">سجلّ نسخ المسودة</a><a href="/review/author/notes/">ملاحظات المراجع</a>{% endif %}
+  </nav>
+</div></header>
+<main class="shell" id="draft-main">
+  {% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
+  {% if case_ready %}
+  <section aria-labelledby="draft-status" class="panel">
+    <h2 id="draft-status">حالة المسودة</h2>
+    {% if last %}<p>آخر نسخة محفوظة <strong>{{ last.revision }}</strong> · <bdi dir="auto">{{ last.title }}</bdi></p>{% else %}<p>لم تُحفظ مسودة جواب لهذه القضية بعد.</p>{% endif %}
+    {% if restored_from %}<p class="notice" role="status">فُتح نص النسخة {{ restored_from }} في حقول التحرير. آخر نسخة محفوظة هي {{ base_revision }}. راجع وقائع القضية الحالية قبل حفظ نسخة جديدة.</p>{% endif %}
+    {% if changed_revision %}<p class="notice">حُفظت نسخة أخرى منذ فتح المحرّر. قارنها بالنص الذي أدخلته قبل حفظ نسخة تالية.</p>{% endif %}
+    {% if changed_evidence or stale_evidence %}<p class="notice">ورد تحديث للسؤال أو لردود الاستيضاح. راجع <a href="#case-evidence">وقائع القضية الحالية</a> قبل حفظ المسودة.</p>{% endif %}
+    {% if last and changed_revision or last and restored_from %}<details open><summary>قراءة النسخة المحفوظة رقم {{ last.revision }}</summary><h3 dir="auto">{{ last.title }}</h3><pre class="exact-text" dir="auto">{{ last_body }}</pre></details>{% endif %}
+  </section>
+  {% if note_text %}
+  <section class="panel" aria-labelledby="open-note">
+    <h2 id="open-note">ملاحظة مفتوحة على النسخة {{ note_revision }}</h2>
+    <pre class="exact-text" dir="auto">{{ note_text }}</pre>
+    {% if base_revision > note_revision %}<p>حُفظت النسخة {{ base_revision }} بعد تسجيل هذه الملاحظة. الملاحظة ما زالت قيد المتابعة.</p>{% endif %}
+    <a href="/review/author/notes/">فتح سجلّ ملاحظات المسودة</a>
+  </section>
+  {% endif %}
+  <div class="comparison-grid">
+    <section class="panel" aria-labelledby="case-evidence">
+      <h2 id="case-evidence">وقائع القضية الحالية</h2>
+      <h3>السؤال الأصلي</h3>
+      <pre class="exact-text" dir="auto">{{ source.0.1 }}</pre>
+      {% if count > 1 %}<h3>النص الحالي للسؤال</h3>
+      {% with tip=source|last %}{% if tip.1 != None %}<pre class="exact-text" dir="auto">{{ tip.1 }}</pre>{% else %}<p class="notice">سُجّل حذف الرسالة في المصدر.</p>{% endif %}{% endwith %}
+      <details><summary>تاريخ نص السؤال</summary><ol>{% for label,text in source %}<li><strong>{{ label }}</strong>{% if text != None %}<pre class="exact-text" dir="auto">{{ text }}</pre>{% endif %}</li>{% endfor %}</ol></details>{% endif %}
+      <h3>الاستيضاحات والردود</h3>
+      {% if thread %}<ol class="timeline">{% for kind,actor,text in thread %}<li>
+        <strong>{% if kind == "request" %}طلب المراجع{% elif actor == "synthetic-requester" %}ردّ من صفحة صاحب السؤال{% else %}ردّ تدريبي من مكتب المراجع{% endif %}</strong>
+        <pre class="exact-text" dir="auto">{{ text }}</pre>
+      </li>{% endfor %}</ol>{% with turn=thread|last %}{% if turn.0 == "request" %}<p class="notice">آخر طلب استيضاح بانتظار الردّ.</p>{% endif %}{% endwith %}
+      {% else %}<p>لا توجد استيضاحات مسجّلة لهذه القضية.</p>{% endif %}
+    </section>
+    <section class="panel" aria-labelledby="answer-fields">
+      <h2 id="answer-fields">نص المسودة</h2>
+      {% if at_limit %}<p class="notice">بلغت المسودة الحد الأقصى لعدد النسخ المحفوظة. يمكن نسخ النص من المحرّر أدناه.</p>{% endif %}
+      <form method="post" action="/review/author/draft/" id="answer-draft-form">
+        {% csrf_token %}
+        <input type="hidden" name="count" value="{{ count }}">
+        <input type="hidden" name="base_revision" value="{{ base_revision }}">
+        <input type="hidden" name="source_digest" value="{{ source_digest }}">
+        <input type="hidden" name="reply_digest" value="{{ reply_digest }}">
+        <p><label for="draft-title">عنوان المسودة</label><br>
+        <textarea id="draft-title" name="title" dir="auto" rows="2" cols="22" maxlength="{{ title_limit }}" required>
+{{ title }}</textarea></p>
+        <p><label for="draft-body">متن الجواب التدريبي</label><br>
+        <textarea id="draft-body" name="body" dir="auto" rows="12" cols="22" maxlength="{{ body_limit }}" required>
+{{ body }}</textarea></p>
+        <p class="metadata">حتى {{ title_limit }} حرفًا للعنوان و{{ body_limit }} حرف للمتن.</p>
+        {% if not at_limit %}
+        <p><label><input type="checkbox" name="evidence_seen" value="1" required> اطّلعت على السؤال وردود الاستيضاح المعروضة{% if changed_revision or restored_from %} وقارنت نصّي بآخر نسخة محفوظة{% endif %}.</label></p>
+        <p>تُحفظ المسودة للاستخدام الداخلي، ويبقى الاعتماد خطوة مستقلة.</p>
+        <button type="submit">{% if last %}حفظ نسخة من المسودة{% else %}حفظ أول مسودة{% endif %}</button>
+        {% endif %}
+      </form>
+    </section>
+  </div>
+  {% elif recovery %}
+  <section class="panel" aria-labelledby="recover-title">
+    <h2 id="recover-title">استئناف الكتابة</h2>
+    <form method="post" action="/review/author/draft/" id="recover-draft-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="resume">
+      {% for key,value in recovery_pins.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+      <p><label for="resume-title">العنوان الذي أدخلته</label><br><textarea id="resume-title" name="title" dir="auto" rows="2" cols="22" readonly>
+{{ title }}</textarea></p>
+      <p><label for="resume-body">المتن الذي أدخلته</label><br><textarea id="resume-body" name="body" dir="auto" rows="8" cols="22" readonly>
+{{ body }}</textarea></p>
+      <p><label for="resume-token">رمز دخول مؤلف الجواب</label>
+      <input id="resume-token" name="token" type="password" maxlength="64" dir="ltr" autocomplete="current-password" required></p>
+      <button type="submit">تسجيل الدخول واستئناف التحرير</button>
+    </form>
+  </section>
+  {% elif typed %}
+  <section class="panel"><h2>نصك في هذه المحاولة</h2><p>يمكنك نسخه قبل مغادرة الصفحة.</p>
+    <p dir="auto">{{ title }}</p><pre class="exact-text" dir="auto"><code>{{ body }}</code></pre>
+  </section>
+  {% endif %}
+</main>
+</body></html>
