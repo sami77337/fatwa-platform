@@ -26,3 +26,15 @@ python -m tools.fast9_case_source_join.journal --synthetic-fixtures-only --case-
 ```
 
 Success confirms the saved prefix and allows further events after it. A shorter history or a different event at that prefix returns a nonzero exit. This is an integrity comparison; the receipt is unsigned. The unpinned reader cannot detect replacement with an entire older, internally consistent copy, or prove that a provider supplied all events. Nothing here records human acknowledgment or authorizes publication or delivery. See the [journal contract](../../apps/fast9_case_source_join/README.md) for the trust boundary.
+
+## Record reading a specific version
+
+From an interactive project terminal run the following command and open <http://127.0.0.1:8017/review/>. The launcher displays a temporary reviewer token. Read the question, paste the token and submit. The desk flags later corrections or deletions and links to the first event after the saved reading. A form opened before a correction returns HTTP 409 with the updated text; review it before submitting again.
+
+```sh
+python -m apps.editorial_workbench.reviewer_server --demo
+```
+
+The first demo launch creates a persistent journal in `.local/reviewer-desk` and records one synthetic intake. To try a correction, point the event CLI in another terminal at the absolute path of that directory and run `record corrected` as described above. To open a dedicated existing journal, set `FATWA_SYNTHETIC_SOURCE_JOURNAL_DIR` and omit `--demo`. All processes sharing that journal must use this version once the first reading has been recorded. That write adds the v2 receipt table in the same SQLite transaction; the older journal tool only understands v1.
+
+A preconfigured launcher can use `FATWA_SYNTHETIC_REVIEWER_TOKEN_SHA256`, the lowercase SHA-256 of the ASCII representation of a random 64-character lowercase hexadecimal token. It authenticates a single training reviewer. Each receipt identifies the draft fingerprint and the committed source prefix. The original development app stays read-only. A reading receipt does not grant scholarly approval.

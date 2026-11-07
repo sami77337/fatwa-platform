@@ -7,7 +7,7 @@ from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from threading import Barrier
+from threading import Barrier, Event
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -98,6 +98,83 @@ class SourceJournalTests(TestCase):
             results = list(pool.map(compete, [self.edit, replace(self.edit, event_id="other")]))
         (winner,) = [e for e in results if e]
         self.assertEqual(self.read(), (self.root, winner))
+
+    def reviewed_version(self):
+        events, _ = journal.read_review_state(self.directory, synthetic_fixtures_only=True)
+        observation = journal.inspect_draft_source(
+            "intake-7", 1, events, synthetic_fixtures_only=True
+        )
+        return {
+            "reviewer": "synthetic-reviewer",
+            "count": len(events),
+            "source_digest": journal.history_digest(events),
+            "draft_digest": observation.draft_revision_sha256,
+            "synthetic_fixtures_only": True,
+        }
+
+    def test_review_requires_exact_draft_and_source_then_replays_without_writing(self):
+        self.put(self.root)
+        version = self.reviewed_version()
+        before = self.db.read_bytes()
+        for values, error in (
+            ({"reviewer": "other-reviewer"}, ValueError),
+            ({"draft_digest": "0" * 64}, journal.ReviewConflict),
+            ({"source_digest": "0" * 64}, journal.ReviewConflict),
+        ):
+            with self.assertRaises(error):
+                journal.acknowledge_review(self.directory, **(version | values))
+        self.assertEqual(self.db.read_bytes(), before)
+        receipt = journal.acknowledge_review(self.directory, **version)
+        self.assertEqual(
+            journal.read_review_state(self.directory, synthetic_fixtures_only=True),
+            ((self.root,), receipt),
+        )
+        persisted = self.db.read_bytes()
+        self.assertEqual(journal.acknowledge_review(self.directory, **version), receipt)
+        self.assertEqual(self.db.read_bytes(), persisted)
+        self.put(self.edit)
+        events, prior = journal.read_review_state(self.directory, synthetic_fixtures_only=True)
+        self.assertEqual((events, prior), ((self.root, self.edit), receipt))
+        self.assertNotEqual(prior.source_digest, journal.history_digest(events))
+        renewed = journal.acknowledge_review(self.directory, **self.reviewed_version())
+        self.assertEqual(renewed.count, 2)
+        self.assertEqual(
+            journal.read_review_state(self.directory, synthetic_fixtures_only=True)[1], renewed
+        )
+
+    def test_review_waiting_on_a_correction_cannot_record_the_old_view(self):
+        self.put(self.root)
+        version = self.reviewed_version()
+        locked = Event()
+        trying_review = Event()
+        connect = journal._connect
+
+        def pause_writer(path, writable):
+            con = connect(path, writable)
+            locked.set()
+            if not trying_review.wait(5):
+                con.close()
+                raise AssertionError("review did not attempt entry")
+            return con
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            with patch.object(journal, "_connect", pause_writer):
+                writer = pool.submit(self.put, self.edit)
+                self.assertTrue(locked.wait(5))
+
+            def review_connect(path, writable):
+                trying_review.set()
+                return connect(path, writable)
+
+            with patch.object(journal, "_connect", review_connect):
+                reviewer = pool.submit(journal.acknowledge_review, self.directory, **version)
+                self.assertEqual(writer.result(timeout=6), (self.root, self.edit))
+                with self.assertRaises(journal.ReviewConflict):
+                    reviewer.result(timeout=6)
+        self.assertEqual(
+            journal.read_review_state(self.directory, synthetic_fixtures_only=True),
+            ((self.root, self.edit), None),
+        )
 
     def test_reader_preserves_existing_same_process_writer_reservation(self):
         self.put(self.root)
