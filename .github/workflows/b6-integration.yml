@@ -330,9 +330,14 @@ jobs:
       - run: python manage.py showmigrations intake_workflow --settings=config.settings.wave7_test
       - name: Actual Wave7 foundation and producer PostgreSQL modules
         shell: bash
+        env:
+          FAST9_CHECK_EXISTING_B6_AUDIT: ${{ (github.ref == 'refs/heads/codex/20261106-fast9-stored-audit-ci' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'codex/20261106-fast9-stored-audit-ci')) && '1' || '0' }}
         run: |
           set -o pipefail
           python tools/dev/wave7_qa.py --suite database --json .local/qa/wave7-foundation/tests.json 2>&1 | tee .local/qa/wave7-foundation/tests.log
+          if [[ "$FAST9_CHECK_EXISTING_B6_AUDIT" == "1" ]]; then
+            test "$(grep -c '^FAST9_STORED_AUDIT ' .local/qa/wave7-foundation/tests.log)" = "1"
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

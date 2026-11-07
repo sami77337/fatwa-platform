@@ -1,0 +1,525 @@
+// Offline negatives against the Wave6 entry point, not acceptance.
+// Run: node --experimental-vm-modules --test tests/acceptance/wave6/startup.test.mjs
+import assert from "node:assert/strict";
+import {EventEmitter} from "node:events";
+import {readFile} from "node:fs/promises";
+import path from "node:path";
+import {test} from "node:test";
+import {fileURLToPath} from "node:url";
+import {createContext, SourceTextModule, SyntheticModule} from "node:vm";
+
+// These are the only real file reads. No source rewriting or extracted copy of
+// the polling loop: evaluate the actual entry point and both actual imports.
+const sources = new Map(await Promise.all(
+  ["browser.mjs", "cdp.mjs", "review_batches.mjs"].map(async name => {
+    const url = new URL(name, import.meta.url);
+    return [url.href, await readFile(url, "utf8")];
+  }),
+));
+const origin = "http://127.0.0.1:43210";
+const fixtureBytes = Buffer.from("synthetic asset bytes; NOT browser evidence");
+
+async function simulate({portRead, exitCode = null, signalCode = null,
+  spawnError = false, namespace = "wave6-e6-synthetic", headingCount = 47,
+  assetFailure, stderr = "", cleanupError, exitDuringRead = false, target, socketEvent, procRead} = {}) {
+  let now = 0;
+  const deadlines = [];
+  function advance(ms) {
+    now += ms;
+    for (const {at, controller} of deadlines) {
+      if (now >= at) controller.abort(new DOMException("fixture timeout", "TimeoutError"));
+    }
+  }
+  const state = {sockets: [], polls: [], spawns: [], procPaths: [], kills: 0, removals: [], http: [], logs: [], profiles: 0};
+  const temporaryRoot = path.resolve("synthetic-e6-no-disk");
+  const profile = path.join(temporaryRoot, "fatwa-e6-browser-fixture");
+  const artifacts = path.join(temporaryRoot, "reports");
+  const browser = new EventEmitter();
+  Object.assign(browser, {pid: 123, exitCode, signalCode, stderr: new EventEmitter()});
+  browser.kill = () => {
+    state.kills++;
+    state.cleanupAt = now;
+    browser.signalCode = "SIGTERM";
+    queueMicrotask(() => browser.emit("exit", null, "SIGTERM"));
+  };
+  const processFixture = {
+    argv: ["node", "browser.mjs", origin],
+    env: {E6_BROWSER: "synthetic-no-executable", E6_ARTIFACTS: artifacts, E6_REVIEW_BATCHES: "required"},
+    versions: process.versions, version: process.version,
+  };
+  const builtins = {
+    "node:assert/strict": {default: assert},
+    "node:path": {default: path},
+    "node:url": {fileURLToPath},
+    "node:os": {default: {
+      tmpdir: () => temporaryRoot, platform: () => procRead ? "linux" : "synthetic", release: () => "fixture", arch: () => "fixture",
+    }},
+    "node:child_process": {
+      execFileSync(executable, args) {
+        if (executable === "git" && args.join(" ") === "rev-parse HEAD") return "synthetic-not-acceptance";
+        if (executable === "git" && args.join(" ") === "status --porcelain") return "";
+        assert.equal(executable, "synthetic-no-executable");
+        assert.deepEqual(Array.from(args), ["--version"]);
+        return "synthetic browser; never executed";
+      },
+      spawn(executable, args, options) {
+        state.spawns.push({executable, args: Array.from(args), options});
+        queueMicrotask(() => {
+          if (spawnError) browser.emit("error", Object.assign(Error("synthetic spawn unavailable"), {code: "ENOENT"}));
+          else browser.emit("spawn");
+          browser.stderr.emit("data", stderr.replaceAll("<profile>", profile));
+        });
+        return browser;
+      },
+    },
+    "node:fs/promises": {
+      async mkdir(target) { assert.equal(target, artifacts); },
+      async mkdtemp(prefix) {
+        assert.equal(prefix, path.join(temporaryRoot, "fatwa-e6-browser-"));
+        state.profiles++;
+        return profile;
+      },
+      async readFile(target, encoding) {
+        if (target.startsWith("/proc/")) {
+          state.procPaths.push(target);
+          assert.equal(encoding.encoding, "utf8");
+          assert.ok(encoding.signal);
+          return procRead(target, advance, browser);
+        }
+        if (target === path.join(profile, "DevToolsActivePort")) {
+          assert.equal(encoding?.encoding ?? encoding, "utf8");
+          state.polls.push(now);
+          if (exitDuringRead && now === 100) {
+            browser.exitCode = 23;
+            browser.emit("exit", 23, null);
+            browser.emit("close", 23, null);
+          }
+          if (portRead) return portRead(now, encoding?.signal, advance);
+          throw Object.assign(Error("synthetic missing port file"), {code: "ENOENT"});
+        }
+        assert.ok(["catalog.js", "django-api.mjs", "tree.js", "style.css", "catalog.css"].some(
+          name => target.endsWith(path.join("apps", "reference", "static", "reference", name)),
+        ), "Unexpected filesystem read");
+        return fixtureBytes;
+      },
+      async writeFile(target, content) {
+        assert.equal(target, path.join(artifacts, "browser-result.json"));
+        assert.equal(state.report, undefined, "Only one final report is permitted");
+        state.report = JSON.parse(content); // Never write synthetic evidence to disk.
+      },
+      async rm(target, options) {
+        assert.equal(target, profile);
+        state.removals.push({target, options});
+        if (cleanupError) throw Object.assign(Error("redact-me: " + profile), {code: cleanupError});
+      },
+    },
+  };
+  const context = createContext({
+    process: processFixture, Buffer, URL, performance: {now: () => now},
+    Date: class extends Date {
+      constructor(...args) { super(...(args.length ? args : [now])); }
+      static now() { return now; }
+    },
+    // Virtual time only. Cap callbacks so a removed deadline cannot hang a test.
+    setTimeout(callback, ms) {
+      if (ms === 10000 && socketEvent) return 1; // Synchronous mock CDP response.
+      assert.ok([50, 3000].includes(ms), "Unexpected timer outside startup polling/cleanup");
+      assert.ok(now < 20000, "Startup exceeded the deterministic fixture budget");
+      advance(ms);
+      callback();
+    },
+    clearTimeout() {},
+    AbortController, AbortSignal: {timeout: ms => {
+      const controller = new AbortController();
+      deadlines.push({at: now + ms, controller});
+      return controller.signal;
+    }},
+    console: {log: value => state.logs.push(value)},
+    async fetch(url, options = {}) {
+      state.http.push(url);
+      if (url === origin + "/api/v1/fiqh/books") return {
+        json: async () => ({items: [{work: {source_namespace: namespace}, heading_count: headingCount}]}),
+      };
+      if (url.startsWith(origin + "/assets/reference/")) return {
+        status: assetFailure === "status" ? 404 : 200,
+        headers: {get: () => assetFailure === "mime" ? "text/html" : url.endsWith(".css") ? "text/css" : "text/javascript"},
+        arrayBuffer: async () => assetFailure === "bytes" ? Buffer.from("wrong bytes") : fixtureBytes,
+      };
+      assert.equal(url, "http://127.0.0.1:9222/json/list", "Unexpected network request");
+      state.discoveryAt = now;
+      state.discoveryRedirect = options.redirect;
+      if (target) return target(options, advance);
+      throw Error("synthetic target discovery blocked"); // Never connect, even on loopback.
+    },
+    WebSocket: class extends EventTarget {
+      constructor(url) {
+        super();
+        state.sockets.push(String(url));
+        if (!socketEvent) throw Error("Offline fixture forbids WebSocket construction");
+        queueMicrotask(() => {
+          socketEvent(this, advance);
+          // Prevent an unbounded old implementation from hanging this test.
+          setImmediate(() => this.dispatchEvent(new Event("error")));
+        });
+      }
+      close() { state.socketClosed = true; }
+    },
+  });
+  const modules = new Map();
+  function moduleAt(identifier) {
+    if (!modules.has(identifier)) {
+      if (Object.hasOwn(builtins, identifier)) {
+        const values = builtins[identifier];
+        modules.set(identifier, new SyntheticModule(Object.keys(values), function () {
+          for (const [key, value] of Object.entries(values)) this.setExport(key, value);
+        }, {context, identifier}));
+      } else {
+        assert.ok(sources.has(identifier), "Unexpected import: " + identifier);
+        modules.set(identifier, new SourceTextModule(sources.get(identifier), {
+          context, identifier, initializeImportMeta(meta) { meta.url = identifier; },
+        }));
+      }
+    }
+    return modules.get(identifier);
+  }
+  const entry = moduleAt(new URL("browser.mjs", import.meta.url).href);
+  await entry.link((specifier, parent) => moduleAt(
+    specifier.startsWith(".") ? new URL(specifier, parent.identifier).href : specifier,
+  ));
+  await entry.evaluate({timeout: 1000});
+  state.exitCode = processFixture.exitCode;
+  return state;
+}
+
+function assertNoAcceptance(state, result = "BLOCKED") {
+  const report = state.report;
+  assert.equal(report.result, result);
+  assert.equal(report.phase, result === "BLOCKED" ? "browser-startup" : "service-preflight");
+  assert.equal(state.exitCode, result === "BLOCKED" ? 2 : 1);
+  assert.deepEqual(report.counts, {PASS: 0, FAIL: 0, NOT_RUN: 10, SKIP: 0});
+  assert.ok(report.tests.every(item => item.result === "NOT_RUN"));
+  for (const key of ["source_acceptance", "assembled_acceptance", "review_batch_acceptance"]) {
+    assert.equal(report[key], "NOT_RUN");
+  }
+  for (const key of ["requests", "screenshots", "console_errors", "exceptions", "unwanted_requests"]) {
+    assert.deepEqual(report[key], []);
+  }
+  assert.equal(report.browser, undefined);
+  assert.equal(state.profiles, 1);
+  assert.equal(state.removals.length, 1);
+  assert.equal(state.spawns.length, result === "BLOCKED" ? 1 : 0);
+  if (state.spawns.length) {
+    const {executable, args} = state.spawns[0];
+    assert.equal(executable, "synthetic-no-executable");
+    assert.ok(args.includes("--remote-debugging-address=127.0.0.1"));
+    assert.ok(args.includes("--remote-debugging-port=0"));
+    assert.ok(args.includes("--user-data-dir=" + state.removals[0].target));
+    assert.ok(!args.some(arg => /no-sandbox|disable-setuid-sandbox|disable-web-security/.test(arg)));
+  }
+}
+
+for (const code of ["ENOENT", "EACCES", "EISDIR"]) {
+  test(`${code}: port read failure remains BLOCKED after exactly 12 virtual seconds`, async () => {
+    const state = await simulate({portRead() { throw Object.assign(Error("synthetic " + code), {code}); }});
+    assertNoAcceptance(state);
+    assert.equal(state.report.blocker, "Timed out: DevTools launch");
+    assert.equal(state.polls.length, 240);
+    assert.equal(state.polls[0], 0);
+    assert.equal(state.polls.at(-1), 11950);
+    assert.equal(state.cleanupAt, 12000);
+    assert.equal(state.kills, 1);
+    assert.equal(state.discoveryAt, undefined);
+  });
+}
+
+for (const content of ["", "not-a-port\n", "0\n"]) {
+  test(`non-ready port record ${JSON.stringify(content)} cannot become acceptance`, async () => {
+    const state = await simulate({portRead: () => content});
+    assertNoAcceptance(state);
+    assert.equal(state.report.blocker, "Timed out: DevTools launch");
+    assert.equal(state.discoveryAt, undefined);
+  });
+}
+
+test("the last pre-deadline poll can observe a port without implying browser acceptance", async () => {
+  const state = await simulate({portRead: now => now < 11950 ? "" : "9222\n/devtools/browser/synthetic\n"});
+  assertNoAcceptance(state);
+  assert.equal(state.discoveryAt, 11950);
+  assert.equal(state.report.blocker, "synthetic target discovery blocked");
+});
+
+test("a port available only at the 12-second boundary is not observed or retried", async () => {
+  const state = await simulate({portRead: now => now < 12000 ? "" : "9222\n/devtools/browser/synthetic\n"});
+  assertNoAcceptance(state);
+  assert.equal(state.report.blocker, "Timed out: DevTools launch");
+  assert.equal(state.polls.at(-1), 11950);
+  assert.equal(state.discoveryAt, undefined);
+});
+
+for (const termination of [{exitCode: 23}, {signalCode: "SIGTERM"}]) {
+  test(`early termination ${JSON.stringify(termination)} fails before polling`, async () => {
+    const state = await simulate(termination);
+    assertNoAcceptance(state);
+    assert.equal(state.report.blocker, "Browser exited before DevTools: sandbox/startup gate blocked");
+    assert.deepEqual(state.polls, []);
+    assert.equal(state.kills, 0);
+  });
+}
+
+test("spawn error is retained instead of mislabeled as DevTools timeout", async () => {
+  const state = await simulate({spawnError: true});
+  assertNoAcceptance(state);
+  assert.equal(state.report.blocker, "synthetic spawn unavailable");
+  assert.ok(state.cleanupAt < 12000);
+});
+
+test("startup stderr is bounded and the private profile path is redacted", async () => {
+  const state = await simulate({stderr: "x".repeat(5000) + "\nsynthetic D-Bus error at <profile>"});
+  assertNoAcceptance(state);
+  assert.equal(state.report.blocker, "Timed out: DevTools launch");
+  assert.equal(state.report.browser_stderr.length, 2000);
+  assert.ok(state.report.browser_stderr.endsWith("synthetic D-Bus error at <temporary-profile>"));
+  assert.ok(!state.report.browser_stderr.includes(state.removals[0].target));
+});
+
+for (const fixture of [{namespace: "foreign-synthetic"}, {headingCount: 46},
+  {assetFailure: "status"}, {assetFailure: "mime"}, {assetFailure: "bytes"}]) {
+  test(`preflight mismatch ${JSON.stringify(fixture)} fails before spawn`, async () => {
+    const state = await simulate(fixture);
+    assertNoAcceptance(state, "FAIL");
+    assert.deepEqual(state.polls, []);
+    assert.equal(state.kills, 0);
+  });
+}
+
+test("startup evidence separates missing, unreadable, partial and invalid port records", async () => {
+  const state = await simulate({portRead(now) {
+    if (now === 0) throw Object.assign(Error("redact-me"), {code: "ENOENT"});
+    if (now === 50) throw Object.assign(Error("redact-me"), {code: "EACCES"});
+    if (now === 100) return "";
+    if (now === 150) return "-2";
+    if (now === 200) return "65536";
+    if (now === 250) return "9e3";
+    return "9222\n/devtools/browser/redact-me\n";
+  }});
+  assertNoAcceptance(state);
+  assert.equal(state.discoveryAt, 300);
+  const d = state.report.startup;
+  assert.equal(d.stage, "target-discovery");
+  assert.equal(d.elapsed_ms, 300);
+  assert.equal(d.child.pid, 123);
+  assert.equal(d.child.exit_code, null);
+  assert.equal(d.child.signal, null); // Sampled before fixture cleanup sends SIGTERM.
+  assert.equal(d.spawned_ms, 0);
+  assert.deepEqual(d.port_file, {
+    attempts: 7, last_state: "valid", last_error_code: "EACCES",
+    first_seen_ms: {missing: 0, read_error: 50, empty: 100, invalid: 150, valid: 300},
+  });
+  assert.ok(!JSON.stringify(d).includes("redact-me"));
+});
+
+test("startup evidence distinguishes a signal, a spawn error and a port timeout", async () => {
+  const signalled = await simulate({signalCode: "SIGKILL"});
+  assertNoAcceptance(signalled);
+  assert.equal(signalled.report.startup.child.signal, "SIGKILL");
+  const failed = await simulate({spawnError: true});
+  assertNoAcceptance(failed);
+  assert.equal(failed.report.startup.spawn_error.code, "ENOENT");
+  const timed = await simulate();
+  assertNoAcceptance(timed);
+  const d = timed.report.startup;
+  assert.equal(d.stage, "port-file");
+  assert.equal(d.elapsed_ms, 12000);
+  assert.equal(d.port_file.attempts, 240);
+  assert.deepEqual(d.port_file.first_seen_ms, {missing: 0});
+  assert.equal(d.port_file.last_error_code, "ENOENT");
+});
+
+test("early process exit records monotonic lifecycle and keeps journeys unexecuted", async () => {
+  const state = await simulate({exitDuringRead: true});
+  assertNoAcceptance(state);
+  assert.equal(state.report.startup.exit_ms, 100);
+  assert.equal(state.report.startup.close_ms, 100);
+  assert.equal(state.report.startup.child.exit_code, 23);
+  assert.equal(state.report.startup.elapsed_ms, 150);
+});
+
+test("profile-removal failure preserves the startup report and fails the gate", async () => {
+  const state = await simulate({cleanupError: "EACCES"});
+  assert.equal(state.exitCode, 1);
+  assert.equal(state.report.result, "FAIL");
+  assert.equal(state.report.result_before_cleanup, "BLOCKED");
+  assert.equal(state.report.cleanup_error, "EACCES");
+  assert.equal(state.report.startup.port_file.last_state, "missing");
+  assert.deepEqual(state.report.counts, {PASS: 0, FAIL: 0, NOT_RUN: 10, SKIP: 0});
+  assert.ok(!JSON.stringify(state.report).includes("redact-me"));
+});
+
+const portAvailable = () => "9222\n/devtools/browser/synthetic\n";
+const pageEndpoint = "ws://127.0.0.1:9222/devtools/page/synthetic";
+const pageList = endpoint => ({status: 200, json: async () => [{type: "page", webSocketDebuggerUrl: endpoint}]});
+
+test("a partial numeric port cannot trigger a request before its browser record arrives", async () => {
+  const state = await simulate({portRead: now => now === 0 ? "9" : now === 50 ? "9222\r\n" :
+    "9222\r\n/devtools/browser/synthetic\r\n"});
+  assertNoAcceptance(state);
+  assert.equal(state.discoveryAt, 100);
+  assert.deepEqual(state.http.filter(url => url.endsWith("/json/list")), ["http://127.0.0.1:9222/json/list"]);
+  assert.equal(state.report.startup.port_file.first_seen_ms.partial, 0);
+});
+
+for (const [label, record, category] of [
+  ["missing", "9222\n", "partial"],
+  ["wrong path", "9222\n/devtools/page/redact-me\n", "invalid"],
+  ["foreign URL", "9222\nws://example.invalid/devtools/browser/redact-me\n", "invalid"],
+]) {
+  test(`a ${label} browser record blocks discovery at the original deadline`, async () => {
+    const state = await simulate({portRead: () => record});
+    assertNoAcceptance(state);
+    assert.equal(state.discoveryAt, undefined);
+    assert.deepEqual(state.http.filter(url => url.endsWith("/json/list")), []);
+    assert.equal(state.report.startup.port_file.last_state, category);
+    assert.equal(state.cleanupAt, 12000);
+    assert.doesNotMatch(JSON.stringify(state.report), /redact-me/);
+  });
+}
+
+// No outstanding real I/O. Simulate a pending operation and advance the same
+// virtual clock used by polling. A missing signal must fail on the old source.
+function stallUntilAborted(signal, advance, remaining) {
+  if (!signal) throw Error("fixture observed unbounded operation");
+  return new Promise((resolve, reject) => {
+    signal.addEventListener("abort", () => reject(signal.reason), {once:true});
+    advance(remaining);
+    if (!signal.aborted) reject(Error("fixture observed an extended deadline"));
+  });
+}
+
+test("an in-flight port read cannot defeat the startup deadline", async () => {
+  const state = await simulate({portRead(now, signal, advance) {
+    return stallUntilAborted(signal, advance, 12000);
+  }});
+  assertNoAcceptance(state);
+  assert.equal(state.polls.length, 1);
+  assert.equal(state.cleanupAt, 12000);
+  assert.equal(state.report.blocker, "Timed out: DevTools launch");
+});
+
+for (const blocked of ["headers", "body"]) {
+  test(`discovery ${blocked} stall uses the remaining startup budget`, async () => {
+    const state = await simulate({portRead: now => now < 11950 ? "" : portAvailable(),
+      target(options, advance) {
+        const pending = () => stallUntilAborted(options.signal, advance, 50);
+        return blocked === "headers" ? pending() : {status: 200, json: pending};
+      },
+    });
+    assertNoAcceptance(state);
+    assert.equal(state.discoveryAt, 11950);
+    assert.equal(state.cleanupAt, 12000);
+    assert.equal(state.report.startup.stage, "target-discovery");
+    assert.equal(state.report.blocker, "Timed out: DevTools target discovery");
+    assert.deepEqual(state.sockets, []);
+  });
+}
+
+test("target discovery disables HTTP redirects", async () => {
+  const state = await simulate({portRead: portAvailable});
+  assertNoAcceptance(state);
+  assert.equal(state.discoveryRedirect, "error");
+});
+
+test("discovery refuses non-200 responses and malformed target lists", async () => {
+  for (const response of [{...pageList(pageEndpoint), status: 403}, {status: 200, json: async () => ({})}]) {
+    const state = await simulate({portRead: portAvailable, target: () => response});
+    assertNoAcceptance(state);
+    assert.equal(state.report.startup.stage, "target-discovery");
+    assert.deepEqual(state.sockets, []);
+  }
+});
+
+test("a foreign or malformed debugger URL is never opened or reported", async () => {
+  for (const url of ["ws://example.invalid:9222/devtools/page/secret", "ws://127.0.0.1:9223/devtools/page/secret",
+    "wss://127.0.0.1:9222/devtools/page/secret", pageEndpoint + "?token=secret",
+    "ws://user@127.0.0.1:9222/devtools/page/secret", pageEndpoint.replace("/page/", "/browser/"),
+  ]) {
+    const state = await simulate({portRead: portAvailable, target: () => pageList(url)});
+    assertNoAcceptance(state);
+    assert.deepEqual(state.sockets, []);
+    assert.equal(state.report.blocker, "Invalid DevTools page endpoint");
+    assert.doesNotMatch(JSON.stringify(state.report), /secret/);
+  }
+});
+
+for (const mode of ["close", "error", "stall"]) {
+  test(`early websocket ${mode} blocks before CDP and releases the socket`, async () => {
+    const state = await simulate({portRead: now => now < 11950 ? "" : portAvailable(),
+      target: () => pageList(pageEndpoint), socketEvent(socket, advance) {
+        if (mode === "stall") advance(50);
+        else socket.dispatchEvent(new Event(mode));
+      },
+    });
+    assertNoAcceptance(state);
+    assert.deepEqual(state.sockets, [pageEndpoint]);
+    assert.equal(state.socketClosed, true);
+    assert.equal(state.report.startup.stage, "websocket");
+    assert.equal(state.report.blocker, mode === "stall" ? "Timed out: DevTools WebSocket" : "DevTools WebSocket failed to open");
+    assert.equal(state.cleanupAt, mode === "stall" ? 12000 : 11950);
+  });
+}
+
+test("Linux startup snapshot retains only the owned main thread's numeric counters and state", async () => {
+  const state = await simulate({procRead: file => file.endsWith("/schedstat")
+    ? "111000000 3456000000 42\n" : "123 (secret-name) with ) chars) S 1 0 0\n"});
+  assertNoAcceptance(state);
+  assert.deepEqual(state.procPaths.sort(), ["/proc/123/schedstat", "/proc/123/stat"]);
+  assert.deepEqual(state.report.startup.linux_main_thread, {
+    state:"S", cpu_ms:111, runqueue_ms:3456, timeslices:42,
+  });
+  assert.ok(!JSON.stringify(state.report).includes("secret-name"));
+  assert.equal(state.report.startup.elapsed_ms, 12000);
+});
+
+for (const mode of ["denied", "malformed", "stalled", "exited"]) {
+  test("unavailable Linux startup measurement preserves the verdict: " + mode, async () => {
+    const state = await simulate({procRead(file, advance, child) {
+      if (mode === "denied") throw Object.assign(Error("private diagnostic"), {code:"EACCES"});
+      if (mode === "stalled") {
+        if (file.endsWith("/schedstat")) advance(100);
+        return new Promise(() => {});
+      }
+      if (mode === "exited") child.exitCode = 5;
+      return file.endsWith("/schedstat") ? "1 2 3" : mode === "malformed" ? "invalid" : "123 (fixture) S 1";
+    }});
+    assertNoAcceptance(state);
+    assert.equal(state.report.startup.linux_main_thread, null);
+    assert.equal(state.report.startup.elapsed_ms, 12000);
+    if (mode === "stalled") assert.equal(state.cleanupAt, 12100);
+    assert.ok(!JSON.stringify(state.report).includes("private diagnostic"));
+  });
+}
+
+test("an already exited Chrome is not sampled by pid", async () => {
+  const state = await simulate({exitCode:23, procRead() { assert.fail("must not read procfs"); }});
+  assertNoAcceptance(state);
+  assert.deepEqual(state.procPaths, []);
+  assert.equal(state.report.startup.linux_main_thread, null);
+});
+
+test("the ready boundary is sampled once before the first interaction", async () => {
+  const state = await simulate({portRead:portAvailable, target:() => pageList(pageEndpoint),
+    procRead: file => file.endsWith("/stat") ? "123 (chrome) R 1" : "3000000 7000000 4",
+    socketEvent(socket) {
+      socket.send = data => {
+        const {id, method} = JSON.parse(data);
+        if (method !== "Browser.getVersion") throw Error("fixture stops at first interaction");
+        socket.dispatchEvent(new MessageEvent("message", {data:JSON.stringify({id, result:{}})}));
+      };
+      socket.dispatchEvent(new Event("open"));
+    },
+  });
+  assert.equal(state.report.startup.stage, "ready");
+  assert.deepEqual(state.report.startup.linux_main_thread, {state:"R", cpu_ms:3, runqueue_ms:7, timeslices:4});
+  assert.equal(state.procPaths.length, 2);
+  assert.equal(state.report.phase, "browser-interactions");
+  assert.equal(state.report.blocker, "fixture stops at first interaction");
+});
