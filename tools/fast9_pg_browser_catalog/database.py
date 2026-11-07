@@ -136,11 +136,15 @@ def fingerprint():
         )
         relations = cursor.fetchall()
         for name, kind in relations:
-            cursor.execute(
-                sql.SQL("SELECT row_to_json(t)::text FROM {}.{} t").format(
-                    sql.Identifier("public"), sql.Identifier(name)
+            relation = sql.Identifier("public", name)
+            if kind == "S":
+                # Sequences expose these columns but have no named composite row type.
+                cursor.execute(
+                    sql.SQL("SELECT last_value, log_cnt, is_called FROM {}").format(relation)
                 )
-            )
+                evidence.append((name, kind, cursor.fetchall()))
+                continue
+            cursor.execute(sql.SQL("SELECT row_to_json(t)::text FROM {} t").format(relation))
             evidence.append((name, kind, sorted(row[0] for row in cursor.fetchall())))
         for query in (
             "SELECT table_name,column_name,ordinal_position,column_default,is_nullable,data_type "
@@ -169,17 +173,22 @@ def read_only_connections():
     from django.db.backends.signals import connection_created
 
     def protect(sender, connection, **kwargs):
-        if connection.alias != "default" or connection.settings_dict["NAME"] != TEST:
-            connection.close()
-            raise AssertionError("BROWSER_DATABASE_IDENTITY_MISMATCH")
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT current_database(),current_user")
-            if cursor.fetchone() != (TEST, "wave7_synthetic"):
+        try:
+            if connection.alias != "default" or connection.settings_dict["NAME"] != TEST:
                 raise AssertionError("BROWSER_DATABASE_IDENTITY_MISMATCH")
-            cursor.execute("SET default_transaction_read_only = on")
-            cursor.execute("SHOW default_transaction_read_only")
-            if cursor.fetchone() != ("on",):
-                raise AssertionError("BROWSER_READ_ONLY_REQUIRED")
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT current_database(),current_user")
+                if cursor.fetchone() != (TEST, "wave7_synthetic"):
+                    raise AssertionError("BROWSER_DATABASE_IDENTITY_MISMATCH")
+                cursor.execute("SET default_transaction_read_only = on")
+                cursor.execute("SHOW default_transaction_read_only")
+                if cursor.fetchone() != ("on",):
+                    raise AssertionError("BROWSER_READ_ONLY_REQUIRED")
+        except Exception:
+            # Django sets wrapper.connection before emitting connection_created.
+            # A rejected session must never satisfy a later ensure_connection().
+            connection.close()
+            raise
 
     connections.close_all()
     connection_created.connect(protect, weak=False)
