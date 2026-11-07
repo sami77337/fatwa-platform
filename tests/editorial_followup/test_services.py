@@ -51,6 +51,46 @@ class FollowupServicesTests(SimpleTestCase):
             self.assertEqual(item.preparation[0].code, "duplicate_id")
             self.assertIn("الأصل", item.preparation[0].guidance)
 
+    def test_exact_id_collisions_include_cross_batch_rows_but_never_merge_them(self):
+        groups = {
+            "W7-VALID-1": ("intake-1", "intake-4"),
+            "SYN-SHARED": ("batch-synthetic-csv-2", "batch-synthetic-json-1"),
+        }
+        flagged = services.select_followup(self.catalog.rows, reason="repeated_external_id").rows
+        self.assertEqual(len(flagged), 4)
+        for item in flagged:
+            self.assertEqual(
+                tuple(row.case.key for row in item.id_group), groups[item.row.case.external_id]
+            )
+            self.assertIn(item.row, item.id_group)
+
+    def test_collisions_require_valid_literal_ids_independent_of_question_text(self):
+        original = self.by_key["intake-7"].row
+        for left, right in (
+            (None, None),
+            ("", ""),
+            ("bad\tvalue", "bad\tvalue"),
+            (" REF ", "REF"),
+            ("Id", "ID"),
+            ("سُؤال", "سؤال"),
+        ):
+            with self.subTest(left=left, right=right):
+                rows = tuple(
+                    replace(original, case=replace(original.case, key=key, external_id=value))
+                    for key, value in (("original", left), ("other", right))
+                )
+                with patch.object(
+                    services, "build_queue_catalog", return_value=replace(self.source, rows=rows)
+                ):
+                    marked = services.build_followup().rows
+                self.assertTrue(all(not item.id_group for item in marked))
+                self.assertTrue(
+                    all(
+                        "repeated_external_id" not in [r.code for r in item.reasons]
+                        for item in marked
+                    )
+                )
+
     def test_real_counts_and_malformed_batch_do_not_invent_rows(self):
         expected = {
             "missing_receipt": 14,

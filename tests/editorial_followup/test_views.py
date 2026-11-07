@@ -64,6 +64,42 @@ class FollowupViewsTests(SimpleTestCase):
         self.assertTrue(all(form.get("method") == "get" for form in parsed.forms))
         self.assertNotIn("script", parsed.tags)
 
+    def test_peer_review_uses_stable_keys_and_retains_filters_across_batches(self):
+        filters = {"reason": "repeated_external_id", "batch": "synthetic-csv"}
+        listing = self.get(reverse("editorial_followup:index"), data=filters)
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(
+            [entry["item"].row.case.key for entry in listing.context["rows"]],
+            ["batch-synthetic-csv-2"],
+        )
+        detail = self.get(listing.context["rows"][0]["url"])
+        self.assertContains(detail, "نسخة JSON اصطناعية مكررة")
+        self.assertContains(detail, 'id="identity-review"')
+        (peer,) = detail.context["id_peers"]
+        self.assertEqual(peer["row"].case.key, "batch-synthetic-json-1")
+        self.assertIn(peer["url"], PageParser(detail.content.decode()).links)
+        self.assertEqual(
+            parse_qs(urlsplit(peer["url"]).query),
+            {name: [value] for name, value in filters.items()},
+        )
+        other = self.get(peer["url"])
+        self.assertContains(other, "نسخة CSV اصطناعية مكررة")
+        self.assertIsNone(other.context["selection"].position)
+        self.assertEqual(other.context["id_peers"][0]["row"].case.key, "batch-synthetic-csv-2")
+        unique = self.get(reverse("editorial_followup:detail", args=["intake-7"]))
+        self.assertNotContains(unique, 'id="identity-review"')
+
+    def test_display_attributes_fallback_title_to_its_actual_source(self):
+        detail = self.get(reverse("editorial_followup:detail", args=["batch-synthetic-jsonl-2"]))
+        self.assertContains(detail, "العنوان كما ورد في المصدر")
+        self.assertNotContains(detail, "السؤال كما ورد")
+        self.assertContains(detail, "  عنوانٌ اصطناعي محفوظ  ")
+        original = self.get(reverse("editorial_followup:detail", args=["intake-7"]))
+        self.assertContains(original, "السؤال كما ورد")
+        missing = self.get(reverse("editorial_followup:detail", args=["intake-6"]))
+        self.assertContains(missing, "لم يرد نص سؤال")
+        self.assertNotContains(missing, "السؤال كما ورد")
+
     def test_filters_survive_every_neighbor_and_return(self):
         filters = {"reason": "missing_receipt", "status": "blocked", "batch": "original"}
         response = self.get(reverse("editorial_followup:index"), data=filters)

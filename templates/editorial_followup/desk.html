@@ -44,14 +44,26 @@
     <dt>حالة الاستلام</dt><dd>{{ selected.row.case.status_label }} · <code dir="ltr">{{ selected.row.case.status }}</code></dd>
     <dt>إيصال المسودة</dt><dd>{% if selected.row.case.record %}مسودة متاحة في الخدمة؛ أحدث لقطة {{ selected.row.case.record.current.number }}.{% else %}لا توجد مسودة متاحة لهذا السجل في الخدمة.{% endif %}</dd>
   </dl>
-  <h3>السؤال كما ورد</h3>
-  <pre class="exact-text" dir="auto"><code>{{ question }}</code></pre>
+  <h3>{{ excerpt.label }}</h3>
+  {% if excerpt.text != None %}<pre class="exact-text" dir="auto"><code>{{ excerpt.text }}</code></pre>{% endif %}
   <nav class="detail-nav" aria-label="فحص السجل نفسه">
     <a href="{{ workbench_url }}#intake">فحص الاستلام في منضدة العمل</a>
     <a href="{{ investigation_url }}#references">فتح التحقيق المرجعي للسجل</a>
     {% if receipt_url %}<a href="{{ receipt_url }}">عرض أحدث لقطة للمسودة</a>{% endif %}
   </nav>
 </section>
+{% if id_peers %}
+<section class="panel" id="identity-review" aria-labelledby="identity-heading">
+  <h2 id="identity-heading">مقارنة السجلات ذات المعرّف الخارجي نفسه</h2>
+  <p>تشمل المقارنة كل دفعات العينة. تكرار المعرّف وحده لا يثبت أن الرسالة تعقيب من السائل نفسه.</p>
+  <ul>{% for peer in id_peers %}<li>
+    <a href="{{ peer.url }}">فحص السجل <bdi>{{ peer.row.case.key }}</bdi></a>
+    · الدفعة <bdi>{{ peer.row.batch_id }}</bdi>
+    <p>{{ peer.excerpt.label }}</p>
+    {% if peer.excerpt.text != None %}<pre class="exact-text" dir="auto"><code>{{ peer.excerpt.text }}</code></pre>{% endif %}
+  </li>{% endfor %}</ul>
+</section>
+{% endif %}
 <section aria-labelledby="reasons-heading" id="followup-reasons">
   <h2 id="reasons-heading">أسباب المتابعة والخطوة التقنية المتاحة</h2>
   <p>إرشادات للتحضير والفحص من الدليل الموجود؛ لا تنفّذ هذه الصفحة أي تصحيح أو انتقال.</p>
@@ -101,7 +113,8 @@
   <div class="case-list">{% for entry in rows %}<article class="panel case-card">
     <div class="case-heading"><h3><a href="{{ entry.url }}">تفاصيل السجل <bdi>{{ entry.item.row.case.key }}</bdi></a></h3><span class="status">{{ entry.item.row.case.status_label }}</span></div>
     <p>الدفعة <bdi>{{ entry.item.row.batch_id }}</bdi> · المعرّف الخارجي <bdi>{{ entry.item.row.case.external_id|default_if_none:"لم يرد معرّف نصي" }}</bdi></p>
-    <pre class="exact-text" dir="auto"><code>{{ entry.question }}</code></pre>
+    <p>{{ entry.excerpt.label }}</p>
+    {% if entry.excerpt.text != None %}<pre class="exact-text" dir="auto"><code>{{ entry.excerpt.text }}</code></pre>{% endif %}
     <ul class="reason-tags" aria-label="أسباب متابعة السجل">{% for reason in entry.item.reasons %}<li>{{ reason.label }}</li>{% endfor %}</ul>
   </article>{% empty %}<div class="panel empty"><p>لا توجد سجلات متابعة تطابق المرشحات الحالية.</p><a href="{% url 'editorial_followup:index' %}">عرض كل أسباب المتابعة</a></div>{% endfor %}</div>
 </section>

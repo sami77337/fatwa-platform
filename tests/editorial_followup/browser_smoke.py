@@ -4,6 +4,7 @@ Uses Playwright installed in the local test environment only, not an app depende
 Run from repository root: python tests/editorial_followup/browser_smoke.py
 """
 
+import os
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -17,10 +18,24 @@ def main():
     output = Path(".local/editorial-followup")
     output.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        context = browser.new_context(viewport={"width": 1280, "height": 900})
+        browser = playwright.chromium.launch(
+            executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER"), chromium_sandbox=True
+        )
+        context = browser.new_context(
+            viewport={"width": 1280, "height": 900}, service_workers="block"
+        )
         page = context.new_page()
         errors = []
+
+        def only_local(route):
+            parsed = urlsplit(route.request.url)
+            if (parsed.scheme, parsed.netloc) != ("http", "127.0.0.1:8016"):
+                errors.append("outside the loopback desk")
+                route.abort()
+            else:
+                route.continue_()
+
+        context.route("**/*", only_local)
         page.on("pageerror", lambda error: errors.append(str(error)))
 
         def layout():
@@ -58,6 +73,22 @@ def main():
         expect(page.locator(".case-card")).to_have_count(2)
         page.screenshot(path=str(output / "desktop.png"))
 
+        page.goto(DESK + "?reason=repeated_external_id&batch=synthetic-csv")
+        expect(page.locator(".case-card")).to_have_count(1)
+        page.get_by_role("link", name="تفاصيل السجل batch-synthetic-csv-2").click()
+        peers = page.locator("#identity-review")
+        expect(peers).to_contain_text("نسخة JSON اصطناعية مكررة")
+        other = peers.get_by_role("link", name="فحص السجل batch-synthetic-json-1")
+        other.focus()
+        other.press("Enter")
+        expect(page.locator("h1")).to_contain_text("batch-synthetic-json-1")
+        expect(page.locator("#identity-review")).to_contain_text("نسخة CSV اصطناعية مكررة")
+        page.get_by_role("link", name="العودة إلى النتائج المصفاة").click()
+        expect(page.locator(".case-card")).to_have_count(1)
+        page.goto(DESK + "/batch-synthetic-jsonl-2")
+        expect(page.get_by_role("heading", name="العنوان كما ورد في المصدر")).to_be_visible()
+        expect(page.get_by_role("heading", name="السؤال كما ورد")).to_have_count(0)
+
         page.goto(DESK + "/history")
         target = page.get_by_role("link", name="فحص الهوية والدليل الدقيق للإحالة 1", exact=True)
         target.click()
@@ -74,7 +105,13 @@ def main():
 
         for width in (360, 320):
             page.set_viewport_size({"width": width, "height": 800})
-            for path in ("", "/history", "/batch-synthetic-jsonl-3", "/batch-synthetic-json-4"):
+            for path in (
+                "",
+                "/history",
+                "/batch-synthetic-jsonl-3",
+                "/batch-synthetic-json-4",
+                "/intake-4",
+            ):
                 page.goto(DESK + path)
                 layout()
         page.goto(DESK + "/batch-synthetic-jsonl-3")
@@ -89,7 +126,7 @@ def main():
         assert not errors, errors
         browser.close()
     print(
-        "PASS: desktop RTL, keyboard skip/filter, combined filters, previous/next/return, exact reference link, Arabic CRLF, 360px/320px no overflow, batch failure, GET/HEAD-only"
+        "PASS: exact-ID cross-batch peer navigation and return, title/reader-question distinction, desktop RTL, keyboard skip/filter, combined filters, previous/next/return, exact reference link, Arabic CRLF, 360px/320px no overflow, batch failure, GET/HEAD-only"
     )
 
 
