@@ -13,6 +13,12 @@ export const SOURCE_PINS = Object.freeze({
   ISSUE_10: ['_codex_input/queued_issue_10.md', '5c731493499ac0d3389d8dd480df6e0c5a9207d87d38d1f125be6cffdcbc56a2'],
   D072_RECORD: ['docs/product/D072_RELEASE_DEFERRAL.md', '2cc176f8d30e2468d6d9c13c14244e30dc54f9bbc0cd1e1c994345afbe97be76'],
 });
+// S6 pinned the CRLF checkout of these tracked records. Git stores these exact LF blobs.
+const TRACKED_LF_SHA256 = new Map([
+  ['AGENTS', 'be29db64889593acbca60ebd0a6720d439754c4a99a11785b9153308e9c7d4c4'],
+  ['COORDINATION', 'c1e16e6e21ea142b1148eb7c94681386ac5eaabfa1da8cc760ad61ded88d6629'],
+  ['D072_RECORD', '43824b84fae5556896f1835a9efe2e25b983552b51c6c5b870f0aed57b7f8714'],
+]);
 const APPROVAL_LINES = Object.freeze({1: 135, 2: 301, 4: 616, 5: 758, 6: 904, 7: 1034, 8: 1173, 9: 1315, 11: 1595, 12: 1734, 13: 1870, 14: 2009, 15: 2148, 16: 2271});
 const DEPENDENCY_STATES = Object.freeze({GATE_B: 'NOT_PASSED', GATE_C: 'HOLD', GATE_D: 'HOLD', GATE_E: 'HOLD', OWNER_U03: 'OWNER_APPROVAL_PENDING', OWNER_U10: 'OWNER_APPROVAL_PENDING', SOURCE_TOC: 'MISSING', SOURCE_RIGHTS: 'PENDING', PUBLIC_BASELINE: 'UNVERIFIED', OTHER_SCIENCE_SOURCE: 'MISSING', HADITH_LIBRARY_SOURCE: 'MISSING', FULL_DECISION_LOG: 'MISSING', ORIGINAL_REVIEW: 'MISSING', OWNER_FEATURE_CHOICES: 'OWNER_APPROVAL_PENDING', OWNER_ACCEPTED_FUNCTIONS: 'OWNER_APPROVAL_PENDING'});
 const SLICE_STATES = Object.freeze({PUBLIC_CATALOG_DEV: 'SAFE_DEV_ONLY', POLICY_DOCS: 'DOCUMENTATION_ONLY', SENSITIVE_WORKFLOWS: 'BLOCKED', V1_KNOWLEDGE: 'BLOCKED', AI_V1_LATER: 'DEFERRED', V2_EXTERNAL: 'DEFERRED', OTHER_SCIENCE_LATER: 'DEFERRED', HADITH_LIBRARY_POST_FIRST_RELEASE: 'DEFERRED', DESIGN_LAST: 'DEFERRED', CURRENT_EXCLUSIONS: 'OUT_OF_SCOPE'});
@@ -198,7 +204,9 @@ export function verifySourceBytes(registry, bytesById) {
   const errors = [];
   for (const source of registry.sources) {
     const bytes = bytesById.get(source.id);
-    if (bytes && sha256(bytes) !== source.sha256) errors.push('source bytes: SHA256 mismatch');
+    if (!bytes) continue;
+    const digest = sha256(bytes);
+    if (digest !== source.sha256 && digest !== TRACKED_LF_SHA256.get(source.id)) errors.push('source bytes: SHA256 mismatch');
   }
   for (const item of registry.evidence) {
     const bytes = bytesById.get(item.source_id);
