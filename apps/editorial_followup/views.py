@@ -12,6 +12,8 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_safe
 
 from apps.editorial_demo.views import local_only
+from apps.editorial_queue.services import QueueRow
+from apps.editorial_workbench.batches import PreparedCase
 from apps.editorial_workbench.services import WorkbenchDataError
 from apps.revision_core.revision_history import HistoryDataError
 
@@ -22,6 +24,21 @@ def _exact(text: str) -> str:
     # Escape markup before preserving CR through HTML parsing. Templates put
     # code inside pre so initial newlines are not stripped by the browser.
     return mark_safe(str(escape(text)).replace("\r", "&#13;"))
+
+
+def _excerpt(row: QueueRow) -> dict:
+    case = row.case
+    if case.question is None:
+        return {"label": "لم يرد نص سؤال", "text": None}
+    title_only = (
+        isinstance(case, PreparedCase)
+        and isinstance(case.original, dict)
+        and "question" not in case.original
+    )
+    return {
+        "label": "العنوان كما ورد في المصدر" if title_only else "السؤال كما ورد",
+        "text": _exact(case.question),
+    }
 
 
 def _url(filters: dict[str, str], key: str | None = None) -> str:
@@ -106,17 +123,18 @@ def desk(request: HttpRequest, key: str | None = None) -> HttpResponse:
                 {
                     "item": item,
                     "url": detail_url(item),
-                    "question": _exact(
-                        item.row.case.question
-                        if item.row.case.question is not None
-                        else "لم يرد نص سؤال"
-                    ),
+                    "excerpt": _excerpt(item.row),
                 }
                 for item in selection.rows
             ),
-            "question": _exact(case.question if case.question is not None else "لم يرد نص سؤال")
-            if case
-            else "",
+            "excerpt": _excerpt(selected.row) if selected else None,
+            "id_peers": tuple(
+                {"row": row, "url": _url(filters, row.case.key), "excerpt": _excerpt(row)}
+                for row in selected.id_group
+                if row.case.key != key
+            )
+            if selected
+            else (),
             "source": _exact(case.raw_source) if case else "",
             "previous_url": detail_url(selection.previous),
             "next_url": detail_url(selection.next),

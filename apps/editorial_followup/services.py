@@ -1,9 +1,11 @@
 """Fact-derived follow-up over existing fixed queue services, without new intake logic."""
 
+from collections import defaultdict
 from dataclasses import dataclass
 
 from apps.editorial_queue.services import QueueBatch, QueueRow, build_queue_catalog
 from apps.editorial_workbench.batches import PreparedCase
+from apps.intake_workflow.contracts import valid_external_id
 from apps.prepared_pipeline.diagnostics import recovery_ar
 
 REASONS = (
@@ -11,6 +13,7 @@ REASONS = (
     ("missing_references", "لا توجد مؤشرات إحالة قابلة للعرض"),
     ("unresolved_references", "إحالات ملتبسة أو غير محسومة أو متعارضة"),
     ("rejected_row", "صف مرفوض"),
+    ("repeated_external_id", "معرّف خارجي مشترك يحتاج مراجعة"),
     ("missing_receipt", "إيصال مسودة غير متاح في العينة"),
 )
 # These are existing intake display states, not editorial decisions.
@@ -42,6 +45,7 @@ class Preparation:
 @dataclass(frozen=True, slots=True)
 class FollowupRow:
     row: QueueRow
+    id_group: tuple[QueueRow, ...]
     reasons: tuple[Reason, ...]
     preparation: tuple[Preparation, ...]
     references: tuple[dict, ...]
@@ -62,7 +66,7 @@ class FollowupSelection:
     position: int | None
 
 
-def _followup(row: QueueRow) -> FollowupRow:
+def _followup(row: QueueRow, id_group: tuple[QueueRow, ...]) -> FollowupRow:
     case = row.case
     preparation = tuple(
         Preparation(
@@ -110,19 +114,34 @@ def _followup(row: QueueRow) -> FollowupRow:
             case.status_label,
             "راجع أسباب رفض الصف في سياق دفعته. عند تكرار المعرّف قارن مواضعه دون دمج السجلات أو استعارة مسودة من صف آخر.",
         )
+    if id_group:
+        add(
+            "repeated_external_id",
+            f"ورد هذا المعرّف الخارجي في السجلات الموضّحة هنا. عددها {len(id_group)}.",
+            "قارن الدفعة ومصدر كل سجل قبل تقرير ما إذا كانت الرسائل تخص قضية واحدة.",
+        )
     if case.record is None:
         add(
             "missing_receipt",
             "لا تتوفر مسودة مرتبطة بهذا الصف في ناتج الخدمة الاصطناعية الحالي.",
             "افحص حالة الاستلام ورابط المقطع وأسباب الرفض أو التعليق قبل أي تحضير لاحق خارج الشاشة. هذا لا يثبت فقدان حدث محفوظ، ولا ينشئ إيصالًا أو مسودة.",
         )
-    return FollowupRow(row, tuple(reasons), preparation, references)
+    return FollowupRow(row, id_group, tuple(reasons), preparation, references)
 
 
 def build_followup() -> FollowupCatalog:
-    """One existing catalog build; no lookup by non-unique external identities."""
+    """Group exact identifiers for comparison; each record keeps its own stable key."""
     catalog = build_queue_catalog()
-    return FollowupCatalog(tuple(_followup(row) for row in catalog.rows), catalog.batches)
+    by_id = defaultdict(list)
+    for row in catalog.rows:
+        external_id = valid_external_id(row.case.external_id)
+        if external_id is not None:
+            by_id[external_id].append(row)
+    groups = {key: tuple(rows) for key, rows in by_id.items() if len(rows) > 1}
+    return FollowupCatalog(
+        tuple(_followup(row, groups.get(row.case.external_id, ())) for row in catalog.rows),
+        catalog.batches,
+    )
 
 
 def select_followup(
