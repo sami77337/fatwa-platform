@@ -1,0 +1,124 @@
+name: FAST9 Wave7 browser catalog PostgreSQL
+on:
+  push:
+    branches: [codex/20261029-fast9-v5-07-catalog-pc1]
+
+permissions:
+  contents: read
+
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: [17, 18]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}-bookworm
+        env:
+          POSTGRES_DB: wave7_synthetic_fast9_browser_ci
+          POSTGRES_USER: wave7_synthetic
+          POSTGRES_PASSWORD: ${{ format('ci-{0}-{1}', github.run_id, matrix.postgres) }}
+        ports: ['127.0.0.1:55442:5432']
+        options: >-
+          --health-cmd "pg_isready -U wave7_synthetic -d wave7_synthetic_fast9_browser_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.wave7_test
+      FATWA_PRODUCTION: '0'
+      FATWA_WAVE7_SYNTHETIC_WRITES: '1'
+      PGHOST: 127.0.0.1
+      PGPORT: '55442'
+      PGDATABASE: wave7_synthetic_fast9_browser_ci
+      PGTESTDATABASE: test_wave7_synthetic_fast9_browser_ci
+      PGUSER: wave7_synthetic
+      PGPASSWORD: ${{ format('ci-{0}-{1}', github.run_id, matrix.postgres) }}
+      FAST9_SYNTHETIC_PG: '1'
+      FAST9_DISPOSABLE_DATABASE: test_wave7_synthetic_fast9_browser_ci
+      FATWA_WAVE7_SYNTHETIC_READS: '1'
+      FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+      EXPECTED_MAJOR: ${{ matrix.postgres }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: python -m pip install --no-deps -r requirements.txt
+      - name: Claim the reserved empty service using Wave7
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/catalog"
+          python -B - <<'PY' | tee "$RUNNER_TEMP/catalog/base-before.json"
+          import django
+          django.setup()
+          import json, os
+          from django.db import connection
+          from apps.intake_workflow.guards import initialize_synthetic_database
+          from tools.fast9_pg_browser_catalog.database import BASE as BASE_DATABASE, TEST as TEST_DATABASE, authorize as validate_environment
+          validate_environment(os.environ)
+          assert os.environ['PGPORT'] == '55442'
+          with connection.cursor() as c:
+              c.execute("SELECT current_database(), current_user, current_setting('server_version_num')::int, oid, datdba=current_user::regrole FROM pg_database WHERE datname=current_database()")
+              name, role, version, oid, owns = c.fetchone()
+              assert (name, role, version // 10000, owns) == (BASE_DATABASE, 'wave7_synthetic', int(os.environ['EXPECTED_MAJOR']), True)
+              c.execute("SELECT 1 FROM pg_database WHERE datname=%s", [TEST_DATABASE])
+              assert c.fetchone() is None
+          ctx = initialize_synthetic_database(synthetic_fixtures_only=True)
+          assert (ctx.database_name, ctx.database_oid) == (name, oid)
+          print(json.dumps(dict(sha=os.environ['GITHUB_SHA'], name=name, role=role, version=version, oid=oid, test_absent=True)))
+          PY
+          python -B manage.py migrate --noinput --settings=config.settings.wave7_test
+      - name: Run both protected Chrome journeys on the actual catalog
+        id: acceptance
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$FATWA_FASTBUILD_BROWSER" --version
+          python -B -m tools.fast9_pg_browser_catalog.run --postgres | tee "$RUNNER_TEMP/catalog/browser.json"
+          python -B - <<'PYCODE'
+          import json, os
+          from pathlib import Path
+          result = json.loads((Path(os.environ['RUNNER_TEMP']) / 'catalog/browser.json').read_bytes())
+          assert result['tested_sha'] == os.environ['GITHUB_SHA'] and not result['owned_paths_dirty']
+          assert all(result[k] == 'PASS' for k in ('result', 'browser', 'catalog', 'database_unchanged', 'teardown'))
+          assert len(result['journeys']) == 2 and all(j['browser'] == 'PASS' for j in result['journeys'])
+          PYCODE
+      - name: Verify owned base and teardown
+        if: ${{ !cancelled() && steps.acceptance.outcome != 'skipped' }}
+        env:
+          ACCEPTANCE: ${{ steps.acceptance.outcome }}
+        shell: bash
+        run: |
+          python -B - <<'PYCODE'
+          import django
+          django.setup()
+          import json, os
+          from pathlib import Path
+          from django.db import connection
+          from apps.intake_workflow.guards import require_synthetic_write
+          from tools.fast9_pg_browser_catalog.database import TEST as TEST_DATABASE
+          dest = Path(os.environ['RUNNER_TEMP']) / 'catalog'
+          base = json.loads((dest / 'base-before.json').read_text())
+          ctx = require_synthetic_write(synthetic_fixtures_only=True)
+          assert (ctx.database_name, ctx.database_oid) == (base['name'], base['oid'])
+          with connection.cursor() as c:
+              c.execute("SELECT 1 FROM pg_database WHERE datname=%s", [TEST_DATABASE])
+              assert c.fetchone() is None
+          receipt = dict(base=base, acceptance=os.environ['ACCEPTANCE'], test_absent_after=True)
+          (dest / 'result.json').write_text(json.dumps(receipt, indent=2))
+          PYCODE
+      - name: Retain version-specific proof
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fast9-catalog-pg${{ matrix.postgres }}
+          path: ${{ runner.temp }}/catalog/
+          if-no-files-found: error
