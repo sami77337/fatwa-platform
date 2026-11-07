@@ -260,10 +260,14 @@ try {
     portFile.attempts++;
     let state;
     try {
-      const [raw] = (await readFile(path.join(profile,"DevToolsActivePort"), {encoding:"utf8", signal:startupDeadline})).split(/\r?\n/);
+      const record = await readFile(path.join(profile,"DevToolsActivePort"), {encoding:"utf8", signal:startupDeadline});
+      const [raw, browserPath] = record.split(/\r?\n/);
       port = Number(raw);
-      const valid = /^\d+$/.test(raw) && port >= 1 && port <= 65535;
-      state = !raw ? "empty" : valid ? "valid" : "invalid";
+      if (!raw) state = "empty";
+      else if (!/^\d+$/.test(raw) || port < 1 || port > 65535) state = "invalid";
+      // Chrome can still be writing its profile record, including the digits of the port.
+      else if (!browserPath) state = "partial";
+      else state = /^\/devtools\/browser\/[a-zA-Z0-9-]+$/.test(browserPath) ? "valid" : "invalid";
     } catch (error) {
       if (startupDeadline.aborted) throw Error("Timed out: DevTools launch");
       state = error.code === "ENOENT" ? "missing" : "read_error";

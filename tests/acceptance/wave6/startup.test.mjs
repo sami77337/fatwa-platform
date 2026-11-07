@@ -351,6 +351,31 @@ const portAvailable = () => "9222\n/devtools/browser/synthetic\n";
 const pageEndpoint = "ws://127.0.0.1:9222/devtools/page/synthetic";
 const pageList = endpoint => ({status: 200, json: async () => [{type: "page", webSocketDebuggerUrl: endpoint}]});
 
+test("a partial numeric port cannot trigger a request before its browser record arrives", async () => {
+  const state = await simulate({portRead: now => now === 0 ? "9" : now === 50 ? "9222\r\n" :
+    "9222\r\n/devtools/browser/synthetic\r\n"});
+  assertNoAcceptance(state);
+  assert.equal(state.discoveryAt, 100);
+  assert.deepEqual(state.http.filter(url => url.endsWith("/json/list")), ["http://127.0.0.1:9222/json/list"]);
+  assert.equal(state.report.startup.port_file.first_seen_ms.partial, 0);
+});
+
+for (const [label, record, category] of [
+  ["missing", "9222\n", "partial"],
+  ["wrong path", "9222\n/devtools/page/redact-me\n", "invalid"],
+  ["foreign URL", "9222\nws://example.invalid/devtools/browser/redact-me\n", "invalid"],
+]) {
+  test(`a ${label} browser record blocks discovery at the original deadline`, async () => {
+    const state = await simulate({portRead: () => record});
+    assertNoAcceptance(state);
+    assert.equal(state.discoveryAt, undefined);
+    assert.deepEqual(state.http.filter(url => url.endsWith("/json/list")), []);
+    assert.equal(state.report.startup.port_file.last_state, category);
+    assert.equal(state.cleanupAt, 12000);
+    assert.doesNotMatch(JSON.stringify(state.report), /redact-me/);
+  });
+}
+
 // No outstanding real I/O. Simulate a pending operation and advance the same
 // virtual clock used by polling. A missing signal must fail on the old source.
 function stallUntilAborted(signal, advance, remaining) {

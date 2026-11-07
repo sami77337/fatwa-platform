@@ -182,3 +182,9 @@ The PR #161 head `a867e34507769e8abc847ef1baf62dc403f91301` could wait past the 
 The port-file read, HTTP target discovery and WebSocket opening now share one 12-second deadline starting at browser spawn. Discovery requires HTTP 200 and an exact `ws://127.0.0.1:<discovered-port>/devtools/page/<id>` target. Early close or error produces a blocked startup report and enters cleanup. Existing CDP commands retain their own 10-second deadlines. No new launch attempt or application retry is added.
 
 On Node 24.22.1 the original launcher passed its 21 startup checks and failed all nine new regressions. The revised launcher passed all 30 startup checks and six CDP tests. The six offline Python guard tests passed separately. These checks do not identify the cause of the earlier PG17 port-file timeout. The focused run did not start a database or a real browser.
+
+### Complete port records, 2026-11-07
+
+A focused reproduction on `02b14c52` exposed a premature HTTP request. When a read returned only `9` while the profile file was being written, the launcher attempted discovery on port 9. With a valid port and a missing or malformed browser path, it also entered discovery immediately. The launcher now waits within its existing deadline for a valid port and the `/devtools/browser/<id>` line, matching the protected Fastbuild reader's record shape. Diagnostics distinguish a missing second line as `partial`. Raw record contents remain outside the report.
+
+Four new tests failed before the change. The revised launcher passed 34 startup tests and six CDP tests, plus six mocked Python guards. A delayed complete CRLF record triggered exactly one discovery request, on its final port. Missing or invalid browser records exhausted the existing 12-second budget with zero discovery requests. The failed #167 PG17 artifact had empty browser stderr and no startup probe, so it cannot establish whether this condition occurred in that run.
