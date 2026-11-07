@@ -32,7 +32,7 @@
 <section class="panel" aria-labelledby="saved-followups">
   <h2 id="saved-followups">طلبات الاستيضاح والردود التدريبية</h2>
   {% with last=thread|last %}{% if last.kind == "request" %}<p>بانتظار ردّ تدريبي على طلب الاستيضاح.</p>{% endif %}{% endwith %}
-  <ol>{% for entry in thread %}<li><strong>{% if entry.kind == "request" %}طلب المراجع{% else %}رد تدريبي{% endif %}</strong>{% if entry.unread %} · جديد منذ آخر قراءة{% endif %}<pre class="exact-text" dir="auto">{{ entry.exact }}</pre><a href="#source-event-{{ entry.source_count }}">نص السؤال وقت التسجيل</a></li>{% endfor %}</ol>
+  <ol>{% for entry in thread %}<li><strong>{% if entry.kind == "request" %}طلب المراجع{% elif entry.from_requester %}ردّ من صفحة صاحب السؤال{% else %}ردّ أدخله المشغّل{% endif %}</strong>{% if entry.unread %} · جديد منذ آخر قراءة{% endif %}<pre class="exact-text" dir="auto">{{ entry.exact }}</pre>{% if entry.reply_reference %}<p>مرجع الردّ <bdi dir="ltr">{{ entry.reply_reference }}</bdi></p>{% endif %}<a href="#source-event-{{ entry.source_count }}">نص السؤال وقت التسجيل</a></li>{% endfor %}</ol>
 </section>
 {% endif %}
 <p><a href="{% url 'editorial_workbench:detail' observation.case_key %}#snapshot">العودة إلى لقطة المسودة</a></p>

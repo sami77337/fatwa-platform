@@ -16,7 +16,9 @@ from pathlib import Path
 from apps.editorial_export.services import require_development
 
 from . import clarifications as clar
+from . import reply_access as access
 from .draft_source_review import inspect_draft_source
+from .reply_access import ReplyCodeUnavailable as ReplyCodeUnavailable
 from .source_history import SourceEvent, replay_source_history, source_receipt, validate_event_shape
 
 JOURNAL_FILENAME = "synthetic-source-history.sqlite3"
@@ -82,6 +84,8 @@ class CaseReview:
     events: tuple[SourceEvent, ...]
     receipt: ReviewReceipt | None
     clarifications: tuple[clar.ClarificationEvent, ...] = ()
+    grant_revision: int = 0
+    grant_expires_at: datetime | None = None
 
     @property
     def thread_digest(self):
@@ -189,13 +193,15 @@ def history_digest(history: tuple[SourceEvent, ...]) -> str | None:
 def _verified(con: sqlite3.Connection):
     (version,) = con.execute("PRAGMA user_version").fetchone()
     expected = _SCHEMA | _REVIEW_SCHEMA if version >= 2 else _SCHEMA
-    if version == 3:
+    if version >= 3:
         expected |= clar.SCHEMA
+    if version == 4:
+        expected |= access.SCHEMA
     entries = con.execute(
         "SELECT name,sql FROM sqlite_schema LIMIT ?", (len(expected) + 1,)
     ).fetchall()
     if (
-        version not in (1, 2, 3)
+        version not in (1, 2, 3, 4)
         or len(entries) != len(expected)
         or dict(entries) != expected
         or con.execute("PRAGMA application_id").fetchone() != (_APP_ID,)
@@ -240,9 +246,9 @@ def _verified(con: sqlite3.Connection):
     if stored_heads != heads:
         raise JournalError("journal_head_mismatch")
     thread = ()
-    if version == 3:
+    if version >= 3:
         try:
-            thread = clar.read_thread(con)
+            thread = clar.read_thread(con, requester_enabled=version == 4)
         except (ValueError, TypeError) as exc:
             raise JournalError("journal_clarification_invalid") from exc
     reply_numbers = {e.digest: e.number for e in thread if e.kind == "reply"}
@@ -252,7 +258,7 @@ def _verified(con: sqlite3.Connection):
             "SELECT case_key,draft_revision,reviewer,count,source_digest,draft_digest,recorded_at,"
             "'' AS reply_digest FROM source_reviews"
         )
-        if version == 3:
+        if version >= 3:
             select_reviews += (
                 " UNION ALL SELECT 'intake-7',1,reviewer,count,source_digest,draft_digest,"
                 "recorded_at,reply_digest FROM clarified_reviews"
@@ -293,7 +299,15 @@ def _verified(con: sqlite3.Connection):
                 reply = turn.digest
             elif (turn.source_count, turn.source_digest, turn.draft_digest, reply) not in reads:
                 raise JournalError("clarification_request_without_reading")
-    return histories, heads, receipts, thread
+    try:
+        grant = (
+            access.read_grant(con, thread, heads.get(_REVIEW_CASE))
+            if version == 4
+            else access.Grant()
+        )
+    except ValueError as exc:
+        raise JournalError("journal_reply_grant_invalid") from exc
+    return histories, heads, receipts, thread, grant
 
 
 def _connect(path: Path, writable: bool) -> sqlite3.Connection:
@@ -321,11 +335,17 @@ def _read_state(directory, case_key, synthetic_fixtures_only):
         if not _exists(path):
             return CaseReview((), None)
         with closing(_connect(path, False)) as con:
-            histories, _, receipts, thread = _verified(con)
+            histories, _, receipts, thread, grant = _verified(con)
             events = histories.get(case_key, ())
             if case_key != _REVIEW_CASE:
                 return CaseReview(events, None)
-            return CaseReview(events, receipts[-1] if receipts else None, thread)
+            return CaseReview(
+                events,
+                receipts[-1] if receipts else None,
+                thread,
+                grant.revision,
+                grant.active_deadline(),
+            )
     except (OSError, sqlite3.Error) as exc:
         raise JournalError("journal_read_unavailable") from exc
 
@@ -369,7 +389,7 @@ def _locked_case(directory, reviewer, count, source_digest, draft_digest):
         if not _exists(path):
             raise ReviewConflict("source_history_missing")
         with closing(_connect(path, True)) as con:
-            histories, heads, receipts, thread = _verified(con)
+            histories, heads, receipts, thread, grant = _verified(con)
             if heads.get(_REVIEW_CASE) != (count, source_digest):
                 raise ReviewConflict("source_version_changed")
             obs = inspect_draft_source(
@@ -377,7 +397,7 @@ def _locked_case(directory, reviewer, count, source_digest, draft_digest):
             )
             if obs.draft_revision_sha256 != draft_digest:
                 raise ReviewConflict("draft_version_changed")
-            yield con, receipts, thread
+            yield con, receipts, thread, grant
     except (OSError, sqlite3.Error) as exc:
         raise JournalError("journal_write_unavailable") from exc
 
@@ -398,6 +418,7 @@ def acknowledge_review(
         con,
         receipts,
         thread,
+        _,
     ):
         if reply_digest != clar.last_reply_digest(thread):
             raise ReviewConflict("clarification_evidence_changed")
@@ -450,6 +471,7 @@ def record_clarification(
         con,
         receipts,
         thread,
+        grant,
     ):
         last = thread[-1] if thread else None
         if thread_digest != (last.digest if last else ""):
@@ -457,6 +479,7 @@ def record_clarification(
             if (
                 last
                 and thread_digest == (thread[-2].digest if len(thread) > 1 else "")
+                and last.actor == _REVIEWER
                 and (last.kind, last.text, last.source_digest, last.draft_digest)
                 == (kind, value, source_digest, draft_digest)
             ):
@@ -479,24 +502,29 @@ def record_clarification(
             for sql in clar.SCHEMA.values():
                 con.execute(sql)
             con.execute("PRAGMA user_version=3")
-        number = len(thread) + 1
-        stamp = datetime.now(UTC).isoformat(timespec="microseconds")
-        digest = clar.turn_digest(
-            thread_digest, number, kind, value, stamp, count, source_digest, draft_digest
-        )
-        con.execute(
-            "INSERT INTO clarification_turns VALUES (?,?,?,?,?,?,?,?)",
-            (number, kind, value, stamp, count, source_digest, draft_digest, digest),
-        )
-        con.execute(
-            "INSERT INTO clarification_head VALUES (?,?,?) ON CONFLICT(case_key) DO UPDATE SET "
-            "number=excluded.number,digest=excluded.digest",
-            (_REVIEW_CASE, number, digest),
-        )
+        turn = _append_turn(con, thread, kind, value, count, source_digest, draft_digest, _REVIEWER)
+        access.clear(con, grant)
         con.commit()
-        return clar.ClarificationEvent(
-            number, kind, value, stamp, digest, count, source_digest, draft_digest
-        )
+        return turn
+
+
+def _append_turn(con, thread, kind, text, count, source, draft, actor):
+    number = len(thread) + 1
+    stamp = datetime.now(UTC).isoformat(timespec="microseconds")
+    digest = clar.turn_digest(
+        thread[-1].digest if thread else "", number, kind, text, stamp, count, source, draft, actor
+    )
+    storage_kind = "requester_reply" if actor == "synthetic-requester" else kind
+    con.execute(
+        "INSERT INTO clarification_turns VALUES (?,?,?,?,?,?,?,?)",
+        (number, storage_kind, text, stamp, count, source, draft, digest),
+    )
+    con.execute(
+        "INSERT INTO clarification_head VALUES (?,?,?) ON CONFLICT(case_key) DO UPDATE SET "
+        "number=excluded.number,digest=excluded.digest",
+        (_REVIEW_CASE, number, digest),
+    )
+    return clar.ClarificationEvent(number, kind, text, stamp, digest, count, source, draft, actor)
 
 
 def append_source_event(
@@ -512,7 +540,7 @@ def append_source_event(
             _initialize(path)
             _exists(path)
         with closing(_connect(path, True)) as con:
-            histories, heads, _, _ = _verified(con)
+            histories, heads, _, _, grant = _verified(con)
             old = histories.get(event.case_key, ())
             # Validate retries even at capacity without adding a 129th replay element.
             prior = next((e for e in old if e.event_id == event.event_id), None)
@@ -533,7 +561,138 @@ def append_source_event(
                 "seq=excluded.seq,digest=excluded.digest",
                 (event.case_key, seq, digest),
             )
+            if event.case_key == _REVIEW_CASE:
+                access.clear(con, grant)
             con.commit()
             return history
     except (OSError, sqlite3.Error) as exc:
         raise JournalError("journal_write_unavailable") from exc
+
+
+@contextmanager
+def _locked_reply_grant(
+    directory, reviewer, count, source_digest, draft_digest, thread_digest, grant_revision
+):
+    with _locked_case(directory, reviewer, count, source_digest, draft_digest) as (
+        con,
+        receipts,
+        thread,
+        grant,
+    ):
+        if (
+            not thread
+            or thread[-1].kind != "request"
+            or thread[-1].digest != thread_digest
+            or type(grant_revision) is not int
+            or grant_revision != grant.revision
+        ):
+            raise ReviewConflict("reply_request_changed")
+        yield con, receipts, thread, grant
+
+
+def issue_reply_code(
+    directory: Path,
+    *,
+    reviewer: str,
+    count: int,
+    source_digest: str,
+    draft_digest: str,
+    thread_digest: str,
+    grant_revision: int,
+    synthetic_fixtures_only: bool = False,
+) -> access.IssuedCode:
+    """Issue or rotate access to the currently displayed pending training request."""
+    require_development(synthetic_fixtures_only)
+    with _locked_reply_grant(
+        directory, reviewer, count, source_digest, draft_digest, thread_digest, grant_revision
+    ) as (con, receipts, thread, grant):
+        receipt = receipts[-1] if receipts else None
+        if not receipt or (receipt.count, receipt.draft_digest, receipt.reply_digest) != (
+            count,
+            draft_digest,
+            clar.last_reply_digest(thread),
+        ):
+            raise ReviewConflict("review_current_evidence_before_issue")
+        result = access.issue(con, grant.revision, thread_digest, source_digest, draft_digest)
+        con.commit()
+        return result
+
+
+def revoke_reply_code(
+    directory: Path,
+    *,
+    reviewer: str,
+    count: int,
+    source_digest: str,
+    draft_digest: str,
+    thread_digest: str,
+    grant_revision: int,
+    synthetic_fixtures_only: bool = False,
+) -> None:
+    """Withdraw a capability without changing the pending clarification itself."""
+    require_development(synthetic_fixtures_only)
+    with _locked_reply_grant(
+        directory, reviewer, count, source_digest, draft_digest, thread_digest, grant_revision
+    ) as (con, _, _, grant):
+        if not grant.code_hash:
+            raise ReviewConflict("no_reply_code_to_revoke")
+        access.clear(con, grant)
+        con.commit()
+
+
+@contextmanager
+def _requester_snapshot(directory, code, writable):
+    """Authenticate the capability and check its scope in the same transaction as use."""
+    supplied = access.code_hash(code)
+    try:
+        path = _path(directory)
+        if not _exists(path):
+            raise ReplyCodeUnavailable("reply_code_unavailable")
+        with closing(_connect(path, writable)) as con:
+            histories, heads, _, thread, grant = _verified(con)
+            if not grant.accepts(supplied):
+                raise ReplyCodeUnavailable("reply_code_unavailable")
+            # _verified matched the grant to the still-open request and current source head.
+            events = histories[_REVIEW_CASE]
+            try:
+                observed = inspect_draft_source(
+                    _REVIEW_CASE, 1, events, synthetic_fixtures_only=True
+                )
+            except ValueError as exc:
+                raise ReplyCodeUnavailable("reply_code_unavailable") from exc
+            if observed.draft_revision_sha256 != grant.draft_digest:
+                raise ReplyCodeUnavailable("reply_code_unavailable")
+            yield con, events, thread, grant, heads[_REVIEW_CASE]
+    except (JournalError, OSError, sqlite3.Error) as exc:
+        raise ReplyCodeUnavailable("reply_code_unavailable") from exc
+
+
+def open_reply_code(
+    directory: Path, code: str, *, synthetic_fixtures_only: bool = False
+) -> access.ReplyPrompt:
+    """Return the pending prompt and source text only, without other case data."""
+    require_development(synthetic_fixtures_only)
+    with _requester_snapshot(directory, code, False) as (_, events, thread, grant, _):
+        body = events[-1].body_utf8
+        return access.ReplyPrompt(
+            thread[-1].text, body.decode("utf-8") if body is not None else None, grant.expires_at
+        )
+
+
+def submit_requester_reply(
+    directory: Path, code: str, text: str, *, synthetic_fixtures_only: bool = False
+) -> clar.ClarificationEvent:
+    """Consume a live code atomically with a reply attributed to the synthetic requester."""
+    require_development(synthetic_fixtures_only)
+    # An unproven code must not reserve a writer or recover a hot rollback journal.
+    # Under the write lock recheck the capability in case another client already used it.
+    with _requester_snapshot(directory, code, False):
+        pass
+    with _requester_snapshot(directory, code, True) as (con, _, thread, grant, head):
+        clar.validate_value("reply", text)
+        turn = _append_turn(
+            con, thread, "reply", text, head[0], head[1], grant.draft_digest, "synthetic-requester"
+        )
+        access.clear(con, grant)
+        con.commit()
+        return turn

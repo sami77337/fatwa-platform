@@ -70,6 +70,8 @@ def clarification_rows(snapshot):
     return [
         {
             "kind": e.kind,
+            "from_requester": e.actor == "synthetic-requester",
+            "reply_reference": e.reply_reference if e.actor == "synthetic-requester" else "",
             "exact": _packet_exact(e.text),
             "number": e.number,
             "source_count": e.source_count,

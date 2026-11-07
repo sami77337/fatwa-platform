@@ -41,6 +41,14 @@ class ClarificationDeskTests(SimpleTestCase):
         original = source_receipt("intake-7")
         append_source_event(Path(directory), original, synthetic_fixtures_only=True)
         client = Client(enforce_csrf_checks=True, HTTP_HOST="127.0.0.1")
+        login_url = "/review/login/"
+        csrf = client.get(login_url).context["csrf_token"]
+        login = client.post(
+            login_url,
+            urlencode({"token": token, "csrfmiddlewaretoken": str(csrf)}),
+            content_type="application/x-www-form-urlencoded",
+        )
+        self.assertEqual(login.status_code, 303)
         url = "/review/"
 
         def submit(screen, **action):
