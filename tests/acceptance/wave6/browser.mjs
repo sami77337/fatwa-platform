@@ -31,12 +31,40 @@ let browser, socket, cdp, stderr = "", injectSearchFailure = false, documentsLoa
 let phase = "service-preflight";
 let startup, startedAt;
 const elapsed = () => Math.round(performance.now() - startedAt);
-function finishStartup() {
+async function linuxMainThreadSnapshot(child) {
+  if (!Number.isSafeInteger(child?.pid) || child.pid <= 0 ||
+      child.exitCode !== null || child.signalCode !== null) return null;
+  // Only observe the owned main thread after the startup decision. Never wait on
+  // telemetry for more than 100 ms, even if a procfs read fails to settle.
+  const signal = AbortSignal.timeout(100);
+  const cutoff = new Promise(resolve => signal.addEventListener("abort", () => resolve(null), {once:true}));
+  const options = {encoding:"utf8", signal};
+  try {
+    const records = await Promise.race([cutoff, Promise.all([
+      readFile(`/proc/${child.pid}/schedstat`, options),
+      readFile(`/proc/${child.pid}/stat`, options),
+    ])]);
+    if (!records || child.exitCode !== null || child.signalCode !== null) return null;
+    const [sched, stat] = records;
+    const counters = /^(\d+)\s+(\d+)\s+(\d+)$/.exec(sched.trim());
+    // comm in /proc/PID/stat can contain spaces and closing parentheses.
+    const state = stat.slice(stat.lastIndexOf(")") + 1).match(/^ ([RSDZTWtXxKPI]) /);
+    if (!stat.startsWith(child.pid + " (") || !state || !counters) return null;
+    const [cpuNs, waitingNs, timeslices] = counters.slice(1).map(Number);
+    if (![cpuNs, waitingNs, timeslices].every(Number.isSafeInteger)) return null;
+    return {state:state[1], cpu_ms:Math.round(cpuNs / 1e6),
+      runqueue_ms:Math.round(waitingNs / 1e6), timeslices};
+  } catch { return null; }
+}
+async function finishStartup() {
   if (!startup || report.startup) return;
   // Take the process snapshot before cleanup can change the observed exit status.
   report.startup = {...startup, elapsed_ms:elapsed(), child:{
     pid:browser?.pid ?? null, exit_code:browser?.exitCode ?? null, signal:browser?.signalCode ?? null,
   }};
+  if (os.platform() === "linux") {
+    report.startup.linux_main_thread = await linuxMainThreadSnapshot(browser);
+  }
 }
 const profile = await mkdtemp(path.join(os.tmpdir(), "fatwa-e6-browser-"));
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -330,7 +358,7 @@ try {
   });
   report.browser=await cdp.send("Browser.getVersion");
   startup.stage = "ready";
-  finishStartup();
+  await finishStartup();
   phase="browser-interactions";
   for(const domain of ["Page","Runtime","Network"]) await cdp.send(domain+".enable");
   await cdp.send("Fetch.enable",{patterns:[{urlPattern:"*"}]});
@@ -353,7 +381,7 @@ try {
   report.review_batch_acceptance=report.tests.find(t=>t.name.startsWith("PR51 "))?.result??"NOT_RUN";
 }catch(error){report.result=phase==="browser-startup"?"BLOCKED":"FAIL";report.blocker=error.message;report.phase=phase;report.browser_stderr=stderr.replaceAll(profile,"<temporary-profile>").slice(-2000);}
 finally {
-  finishStartup();
+  await finishStartup();
   socket?.close();cdp?.close();
   if(browser && browser.exitCode===null && browser.signalCode===null) {
     browser.kill(); await Promise.race([new Promise(resolve=>browser.once("exit",resolve)),pause(3000)]);

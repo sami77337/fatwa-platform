@@ -21,7 +21,7 @@ const fixtureBytes = Buffer.from("synthetic asset bytes; NOT browser evidence");
 
 async function simulate({portRead, exitCode = null, signalCode = null,
   spawnError = false, namespace = "wave6-e6-synthetic", headingCount = 47,
-  assetFailure, stderr = "", cleanupError, exitDuringRead = false, target, socketEvent} = {}) {
+  assetFailure, stderr = "", cleanupError, exitDuringRead = false, target, socketEvent, procRead} = {}) {
   let now = 0;
   const deadlines = [];
   function advance(ms) {
@@ -30,7 +30,7 @@ async function simulate({portRead, exitCode = null, signalCode = null,
       if (now >= at) controller.abort(new DOMException("fixture timeout", "TimeoutError"));
     }
   }
-  const state = {sockets: [], polls: [], spawns: [], kills: 0, removals: [], http: [], logs: [], profiles: 0};
+  const state = {sockets: [], polls: [], spawns: [], procPaths: [], kills: 0, removals: [], http: [], logs: [], profiles: 0};
   const temporaryRoot = path.resolve("synthetic-e6-no-disk");
   const profile = path.join(temporaryRoot, "fatwa-e6-browser-fixture");
   const artifacts = path.join(temporaryRoot, "reports");
@@ -52,7 +52,7 @@ async function simulate({portRead, exitCode = null, signalCode = null,
     "node:path": {default: path},
     "node:url": {fileURLToPath},
     "node:os": {default: {
-      tmpdir: () => temporaryRoot, platform: () => "synthetic", release: () => "fixture", arch: () => "fixture",
+      tmpdir: () => temporaryRoot, platform: () => procRead ? "linux" : "synthetic", release: () => "fixture", arch: () => "fixture",
     }},
     "node:child_process": {
       execFileSync(executable, args) {
@@ -80,6 +80,12 @@ async function simulate({portRead, exitCode = null, signalCode = null,
         return profile;
       },
       async readFile(target, encoding) {
+        if (target.startsWith("/proc/")) {
+          state.procPaths.push(target);
+          assert.equal(encoding.encoding, "utf8");
+          assert.ok(encoding.signal);
+          return procRead(target, advance, browser);
+        }
         if (target === path.join(profile, "DevToolsActivePort")) {
           assert.equal(encoding?.encoding ?? encoding, "utf8");
           state.polls.push(now);
@@ -116,11 +122,13 @@ async function simulate({portRead, exitCode = null, signalCode = null,
     },
     // Virtual time only. Cap callbacks so a removed deadline cannot hang a test.
     setTimeout(callback, ms) {
+      if (ms === 10000 && socketEvent) return 1; // Synchronous mock CDP response.
       assert.ok([50, 3000].includes(ms), "Unexpected timer outside startup polling/cleanup");
       assert.ok(now < 20000, "Startup exceeded the deterministic fixture budget");
       advance(ms);
       callback();
     },
+    clearTimeout() {},
     AbortController, AbortSignal: {timeout: ms => {
       const controller = new AbortController();
       deadlines.push({at: now + ms, controller});
@@ -458,3 +466,60 @@ for (const mode of ["close", "error", "stall"]) {
     assert.equal(state.cleanupAt, mode === "stall" ? 12000 : 11950);
   });
 }
+
+test("Linux startup snapshot retains only the owned main thread's numeric counters and state", async () => {
+  const state = await simulate({procRead: file => file.endsWith("/schedstat")
+    ? "111000000 3456000000 42\n" : "123 (secret-name) with ) chars) S 1 0 0\n"});
+  assertNoAcceptance(state);
+  assert.deepEqual(state.procPaths.sort(), ["/proc/123/schedstat", "/proc/123/stat"]);
+  assert.deepEqual(state.report.startup.linux_main_thread, {
+    state:"S", cpu_ms:111, runqueue_ms:3456, timeslices:42,
+  });
+  assert.ok(!JSON.stringify(state.report).includes("secret-name"));
+  assert.equal(state.report.startup.elapsed_ms, 12000);
+});
+
+for (const mode of ["denied", "malformed", "stalled", "exited"]) {
+  test("unavailable Linux startup measurement preserves the verdict: " + mode, async () => {
+    const state = await simulate({procRead(file, advance, child) {
+      if (mode === "denied") throw Object.assign(Error("private diagnostic"), {code:"EACCES"});
+      if (mode === "stalled") {
+        if (file.endsWith("/schedstat")) advance(100);
+        return new Promise(() => {});
+      }
+      if (mode === "exited") child.exitCode = 5;
+      return file.endsWith("/schedstat") ? "1 2 3" : mode === "malformed" ? "invalid" : "123 (fixture) S 1";
+    }});
+    assertNoAcceptance(state);
+    assert.equal(state.report.startup.linux_main_thread, null);
+    assert.equal(state.report.startup.elapsed_ms, 12000);
+    if (mode === "stalled") assert.equal(state.cleanupAt, 12100);
+    assert.ok(!JSON.stringify(state.report).includes("private diagnostic"));
+  });
+}
+
+test("an already exited Chrome is not sampled by pid", async () => {
+  const state = await simulate({exitCode:23, procRead() { assert.fail("must not read procfs"); }});
+  assertNoAcceptance(state);
+  assert.deepEqual(state.procPaths, []);
+  assert.equal(state.report.startup.linux_main_thread, null);
+});
+
+test("the ready boundary is sampled once before the first interaction", async () => {
+  const state = await simulate({portRead:portAvailable, target:() => pageList(pageEndpoint),
+    procRead: file => file.endsWith("/stat") ? "123 (chrome) R 1" : "3000000 7000000 4",
+    socketEvent(socket) {
+      socket.send = data => {
+        const {id, method} = JSON.parse(data);
+        if (method !== "Browser.getVersion") throw Error("fixture stops at first interaction");
+        socket.dispatchEvent(new MessageEvent("message", {data:JSON.stringify({id, result:{}})}));
+      };
+      socket.dispatchEvent(new Event("open"));
+    },
+  });
+  assert.equal(state.report.startup.stage, "ready");
+  assert.deepEqual(state.report.startup.linux_main_thread, {state:"R", cpu_ms:3, runqueue_ms:7, timeslices:4});
+  assert.equal(state.procPaths.length, 2);
+  assert.equal(state.report.phase, "browser-interactions");
+  assert.equal(state.report.blocker, "fixture stops at first interaction");
+});
