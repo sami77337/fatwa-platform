@@ -15,6 +15,7 @@ from apps.fast9_case_source_join.source_journal import (
     JournalError,
     ReviewConflict,
     read_case_review,
+    history_digest,
     record_draft_note,
 )
 
@@ -30,10 +31,11 @@ TEMPLATE = "editorial_workbench/draft_notes.html"
 @require_http_methods(["GET", "HEAD", "POST"])
 def draft_notes(request):
     reviewer = signed_in(request)
+    author = signed_in(request, "author")
     context = {
         "case_key": CASE_KEY,
         "can_review": reviewer,
-        "can_author": signed_in(request, "author"),
+        "can_author": author,
     }
     status = 200
 
@@ -47,8 +49,8 @@ def draft_notes(request):
         return error("تعذّر فتح سجل القضية التدريبية.", 503)
 
     if request.method == "POST":
-        if not reviewer:
-            return error("تسجيل الملاحظات وإغلاقها متاحان للمراجع.", 403)
+        if not reviewer and not author:
+            return error("سجّل الدخول بالمكتب المختص أولًا.", 403)
         if request.content_type != "application/x-www-form-urlencoded":
             return error("استخدم نموذج الملاحظات المعروض.", 415)
         try:
@@ -57,7 +59,7 @@ def draft_notes(request):
                 set(fields) - {"csrfmiddlewaretoken"}
                 != {"action", "text", "revision", "draft_digest", "note_count"}
                 or any(len(fields.getlist(k)) != 1 for k in fields)
-                or fields["action"] not in {"request", "close", "withdraw"}
+                or fields["action"] not in {"request", "close", "withdraw", "submit", "confirm"}
                 or not re.fullmatch(r"[1-9][0-9]{0,2}", fields["revision"])
                 or not re.fullmatch(r"[0-9a-f]{64}", fields["draft_digest"])
                 or not re.fullmatch(r"0|[1-9][0-9]{0,2}", fields["note_count"])
@@ -66,10 +68,15 @@ def draft_notes(request):
                 return error("تعذّر تحديد الإجراء أو النسخة. افتح أحدث نسخة من الصفحة.", 400)
         except SuspiciousOperation:
             return error("تعذّرت قراءة النموذج.", 400)
+        role = "synthetic-mufti-author" if fields["action"] == "submit" else "synthetic-reviewer"
+        if (role == "synthetic-mufti-author" and not author) or (
+            role == "synthetic-reviewer" and not reviewer
+        ):
+            return error("لا تملك هذه الهوية صلاحية هذا الإجراء.", 403)
         try:
             record_draft_note(
                 directory,
-                reviewer="synthetic-reviewer",
+                reviewer=role,
                 revision=int(fields["revision"]),
                 draft_digest=fields["draft_digest"],
                 note_count=int(fields["note_count"]),
@@ -101,19 +108,45 @@ def draft_notes(request):
     if snapshot.drafts:
         latest = snapshot.drafts[-1]
         notes = snapshot.draft_notes
-        # The journal verifies the alternating request and resolution events.
+        # Change requests must be paired with their own resolution; author
+        # submissions and technical checks are independent audit events.
         history = []
-        for original, decision in zip(notes[::2], notes[1::2]):
-            history.append(
-                {
-                    "original": original,
-                    "text": _packet_exact(original.text),
-                    "decision": decision,
-                    "decision_time": datetime.fromisoformat(decision.recorded_at),
-                }
-            )
+        pending_request = None
+        for event in notes:
+            if event.action == "request":
+                pending_request = event
+            elif event.action in {"withdraw", "close"} and pending_request is not None:
+                history.append(
+                    {
+                        "original": pending_request,
+                        "text": _packet_exact(pending_request.text),
+                        "decision": event,
+                        "decision_time": datetime.fromisoformat(event.recorded_at),
+                    }
+                )
+                pending_request = None
         active = notes[-1] if notes and notes[-1].action == "request" else None
+        fresh = (
+            latest.source_count == len(snapshot.events)
+            and latest.source_digest == history_digest(snapshot.events)
+            and latest.reply_digest == snapshot.reply_digest
+            and not (snapshot.clarifications and snapshot.clarifications[-1].kind == "request")
+        )
+        last_note = notes[-1] if notes else None
+        open_note = bool(last_note and last_note.action == "request")
+        pending = bool(
+            last_note and last_note.action == "submit" and last_note.revision == latest.revision
+        )
+        confirmed = bool(
+            last_note and last_note.action == "confirm" and last_note.revision == latest.revision
+        )
         context.update(
+            fresh_evidence=fresh,
+            pending_review=pending,
+            technical_reviewed=confirmed and fresh,
+            can_submit=author and fresh and not open_note and len(notes) < MAX_NOTES
+            and not (pending or confirmed),
+            can_confirm=reviewer and fresh and pending and len(notes) < MAX_NOTES,
             revision=latest.revision,
             draft_digest=latest.digest,
             title=_packet_exact(latest.title),
@@ -124,5 +157,6 @@ def draft_notes(request):
             active_text=_packet_exact(active.text) if active else "",
             newer=bool(active and latest.revision > active.revision),
             history=history[::-1],
+            handoffs=[e for e in notes if e.action in {"submit", "confirm"}],
         )
     return render(request, TEMPLATE, context, status=status)

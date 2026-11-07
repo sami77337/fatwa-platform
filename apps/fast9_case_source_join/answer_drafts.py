@@ -74,7 +74,7 @@ class DraftNote:
 
 
 def validate_note(action, value):
-    if type(action) is not str or action not in {"request", "withdraw", "close"}:
+    if type(action) is not str or action not in {"request", "withdraw", "close", "submit", "confirm"}:
         raise DraftInputError("invalid_draft_note_action")
     if action == "request":
         try:
@@ -87,6 +87,14 @@ def validate_note(action, value):
 
 def note_action_allowed(notes, action, revision):
     last = notes[-1] if notes else None
+    if action == "submit":
+        if last and (last.action == "request" or revision < last.revision):
+            return False
+        return not last or revision > last.revision or last.action in {"withdraw", "close"}
+    if action == "confirm":
+        return bool(last and last.action == "submit" and revision == last.revision)
+    if last and last.action == "submit":
+        return action == "request" and revision == last.revision
     if last is None or last.action != "request":
         return action == "request"
     if action == "close":
@@ -175,7 +183,7 @@ def read(con, thread, expected_head):
         validate_note(event.action, event.text)
         if (
             event.number != number
-            or event.actor != REVIEWER
+            or event.actor != (AUTHOR if event.action == "submit" else REVIEWER)
             or not valid_timestamp(event.recorded_at)
             or type(event.revision) is not int
             or not 1 <= event.revision <= len(versions)
@@ -230,7 +238,7 @@ def append_note(con, notes, action, value, revision, draft_digest):
         value,
         revision,
         draft_digest,
-        REVIEWER,
+        AUTHOR if action == "submit" else REVIEWER,
         datetime.now(UTC).isoformat(timespec="microseconds"),
     )
     digest = _digest(notes[-1].digest if notes else "", ("change-note", *fields))
