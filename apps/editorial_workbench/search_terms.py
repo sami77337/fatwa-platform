@@ -6,7 +6,8 @@ import re
 
 from apps.reference.normalization import normalize_title
 
-_EQUIVALENT = {"بدون": "بلا", "دون": "بلا", "بلا": "بلا"}
+# Bare "دون" can mean "less than" in jurisprudential questions; do not conflate it.
+_EQUIVALENT = {"بدون": "بلا", "بلا": "بلا"}
 _WORD = re.compile(r"(?u)\w+")
 
 

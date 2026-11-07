@@ -7,14 +7,15 @@ from apps.reference.normalization import normalize_title
 
 class CaseSearchTests(unittest.TestCase):
     def test_negative_preposition_variants(self):
-        for query in ("بدون مقطع", "بلا مقطع", "دون مقطع"):
-            for saved in ("بلا مقطع", "بدون مقطع", "دون مقطع"):
+        for query in ("بدون مقطع", "بلا مقطع"):
+            for saved in ("بلا مقطع", "بدون مقطع"):
                 with self.subTest(query=query, saved=saved):
                     self.assertTrue(case_search_matches(query, "ما الحكم في التسجيل " + saved + " للصوت؟"))
 
     def test_preserves_word_boundaries(self):
         self.assertFalse(case_search_matches("دون مقطع", "ملف تدوين مقطع"))
         self.assertFalse(case_search_matches("بدون مقطع", "الحكم بدون مقصد"))
+        self.assertFalse(case_search_matches("دون عشرين", "بلا عشرين"))
 
     def test_unchanged_catalog_title_normalization(self):
         before = "السؤال بدون مقطع"
