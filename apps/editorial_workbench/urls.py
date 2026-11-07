@@ -4,7 +4,7 @@ from django.urls import path
 
 from . import views
 from .persisted import stored_audit
-from .source_review import source_review
+from .source_review import source_journal_review, source_review
 
 app_name = "editorial_workbench"
 urlpatterns = [
@@ -12,5 +12,6 @@ urlpatterns = [
     path("/style.css", views.stylesheet, name="style"),
     path("/workflow-audit", stored_audit, name="stored"),
     path("/intake-7/source-review", source_review, name="source_review"),
+    path("/intake-7/source-review/journal", source_journal_review, name="source_journal"),
     path("/<slug:key>", views.workbench, name="detail"),
 ]
