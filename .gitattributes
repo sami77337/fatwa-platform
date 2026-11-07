@@ -1,4 +1,0 @@
-# The S6 evidence registry pins the CRLF working-tree bytes of these three tracked records.
-AGENTS.md text eol=crlf
-docs/coordination/PARALLEL_EXECUTION_20261013.md text eol=crlf
-docs/product/D072_RELEASE_DEFERRAL.md text eol=crlf
