@@ -208,3 +208,24 @@ test('CLI rejects unknown or incomplete arguments without reading arbitrary inpu
     assert.equal(result.status, 2); assert.match(result.stderr, /Usage:/);
   }
 });
+
+test('tracked evidence accepts each frozen LF or CRLF representation and rejects mixed bytes', async () => {
+  for (const id of ['AGENTS', 'COORDINATION', 'D072_RECORD']) {
+    const source = registry.sources.find(s => s.id === id);
+    const raw = await readFile(new URL('../../../' + source.path, import.meta.url), 'utf8');
+    const lf = raw.replaceAll('\r\n', '\n');
+    const verify = text => verifySourceBytes(registry, new Map([[id, Buffer.from(text)]]));
+    assert.deepEqual(verify(lf), []);
+    assert.deepEqual(verify(lf.replaceAll('\n', '\r\n')), []);
+    assert.match(verify(lf.replace('\n', '\r\n')).join('\n'), /SHA256 mismatch/);
+    assert.match(verify(lf + ' ').join('\n'), /SHA256 mismatch/);
+  }
+});
+
+test('a tracked-repository hash cannot verify an original export or a task copy', async () => {
+  const raw = await readFile(new URL('../../../AGENTS.md', import.meta.url), 'utf8');
+  const bytes = Buffer.from(raw.replaceAll('\r\n', '\n'));
+  for (const id of ['SPEC_TEXT', 'CLAUSE_INDEX', 'ISSUE_7', 'ISSUE_10']) {
+    assert.match(verifySourceBytes(registry, new Map([[id, bytes]])).join('\n'), /SHA256 mismatch/);
+  }
+});
