@@ -15,7 +15,7 @@ from tools.fast9_pg_reference_consistency.guard import (
 # DiscoverRunner builds the suite BEFORE setup_databases/migrations. Fail early.
 validate_environment(os.environ)
 
-from django.db import connection, transaction  # noqa: E402
+from django.db import IntegrityError, connection, transaction  # noqa: E402
 from django.test import TransactionTestCase  # noqa: E402
 from django.test.utils import CaptureQueriesContext  # noqa: E402
 
@@ -77,6 +77,7 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
         # Real domain connection: existing navigation and reference evidence still agree.
         from apps.fast8_fiqh_navigation.django_adapter import DjangoNavigationReader
         from apps.fast8_fiqh_navigation.services import CatalogNavigation
+        from tools.fiqh_reading_trail.fixtures import synthetic_fixture as navigation_fixture
 
         with self.assertRaisesRegex(ValueError, "book-622"):
             CatalogNavigation(self.pin, self.edition_id)
@@ -91,8 +92,19 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
             {"edition": str(nav_id), "source_row_id": "30"},
             DjangoNavigationReader(),
         )
-        self.assertEqual(navigation.trail.status, "verified")
-        self.assertEqual(navigation.trail.current.evidence.printed_part, "الأول")
+        # Its root contains CRLF: valid stored source bytes, ineligible citation text.
+        self.assertEqual(navigation.trail.status, "unverified")
+        self.assertEqual(navigation.trail.reason, "incomplete_source_evidence")
+        supported, _ = navigation_fixture()
+        supported_id = ingest_catalog(
+            supported.spec, supported.records, dry_run=False, expected_checksum=supported.checksum
+        ).edition_id
+        self.assertEqual(check_catalog(supported, supported_id, self.reader).status, "CONSISTENT")
+        navigation = CatalogNavigation(supported, supported_id).navigate(
+            {"edition": str(supported_id), "source_row_id": "40"}, DjangoNavigationReader()
+        )
+        self.assertEqual(navigation.trail.status, "verified", navigation.trail.reason)
+        self.assertEqual(navigation.trail.current.evidence.printed_part, "تمهيد")
         self.assertEqual(navigation.trail.current.evidence.printed_page, 3)
 
     def check_inserted_variant(self, label, *, heading=None, edition=None, work=None, omit=None):
@@ -171,9 +183,25 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
         # A separate valid edition is outside the pinned scope, not an extra heading.
         self.assertEqual(self.check().status, "CONSISTENT")
         parent = ReferenceHeading.objects.get(edition_id=other_id, source_row_id=10)
-        crossed = self.check_inserted_variant("crossed", heading={"parent_id": parent.pk})
+        with self.assertRaises(IntegrityError) as error, transaction.atomic():
+            self.check_inserted_variant("foreign", heading={"parent_id": parent.pk})
+        self.assertEqual(error.exception.__cause__.sqlstate, "23514")
+        self.assertIn("Parent must exist in the same edition", str(error.exception))
+        # A same-edition parent of the right depth is legal SQL but differs from the source pin.
+        spec = replace(self.pin.spec, edition_key="synthetic-redirected-parent")
+        expected = prepare_catalog(spec, self.pin.records)
+        actual = prepare_catalog(
+            spec,
+            tuple(
+                replace(row, parent_source_row_id=50) if row.source_row_id == 30 else row
+                for row in self.pin.records
+            ),
+        )
+        actual_id = ingest_catalog(
+            actual.spec, actual.records, dry_run=False, expected_checksum=actual.checksum
+        ).edition_id
+        crossed = check_catalog(expected, actual_id, self.reader)
         self.assertEqual(crossed.status, "INCONSISTENT")
-        self.assertEqual(crossed.reason, "heading_fields_or_parent")
         self.assertEqual(check_catalog(self.pin, other_id, self.reader).status, "NOT_CONNECTED")
 
     def test_nested_transaction_and_unknown_edition_never_claim_consistency(self):
