@@ -142,7 +142,12 @@ def resolve(link: Mapping[str, object], catalog: ReadOnlyCatalog) -> Resolution:
     evidence = candidates[0]
     if type(evidence) is not Heading:
         return Resolution(Outcome.UNVERIFIED, ("incomplete_source_evidence",))
-    if evidence.edition_id != edition or evidence.source_row_id != row:
+    if (
+        not _positive(evidence.edition_id)
+        or not _positive(evidence.source_row_id)
+        or evidence.edition_id != edition
+        or evidence.source_row_id != row
+    ):
         return Resolution(Outcome.UNVERIFIED, ("adapter_identity_violation",))
     if (
         not _text(evidence.work_title)

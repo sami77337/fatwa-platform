@@ -3,6 +3,7 @@
 import json
 import unittest
 from dataclasses import replace
+from unittest.mock import Mock
 
 from apps.reference_links import (
     CatalogReadError,
@@ -142,6 +143,22 @@ class ResolutionTests(unittest.TestCase):
 
         for adapter in (Unavailable(), WrongEdition()):
             self.assertEqual(resolve(self.link, adapter).outcome, Outcome.UNVERIFIED)
+
+    def test_adapter_ids_must_be_exact_integers_before_a_citation_is_exposed(self):
+        link = {"edition_id": 1, "source_row_id": 1}
+        row = replace(BASE, source_row_id=1)
+        catalog = Mock(spec=["lookup"])
+        for field in link:
+            for value in (True, 1.0):
+                with self.subTest(field=field, value=value):
+                    catalog.lookup.return_value = (replace(row, **{field: value}),)
+                    result = resolve(link, catalog)
+                    self.assertEqual(result.outcome, Outcome.UNVERIFIED)
+                    self.assertEqual(result.reasons, ("adapter_identity_violation",))
+                    self.assertIsNone(result.internal_payload()["toc_url"])
+                    self.assertIsNone(result.evidence)
+                    with self.assertRaises(ValueError):
+                        render_citation(result)
 
     def test_snapshot_bound(self):
         with self.assertRaises(ValueError):
