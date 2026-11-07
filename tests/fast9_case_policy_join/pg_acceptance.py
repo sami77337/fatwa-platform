@@ -1,5 +1,7 @@
 """Opt-in only: not auto-collected by offline test discovery; never skip/xfail."""
 
+import json
+
 from django.db import connection, transaction
 from django.test import SimpleTestCase
 
@@ -17,6 +19,8 @@ class SyntheticNonMutationAcceptance(SimpleTestCase):
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SET TRANSACTION READ ONLY")
+                cursor.execute("SHOW transaction_read_only")
+                self.assertEqual(cursor.fetchone()[0], "on")
                 cursor.execute("SELECT current_database(), current_user")
                 self.assertEqual(cursor.fetchone(), ("test_" + BASE, "wave7_synthetic"))
                 cursor.execute("SELECT count(*) FROM intake_workflow_intakeitem")
@@ -38,4 +42,21 @@ class SyntheticNonMutationAcceptance(SimpleTestCase):
             self.assertEqual(decision.persisted_case_connection, "NOT_CONNECTED")
             with connection.cursor() as cursor:
                 cursor.execute("SELECT count(*) FROM intake_workflow_intakeitem")
-                self.assertEqual(cursor.fetchone()[0], before)
+                after = cursor.fetchone()[0]
+            self.assertEqual(after, before)
+            print(
+                "FAST9_POLICY "
+                + json.dumps(
+                    {
+                        "database": context.database_name,
+                        "oid": context.database_oid,
+                        "intake_rows_before": before,
+                        "intake_rows_after": after,
+                        "effect": decision.effect,
+                        "allowed": decision.allowed,
+                        "persisted_case_connection": decision.persisted_case_connection,
+                        "transaction_read_only": True,
+                    },
+                    sort_keys=True,
+                )
+            )
