@@ -1,8 +1,14 @@
 """Bounded, read-only SSR entry points; no catalog mutations."""
 
+from urllib.parse import urlsplit
+
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db import DatabaseError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.http import require_safe
 
 from apps.reference.query import InvalidQuery, Page, bounded_int, strict_bool, validate_search
@@ -14,6 +20,51 @@ from apps.reference.services import (
     roots,
     search,
 )
+
+_PAGES = {
+    "home": ("الرئيسية | الفهرس الفقهي", "تصفّح أبواب المرجع الفقهي وابحث في عناوينه."),
+    "help": (
+        "دليل الاستخدام والمصدر | الفهرس الفقهي",
+        "دليل تصفّح عناوين المرجع الفقهي والبحث فيها وتوثيق مواضعها.",
+    ),
+}
+_validate_https = URLValidator(schemes=["https"])
+
+
+def _public_origin() -> str:
+    # The final domain is an owner decision. Request headers never select it.
+    value = getattr(settings, "PUBLIC_SITE_ORIGIN", None)
+    if not isinstance(value, str) or not value:
+        return ""
+    try:
+        _validate_https(value)
+        parts = urlsplit(value)
+        port = parts.port  # urlsplit defers port validation until access.
+    except (ValidationError, ValueError):
+        return ""
+    if (
+        port == 0
+        or parts.username is not None
+        or value.removesuffix("/") != f"https://{parts.netloc}"
+    ):
+        return ""
+    return f"https://{parts.netloc}"
+
+
+def _render_page(request: HttpRequest, context: dict, *, status: int = 200) -> HttpResponse:
+    page = context["current_page"]
+    context["page_title"], context["page_description"] = _PAGES[page]
+    # Search input can contain personal text. Only the clean homepage and the
+    # fixed source guide represent shareable public page identities.
+    shareable = page == "help" or (
+        not request.GET and context.get("catalog_state") != "unavailable"
+    )
+    context["withhold_preview"] = status != 200 or not shareable
+    if not context["withhold_preview"]:
+        origin = _public_origin()
+        if origin:
+            context["canonical_url"] = origin + reverse("public_help" if page == "help" else "home")
+    return render(request, f"public_site/{page}.html", context, status=status)
 
 
 @require_safe
@@ -72,12 +123,12 @@ def home(request: HttpRequest) -> HttpResponse:
         if context["catalog_state"] != "available":
             context["catalog_state"] = "invalid"
         context["error"] = "تحقق من البحث: اكتب حتى ١٦٠ حرفًا وعشر كلمات، واختر مرشحات صالحة."
-        return render(request, "public_site/home.html", context, status=400)
+        return _render_page(request, context, status=400)
     except (DatabaseError, CatalogUnavailable, HeadingNotFound):
         context = {"current_page": "home", "catalog_state": "unavailable"}
-    return render(request, "public_site/home.html", context)
+    return _render_page(request, context)
 
 
 @require_safe
 def help_page(request: HttpRequest) -> HttpResponse:
-    return render(request, "public_site/help.html", {"current_page": "help"})
+    return _render_page(request, {"current_page": "help"})
