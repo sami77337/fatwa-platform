@@ -29,6 +29,24 @@
     </p>
     {% if recorded_at %}<p>سجّل المراجع التجريبي آخر قراءة في <time datetime="{{ recorded_at|date:'c' }}">{{ recorded_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان.</p>{% endif %}
   </section>
+  {% if reading_diff %}
+  <section class="panel" aria-labelledby="reading-diff-heading" data-diff="{{ reading_diff.kind }}">
+    <h2 id="reading-diff-heading">ما تغيّر منذ آخر قراءة</h2>
+    <p>المقارنة بين نص السؤال عند الحدث {{ reading_diff.baseline_count }} ونصّه عند الحدث {{ current_count }}.</p>
+    {% if reading_diff.kind == "same" %}
+    <p>وردت أحداث جديدة، والنص الحالي يطابق النص الذي قرأته سابقًا. راجع <a href="#history-heading">تاريخ السؤال</a> وسجّل قراءة هذه النسخة.</p>
+    {% elif reading_diff.kind == "omitted" %}
+    <p>لتتبّع التغييرات، قارن النصوص الكاملة في <a href="#history-heading">تاريخ السؤال</a>.</p>
+    {% else %}
+    {% if reading_diff.kind == "deleted" %}<p>حُذفت الرسالة بعد قراءتك السابقة.</p>
+    {% elif reading_diff.kind == "restored" %}<p>عاد نص السؤال إلى الصيغة التي وردت عند الاستلام.</p>{% endif %}
+    {% if reading_diff.segments %}
+    <p class="legend" id="reading-diff-legend"><span><del>المحذوف</del> مشطوب</span><span><ins>المضاف</ins> تحته خط</span></p>
+    <pre class="exact-text" dir="auto" aria-describedby="reading-diff-legend" id="reading-diff-text"><bdi dir="auto">{% for segment in reading_diff.segments %}{% if segment.kind == "removed" %}<del>{{ segment.text }}</del>{% elif segment.kind == "added" %}<ins>{{ segment.text }}</ins>{% else %}{{ segment.text }}{% endif %}{% endfor %}</bdi></pre>
+    {% endif %}
+    {% endif %}
+  </section>
+  {% endif %}
   <section class="panel" aria-labelledby="text-heading">
     <h2 id="text-heading">نص السؤال</h2>
     <p>{{ source_status }}</p>

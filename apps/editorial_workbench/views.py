@@ -9,7 +9,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.template import engines
 from django.urls import reverse
-from django.utils.html import escape
+from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_safe
 
@@ -319,10 +319,14 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
     return response
 
 
+def _exact_text(value: str) -> str:
+    """Escape source text while preserving carriage returns in HTML."""
+    return mark_safe(str(escape(value)).replace("\r", "&#13;"))
+
+
 def _packet_exact(value: str | None, missing: str = "") -> str:
-    """Escape source first; preserve CR and initial LF through HTML parsing."""
-    escaped = str(escape(missing if value is None else value)).replace("\r", "&#13;")
-    return mark_safe("<code>" + escaped + "</code>")
+    # The code element also preserves an initial newline inside pre.
+    return format_html("<code>{}</code>", _exact_text(missing if value is None else value))
 
 
 def _packet_text(value) -> str:

@@ -91,7 +91,11 @@ class SourceJournalReviewTests(SimpleTestCase):
             self.assertEqual(post().status_code, 303)
             self.assertContains(client.get(url), 'data-state="current"')
             self.append(correction)
-            self.assertContains(post(), 'href="#event-2"', status_code=409)
+            conflict = post()
+            self.assertContains(conflict, 'href="#event-2"', status_code=409)
+            self.assertContains(conflict, 'data-diff="edited"', status_code=409)
+            self.assertContains(conflict, "<del>", status_code=409)
+            self.assertContains(conflict, "<ins>", status_code=409)
         self.assertContains(self.read(), 'data-state="changed"')
 
     def test_empty_history_does_not_create_a_store_or_imply_the_source_is_unchanged(self):

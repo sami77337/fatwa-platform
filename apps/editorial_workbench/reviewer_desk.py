@@ -22,9 +22,10 @@ from apps.fast9_case_source_join.source_journal import (
     read_review_state,
 )
 
+from .reading_diff import reading_diff
 from .source_review import CASE_KEY, DRAFT_REVISION, KINDS, STATUS, reading_state
 from .source_review_identity import authenticate_fixture_reviewer
-from .views import _packet_exact, _source_journal_directory
+from .views import _exact_text, _packet_exact, _source_journal_directory
 
 TEMPLATE = "editorial_workbench/reviewer_desk.html"
 DESK_SETTINGS = "apps.editorial_workbench.reviewer_settings"
@@ -121,6 +122,12 @@ def reviewer_desk(request):
     reviewed_count = receipt.count if receipt else 0
     state = reading_state(receipt, len(events), observation.draft_revision_sha256)
 
+    difference = reading_diff(events, reviewed_count)
+    if difference:
+        difference["segments"] = [
+            {"kind": part["kind"], "text": _exact_text(part["text"])}
+            for part in difference["segments"]
+        ]
     timeline = [
         {
             "number": i,
@@ -145,6 +152,7 @@ def reviewer_desk(request):
             "events": timeline,
             "reviewed_count": reviewed_count,
             "review_state": state,
+            "reading_diff": difference,
             "recorded_at": datetime.fromisoformat(receipt.recorded_at) if receipt else None,
             "message": message,
             "can_ack": True,
