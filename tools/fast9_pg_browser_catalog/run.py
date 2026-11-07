@@ -180,8 +180,18 @@ def postgres(report):
             catalog="FAIL" if old is not None else "NOT_RUN",
             reason="OWNED_SYNTHETIC_POSTGRES_UNAVAILABLE",
         )
-    except Exception:
-        # No SQL, credentials, arbitrary exceptions or real data in public output.
+    except Exception as error:
+        # Emit only locations in this harness and a driver SQLSTATE, never exception text.
+        trace = error.__traceback__
+        while trace:
+            code = trace.tb_frame.f_code
+            if code.co_filename in (__file__, db.__file__):
+                report["failed_check"] = f"{code.co_name}:{trace.tb_lineno}"
+            trace = trace.tb_next
+        state = getattr(error.__cause__, "sqlstate", None)
+        if isinstance(state, str) and len(state) == 5 and state.isascii() and state.isalnum():
+            report["sqlstate"] = state
+        report["exception_type"] = type(error).__name__
         report.update(catalog="FAIL", reason="POSTGRES_ACCEPTANCE_FAILED")
     finally:
         try:
