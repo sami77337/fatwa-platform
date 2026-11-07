@@ -183,8 +183,14 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
         # A separate valid edition is outside the pinned scope, not an extra heading.
         self.assertEqual(self.check().status, "CONSISTENT")
         parent = ReferenceHeading.objects.get(edition_id=other_id, source_row_id=10)
+        require_target(test_database=True)
+        child = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=30)
+        child.pk = None
+        child.parent = parent
+        child.source_id = "synthetic-foreign-parent"
+        child.source_row_id = child.source_order = child.position = 999
         with self.assertRaises(IntegrityError) as error, transaction.atomic():
-            self.check_inserted_variant("foreign", heading={"parent_id": parent.pk})
+            child.save(force_insert=True)
         self.assertEqual(error.exception.__cause__.sqlstate, "23514")
         self.assertIn("Parent must exist in the same edition", str(error.exception))
         # A same-edition parent of the right depth is legal SQL but differs from the source pin.
