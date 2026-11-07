@@ -149,3 +149,27 @@ that coverage. No public endpoint is added and no shared URL mount is needed.
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; SCOPE_DEVIATION_HOLD;
 NOT_DEPLOYED; U03/U10 OWNER_APPROVAL_PENDING. No owner, catalog-policy,
 scholarly, production or release acceptance is inferred.
+
+## Replaying synthetic source changes
+
+`source_history.source_receipt(case_key)` reads the fixed Wave7 intake fixture.
+It accepts `intake-1`, `intake-4` and `intake-7`. The receipt carries both
+the UTF-8 bytes of the decoded question and the SHA-256 of the original JSON
+row slice. The latter covers the original JSON spelling and escapes. The
+three fabricated messaging envelopes share a message ID and differ by
+account or conversation. External intake IDs and equal question text cannot
+substitute for the scoped message and case-row identities.
+
+`replay_source_history(events, synthetic_fixtures_only=True)` takes an ordered
+list or tuple of 1–128 supplied deliveries and returns an immutable tuple of
+accepted events. The first must equal the canonical receipt. Each correction
+or deletion references the preceding distinct event and retains the receipt's
+case, row hash, channel, account, conversation and message. Exact retries
+deduplicate even after later changes. Conflicting reuse, forks, out-of-order
+events and new changes after deletion raise `ValueError`. A correction may
+use either fixed `CORRECTION_BODIES` example or restore the original question.
+A deletion appends an empty-body tombstone. The original bytes and every
+intermediate version remain available in the returned history.
+
+This local exercise uses fabricated envelope and event identifiers. Persistence,
+provider authentication and receipt of live provider events are outside its scope.
