@@ -29,7 +29,7 @@ Success confirms the saved prefix and allows further events after it. A shorter 
 
 ## Record reading a specific version
 
-From an interactive project terminal run the following command and open <http://127.0.0.1:8017/review/>. The launcher displays a temporary reviewer token. Read the question, paste the token and submit. The desk flags later corrections or deletions and links to the first event after the saved reading. A form opened before a correction returns HTTP 409 with the updated text; review it before submitting again.
+From an interactive project terminal run the following command and open <http://127.0.0.1:8017/review/>. The launcher displays a temporary reviewer token. Sign in with the token, read the question, and record the reading. The reviewer session lasts 30 minutes. The desk flags later corrections or deletions and links to the first event after the saved reading. A form opened before a correction returns HTTP 409 with the updated text; review it before submitting again.
 
 ```sh
 python -m apps.editorial_workbench.reviewer_server --demo
@@ -42,3 +42,9 @@ A preconfigured launcher can use `FATWA_SYNTHETIC_REVIEWER_TOKEN_SHA256`, the lo
 After recording a reading, the desk can save a typed training clarification for the same case. The case waits for a reply. An operator can simulate its arrival by entering invented text or selecting an example. The original question and conversation are kept separately. A new reply is marked unread even when the source wording is identical. Read the reply before recording a fresh receipt or asking another question. Both desks show the saved thread and its associated source version.
 
 The first successful clarification upgrades the dedicated local journal to v3. Use the same code version for all processes that share it. HTTP remains limited to the training workstation; these actions do not contact a requester.
+
+## Answer from the local requester page
+
+After saving a clarification, choose **إصدار رمز الردّ** in the reviewer desk. Open **صفحة صاحب السؤال** in a separate browser profile on the same machine and enter the issued code. The requester can read that specific prompt, submit one training response and keep the displayed reply reference. The desk shows the same reference and identifies the reply as coming from the requester page.
+
+The code expires after 30 minutes. Replacing or cancelling it, changing the source, or saving an answer closes the old code. The first issue upgrades this local journal to v4. Use this version in all processes that share it. The independent workbench preview is for a trusted development workstation; the reviewer and requester demonstration runs on the dedicated loopback desk.

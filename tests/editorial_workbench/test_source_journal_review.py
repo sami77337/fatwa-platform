@@ -69,6 +69,14 @@ class SourceJournalReviewTests(SimpleTestCase):
             ALLOWED_HOSTS=["127.0.0.1"],
         ):
             client = Client(enforce_csrf_checks=True, HTTP_HOST="127.0.0.1")
+            login_url = "/review/login/"
+            csrf = client.get(login_url).context["csrf_token"]
+            login = client.post(
+                login_url,
+                urlencode({"token": token, "csrfmiddlewaretoken": str(csrf)}),
+                content_type="application/x-www-form-urlencoded",
+            )
+            self.assertEqual(login.status_code, 303)
             url = "/review/"
             ctx = client.get(url).context
             fields = {

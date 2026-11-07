@@ -27,7 +27,7 @@
     <h2 id="review-state">حالة القراءة</h2>
     <p class="notice" role="status" id="reading-status" data-state="{{ review_state }}">
       {% if has_new_reply %}
-      ورد ردّ تدريبي جديد منذ آخر قراءة. <a href="#clarification-thread">اقرأ الردّ على الاستيضاح</a>.
+      ورد ردّ جديد على الاستيضاح منذ آخر قراءة. <a href="#clarification-thread">اقرأ الردّ على الاستيضاح</a>.
       {% if reviewed_count and reviewed_count < current_count %}وتحدّث نصّ المصدر أيضًا. <a href="#event-{{ reviewed_count|add:'1' }}">انتقل إلى أول تحديث في السؤال</a>.{% endif %}
       {% if review_state == "draft_changed" %}تغيّرت المسودة أيضًا منذ آخر قراءة.{% endif %}
       {% elif review_state == "current" %}سُجّلت قراءة هذه النسخة من السؤال{% if thread %} والردود المتاحة{% endif %}، ورُبطت بالمسودة رقم {{ revision }}.
@@ -73,13 +73,14 @@
   </section>
   <section class="panel" aria-labelledby="clarification-thread">
     <h2 id="clarification-thread">الاستيضاحات والردود</h2>
-    {% if waiting %}<p class="notice" role="status" id="clarification-waiting">بانتظار ردّ تدريبي على آخر طلب استيضاح.</p>{% endif %}
+    {% if waiting %}<p class="notice" role="status" id="clarification-waiting">بانتظار الردّ على آخر طلب استيضاح.</p>{% endif %}
     {% if thread %}
     <ol class="timeline">
       {% for entry in thread %}<li id="clarification-{{ entry.number }}">
-        <strong>{% if entry.kind == "request" %}طلب استيضاح{% else %}ردّ تدريبي{% endif %}</strong>
+        <strong>{% if entry.kind == "request" %}طلب استيضاح{% elif entry.from_requester %}ردّ من صفحة صاحب السؤال{% else %}ردّ تدريبي أدخله المشغّل{% endif %}</strong>
         · <time datetime="{{ entry.recorded_at|date:'c' }}">{{ entry.recorded_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان
         · <a href="#event-{{ entry.source_count }}">نسخة السؤال عند الحدث {{ entry.source_count }}</a>
+        {% if entry.reply_reference %} · مرجع الردّ <bdi dir="ltr">{{ entry.reply_reference }}</bdi>{% endif %}
         <pre class="exact-text" dir="auto">{{ entry.exact }}</pre>
         {% if entry.kind == "reply" %}
         <p>{% if entry.unread %}ينتظر هذا الردّ تسجيل قراءة المراجع.{% else %}سجّل المراجع قراءة هذا الردّ.{% endif %}</p>
@@ -88,8 +89,41 @@
     </ol>
     {% else %}<p>لا توجد استيضاحات مسجّلة لهذه القضية.</p>{% endif %}
 
+    {% if waiting %}
+    <section aria-labelledby="reply-access-heading">
+      <h3 id="reply-access-heading">إتاحة الردّ لصاحب السؤال</h3>
+      {% if grant_active %}
+      <p>رمز الردّ سارٍ حتى <time datetime="{{ grant_expires_at|date:'c' }}">{{ grant_expires_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان. يفتح هذا الرمز طلب الاستيضاح الحالي فقط.</p>
+      {% elif can_issue_code %}
+      <p>أصدر رمزًا مؤقتًا يتيح لصاحب السؤال فتح هذا الطلب وإضافة ردّ واحد.</p>
+      {% else %}
+      <p>راجع آخر تحديث للقضية وسجّل قراءتك قبل إصدار رمز الردّ.</p>
+      {% endif %}
+      {% if issued_code and grant_active %}
+      <label for="issued-reply-code">رمز الردّ لهذا الطلب</label>
+      <input id="issued-reply-code" value="{{ issued_code }}" dir="ltr" readonly autocomplete="off" spellcheck="false" aria-describedby="issued-reply-help">
+      <p id="issued-reply-help">انسخ الرمز الآن. في تجربة صاحب السؤال، افتح <a href="{{ reply_portal_url }}">صفحة الردّ</a> وأدخل هذا الرمز.</p>
+      {% elif grant_active %}
+      <p><a href="{{ reply_portal_url }}">فتح صفحة الردّ لصاحب السؤال</a></p>
+      {% endif %}
+      {% if can_issue_code or grant_active %}
+      <form method="post" id="reply-code-form">
+        {% csrf_token %}
+        <input type="hidden" name="count" value="{{ current_count }}">
+        <input type="hidden" name="source_digest" value="{{ source_digest }}">
+        <input type="hidden" name="draft_digest" value="{{ draft_digest }}">
+        <input type="hidden" name="thread_digest" value="{{ thread_digest }}">
+        <input type="hidden" name="reply_digest" value="{{ reply_digest }}">
+        <input type="hidden" name="grant_revision" value="{{ grant_revision }}">
+        {% if can_issue_code %}<button type="submit" name="action" value="issue_reply_code">{% if grant_active %}استبدال الرمز الحالي برمز جديد{% else %}إصدار رمز الردّ{% endif %}</button>{% endif %}
+        {% if grant_active %}<button type="submit" name="action" value="revoke_reply_code">إلغاء رمز الردّ الحالي</button>{% endif %}
+      </form>
+      {% endif %}
+    </section>
+    {% endif %}
+
     {% if can_request or can_reply %}
-    <h3>{% if can_request %}طلب استيضاح جديد{% else %}تجربة وصول ردّ{% endif %}</h3>
+    {% if can_reply %}<details{% if reply_value %} open{% endif %}><summary>محاكاة ردّ من مكتب المراجع</summary>{% else %}<h3>طلب استيضاح جديد</h3>{% endif %}
     <form method="post" id="{% if can_request %}clarification-request-form{% else %}clarification-reply-form{% endif %}">
       {% csrf_token %}
       <input type="hidden" name="count" value="{{ current_count }}">
@@ -113,10 +147,9 @@
       <p><label for="clarification-reply-text">ردّ تدريبي بصياغتك (حتى 500 حرف)</label><br>
       <textarea id="clarification-reply-text" name="reply_text" rows="3" cols="24" maxlength="500" dir="auto" aria-describedby="reply-help">{{ reply_value }}</textarea></p>
       {% endif %}
-      <label for="thread-token">رمز المراجع التجريبي</label>
-      <input type="password" id="thread-token" name="token" dir="ltr" required minlength="64" maxlength="64" pattern="[a-f0-9]{64}" autocomplete="off" spellcheck="false" autocapitalize="none">
       <button type="submit">{% if can_request %}حفظ طلب الاستيضاح{% else %}إضافة الردّ التجريبي{% endif %}</button>
     </form>
+    {% if can_reply %}</details>{% endif %}
     {% elif can_ack and not waiting %}
       {% if review_state != "current" or has_new_reply %}<p>لتسجيل طلب استيضاح، <a href="#record-heading">سجّل قراءة النسخة الحالية</a> أولًا.</p>{% endif %}
     {% endif %}
@@ -145,7 +178,7 @@
   {% if can_ack and review_state != "current" or can_ack and has_new_reply %}
   <section class="panel" aria-labelledby="record-heading">
     <h2 id="record-heading">تسجيل القراءة</h2>
-    <p id="record-help">بعد الاطّلاع على أحداث السؤال حتى الرقم {{ current_count }}{% if has_new_reply %} وقراءة الردّ الجديد{% endif %}، أدخل رمز المراجع التجريبي لحفظ إقرار قراءة هذه النسخة وربطه بالمسودة رقم {{ revision }}.</p>
+    <p id="record-help">بعد الاطّلاع على أحداث السؤال حتى الرقم {{ current_count }}{% if has_new_reply %} وقراءة الردّ الجديد{% endif %}، سجّل قراءتك لربطها بالمسودة رقم {{ revision }}.</p>
     <form method="post">
       {% csrf_token %}
       {% if prompt_value and not waiting and not thread_full %}<input type="hidden" name="resume_prompt" value="{{ prompt_value }}">{% endif %}
@@ -154,13 +187,15 @@
       <input type="hidden" name="draft_digest" value="{{ draft_digest }}">
       <input type="hidden" name="thread_digest" value="{{ thread_digest }}">
       <input type="hidden" name="reply_digest" value="{{ reply_digest }}">
-      <label for="review-token">رمز المراجع التجريبي</label>
-      <input type="password" id="review-token" name="token" dir="ltr" required minlength="64" maxlength="64" pattern="[a-f0-9]{64}" autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="record-help">
-      <button type="submit">تسجيل أنني قرأت هذه النسخة</button>
+      <button type="submit" aria-describedby="record-help">تسجيل أنني قرأت هذه النسخة</button>
     </form>
   </section>
   {% endif %}
   {% endif %}
+  <form method="post" action="/review/logout/" id="reviewer-logout">
+    {% csrf_token %}
+    <button type="submit">خروج المراجع</button>
+  </form>
 </main>
 </body>
 </html>

@@ -33,6 +33,11 @@ class ClarificationEvent:
     source_count: int
     source_digest: str
     draft_digest: str
+    actor: str = "synthetic-reviewer"
+
+    @property
+    def reply_reference(self) -> str:
+        return f"R-{self.number:03d}-{self.digest[:12].upper()}"
 
 
 def validate_value(kind, value):
@@ -57,11 +62,21 @@ def valid_timestamp(value):
     return stamp.tzinfo == UTC and stamp.isoformat(timespec="microseconds") == value
 
 
-def turn_digest(previous, number, kind, value, recorded_at, count, source_digest, draft_digest):
+def turn_digest(
+    previous,
+    number,
+    kind,
+    value,
+    recorded_at,
+    count,
+    source_digest,
+    draft_digest,
+    actor="synthetic-reviewer",
+):
     # Scope and the complete prior dialogue are part of each version, including its prompt.
     data = [
         "intake-7",
-        "synthetic-reviewer",
+        actor,
         previous,
         number,
         kind,
@@ -107,7 +122,7 @@ for _table, _key in (
         )
 
 
-def read_thread(con):
+def read_thread(con, *, requester_enabled=False):
     rows = con.execute(
         "SELECT t.*,e.digest FROM clarification_turns t LEFT JOIN source_events e "
         "ON e.case_key='intake-7' AND t.source_count=e.seq ORDER BY t.number LIMIT ?",
@@ -120,6 +135,9 @@ def read_thread(con):
     for i, (n, kind, value, recorded, count, source, draft, digest, event_digest) in enumerate(
         rows, 1
     ):
+        actor = "synthetic-reviewer"
+        if kind == "requester_reply" and requester_enabled:
+            kind, actor = "reply", "synthetic-requester"
         validate_value(kind, value)
         if (
             n != i
@@ -129,10 +147,13 @@ def read_thread(con):
             or not valid_timestamp(recorded)
             or type(draft) is not str
             or not _HEX.fullmatch(draft)
-            or turn_digest(previous, n, kind, value, recorded, count, source, draft) != digest
+            or turn_digest(previous, n, kind, value, recorded, count, source, draft, actor)
+            != digest
         ):
             raise ValueError("invalid_clarification_record")
-        thread.append(ClarificationEvent(n, kind, value, recorded, digest, count, source, draft))
+        thread.append(
+            ClarificationEvent(n, kind, value, recorded, digest, count, source, draft, actor)
+        )
         previous = digest
     if con.execute("SELECT * FROM clarification_head LIMIT 2").fetchall() != [
         ("intake-7", len(rows), previous)

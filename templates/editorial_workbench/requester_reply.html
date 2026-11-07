@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الردّ على طلب استيضاح</title>
+  <link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">انتقل إلى المحتوى</a>
+<header class="site-header">
+  <div class="shell">
+    <p class="eyebrow">صفحة صاحب السؤال · تجربة محلية ببيانات تدريبية</p>
+    <h1>الردّ على طلب استيضاح</h1>
+  </div>
+</header>
+<main id="main" class="shell" tabindex="-1">
+  {% if message %}<p class="notice" role="{% if phase == 'sent' %}status{% else %}alert{% endif %}">{{ message }}</p>{% endif %}
+  {% if phase == "compose" %}
+  <section class="panel" aria-labelledby="request-heading">
+    <h2 id="request-heading">ما يريد المراجع توضيحه</h2>
+    <pre class="exact-text" id="clarification-prompt" dir="auto">{{ prompt_exact }}</pre>
+    {% if source_exact != None %}
+    <details><summary>نص السؤال عند إصدار الرمز</summary><pre class="exact-text" id="request-source" dir="auto">{{ source_exact }}</pre></details>
+    {% endif %}
+    <p>يمكن استخدام الرمز حتى <time datetime="{{ expires_at|date:'c' }}">{{ expires_at|date:"H:i" }}</time> بتوقيت عمّان.</p>
+    <form method="post" id="requester-reply-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reply">
+      <input type="hidden" name="code" value="{{ code }}">
+      {% if form_proof %}<input type="hidden" name="form_proof" value="{{ form_proof }}">{% endif %}
+      <label for="requester-text">ردّك على طلب الاستيضاح</label>
+      <p id="reply-help">اكتب التفصيل المطلوب في حدود 500 حرف، باستخدام بيانات المثال التدريبي. راجع نصّك قبل إرساله.</p>
+      <textarea id="requester-text" name="text" rows="5" cols="24" maxlength="500" required dir="auto" aria-describedby="reply-help">{{ text_value }}</textarea>
+      <p><button type="submit">إرسال ردّي إلى المراجع</button></p>
+    </form>
+  </section>
+  {% elif phase == "sent" %}
+  <section class="panel" aria-labelledby="sent-heading">
+    <h2 id="sent-heading">حُفظ ردّك في القضية التدريبية</h2>
+    <p>مرجع الردّ <bdi dir="ltr" id="reply-reference">{{ reply_reference }}</bdi> · <time datetime="{{ sent_at|date:'c' }}">{{ sent_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان.</p>
+    <pre class="exact-text" dir="auto">{{ reply_exact }}</pre>
+    <p>يستطيع المراجع الآن قراءة ردّك مع طلب الاستيضاح. يمكنك إغلاق هذه الصفحة.</p>
+  </section>
+  {% else %}
+  <section class="panel" aria-labelledby="open-heading">
+    <h2 id="open-heading">فتح طلب الاستيضاح</h2>
+    {% if unsent_exact %}<details open><summary>نسخة من النص الذي أدخلته في هذه المحاولة</summary><pre class="exact-text" dir="auto">{{ unsent_exact }}</pre></details>{% endif %}
+    <form method="post" id="open-reply-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="open">
+      <label for="requester-code">رمز الردّ</label>
+      <p id="code-help">أدخل الرمز الذي خصّصه المراجع لهذا الطلب.</p>
+      <input type="password" id="requester-code" name="code" dir="ltr" maxlength="32" required autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="code-help">
+      <p><button type="submit">فتح الطلب</button></p>
+    </form>
+  </section>
+  {% endif %}
+</main>
+</body>
+</html>
