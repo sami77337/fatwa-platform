@@ -805,8 +805,9 @@ def record_draft_note(
 ) -> answers.DraftNote:
     """Request, withdraw or close a change on an exact answer version; no publication effect."""
     require_development(synthetic_fixtures_only)
-    if type(reviewer) is not str or reviewer != _REVIEWER:
-        raise answers.DraftInputError("unknown_training_reviewer")
+    required_actor = answers.AUTHOR if action == "submit" else _REVIEWER
+    if type(reviewer) is not str or reviewer != required_actor:
+        raise answers.DraftInputError("unauthorized_review_action")
     if (
         type(revision) is not int
         or type(draft_digest) is not str
@@ -820,12 +821,20 @@ def record_draft_note(
         if not _exists(path):
             raise ReviewConflict("answer_draft_missing")
         with closing(_connect(path, True)) as con:
-            *_, (versions, notes) = _verified(con)
+            histories, heads, receipts, thread, grant, (versions, notes) = _verified(con)
             if not versions or (revision, draft_digest) != (
                 versions[-1].revision,
                 versions[-1].digest,
             ):
                 raise ReviewConflict("answer_draft_changed")
+            if action in {"submit", "confirm"}:
+                latest = versions[-1]
+                if (
+                    heads.get(_REVIEW_CASE) != (latest.source_count, latest.source_digest)
+                    or clar.last_reply_digest(thread) != latest.reply_digest
+                    or (thread and thread[-1].kind == "request")
+                ):
+                    raise ReviewConflict("answer_review_evidence_stale")
             if notes and note_count == len(notes) - 1:
                 last = notes[-1]
                 if (last.action, last.text, last.draft_digest) == (action, text, draft_digest):
