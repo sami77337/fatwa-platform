@@ -20,6 +20,28 @@
     <h3>العنوان</h3><pre class="exact-text" dir="auto">{{ title }}</pre>
     <h3>نص الجواب</h3><pre class="exact-text" dir="auto">{{ body }}</pre>
   </section>
+  <section class="panel" aria-labelledby="handoff-heading">
+    <h2 id="handoff-heading">تسليم المسودة للمراجعة الداخلية</h2>
+    {% if not fresh_evidence %}
+    <p class="notice">تغيّر السؤال أو ورد ردّ استيضاح منذ حفظ هذه النسخة. يجب حفظ نسخة جديدة بعد مراجعة المستجدات.</p>
+    {% elif pending_review %}
+    <p class="notice" role="status">النسخة {{ revision }} قيد المراجعة الداخلية. لم تعتمد الفتوى.</p>
+    {% elif technical_reviewed %}
+    <p class="notice" role="status">أُكمل الفحص الفني للنسخة {{ revision }}، دون اعتماد شرعي أو إذن نشر أو إرسال.</p>
+    {% else %}
+    <p>المسودة قيد التحرير حتى يرسلها المؤلف للمراجع صراحةً.</p>
+    {% endif %}
+    {% if can_submit or can_confirm %}
+    <form method="post" id="draft-handoff-form">{% csrf_token %}
+      <input type="hidden" name="revision" value="{{ revision }}">
+      <input type="hidden" name="draft_digest" value="{{ draft_digest }}">
+      <input type="hidden" name="note_count" value="{{ note_count }}">
+      <input type="hidden" name="text" value="">
+      {% if can_submit %}<button name="action" value="submit">إرسال النسخة {{ revision }} للمراجعة الداخلية</button>{% endif %}
+      {% if can_confirm %}<button name="action" value="confirm">تسجيل إتمام الفحص الفني لهذه النسخة</button>{% endif %}
+    </form>
+    {% endif %}
+  </section>
   <section class="panel" aria-labelledby="open-heading">
     <h2 id="open-heading">الملاحظة المفتوحة</h2>
     {% if active_note %}
