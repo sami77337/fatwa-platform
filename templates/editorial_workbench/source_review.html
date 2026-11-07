@@ -11,7 +11,7 @@
 {% if source_journal_enabled %}<p><a id="source-journal-link" href="{% url 'editorial_workbench:source_journal' %}">فتح سجل المصدر المحفوظ</a></p>{% endif %}
 {% else %}
 <p>هذه قراءة لسجل التدريب المحلي وقت فتح الصفحة. تُقارن المسودة بالأحداث المحفوظة حتى الحدث <bdi id="source-journal-tip">{{ observation.last_supplied_event_id }}</bdi>.</p>
-<p id="saved-reading-status" data-state="{{ reading_state }}">{% if reading_state == "current" %}سجّل المراجع التجريبي قراءة نسخة السؤال المعروضة مع هذه المسودة.{% elif reading_state == "changed" %}وصل تحديث بعد القراءة المسجّلة. آخر قراءة شملت الأحداث حتى الرقم {{ read_through }}.{% elif reading_state == "draft_changed" %}تغيّرت المسودة منذ القراءة المسجّلة.{% else %}لم تُسجّل قراءة لهذه النسخة في مكتب المراجع التجريبي.{% endif %}</p>
+<p id="saved-reading-status" data-state="{{ reading_state }}">{% if reading_state == "current" %}سجّل المراجع التجريبي قراءة نسخة السؤال المعروضة مع هذه المسودة.{% elif reading_state == "changed" %}وصل تحديث بعد القراءة المسجّلة. آخر قراءة شملت الأحداث حتى الرقم {{ read_through }}.{% elif reading_state == "reply_changed" %}وصل رد على طلب الاستيضاح بعد آخر قراءة مسجّلة.{% elif reading_state == "draft_changed" %}تغيّرت المسودة منذ القراءة المسجّلة.{% else %}لم تُسجّل قراءة لهذه النسخة في مكتب المراجع التجريبي.{% endif %}</p>
 <p><a href="{% url 'editorial_workbench:source_review' %}">فتح أمثلة تغيّر نص السؤال</a></p>
 {% endif %}
 <section class="panel" aria-labelledby="source-review-heading">
@@ -24,9 +24,16 @@
 </section>
 <section class="panel" aria-labelledby="source-history-heading">
   <h2 id="source-history-heading">{% if selected %}الأحداث حسب ترتيب ورودها في المثال{% else %}الأحداث حسب ترتيب حفظها{% endif %}</h2>
-  <ol id="source-review-timeline">{% for event in timeline %}<li data-kind="{{ event.kind }}">
+  <ol id="source-review-timeline">{% for event in timeline %}<li data-kind="{{ event.kind }}" id="source-event-{{ forloop.counter }}">
     <strong>{{ event.label }}</strong>{% if event.body != None %}<pre class="exact-text" dir="auto">{{ event.body }}</pre>{% endif %}
   </li>{% endfor %}</ol>
 </section>
+{% if thread %}
+<section class="panel" aria-labelledby="saved-followups">
+  <h2 id="saved-followups">طلبات الاستيضاح والردود التدريبية</h2>
+  {% with last=thread|last %}{% if last.kind == "request" %}<p>بانتظار ردّ تدريبي على طلب الاستيضاح.</p>{% endif %}{% endwith %}
+  <ol>{% for entry in thread %}<li><strong>{% if entry.kind == "request" %}طلب المراجع{% else %}رد تدريبي{% endif %}</strong>{% if entry.unread %} · جديد منذ آخر قراءة{% endif %}<pre class="exact-text" dir="auto">{{ entry.exact }}</pre><a href="#source-event-{{ entry.source_count }}">نص السؤال وقت التسجيل</a></li>{% endfor %}</ol>
+</section>
+{% endif %}
 <p><a href="{% url 'editorial_workbench:detail' observation.case_key %}#snapshot">العودة إلى لقطة المسودة</a></p>
 {% endblock %}

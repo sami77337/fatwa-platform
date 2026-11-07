@@ -14,16 +14,30 @@ from django.views.decorators.http import require_http_methods, require_safe
 from django.views.static import serve
 
 from apps.editorial_demo.views import local_only
+from apps.fast9_case_source_join.clarifications import (
+    MAX_TURNS,
+    REPLY_OPTIONS,
+    ClarificationInput,
+    validate_value,
+)
 from apps.fast9_case_source_join.draft_source_review import inspect_draft_source
 from apps.fast9_case_source_join.source_journal import (
     ReviewConflict,
     acknowledge_review,
     history_digest,
-    read_review_state,
+    read_case_review,
+    record_clarification,
 )
 
 from .reading_diff import reading_diff
-from .source_review import CASE_KEY, DRAFT_REVISION, KINDS, STATUS, reading_state
+from .source_review import (
+    CASE_KEY,
+    DRAFT_REVISION,
+    KINDS,
+    STATUS,
+    clarification_rows,
+    reading_state,
+)
 from .source_review_identity import authenticate_fixture_reviewer
 from .views import _exact_text, _packet_exact, _source_journal_directory
 
@@ -53,7 +67,43 @@ class DeskGuard:
         return response
 
 
-@sensitive_post_parameters("token")
+_ACTION_FIELDS = {
+    "read": set(),
+    "request_clarification": {"prompt"},
+    "simulate_reply": {"reply_key"},
+}
+
+
+def _form_action(fields):
+    action = fields.get("action", "read")
+    if action not in _ACTION_FIELDS or any(len(fields.getlist(k)) != 1 for k in fields):
+        return None
+    names = {"count", "source_digest", "draft_digest", "token"} | _ACTION_FIELDS[action]
+    actual = set(fields) - {"csrfmiddlewaretoken", "action"}
+    if action == "read" and "resume_prompt" in actual:
+        names.add("resume_prompt")
+    if action == "simulate_reply" and "reply_text" in actual:
+        names.add("reply_text")
+    # Forms opened on the previous version can confirm only a case without a new reply.
+    if action != "read" or {"thread_digest", "reply_digest"} & actual:
+        names |= {"thread_digest", "reply_digest"}
+    if (
+        actual != names
+        or not re.fullmatch(r"[1-9][0-9]{0,2}", fields["count"])
+        or int(fields["count"]) > 128
+    ):
+        return None
+    if not all(re.fullmatch(r"[0-9a-f]{64}", fields[k]) for k in ("source_digest", "draft_digest")):
+        return None
+    if any(
+        value and not re.fullmatch(r"[0-9a-f]{64}", value)
+        for value in (fields.get("reply_digest"), fields.get("thread_digest"))
+    ):
+        return None
+    return action
+
+
+@sensitive_post_parameters("token", "prompt", "reply_text", "resume_prompt")
 @require_http_methods(["GET", "HEAD", "POST"])
 def reviewer_desk(request):
     directory = _source_journal_directory()
@@ -68,48 +118,80 @@ def reviewer_desk(request):
 
     status = 200
     message = ""
+    prompt_value = ""
+    reply_value = ""
+    reply_target = None
     if request.method == "POST":
         if request.content_type != "application/x-www-form-urlencoded":
             return failure("استخدم نموذج تسجيل القراءة المعروض في المكتب.", 415)
         try:
             fields = request.POST
-            names = {"count", "source_digest", "draft_digest", "token"}
-            if (
-                set(fields) - {"csrfmiddlewaretoken"} != names
-                or any(len(fields.getlist(k)) != 1 for k in fields)
-                or not re.fullmatch(r"[1-9][0-9]{0,2}", fields["count"])
-                or int(fields["count"]) > 128
-                or not all(
-                    re.fullmatch(r"[0-9a-f]{64}", fields[k])
-                    for k in ("source_digest", "draft_digest")
-                )
-            ):
-                return failure("تعذّر تحديد نسخة السؤال من النموذج.", 400)
+            action = _form_action(fields)
+            if action is None:
+                return failure("تعذّر تحديد الإجراء أو نسخة القضية من النموذج.", 400)
         except SuspiciousOperation:
             return failure("تعذّرت قراءة النموذج.", 400)
         try:
             reviewer = authenticate_fixture_reviewer(fields["token"])
         except ValueError:
             return failure("تعذّر التحقق من رمز المراجع. ارجع وأعد إدخال الرمز.", 403)
+        version = {
+            "reviewer": reviewer,
+            "count": int(fields["count"]),
+            "source_digest": fields["source_digest"],
+            "draft_digest": fields["draft_digest"],
+            "synthetic_fixtures_only": True,
+        }
+        prompt_value = fields.get("prompt", fields.get("resume_prompt", ""))
+        reply_value = fields.get("reply_text", "")
         try:
-            acknowledge_review(
-                directory,
-                reviewer=reviewer,
-                count=int(fields["count"]),
-                source_digest=fields["source_digest"],
-                draft_digest=fields["draft_digest"],
-                synthetic_fixtures_only=True,
+            if action == "read":
+                if prompt_value:
+                    validate_value("request", prompt_value)
+                acknowledge_review(
+                    directory, **version, reply_digest=fields.get("reply_digest", "")
+                )
+            else:
+                kind, value = "request", prompt_value
+                if action == "simulate_reply":
+                    reply_target = fields["thread_digest"]
+                    key = fields["reply_key"]
+                    if bool(key) == bool(reply_value) or (key and key not in REPLY_OPTIONS):
+                        raise ClarificationInput("choose_one_reply")
+                    kind, value = "reply", REPLY_OPTIONS[key] if key else reply_value
+                record_clarification(
+                    directory,
+                    **version,
+                    thread_digest=fields["thread_digest"],
+                    kind=kind,
+                    value=value,
+                )
+        except ClarificationInput:
+            status = 400
+            message = (
+                "اكتب نص استيضاح تدريبي من حرف واحد إلى 500 حرف دون محارف تحكّم."
+                if action != "simulate_reply"
+                else "اكتب ردًّا تدريبيًا حتى 500 حرف أو اختر مثالًا واحدًا من القائمة."
             )
         except ReviewConflict:
             status = 409
-            message = "تغيّر السؤال أو المسودة قبل حفظ القراءة. راجع النسخة المعروضة ثم سجّل قراءتك."
+            message = "تعذّر حفظ الإجراء على النسخة السابقة. راجع السؤال والردود وحالة الطلب في النسخة المعروضة."
         except (ValueError, OSError):
-            return failure("تعذّر التحقق من سجل التدريب أو حفظ القراءة.", 503)
+            return failure("تعذّر التحقق من سجل القضية أو حفظ الإجراء.", 503)
         else:
-            return HttpResponse(status=303, headers={"Location": "/review/"})
+            if action != "read" or not prompt_value:
+                location = (
+                    "/review/#clarification-thread"
+                    if action == "request_clarification"
+                    else "/review/"
+                )
+                return HttpResponse(status=303, headers={"Location": location})
+            # Keep typed text in this response only. The reviewer must submit the request separately.
+            message = "سُجّلت قراءتك. احتفظ النموذج بنص طلبك لتراجعه قبل حفظه."
 
     try:
-        events, receipt = read_review_state(directory, synthetic_fixtures_only=True)
+        snapshot = read_case_review(directory, synthetic_fixtures_only=True)
+        events, receipt = snapshot.events, snapshot.receipt
         if not events:
             return failure("لا توجد أحداث محفوظة لهذه القضية في سجل التدريب.", 404)
         observation = inspect_draft_source(
@@ -120,7 +202,11 @@ def reviewer_desk(request):
 
     digest = history_digest(events)
     reviewed_count = receipt.count if receipt else 0
-    state = reading_state(receipt, len(events), observation.draft_revision_sha256)
+    state = reading_state(
+        receipt, len(events), observation.draft_revision_sha256, snapshot.reply_digest
+    )
+    thread = clarification_rows(snapshot)
+    waiting = bool(thread and thread[-1]["kind"] == "request")
 
     difference = reading_diff(events, reviewed_count)
     if difference:
@@ -156,6 +242,18 @@ def reviewer_desk(request):
             "recorded_at": datetime.fromisoformat(receipt.recorded_at) if receipt else None,
             "message": message,
             "can_ack": True,
+            "thread": thread,
+            "thread_digest": snapshot.thread_digest,
+            "reply_digest": snapshot.reply_digest,
+            "waiting": waiting,
+            "has_new_reply": any(e["unread"] for e in thread),
+            "can_request": state == "current" and not waiting and len(thread) < MAX_TURNS,
+            "thread_full": len(thread) == MAX_TURNS,
+            "can_reply": waiting,
+            "reply_options": REPLY_OPTIONS,
+            "prompt_value": prompt_value,
+            "reply_value": reply_value if reply_target == snapshot.thread_digest else "",
+            "detached_reply": reply_value if reply_target != snapshot.thread_digest else "",
         },
         status=status,
     )

@@ -18,10 +18,19 @@
   {% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
   {% if current_count %}
   <p>القضية <bdi>{{ case_key }}</bdi> · المسودة رقم {{ revision }} · سجل السؤال حتى الحدث {{ current_count }}</p>
+  <nav class="section-nav" aria-label="أقسام القضية">
+    <a href="#text-heading">نص السؤال</a>
+    <a href="#clarification-thread">الاستيضاحات والردود</a>
+    <a href="#history-heading">تاريخ السؤال</a>
+  </nav>
   <section class="panel" aria-labelledby="review-state">
     <h2 id="review-state">حالة القراءة</h2>
     <p class="notice" role="status" id="reading-status" data-state="{{ review_state }}">
-      {% if review_state == "current" %}سُجّلت قراءة هذه النسخة من السؤال، ورُبطت بالمسودة رقم {{ revision }}.
+      {% if has_new_reply %}
+      ورد ردّ تدريبي جديد منذ آخر قراءة. <a href="#clarification-thread">اقرأ الردّ على الاستيضاح</a>.
+      {% if reviewed_count and reviewed_count < current_count %}وتحدّث نصّ المصدر أيضًا. <a href="#event-{{ reviewed_count|add:'1' }}">انتقل إلى أول تحديث في السؤال</a>.{% endif %}
+      {% if review_state == "draft_changed" %}تغيّرت المسودة أيضًا منذ آخر قراءة.{% endif %}
+      {% elif review_state == "current" %}سُجّلت قراءة هذه النسخة من السؤال{% if thread %} والردود المتاحة{% endif %}، ورُبطت بالمسودة رقم {{ revision }}.
       {% elif review_state == "changed" %}وصل تحديث للسؤال بعد آخر قراءة مسجّلة. شملت القراءة السابقة الأحداث حتى الرقم {{ reviewed_count }}.
       <a href="#event-{{ reviewed_count|add:'1' }}">انتقل إلى أول تحديث جديد</a>
       {% elif review_state == "draft_changed" %}تغيّرت المسودة منذ آخر قراءة مسجّلة. راجع نص السؤال قبل تسجيل قراءة ترتبط بالمسودة الحالية.
@@ -62,6 +71,67 @@
       </div>
     </div>
   </section>
+  <section class="panel" aria-labelledby="clarification-thread">
+    <h2 id="clarification-thread">الاستيضاحات والردود</h2>
+    {% if waiting %}<p class="notice" role="status" id="clarification-waiting">بانتظار ردّ تدريبي على آخر طلب استيضاح.</p>{% endif %}
+    {% if thread %}
+    <ol class="timeline">
+      {% for entry in thread %}<li id="clarification-{{ entry.number }}">
+        <strong>{% if entry.kind == "request" %}طلب استيضاح{% else %}ردّ تدريبي{% endif %}</strong>
+        · <time datetime="{{ entry.recorded_at|date:'c' }}">{{ entry.recorded_at|date:"Y-m-d H:i" }}</time> بتوقيت عمّان
+        · <a href="#event-{{ entry.source_count }}">نسخة السؤال عند الحدث {{ entry.source_count }}</a>
+        <pre class="exact-text" dir="auto">{{ entry.exact }}</pre>
+        {% if entry.kind == "reply" %}
+        <p>{% if entry.unread %}ينتظر هذا الردّ تسجيل قراءة المراجع.{% else %}سجّل المراجع قراءة هذا الردّ.{% endif %}</p>
+        {% endif %}
+      </li>{% endfor %}
+    </ol>
+    {% else %}<p>لا توجد استيضاحات مسجّلة لهذه القضية.</p>{% endif %}
+
+    {% if can_request or can_reply %}
+    <h3>{% if can_request %}طلب استيضاح جديد{% else %}تجربة وصول ردّ{% endif %}</h3>
+    <form method="post" id="{% if can_request %}clarification-request-form{% else %}clarification-reply-form{% endif %}">
+      {% csrf_token %}
+      <input type="hidden" name="count" value="{{ current_count }}">
+      <input type="hidden" name="source_digest" value="{{ source_digest }}">
+      <input type="hidden" name="draft_digest" value="{{ draft_digest }}">
+      <input type="hidden" name="thread_digest" value="{{ thread_digest }}">
+      <input type="hidden" name="reply_digest" value="{{ reply_digest }}">
+      {% if can_request %}
+      <input type="hidden" name="action" value="request_clarification">
+      <label for="clarification-prompt">ما المعلومة التي تحتاج إلى توضيح؟</label>
+      <p id="clarification-help">اكتب سؤالك للمثال التدريبي في حدود 500 حرف. يُحفظ الطلب داخل هذه القضية.</p>
+      <textarea id="clarification-prompt" name="prompt" rows="3" cols="24" maxlength="500" required dir="auto" aria-describedby="clarification-help">{{ prompt_value }}</textarea>
+      {% else %}
+      <input type="hidden" name="action" value="simulate_reply">
+      <p id="reply-help">لمحاكاة وصول توضيح من السائل، اختر أحد الأمثلة أو اكتب ردًّا من عندك ببيانات اصطناعية. استخدم خانة واحدة فقط.</p>
+      <label for="clarification-reply">مثال جاهز</label>
+      <select id="clarification-reply" name="reply_key" aria-describedby="reply-help">
+        <option value="">اختر مثالًا</option>
+        {% for key,text in reply_options.items %}<option value="{{ key }}">{{ text }}</option>{% endfor %}
+      </select>
+      <p><label for="clarification-reply-text">ردّ تدريبي بصياغتك (حتى 500 حرف)</label><br>
+      <textarea id="clarification-reply-text" name="reply_text" rows="3" cols="24" maxlength="500" dir="auto" aria-describedby="reply-help">{{ reply_value }}</textarea></p>
+      {% endif %}
+      <label for="thread-token">رمز المراجع التجريبي</label>
+      <input type="password" id="thread-token" name="token" dir="ltr" required minlength="64" maxlength="64" pattern="[a-f0-9]{64}" autocomplete="off" spellcheck="false" autocapitalize="none">
+      <button type="submit">{% if can_request %}حفظ طلب الاستيضاح{% else %}إضافة الردّ التجريبي{% endif %}</button>
+    </form>
+    {% elif can_ack and not waiting %}
+      {% if review_state != "current" or has_new_reply %}<p>لتسجيل طلب استيضاح، <a href="#record-heading">سجّل قراءة النسخة الحالية</a> أولًا.</p>{% endif %}
+    {% endif %}
+    {% if thread_full %}<p>اكتملت سعة الاستيضاحات لهذه القضية التدريبية. يظل سجلّها متاحًا للقراءة.</p>{% endif %}
+    {% if detached_reply %}
+    <h3>نص الردّ غير المحفوظ</h3>
+    <p>يمكنك نسخ الردّ قبل متابعة المراجعة.</p>
+    <pre class="exact-text" dir="auto"><bdi>{{ detached_reply }}</bdi></pre>
+    {% endif %}
+    {% if prompt_value and not can_request %}
+    <h3>نص الطلب غير المحفوظ</h3>
+    <p>{% if not waiting and not thread_full %}عند تسجيل قراءة التحديث، يعود النص إلى حقل الاستيضاح لتراجعه قبل حفظه.{% else %}يمكنك نسخ النص قبل متابعة المراجعة.{% endif %}</p>
+    <pre class="exact-text" dir="auto"><bdi>{{ prompt_value }}</bdi></pre>
+    {% endif %}
+  </section>
   <section class="panel" aria-labelledby="history-heading">
     <h2 id="history-heading">تاريخ السؤال</h2>
     <ol class="timeline">
@@ -72,15 +142,18 @@
       </li>{% endfor %}
     </ol>
   </section>
-  {% if can_ack and review_state != "current" %}
+  {% if can_ack and review_state != "current" or can_ack and has_new_reply %}
   <section class="panel" aria-labelledby="record-heading">
     <h2 id="record-heading">تسجيل القراءة</h2>
-    <p id="record-help">بعد الاطّلاع على الأحداث حتى الرقم {{ current_count }}، أدخل رمز المراجع التجريبي لحفظ إقرار قراءة هذه النسخة وربطه بالمسودة رقم {{ revision }}.</p>
+    <p id="record-help">بعد الاطّلاع على أحداث السؤال حتى الرقم {{ current_count }}{% if has_new_reply %} وقراءة الردّ الجديد{% endif %}، أدخل رمز المراجع التجريبي لحفظ إقرار قراءة هذه النسخة وربطه بالمسودة رقم {{ revision }}.</p>
     <form method="post">
       {% csrf_token %}
+      {% if prompt_value and not waiting and not thread_full %}<input type="hidden" name="resume_prompt" value="{{ prompt_value }}">{% endif %}
       <input type="hidden" name="count" value="{{ current_count }}">
       <input type="hidden" name="source_digest" value="{{ source_digest }}">
       <input type="hidden" name="draft_digest" value="{{ draft_digest }}">
+      <input type="hidden" name="thread_digest" value="{{ thread_digest }}">
+      <input type="hidden" name="reply_digest" value="{{ reply_digest }}">
       <label for="review-token">رمز المراجع التجريبي</label>
       <input type="password" id="review-token" name="token" dir="ltr" required minlength="64" maxlength="64" pattern="[a-f0-9]{64}" autocomplete="off" spellcheck="false" autocapitalize="none" aria-describedby="record-help">
       <button type="submit">تسجيل أنني قرأت هذه النسخة</button>

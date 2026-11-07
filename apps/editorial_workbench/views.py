@@ -14,6 +14,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_safe
 
 from apps.editorial_demo.views import local_only
+from apps.fast9_case_source_join.source_journal import JournalError, read_case_review
 from apps.fatwa_drafts.revision_audit import build_revision_audit
 from apps.revision_core.revision_comparison import compare_revisions
 from apps.revision_core.revision_history import (
@@ -190,8 +191,9 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
         )
     elif case is not None and set(request.GET) & {"revision", "before", "after"}:
         return failure(request, "لا توجد مسودة أو مراجعات لهذا المدخل. راجع ملاحظات الاستلام.", 400)
+    journal_directory = _source_journal_directory()
     context = {
-        "source_journal_enabled": _source_journal_directory() is not None,
+        "source_journal_enabled": journal_directory is not None,
         "batches": prepared.batches,
         "batch_id": batch_id,
         "selected_batch": selected_batch,
@@ -314,6 +316,22 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
             response["Cache-Control"] = "no-store"
             response["X-Packet-SHA256"] = packet.sha256
             return response
+    if journal_directory is not None and (
+        key == "intake-7" or (key is None and any(c.key == "intake-7" for c in cases))
+    ):
+        try:
+            saved = read_case_review(journal_directory, synthetic_fixtures_only=True)
+        except (JournalError, OSError):
+            context["clarification_notice"] = "تعذّرت قراءة حالة الاستيضاح"
+        else:
+            if saved.clarifications:
+                if saved.clarifications[-1].kind == "request":
+                    notice = "بانتظار ردّ على الاستيضاح"
+                elif saved.receipt is None or saved.reply_digest != saved.receipt.reply_digest:
+                    notice = "ردّ جديد على الاستيضاح يحتاج إلى قراءة"
+                else:
+                    notice = "سُجّلت قراءة آخر ردّ على الاستيضاح"
+                context["clarification_notice"] = notice
     response = HttpResponse(_owned_template("workbench.html").render(context, request))
     response["Cache-Control"] = "no-store"
     return response
