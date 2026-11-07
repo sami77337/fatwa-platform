@@ -4,7 +4,7 @@ Only tools.fast9_pg_reference_consistency may launch the existing trusted runner
 """
 
 import os
-from dataclasses import replace
+from dataclasses import asdict, replace
 
 from tools.fast9_pg_reference_consistency.guard import (
     TEST_DATABASE,
@@ -15,14 +15,15 @@ from tools.fast9_pg_reference_consistency.guard import (
 # DiscoverRunner builds the suite BEFORE setup_databases/migrations. Fail early.
 validate_environment(os.environ)
 
-from django.db import connection, transaction  # noqa: E402
+from django.db import IntegrityError, connection, transaction  # noqa: E402
 from django.test import TransactionTestCase  # noqa: E402
 from django.test.utils import CaptureQueriesContext  # noqa: E402
 
 from apps.fast9_pg_reference_consistency.django_adapter import DjangoConsistencyReader  # noqa: E402
-from apps.fast9_pg_reference_consistency.services import check_catalog  # noqa: E402
+from apps.fast9_pg_reference_consistency.services import check_catalog, edition_fields, work_fields  # noqa: E402
 from apps.reference.ingest import ingest_catalog  # noqa: E402
 from apps.reference.models import ReferenceEdition, ReferenceHeading, ReferenceWork  # noqa: E402
+from apps.reference.normalization import normalize_title  # noqa: E402
 from apps.reference.records import prepare_catalog  # noqa: E402
 from tools.fast9_pg_reference_consistency.fixtures import synthetic_fixture  # noqa: E402
 
@@ -76,17 +77,62 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
         # Real domain connection: existing navigation and reference evidence still agree.
         from apps.fast8_fiqh_navigation.django_adapter import DjangoNavigationReader
         from apps.fast8_fiqh_navigation.services import CatalogNavigation
+        from tools.fiqh_reading_trail.fixtures import synthetic_fixture as navigation_fixture
 
-        navigation = CatalogNavigation(self.pin, self.edition_id).navigate(
-            {"edition": str(self.edition_id), "source_row_id": "30"},
+        with self.assertRaisesRegex(ValueError, "book-622"):
+            CatalogNavigation(self.pin, self.edition_id)
+        nav_pin = prepare_catalog(
+            replace(self.pin.spec, source_book_id="622", edition_key="synthetic-622-navigation"),
+            self.pin.records,
+        )
+        nav_id = ingest_catalog(
+            nav_pin.spec, nav_pin.records, dry_run=False, expected_checksum=nav_pin.checksum
+        ).edition_id
+        navigation = CatalogNavigation(nav_pin, nav_id).navigate(
+            {"edition": str(nav_id), "source_row_id": "30"},
             DjangoNavigationReader(),
         )
-        self.assertEqual(navigation.trail.status, "verified")
-        self.assertEqual(navigation.trail.current.evidence.printed_part, "الأول")
+        # Its root contains CRLF: valid stored source bytes, ineligible citation text.
+        self.assertEqual(navigation.trail.status, "unverified")
+        self.assertEqual(navigation.trail.reason, "incomplete_source_evidence")
+        supported, _ = navigation_fixture()
+        supported_id = ingest_catalog(
+            supported.spec, supported.records, dry_run=False, expected_checksum=supported.checksum
+        ).edition_id
+        self.assertEqual(check_catalog(supported, supported_id, self.reader).status, "CONSISTENT")
+        navigation = CatalogNavigation(supported, supported_id).navigate(
+            {"edition": str(supported_id), "source_row_id": "40"}, DjangoNavigationReader()
+        )
+        self.assertEqual(navigation.trail.status, "verified", navigation.trail.reason)
+        self.assertEqual(navigation.trail.current.evidence.printed_part, "تمهيد")
         self.assertEqual(navigation.trail.current.evidence.printed_page, 3)
 
+    def check_inserted_variant(self, label, *, heading=None, edition=None, work=None, omit=None):
+        """Build an independent snapshot using initial inserts; stored rows are immutable."""
+        require_target(test_database=True)
+        spec = replace(self.pin.spec, source_namespace="fast9-probe-" + label)
+        pin = prepare_catalog(spec, self.pin.records)
+        stored_work = ReferenceWork.objects.create(**(work_fields(pin) | (work or {})))
+        stored_edition = ReferenceEdition.objects.create(
+            work=stored_work, **(edition_fields(pin) | (edition or {}))
+        )
+        parent_pks = {}
+        for record in pin.records:
+            if record.source_row_id == omit:
+                continue
+            fields = asdict(record)
+            parent = fields.pop("parent_source_row_id")
+            fields.update(
+                parent_id=parent_pks[parent] if parent is not None else None,
+                title_normalized=normalize_title(record.title_original),
+            )
+            if record.source_row_id == 30 and heading:
+                fields.update(heading)
+            item = ReferenceHeading.objects.create(edition=stored_edition, **fields)
+            parent_pks[record.source_row_id] = item.pk
+        return check_catalog(pin, stored_edition.pk, self.reader)
+
     def test_changed_heading_fields_including_normalized_title_are_rejected(self):
-        row = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=30)
         for field, changed in (
             ("title_original", "عنوان اصطناعي متغير"),
             ("title_normalized", "corrupt"),
@@ -99,12 +145,11 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
             ("source_id", "changed-synthetic"),
         ):
             with self.subTest(field=field):
-                ReferenceHeading.objects.filter(pk=row.pk).update(**{field: changed})
-                self.assertEqual(self.check().status, "INCONSISTENT")
-                ReferenceHeading.objects.filter(pk=row.pk).update(**{field: getattr(row, field)})
+                result = self.check_inserted_variant(field, heading={field: changed})
+                self.assertEqual(result.status, "INCONSISTENT")
+                self.assertEqual(result.reason, "heading_fields_or_parent")
 
     def test_metadata_and_checksum_changes_are_rejected(self):
-        edition = ReferenceEdition.objects.get(pk=self.edition_id)
         for field, changed in (
             ("ingest_checksum", "0" * 64),
             ("heading_count", 5),
@@ -112,17 +157,13 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
             ("title", "طبعة بديلة"),
         ):
             with self.subTest(field=field):
-                ReferenceEdition.objects.filter(pk=self.edition_id).update(**{field: changed})
-                self.assertEqual(self.check().status, "INCONSISTENT")
-                ReferenceEdition.objects.filter(pk=self.edition_id).update(
-                    **{field: getattr(edition, field)}
-                )
-        ReferenceWork.objects.update(title_original="مرجع اصطناعي متغير")
-        self.assertEqual(self.check().status, "INCONSISTENT")
+                result = self.check_inserted_variant(field, edition={field: changed})
+                self.assertEqual(result.status, "INCONSISTENT")
+        result = self.check_inserted_variant("work", work={"title_original": "مرجع اصطناعي متغير"})
+        self.assertEqual(result.status, "INCONSISTENT")
 
     def test_extra_and_absent_rows_rejected(self):
         row = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=50)
-        original_pk = row.pk
         row.pk = None
         row.source_id = "synthetic-extra"
         row.source_row_id = 999
@@ -130,9 +171,7 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
         row.position = 999
         row.save(force_insert=True)
         self.assertEqual(self.check().reason, "heading_count")
-        row.delete()
-        ReferenceHeading.objects.filter(pk=original_pk).delete()
-        self.assertEqual(self.check().reason, "heading_count")
+        self.assertEqual(self.check_inserted_variant("absent", omit=50).reason, "heading_count")
 
     def test_cross_edition_parent_same_source_row_id_and_wrong_edition_rejected(self):
         other = prepare_catalog(
@@ -144,10 +183,31 @@ class PostgreSQLConsistencyTests(TransactionTestCase):
         # A separate valid edition is outside the pinned scope, not an extra heading.
         self.assertEqual(self.check().status, "CONSISTENT")
         parent = ReferenceHeading.objects.get(edition_id=other_id, source_row_id=10)
-        ReferenceHeading.objects.filter(edition_id=self.edition_id, source_row_id=30).update(
-            parent=parent
+        require_target(test_database=True)
+        child = ReferenceHeading.objects.get(edition_id=self.edition_id, source_row_id=30)
+        child.pk = None
+        child.parent = parent
+        child.source_id = "synthetic-foreign-parent"
+        child.source_row_id = child.source_order = child.position = 999
+        with self.assertRaises(IntegrityError) as error, transaction.atomic():
+            child.save(force_insert=True)
+        self.assertEqual(error.exception.__cause__.sqlstate, "23514")
+        self.assertIn("Parent must exist in the same edition", str(error.exception))
+        # A same-edition parent of the right depth is legal SQL but differs from the source pin.
+        spec = replace(self.pin.spec, edition_key="synthetic-redirected-parent")
+        expected = prepare_catalog(spec, self.pin.records)
+        actual = prepare_catalog(
+            spec,
+            tuple(
+                replace(row, parent_source_row_id=50) if row.source_row_id == 30 else row
+                for row in self.pin.records
+            ),
         )
-        self.assertEqual(self.check().status, "INCONSISTENT")
+        actual_id = ingest_catalog(
+            actual.spec, actual.records, dry_run=False, expected_checksum=actual.checksum
+        ).edition_id
+        crossed = check_catalog(expected, actual_id, self.reader)
+        self.assertEqual(crossed.status, "INCONSISTENT")
         self.assertEqual(check_catalog(self.pin, other_id, self.reader).status, "NOT_CONNECTED")
 
     def test_nested_transaction_and_unknown_edition_never_claim_consistency(self):
