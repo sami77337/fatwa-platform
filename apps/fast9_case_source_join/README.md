@@ -173,3 +173,57 @@ intermediate version remain available in the returned history.
 
 This local exercise uses fabricated envelope and event identifiers. Persistence,
 provider authentication and receipt of live provider events are outside its scope.
+
+## Persisting the synthetic source history across restarts
+
+The development-only Python API stores the three fixed Wave7 example histories in
+`synthetic-source-history.sqlite3` in an **existing, dedicated operator-owned
+directory** on a local filesystem supporting file locks and hard links. Pass
+`pathlib.Path` for this directory. The file is independent of Django's database.
+The writer creates it only for a valid fixed receipt. The reader returns an empty
+tuple for an absent file or case and opens an existing file in SQLite read-only
+mode. Production settings or missing explicit synthetic opt-in reject both APIs.
+
+```python
+from apps.fast9_case_source_join.source_history import source_receipt
+from apps.fast9_case_source_join.source_journal import append_source_event, read_source_history
+
+root = source_receipt("intake-7")
+append_source_event(directory, root, synthetic_fixtures_only=True)
+events = read_source_history(directory, root.case_key, synthetic_fixtures_only=True)
+```
+
+Each append takes a SQLite writer reservation, revalidates the bounded event
+chains and their case heads, then commits the new event and head together with
+`synchronous=FULL`. Independent processes can retry an identical event.
+At most one of two distinct successors of the same tip commits. The result
+from a reader is one transaction's snapshot. Replaying a deletion notice keeps
+the prior bytes. Reuse the existing synthetic replay contract for event kinds,
+bodies, scope, and the 128-event limit. A SQLite failure raises `JournalError`;
+a conflicting or invalid proposed event raises `ValueError`.
+
+All opens of the database itself, including the bounded format check, use the
+SQLite VFS so a local reader preserves kernel locks held by another connection
+in its process. The read-only format probe checks the fixed application marker
+and rollback-journal format without recovering foreign files or creating WAL
+companions. Event reads use a separate, normally locked transaction.
+
+The encoded payload keeps exact decoded question/correction UTF-8 bytes and the
+independent original Wave7 JSON-row digest. Each entry digest includes the prior
+digest. A stored case head records the accepted count and tip. An unrelated
+database, missing schema guard, invalid chain or inconsistent head fails closed.
+Readers and writers assume that the configured directory and all its ancestors
+are under trusted local control. Use a consistent backup when the writer is
+closed. Restoring a complete older valid file restores an older valid prefix;
+the journal cannot determine whether a later backup or an omitted provider
+event exists. An operator may retain the case key, accepted event count and
+`history_digest(events)` independently, then compare that digest with
+`history_digest(reloaded[:count])` after verifying the same case and a count
+at least as large. The helper accepts an already validated sequence and
+returns `None` for an empty prefix. A filesystem administrator who rewrites the whole file can
+recompute its hashes. An interrupted bootstrap can leave a private temporary
+file. After a process interruption, SQLite recovery that requires a write lock
+must be performed by an authorized writer. This proof covers process restart
+and rollback; host power-loss recovery and replicated storage remain untested.
+
+See the [operator walkthrough](../../tools/fast9_case_source_join/JOURNAL.md) to save an event, reopen the workbench and verify a restored prefix against a retained receipt.

@@ -1,5 +1,6 @@
 """Read-only HTTP composition of existing synthetic editorial services."""
 
+import os
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -42,6 +43,14 @@ def failure(request: HttpRequest, message: str, status: int) -> HttpResponse:
     )
     response["Cache-Control"] = "no-store"
     return response
+
+
+def _source_journal_directory() -> Path | None:
+    value = os.environ.get("FATWA_SYNTHETIC_SOURCE_JOURNAL_DIR")
+    if not value:
+        return None
+    directory = Path(value)
+    return directory if directory.is_absolute() else None
 
 
 def _query(request: HttpRequest, *, detail: bool) -> tuple[str, str, str]:
@@ -182,6 +191,7 @@ def workbench(request: HttpRequest, key: str | None = None) -> HttpResponse:
     elif case is not None and set(request.GET) & {"revision", "before", "after"}:
         return failure(request, "لا توجد مسودة أو مراجعات لهذا المدخل. راجع ملاحظات الاستلام.", 400)
     context = {
+        "source_journal_enabled": _source_journal_directory() is not None,
         "batches": prepared.batches,
         "batch_id": batch_id,
         "selected_batch": selected_batch,

@@ -1,7 +1,7 @@
 """Replay one fixed synthetic Wave7 source message without performing any I/O."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 
 from apps.intake_workflow.contracts import parse_synthetic_payload
@@ -57,6 +57,29 @@ def source_receipt(case_key: str) -> SourceEvent:
     )
 
 
+def validate_event_shape(event: SourceEvent) -> None:
+    if type(event) is not SourceEvent or any(
+        type(value) is not str
+        for value in (
+            event.event_id,
+            event.case_key,
+            event.channel,
+            event.account,
+            event.conversation,
+            event.source_ref,
+            event.kind,
+            event.row_sha256,
+        )
+    ):
+        raise ValueError("invalid_event")
+    if (
+        not _EVENT_ID.fullmatch(event.event_id)
+        or (event.prior_event_id is not None and type(event.prior_event_id) is not str)
+        or (event.body_utf8 is not None and type(event.body_utf8) is not bytes)
+    ):
+        raise ValueError("invalid_event")
+
+
 def replay_source_history(
     events: list[SourceEvent] | tuple[SourceEvent, ...], *, synthetic_fixtures_only: bool = False
 ) -> tuple[SourceEvent, ...]:
@@ -67,26 +90,7 @@ def replay_source_history(
         raise ValueError("expected_1_to_128_events")
     history: dict[str, SourceEvent] = {}
     for event in events:
-        if type(event) is not SourceEvent or any(
-            type(value) is not str
-            for value in (
-                event.event_id,
-                event.case_key,
-                event.channel,
-                event.account,
-                event.conversation,
-                event.source_ref,
-                event.kind,
-                event.row_sha256,
-            )
-        ):
-            raise ValueError("invalid_event")
-        if (
-            not _EVENT_ID.fullmatch(event.event_id)
-            or (event.prior_event_id is not None and type(event.prior_event_id) is not str)
-            or (event.body_utf8 is not None and type(event.body_utf8) is not bytes)
-        ):
-            raise ValueError("invalid_event")
+        validate_event_shape(event)
         if event.event_id in history:
             if history[event.event_id] != event:
                 raise ValueError("event_id_conflict")
@@ -115,3 +119,37 @@ def replay_source_history(
                 raise ValueError("invalid_change")
         history[event.event_id] = event
     return tuple(history.values())
+
+
+def sample_source_events(case_key: str, sample: str) -> tuple[SourceEvent, ...]:
+    """Return the fixed local example prefix for this case, without writes."""
+    if sample not in ("received", "corrected", "deleted", "restored"):
+        raise ValueError("unknown_fixture_sample")
+    first = source_receipt(case_key)
+    if sample == "received":
+        return (first,)
+    edit = replace(
+        first,
+        event_id="edit-example",
+        prior_event_id=first.event_id,
+        kind="corrected",
+        body_utf8=CORRECTION_BODIES[0],
+    )
+    if sample == "corrected":
+        return first, edit
+    if sample == "deleted":
+        last = replace(
+            edit,
+            event_id="delete-example",
+            prior_event_id=edit.event_id,
+            kind="deleted",
+            body_utf8=None,
+        )
+    else:
+        last = replace(
+            edit,
+            event_id="restore-example",
+            prior_event_id=edit.event_id,
+            body_utf8=first.body_utf8,
+        )
+    return first, edit, last

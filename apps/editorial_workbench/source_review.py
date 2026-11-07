@@ -1,6 +1,4 @@
-"""Local inspection of fixed source-change examples against one actual fixture draft."""
-
-from dataclasses import replace
+"""Inspect saved or example source events against one fixed development draft."""
 
 from django.core.exceptions import TooManyFieldsSent
 from django.shortcuts import render
@@ -8,9 +6,10 @@ from django.views.decorators.http import require_safe
 
 from apps.editorial_demo.views import local_only
 from apps.fast9_case_source_join import draft_source_review
-from apps.fast9_case_source_join.source_history import CORRECTION_BODIES, source_receipt
+from apps.fast9_case_source_join.source_history import sample_source_events
+from apps.fast9_case_source_join.source_journal import JournalError, read_source_history
 
-from .views import _packet_exact, failure
+from .views import _packet_exact, _source_journal_directory, failure
 
 # Only this original intake row has both a bound source envelope and a receipt-stage draft.
 CASE_KEY = "intake-7"
@@ -29,37 +28,6 @@ STATUS = {
 KINDS = {"received": "الاستلام", "corrected": "تصحيح", "deleted": "حذف"}
 
 
-def _sample_events(sample):
-    first = source_receipt(CASE_KEY)
-    if sample == "received":
-        return (first,)
-    edit = replace(
-        first,
-        event_id="edit-example",
-        prior_event_id=first.event_id,
-        kind="corrected",
-        body_utf8=CORRECTION_BODIES[0],
-    )
-    if sample == "corrected":
-        return first, edit
-    if sample == "deleted":
-        last = replace(
-            edit,
-            event_id="delete-example",
-            prior_event_id=edit.event_id,
-            kind="deleted",
-            body_utf8=None,
-        )
-    else:
-        last = replace(
-            edit,
-            event_id="restore-example",
-            prior_event_id=edit.event_id,
-            body_utf8=first.body_utf8,
-        )
-    return first, edit, last
-
-
 @require_safe
 def source_review(request):
     local_only(request)
@@ -71,7 +39,31 @@ def source_review(request):
     except TooManyFieldsSent:
         return failure(request, "تعذّرت قراءة خيار العرض.", 400)
     try:
-        events = _sample_events(sample)
+        events = sample_source_events(CASE_KEY, sample)
+    except ValueError:
+        return failure(request, "تعذّرت قراءة أحداث المثال.", 503)
+    return _render_review(request, events, sample=sample)
+
+
+@require_safe
+def source_journal_review(request):
+    local_only(request)
+    if request.META.get("QUERY_STRING"):
+        return failure(request, "تُعرض الأحداث المحفوظة لهذه القضية دون معايير إضافية.", 400)
+    directory = _source_journal_directory()
+    if directory is None:
+        return failure(request, "لم يُضبط مسار مطلق لسجل المصدر المحلي.", 503)
+    try:
+        events = read_source_history(directory, CASE_KEY, synthetic_fixtures_only=True)
+    except (JournalError, OSError):
+        return failure(request, "تعذّرت قراءة سجل المصدر أو التحقق من سلامة أحداثه.", 503)
+    if not events:
+        return failure(request, "لا توجد أحداث محفوظة لهذه القضية في السجل المحلي.", 404)
+    return _render_review(request, events)
+
+
+def _render_review(request, events, *, sample=None):
+    try:
         observation = draft_source_review.inspect_draft_source(
             CASE_KEY, DRAFT_REVISION, events, synthetic_fixtures_only=True
         )
@@ -93,6 +85,7 @@ def source_review(request):
             "observation": observation,
             "status_message": STATUS[observation.status],
             "samples": SAMPLES,
+            "source_journal_enabled": _source_journal_directory() is not None,
             "selected": sample,
             "timeline": timeline,
             "original": timeline[0]["body"],

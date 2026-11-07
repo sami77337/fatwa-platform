@@ -1,12 +1,18 @@
 {% extends "editorial_workbench/base.html" %}
 {% block title %}مراجعة تغيّر نص السؤال | مساحة المراجعة{% endblock %}
 {% block content %}
-<h1>مراجعة تغيّر نص السؤال</h1>
+<h1>{% if selected %}مراجعة تغيّر نص السؤال{% else %}مراجعة سجل المصدر المحفوظ{% endif %}</h1>
 <p>السجل <bdi>{{ observation.case_key }}</bdi> · مراجعة المسودة {{ observation.draft_revision }}</p>
+{% if selected %}
 <p>اختر مثالًا اصطناعيًا لترى ما تغيّر منذ استلام السؤال. تقتصر المقارنة على الأحداث المعروضة في المثال.</p>
 <nav class="section-nav" id="source-review-samples" aria-label="أمثلة تغيّر نص السؤال">
   {% for key,label in samples.items %}<a href="?sample={{ key }}"{% if key == selected %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
 </nav>
+{% if source_journal_enabled %}<p><a id="source-journal-link" href="{% url 'editorial_workbench:source_journal' %}">فتح سجل المصدر المحفوظ</a></p>{% endif %}
+{% else %}
+<p>هذه قراءة لسجل التدريب المحلي وقت فتح الصفحة. تُقارن المسودة بالأحداث المحفوظة حتى الحدث <bdi id="source-journal-tip">{{ observation.last_supplied_event_id }}</bdi>.</p>
+<p><a href="{% url 'editorial_workbench:source_review' %}">فتح أمثلة تغيّر نص السؤال</a></p>
+{% endif %}
 <section class="panel" aria-labelledby="source-review-heading">
   <h2 id="source-review-heading">مقارنة نص المصدر</h2>
   <p class="notice" role="status" id="source-review-status" data-status="{{ observation.status }}">{{ status_message }}</p>
@@ -16,7 +22,7 @@
   {% if latest != None %}<pre class="exact-text" dir="auto" id="source-review-latest">{{ latest }}</pre>{% else %}<p id="source-review-latest">آخر حدث هو حذف نص المصدر.</p>{% endif %}
 </section>
 <section class="panel" aria-labelledby="source-history-heading">
-  <h2 id="source-history-heading">الأحداث حسب ترتيب ورودها في المثال</h2>
+  <h2 id="source-history-heading">{% if selected %}الأحداث حسب ترتيب ورودها في المثال{% else %}الأحداث حسب ترتيب حفظها{% endif %}</h2>
   <ol id="source-review-timeline">{% for event in timeline %}<li data-kind="{{ event.kind }}">
     <strong>{{ event.label }}</strong>{% if event.body != None %}<pre class="exact-text" dir="auto">{{ event.body }}</pre>{% endif %}
   </li>{% endfor %}</ol>
