@@ -171,7 +171,7 @@ class SourceJournalReviewTests(SimpleTestCase):
         self.assertEqual(db.read_bytes(), b"synthetic-private-error-marker")
 
     def test_guards_reject_overrides_writes_remote_peers_and_production_before_storage_read(self):
-        target = "apps.editorial_workbench.source_review.read_review_state"
+        target = "apps.editorial_workbench.source_review.read_case_review"
         with patch(target, side_effect=AssertionError("must not read storage")):
             for q in ("sample=received", "path=/tmp/stash", "case_key=intake-1", "revision=1"):
                 self.assertEqual(self.read(self.url + "?" + q).status_code, 400)

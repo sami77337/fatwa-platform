@@ -8,6 +8,7 @@
   <p class="notice">كل ما يلي مرتبط بهذا المصدر الاصطناعي وحده. اختيار لقطة أو مقارنة يغيّر العرض فقط، ولا يحفظ تغييرًا.</p>
   <p><a class="button-link" href="{{ packet_url }}">حزمة مراجعة السجل · عرض وتصدير وطباعة</a></p>
   {% if case.key == "intake-7" and case.record %}<p><a id="source-review-link" href="{% url 'editorial_workbench:source_review' %}">مقارنة المسودة بتغيّرات نص السؤال</a>{% if source_journal_enabled %} · <a id="source-journal-link" href="{% url 'editorial_workbench:source_journal' %}">فتح سجل المصدر المحفوظ</a>{% endif %}</p>{% endif %}
+  {% if clarification_notice %}<p class="metadata"><a href="{% url 'editorial_workbench:source_journal' %}#saved-followups">{{ clarification_notice }}</a></p>{% endif %}
   <nav class="section-nav" aria-label="أقسام مراجعة السجل"><a href="#intake">الاستلام الأصلي</a><a href="#snapshot">لقطة المسودة</a><a href="#history">تاريخ المراجعات</a><a href="#comparison">مقارنة النسخ</a><a href="#references">مطابقة المراجع</a><a href="#audit">تدقيق اللقطات</a></nav>
   {% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
   <section class="panel" id="intake" tabindex="-1" aria-labelledby="intake-heading">
@@ -74,6 +75,6 @@
     </form>
   </section>
   {% if error %}<p role="alert" class="notice">{{ error }}</p>{% endif %}
-  <p role="status">السجلات المطابقة: {{ cases|length }}</p><div class="case-list">{% for row in detail_rows %}<article class="case-card"><p class="eyebrow"><bdi>{{ row.case.external_id|default:'دون معرّف خارجي صالح' }}</bdi></p><h2><a href="{{ row.url }}">{{ row.case.question|default:'سجل بلا سؤال نصي صالح' }}</a></h2><p><span class="badge">{{ row.case.status_label }}</span></p><p class="metadata">{{ row.case.fixture_label }}{% if row.case.record %} · {{ row.case.record.history|length }} لقطات{% endif %}</p>{% if row.case.issues %}<ul>{% for issue in row.case.issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% endif %}</article>{% empty %}<p class="empty">لا توجد سجلات تطابق البحث والتصفية. <a href="{{ list_url }}">عرض جميع السجلات</a></p>{% endfor %}</div>
+  <p role="status">السجلات المطابقة: {{ cases|length }}</p><div class="case-list">{% for row in detail_rows %}<article class="case-card"><p class="eyebrow"><bdi>{{ row.case.external_id|default:'دون معرّف خارجي صالح' }}</bdi></p><h2><a href="{{ row.url }}">{{ row.case.question|default:'سجل بلا سؤال نصي صالح' }}</a></h2><p><span class="badge">{{ row.case.status_label }}</span></p>{% if row.case.key == "intake-7" and clarification_notice %}<p class="metadata"><a href="{% url 'editorial_workbench:source_journal' %}#saved-followups">{{ clarification_notice }}</a></p>{% endif %}<p class="metadata">{{ row.case.fixture_label }}{% if row.case.record %} · {{ row.case.record.history|length }} لقطات{% endif %}</p>{% if row.case.issues %}<ul>{% for issue in row.case.issues %}<li>{{ issue }}</li>{% endfor %}</ul>{% endif %}</article>{% empty %}<p class="empty">لا توجد سجلات تطابق البحث والتصفية. <a href="{{ list_url }}">عرض جميع السجلات</a></p>{% endfor %}</div>
 {% endif %}
 {% endblock %}

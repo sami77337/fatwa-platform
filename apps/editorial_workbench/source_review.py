@@ -1,5 +1,7 @@
 """Inspect saved or example source events against one fixed development draft."""
 
+from datetime import datetime
+
 from django.core.exceptions import TooManyFieldsSent
 from django.shortcuts import render
 from django.views.decorators.http import require_safe
@@ -7,7 +9,7 @@ from django.views.decorators.http import require_safe
 from apps.editorial_demo.views import local_only
 from apps.fast9_case_source_join import draft_source_review
 from apps.fast9_case_source_join.source_history import sample_source_events
-from apps.fast9_case_source_join.source_journal import JournalError, read_review_state
+from apps.fast9_case_source_join.source_journal import JournalError, read_case_review
 
 from .views import _packet_exact, _source_journal_directory, failure
 
@@ -54,24 +56,43 @@ def source_journal_review(request):
     if directory is None:
         return failure(request, "لم يُضبط مسار مطلق لسجل المصدر المحلي.", 503)
     try:
-        events, receipt = read_review_state(directory, synthetic_fixtures_only=True)
+        snapshot = read_case_review(directory, synthetic_fixtures_only=True)
     except (JournalError, OSError):
         return failure(request, "تعذّرت قراءة سجل المصدر أو التحقق من سلامة أحداثه.", 503)
-    if not events:
+    if not snapshot.events:
         return failure(request, "لا توجد أحداث محفوظة لهذه القضية في السجل المحلي.", 404)
-    return _render_review(request, events, receipt=receipt)
+    return _render_review(request, snapshot.events, snapshot=snapshot)
 
 
-def reading_state(receipt, count, draft_digest):
+def clarification_rows(snapshot):
+    seen = snapshot.receipt.reply_digest if snapshot.receipt else ""
+    seen_number = next((e.number for e in snapshot.clarifications if e.digest == seen), 0)
+    return [
+        {
+            "kind": e.kind,
+            "exact": _packet_exact(e.text),
+            "number": e.number,
+            "source_count": e.source_count,
+            "recorded_at": datetime.fromisoformat(e.recorded_at),
+            "unread": e.kind == "reply" and e.number > seen_number,
+        }
+        for e in snapshot.clarifications
+    ]
+
+
+def reading_state(receipt, count, draft_digest, reply_digest=""):
     # The journal validates every receipt against its case and source prefix.
     if receipt is None:
         return "unseen"
     if receipt.draft_digest != draft_digest:
         return "draft_changed"
-    return "current" if receipt.count == count else "changed"
+    if receipt.count != count:
+        return "changed"
+    return "current" if receipt.reply_digest == reply_digest else "reply_changed"
 
 
-def _render_review(request, events, *, sample=None, receipt=None):
+def _render_review(request, events, *, sample=None, snapshot=None):
+    receipt = snapshot.receipt if snapshot else None
     try:
         observation = draft_source_review.inspect_draft_source(
             CASE_KEY, DRAFT_REVISION, events, synthetic_fixtures_only=True
@@ -96,7 +117,13 @@ def _render_review(request, events, *, sample=None, receipt=None):
             "samples": SAMPLES,
             "source_journal_enabled": _source_journal_directory() is not None,
             "selected": sample,
-            "reading_state": reading_state(receipt, len(events), observation.draft_revision_sha256),
+            "reading_state": reading_state(
+                receipt,
+                len(events),
+                observation.draft_revision_sha256,
+                snapshot.reply_digest if snapshot else "",
+            ),
+            "thread": clarification_rows(snapshot) if snapshot else [],
             "read_through": receipt.count if receipt else None,
             "timeline": timeline,
             "original": timeline[0]["body"],
