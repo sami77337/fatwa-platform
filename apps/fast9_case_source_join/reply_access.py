@@ -91,7 +91,6 @@ def issue(con, revision, request, source, draft):
     expiry = datetime.now(UTC) + TTL
     if revision == 0:
         con.execute(SCHEMA["requester_reply_access"])
-        con.execute("PRAGMA user_version=4")
     con.execute(
         "INSERT OR REPLACE INTO requester_reply_access VALUES (1,?,?,?,?,?,?)",
         (

@@ -29,17 +29,26 @@ def reading_diff(events: tuple[SourceEvent, ...], baseline_count: int | None) ->
             result["segments"].append({"kind": "removed", "text": old})
         return result
 
+    segments = word_segments(old, new)
+    if segments is not None:
+        result["kind"] = "restored" if after == events[0].body_utf8 else "edited"
+        result["segments"] = segments
+    return result
+
+
+def word_segments(old: str, new: str) -> list[dict[str, str]] | None:
+    """Return lossless word-level changes; fall back to the exact texts for long comparisons."""
     # Whitespace runs are tokens too. Combining marks stay with their Arabic word.
     old_tokens = re.findall(r"\s+|\S+", old)
     new_tokens = re.findall(r"\s+|\S+", new)
     if len(old_tokens) * len(new_tokens) > 256 * 256:
-        return result
-    result["kind"] = "restored" if after == events[0].body_utf8 else "edited"
+        return None
+    segments = []
     diff = SequenceMatcher(None, old_tokens, new_tokens, autojunk=False)
     for tag, i, j, k, end in diff.get_opcodes():
         if tag != "insert":
             kind = "kept" if tag == "equal" else "removed"
-            result["segments"].append({"kind": kind, "text": "".join(old_tokens[i:j])})
+            segments.append({"kind": kind, "text": "".join(old_tokens[i:j])})
         if tag in {"insert", "replace"}:
-            result["segments"].append({"kind": "added", "text": "".join(new_tokens[k:end])})
-    return result
+            segments.append({"kind": "added", "text": "".join(new_tokens[k:end])})
+    return segments

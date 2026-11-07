@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ملاحظات مراجعة المسودة</title>
+  <link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">انتقل إلى الملاحظات</a>
+<header class="site-header"><div class="shell">
+  <p class="eyebrow">مكتب التدريب المحلي · القضية <bdi>{{ case_key }}</bdi></p>
+  <h1>ملاحظات مراجعة المسودة</h1>
+  <nav class="section-nav" aria-label="التنقل في المكتب"><a href="/review/author/queue/">قائمة المسودات</a><a href="/review/author/history/">سجل النسخ</a>{% if can_author %}<a href="/review/author/draft/">محرّر الجواب</a>{% endif %}</nav>
+</div></header>
+<main class="shell" id="main" tabindex="-1">
+  {% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
+  {% if revision %}
+  <section class="panel" aria-labelledby="latest-heading">
+    <h2 id="latest-heading">المسودة الحالية · النسخة {{ revision }}</h2>
+    <h3>العنوان</h3><pre class="exact-text" dir="auto">{{ title }}</pre>
+    <h3>نص الجواب</h3><pre class="exact-text" dir="auto">{{ body }}</pre>
+  </section>
+  <section class="panel" aria-labelledby="open-heading">
+    <h2 id="open-heading">الملاحظة المفتوحة</h2>
+    {% if active_note %}
+    <p role="status">طلب المراجع تعديلًا على <a href="/review/author/history/?before={{ active_note.revision }}&amp;after={{ active_note.revision }}#comparison">النسخة {{ active_note.revision }}</a>.</p>
+    <pre id="active-draft-note" class="exact-text" dir="auto">{{ active_text }}</pre>
+    {% if newer %}
+    <p>حُفظت نسخة أحدث بعد الملاحظة. <a href="/review/author/history/?before={{ active_note.revision }}&amp;after={{ revision }}#comparison">قارن النسختين {{ active_note.revision }} و{{ revision }}</a>.</p>
+    {% endif %}
+    {% if can_review %}
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="draft_digest" value="{{ draft_digest }}"><input type="hidden" name="note_count" value="{{ note_count }}"><input type="hidden" name="text" value="">
+      {% if newer %}<button name="action" value="close">إغلاق الملاحظة بعد مراجعة النسخة {{ revision }}</button>
+      {% else %}<button name="action" value="withdraw">سحب الملاحظة على النسخة {{ revision }}</button>{% endif %}
+    </form>
+    {% endif %}
+    {% if text_value %}<h3>نص الملاحظة التي لم تُحفظ</h3><pre class="exact-text" dir="auto"><code>{{ text_value }}</code></pre>{% endif %}
+    {% else %}
+    <p>لا توجد ملاحظة مفتوحة على هذه المسودة.</p>
+    {% if full %}<p>امتلّ سجل الملاحظات لهذه القضية التدريبية. يمكنك الرجوع إلى الملاحظات السابقة أدناه.</p>
+    {% elif can_review %}
+    <form method="post" id="draft-note-form">{% csrf_token %}
+      <input type="hidden" name="action" value="request"><input type="hidden" name="revision" value="{{ revision }}">
+      <input type="hidden" name="draft_digest" value="{{ draft_digest }}"><input type="hidden" name="note_count" value="{{ note_count }}">
+      <label for="note-text">التعديل المطلوب على النسخة {{ revision }}</label>
+      <p id="note-help">حدّد الجملة أو الموضع الذي يحتاج إلى تعديل، ثم اكتب ما تريد من المؤلف مراجعته.</p>
+      <textarea id="note-text" name="text" required maxlength="500" rows="4" cols="28" aria-describedby="note-help" dir="auto">
+{{ text_value }}</textarea>
+      <button type="submit">تسجيل الملاحظة على النسخة {{ revision }}</button>
+    </form>
+    {% endif %}
+    {% endif %}
+  </section>
+  {% if history %}
+  <section class="panel" aria-labelledby="previous-heading">
+    <h2 id="previous-heading">الملاحظات السابقة</h2>
+    <ol class="timeline">{% for item in history %}<li>
+      <p>ملاحظة على <a href="/review/author/history/?before={{ item.original.revision }}&amp;after={{ item.original.revision }}#comparison">النسخة {{ item.original.revision }}</a></p>
+      <pre class="exact-text" dir="auto">{{ item.text }}</pre>
+      <p>{% if item.decision.action == 'withdraw' %}سحبها المراجع على النسخة نفسها{% else %}أغلقها المراجع بعد فحص <a href="/review/author/history/?before={{ item.original.revision }}&amp;after={{ item.decision.revision }}#comparison">النسخة {{ item.decision.revision }}</a>{% endif %} · <time datetime="{{ item.decision_time|date:'c' }}">{{ item.decision_time|date:"Y-m-d H:i" }}</time> بتوقيت عمّان.</p>
+    </li>{% endfor %}</ol>
+  </section>
+  {% endif %}
+  {% elif not message %}<p class="notice">تتاح إضافة ملاحظة بعد حفظ النسخة الأولى من مسودة الجواب.</p>{% endif %}
+</main>
+</body>
+</html>

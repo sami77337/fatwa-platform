@@ -16,3 +16,6 @@ CSRF_COOKIE_PATH = "/review/"
 CSRF_COOKIE_SECURE = False  # This profile binds to literal HTTP loopback.
 CSRF_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_HTTPONLY = True
+
+# The URL-encoded Arabic draft can exceed the public catalog form limit.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 48 * 1024

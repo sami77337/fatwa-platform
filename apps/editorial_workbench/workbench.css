@@ -2,3 +2,6 @@
 @media print{.case-packet .packet-actions,.case-packet .section-nav,.print-help{display:none}.case-packet .panel{break-inside:auto;border-radius:0;padding:.5rem 0}.case-packet h2,.case-packet h3,.case-packet h4{break-after:avoid}.case-packet pre{overflow:visible}.site-header nav{display:none}}
 #reading-diff-text ins{background:#d6f2dd;color:#173c22;text-decoration:underline}
 #reading-diff-text del{background:#f9dddd;color:#5c2020;text-decoration:line-through}
+
+.answer-editor textarea{width:100%;max-width:100%;box-sizing:border-box;font:inherit;padding:.55rem}
+.answer-editor input[type=checkbox]{width:auto;min-height:0}

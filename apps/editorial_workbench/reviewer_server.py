@@ -32,18 +32,22 @@ def main():
     from apps.fast9_case_source_join.source_history import sample_source_events
     from apps.fast9_case_source_join.source_journal import append_source_event
 
-    secret_env = "FATWA_SYNTHETIC_REVIEWER_TOKEN_SHA256"
-    if secret_env in os.environ:
-        if not re.fullmatch(r"[0-9a-f]{64}", os.environ[secret_env]):
-            parser.error("Expected a lowercase SHA-256 digest for the training reviewer.")
-    elif sys.stderr.isatty():
-        token = secrets.token_hex(32)
-        os.environ[secret_env] = sha256(token.encode("ascii")).hexdigest()
-        print(f"Temporary training reviewer token: {token}", file=sys.stderr, flush=True)
-    else:
-        parser.error(
-            "Start from an interactive terminal or configure the training reviewer's token digest."
-        )
+    from .source_review_identity import ROLE_CREDENTIALS
+
+    for role, secret_env in ROLE_CREDENTIALS.items():
+        if secret_env in os.environ:
+            if not re.fullmatch(r"[0-9a-f]{64}", os.environ[secret_env]):
+                parser.error(f"Expected a lowercase SHA-256 digest for the training {role}.")
+        elif sys.stderr.isatty():
+            token = secrets.token_hex(32)
+            os.environ[secret_env] = sha256(token.encode("ascii")).hexdigest()
+            print(f"Temporary training {role} token: {token}", file=sys.stderr, flush=True)
+        elif role == "reviewer":
+            parser.error(
+                "Start from an interactive terminal or configure the training reviewer's token digest."
+            )
+    if os.environ.get(ROLE_CREDENTIALS["author"]) == os.environ.get(ROLE_CREDENTIALS["reviewer"]):
+        parser.error("Use independent credentials for reviewer and author.")
 
     directory_env = "FATWA_SYNTHETIC_SOURCE_JOURNAL_DIR"
     if args.demo:
@@ -56,14 +60,17 @@ def main():
         except FileExistsError:
             pass
         else:
-            (event,) = sample_source_events("intake-7", "received")
-            append_source_event(directory, event, synthetic_fixtures_only=True)
+            for case_key in ("intake-7", "intake-1", "intake-4"):
+                (event,) = sample_source_events(case_key, "received")
+                append_source_event(directory, event, synthetic_fixtures_only=True)
         os.environ[directory_env] = str(directory)
     else:
         directory = Path(os.environ.get(directory_env, ""))
     if not directory.is_absolute() or not directory.is_dir() or directory.is_symlink():
         parser.error("Supply an absolute local journal directory, or start with --demo.")
     print("Open http://127.0.0.1:8017/review/", flush=True)
+    if os.environ.get(ROLE_CREDENTIALS["author"]):
+        print("Author: http://127.0.0.1:8017/review/author/login/", flush=True)
     FollowupPreview().run_from_argv(["reviewer-desk", "runserver", "127.0.0.1:8017", "--noreload"])
 
 
