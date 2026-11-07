@@ -1,0 +1,30 @@
+name: FAST9 Arabic editorial relevance
+on:
+  push:
+    paths:
+      - 'apps/editorial_search/**'
+      - 'tests/editorial_search/**'
+      - '.github/workflows/fast9-arabic-relevance.yml'
+  pull_request:
+    paths:
+      - 'apps/editorial_search/**'
+      - 'tests/editorial_search/**'
+      - '.github/workflows/fast9-arabic-relevance.yml'
+permissions:
+  contents: read
+
+jobs:
+  relevance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements.txt
+      - name: Original search tests and paraphrase relevance
+        run: |
+          python manage.py test tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_relevance tests.editorial_search.test_query_terms --settings=config.settings.test --noinput --verbosity=1

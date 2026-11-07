@@ -105,3 +105,32 @@ issues, reran the 27 search tests and checked 199/200/201-match boundaries.
 ```powershell
 python -B manage.py test tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_workbench.test_views tests.integration.test_fast4 tests.integration.test_fast5.Fast5IntegrationTests.test_shared_navigation_connects_fast5_and_existing_fast4 --settings=config.settings.test --noinput
 ```
+
+## Offline relevance baseline for owner point 245
+
+Run these commands from the repository root with the pinned Python dependencies:
+
+```sh
+python -B -m tests.editorial_search.evaluate_relevance
+python -B manage.py test tests.editorial_search.test_relevance --settings=config.settings.test --noinput
+```
+
+The report evaluates the first three hits from the existing editorial search engine.
+Five answerable Arabic queries have fixed expected question or draft-revision identities.
+They test exact-field intent, diacritics, repeated questions across records and batches,
+gapped revisions, and a paraphrase. For the exact-field query only the identical
+question is relevant. A separate no-match control expects no results. Judgments refer
+only to the synthetic fixtures, and were selected for this engineering check. The
+specialist-reviewed Arabic benchmark in owner points 243–244 remains pending.
+
+Precision divides relevant top-three hits by three, including when fewer hits return.
+Recall divides by all judged relevant identities for the query. Reciprocal rank uses
+the first relevant hit in the top three and is zero for a miss. The macro metrics
+weight answerable queries equally. Query coverage measures the share of answerable
+queries with a relevant top-three hit. The no-match control is reported separately.
+The output includes each query, judged identities and ordered hits for replay.
+
+On engine commit `88f3d4c5`, macro precision@3 was 0.60, recall@3 was 0.64,
+MRR@3 was 0.80, and coverage was 4/5. The no-match control passed. The question
+containing «بلا مقطع» was missed for «بدون مقطع». No threshold or synonym policy is
+assumed for the full product.

@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from heapq import nsmallest
 
 from apps.editorial_queue.services import QueueCatalog, QueueRow
-from apps.reference.normalization import normalize_title
+from .query_terms import normalize_editorial_search
 
 PAGE_SIZE = 10
 MAX_RESULTS = 200
@@ -205,7 +205,7 @@ def search_catalog(
     validate_query(q, source, batch, page)
     if batch and batch not in {item.batch_id for item in catalog.batches}:
         raise ValueError("unknown_batch")
-    normalized_query = normalize_title(q)
+    normalized_query = normalize_editorial_search(q)
     terms = normalized_query.split()
 
     def ranked_matches() -> Iterator[tuple[bool, int, SearchHit]]:
@@ -214,7 +214,7 @@ def search_catalog(
         for position, document in enumerate(_documents(catalog, batch)):
             if source and document.source != source:
                 continue
-            fields = tuple(normalize_title(field.text) for field in document.fields)
+            fields = tuple(normalize_editorial_search(field.text) for field in document.fields)
             searchable = " ".join(fields)
             if all(term in searchable for term in terms):
                 yield normalized_query not in fields, position, document
