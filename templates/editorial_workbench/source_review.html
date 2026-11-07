@@ -1,0 +1,25 @@
+{% extends "editorial_workbench/base.html" %}
+{% block title %}مراجعة تغيّر نص السؤال | مساحة المراجعة{% endblock %}
+{% block content %}
+<h1>مراجعة تغيّر نص السؤال</h1>
+<p>السجل <bdi>{{ observation.case_key }}</bdi> · مراجعة المسودة {{ observation.draft_revision }}</p>
+<p>اختر مثالًا اصطناعيًا لترى ما تغيّر منذ استلام السؤال. تقتصر المقارنة على الأحداث المعروضة في المثال.</p>
+<nav class="section-nav" id="source-review-samples" aria-label="أمثلة تغيّر نص السؤال">
+  {% for key,label in samples.items %}<a href="?sample={{ key }}"{% if key == selected %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+<section class="panel" aria-labelledby="source-review-heading">
+  <h2 id="source-review-heading">مقارنة نص المصدر</h2>
+  <p class="notice" role="status" id="source-review-status" data-status="{{ observation.status }}">{{ status_message }}</p>
+  <h3>السؤال الأصلي الذي استُلِم مع المسودة</h3>
+  <pre class="exact-text" dir="auto" id="source-review-original">{{ original }}</pre>
+  <h3>النص في آخر حدث معروض</h3>
+  {% if latest != None %}<pre class="exact-text" dir="auto" id="source-review-latest">{{ latest }}</pre>{% else %}<p id="source-review-latest">آخر حدث هو حذف نص المصدر.</p>{% endif %}
+</section>
+<section class="panel" aria-labelledby="source-history-heading">
+  <h2 id="source-history-heading">الأحداث حسب ترتيب ورودها في المثال</h2>
+  <ol id="source-review-timeline">{% for event in timeline %}<li data-kind="{{ event.kind }}">
+    <strong>{{ event.label }}</strong>{% if event.body != None %}<pre class="exact-text" dir="auto">{{ event.body }}</pre>{% endif %}
+  </li>{% endfor %}</ol>
+</section>
+<p><a href="{% url 'editorial_workbench:detail' observation.case_key %}#snapshot">العودة إلى لقطة المسودة</a></p>
+{% endblock %}
