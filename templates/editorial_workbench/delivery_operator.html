@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>متابعة إيصالات التسليم</title>
+<link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">انتقل إلى القائمة</a>
+<header class="site-header">
+<div class="shell">
+<p class="eyebrow">مشغّل التسليم · بيئة تدريب محلية</p>
+<h1>متابعة محاولات التسليم</h1>
+</div>
+</header>
+<main id="main" class="shell" tabindex="-1">
+{% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
+<section class="panel" aria-labelledby="boundary">
+<h2 id="boundary">حدود التشغيل</h2>
+<p>هذه شاشة متابعة فقط. انتهاء حجز إرسال لا يعني فشل وصول الرسالة، ولا يجيز إرسالها مجددًا. لا توجد هنا وظيفة للإرسال أو إعادة المحاولة أو اعتماد الفتوى.</p>
+<form method="post" action="{% url 'operator_outbox' %}">
+{% csrf_token %}
+<input type="hidden" name="action" value="flag_expired">
+<button type="submit">وضع الحجوزات المنتهية في انتظار المصالحة</button>
+</form>
+</section>
+<section class="panel" aria-labelledby="attention-heading">
+<h2 id="attention-heading">السجلات التي تحتاج إلى متابعة</h2>
+{% if items %}
+<ol class="timeline">
+{% for item in items %}
+<li id="attempt-{{ forloop.counter }}">
+<h3>القضية <bdi dir="ltr">{{ item.case_key }}</bdi> · الجزء {{ item.part_ordinal }}</h3>
+<p>القناة <bdi dir="ltr">{{ item.provider }}</bdi> · مراجعة الجواب {{ item.answer_revision }}</p>
+<p><strong>الحالة المحفوظة:</strong> <bdi dir="ltr">{{ item.saved_state }}</bdi></p>
+<p><strong>الإجراء المطلوب:</strong> <bdi dir="ltr">{{ item.attention }}</bdi></p>
+{% if item.reservation_deadline %}
+<p>وقت انتهاء الحجز: <time datetime="{{ item.reservation_deadline }}">{{ item.reservation_deadline }}</time></p>
+{% endif %}
+{% if item.provider_message_id %}
+<p>معرّف رسالة المزود: <bdi dir="ltr">{{ item.provider_message_id }}</bdi></p>
+{% endif %}
+<p class="metadata">بصمة محاولة التسليم: <code>{{ item.intent_key }}</code></p>
+</li>
+{% endfor %}
+</ol>
+{% else %}
+<p role="status">لا توجد محاولات معلّقة في سجل التدريب الحالي.</p>
+{% endif %}
+</section>
+<form method="post" action="{% url 'operator_logout' %}">
+{% csrf_token %}<button type="submit">خروج المشغّل</button>
+</form>
+</main>
+</body>
+</html>

@@ -46,8 +46,9 @@ def main():
             parser.error(
                 "Start from an interactive terminal or configure the training reviewer's token digest."
             )
-    if os.environ.get(ROLE_CREDENTIALS["author"]) == os.environ.get(ROLE_CREDENTIALS["reviewer"]):
-        parser.error("Use independent credentials for reviewer and author.")
+    configured = [os.environ[key] for key in ROLE_CREDENTIALS.values() if os.environ.get(key)]
+    if len(set(configured)) != len(configured):
+        parser.error("Use independent credentials for reviewer, author and operator.")
 
     directory_env = "FATWA_SYNTHETIC_SOURCE_JOURNAL_DIR"
     if args.demo:
@@ -71,6 +72,8 @@ def main():
     print("Open http://127.0.0.1:8017/review/", flush=True)
     if os.environ.get(ROLE_CREDENTIALS["author"]):
         print("Author: http://127.0.0.1:8017/review/author/login/", flush=True)
+    if os.environ.get(ROLE_CREDENTIALS["operator"]):
+        print("Operator: http://127.0.0.1:8017/review/operations/login/", flush=True)
     FollowupPreview().run_from_argv(["reviewer-desk", "runserver", "127.0.0.1:8017", "--noreload"])
 
 
