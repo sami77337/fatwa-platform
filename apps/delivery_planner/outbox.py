@@ -295,10 +295,17 @@ def stage_plan(
 def reserve_for_adapter(
     directory: Path, *, intent_key: str, plan: Plan, approval: ApprovalReceipt,
     evidence: CurrentEvidence, verify_approval: Callable[[ApprovalReceipt], bool],
+    get_current_evidence: Callable[[str], CurrentEvidence] | None = None,
     ttl_seconds: int = 60, synthetic_fixtures_only: bool = False,
 ) -> Reservation:
-    """Reserve one send attempt; never retry automatically after an uncertain outcome."""
+    """Reserve only if a trusted current-evidence reader agrees at reservation time.
+
+    This is not a live channel dispatch. A future sender must independently
+    re-check freshness before its external side effect.
+    """
     require_development(synthetic_fixtures_only)
+    if not callable(get_current_evidence):
+        raise OutboxConflict("current_evidence_reader_required")
     bound = _approval(plan, approval, evidence, verify_approval)
     if type(ttl_seconds) is not int or not 5 <= ttl_seconds <= 300:
         raise OutboxConflict("invalid_reservation_ttl")
@@ -309,6 +316,16 @@ def reserve_for_adapter(
     try:
         with _db(directory, writable=True) as con:
             stored, _, _ = _verified_db(con)
+            # Caller-supplied CurrentEvidence is not proof of current state.
+            # The trusted adapter must read its canonical source here, while
+            # the local outbox reservation remains serialized.
+            try:
+                latest = get_current_evidence(plan.case_key)
+            except Exception as exc:
+                raise OutboxConflict("current_evidence_reader_unavailable") from exc
+            if type(latest) is not CurrentEvidence or latest != evidence:
+                raise OutboxConflict("current_evidence_changed")
+            bound = _approval(plan, approval, latest, verify_approval)
             row = stored.get(intent_key)
             if (
                 row is None or row[1] != _plan_fingerprint(plan)

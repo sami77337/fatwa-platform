@@ -45,7 +45,9 @@ class ReconciliationTests(unittest.TestCase):
         reservation = reserve_for_adapter(
             self.directory, intent_key=intent.intent_key,
             plan=self.plan, approval=self.receipt, evidence=self.evidence,
-            verify_approval=self.verify, ttl_seconds=5, synthetic_fixtures_only=True,
+            verify_approval=self.verify, ttl_seconds=5,
+            get_current_evidence=lambda key: self.evidence if key == "intake-7" else None,
+            synthetic_fixtures_only=True,
         )
         return intent, reservation
 
@@ -75,6 +77,7 @@ class ReconciliationTests(unittest.TestCase):
             reserve_for_adapter(
                 self.directory, intent_key=intent.intent_key, plan=self.plan,
                 approval=self.receipt, evidence=self.evidence, verify_approval=self.verify,
+                get_current_evidence=lambda key: self.evidence,
                 synthetic_fixtures_only=True,
             )
         (same,) = stage_plan(
