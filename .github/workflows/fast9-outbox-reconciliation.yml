@@ -1,0 +1,34 @@
+name: FAST9 outbox reconciliation
+on:
+  push:
+    paths:
+      - 'apps/delivery_planner/outbox.py'
+      - 'apps/delivery_planner/outbox_recovery.py'
+      - 'tests/delivery_planner/test_outbox_recovery.py'
+      - '.github/workflows/fast9-outbox-reconciliation.yml'
+  pull_request:
+    paths:
+      - 'apps/delivery_planner/outbox.py'
+      - 'apps/delivery_planner/outbox_recovery.py'
+      - 'tests/delivery_planner/test_outbox_recovery.py'
+      - '.github/workflows/fast9-outbox-reconciliation.yml'
+permissions:
+  contents: read
+jobs:
+  reconciliation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      FATWA_PRODUCTION: '0'
+      DJANGO_SETTINGS_MODULE: config.settings.test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements.txt
+      - name: Reconciliation and outbox compatibility
+        run: |
+          python -m unittest tests.delivery_planner.test_outbox_recovery tests.delivery_planner.test_outbox tests.delivery_planner.test_approval -v

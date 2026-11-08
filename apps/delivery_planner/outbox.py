@@ -32,7 +32,8 @@ MAX_EVENTS = 512
 _SHA = re.compile(r"^[a-f0-9]{64}$")
 _REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _ALLOWED = frozenset({"STAGED", "HELD_FOR_HUMAN", "RESERVED", "QUEUED",
-                      "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"})
+                      "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW",
+                      "UNKNOWN_REQUIRES_RECONCILIATION"})
 _DDL = (
     "CREATE TABLE intents (intent_key TEXT PRIMARY KEY, plan_fingerprint TEXT NOT NULL,"
     "case_key TEXT NOT NULL, provider TEXT NOT NULL, revision INTEGER NOT NULL,"
@@ -380,6 +381,9 @@ def record_provider_receipt(
                 "RESERVED": {"QUEUED", "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
                 "QUEUED": {"SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
                 "SENT_UNCONFIRMED": {"DELIVERED", "FAILED_REQUIRES_REVIEW"},
+                # An expired reservation is not permission to send again. A
+                # verified late receipt may still establish what actually happened.
+                "UNKNOWN_REQUIRES_RECONCILIATION": {"SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
             }
             if state not in allowed.get(old, set()):
                 raise OutboxConflict("provider_receipt_invalid_transition")
