@@ -45,7 +45,11 @@ def desk_login(request, role="reviewer"):
         return render(
             request,
             "editorial_workbench/reviewer_login.html",
-            {"message": message, "author_login": role == "author"},
+            {
+                "message": message,
+                "author_login": role == "author",
+                "operator_login": role == "operator",
+            },
             status=status,
         )
 
@@ -69,7 +73,11 @@ def desk_login(request, role="reviewer"):
     rotate_token(request)
     response = HttpResponse(
         status=303,
-        headers={"Location": reverse("author_queue" if role == "author" else "reviewer_desk")},
+        headers={"Location": reverse({
+            "author": "author_queue",
+            "operator": "operator_outbox",
+            "reviewer": "reviewer_desk",
+        }[role])},
     )
     return set_role_cookie(request, response, role)
 
@@ -93,7 +101,11 @@ def desk_logout(request, role="reviewer"):
     rotate_token(request)
     response = HttpResponse(
         status=303,
-        headers={"Location": reverse("author_login" if role == "author" else "reviewer_login")},
+        headers={"Location": reverse({
+            "author": "author_login",
+            "operator": "operator_login",
+            "reviewer": "reviewer_login",
+        }[role])},
     )
     response.delete_cookie(_COOKIE_PREFIX + role, path="/review/", samesite="Strict")
     return response

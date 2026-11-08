@@ -35,6 +35,7 @@ from .answer_editor import answer_editor
 from .answer_history import answer_history
 from .author_queue import author_queue
 from .draft_notes import draft_notes
+from .delivery_operator import operator_outbox
 from .reading_diff import reading_diff
 from .requester_reply import requester_reply
 from .reviewer_access import desk_login, desk_logout, signed_in
@@ -70,6 +71,9 @@ class DeskGuard:
             "/review/author/logout/",
             "/review/author/draft/",
             "/review/author/notes/",
+            "/review/operations/login/",
+            "/review/operations/logout/",
+            "/review/operations/outbox/",
         }
         methods = ("GET", "HEAD", "POST") if request.path in form_paths else ("GET", "HEAD")
         response = (
@@ -337,6 +341,9 @@ urlpatterns = [
     path("review/author/draft/", answer_editor, name="answer_editor"),
     path("review/author/history/", answer_history, name="answer_history"),
     path("review/author/notes/", draft_notes, name="draft_notes"),
+    path("review/operations/login/", desk_login, {"role": "operator"}, name="operator_login"),
+    path("review/operations/logout/", desk_logout, {"role": "operator"}, name="operator_logout"),
+    path("review/operations/outbox/", operator_outbox, name="operator_outbox"),
     path(
         "dev/editorial-workbench/style.css",
         require_safe(serve),
