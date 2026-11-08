@@ -58,6 +58,41 @@ class OutboxConflict(ValueError):
     """An intent, approval, reservation or receipt conflicts with saved history."""
 
 
+# The event chain is append-only. A valid hash tip alone must not make an
+# impossible lifecycle transition or an internally inconsistent receipt valid.
+_ALLOWED_TRANSITIONS = {
+    "": {"STAGED", "HELD_FOR_HUMAN"},
+    "STAGED": {"RESERVED"},
+    "RESERVED": {
+        "UNKNOWN_REQUIRES_RECONCILIATION", "QUEUED", "SENT_UNCONFIRMED",
+        "DELIVERED", "FAILED_REQUIRES_REVIEW",
+    },
+    "UNKNOWN_REQUIRES_RECONCILIATION": {
+        "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW",
+    },
+    "QUEUED": {"SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
+    "SENT_UNCONFIRMED": {"DELIVERED", "FAILED_REQUIRES_REVIEW"},
+}
+
+
+def _valid_utc_timestamp(value: object) -> bool:
+    if type(value) is not str or not 20 <= len(value) <= 40:
+        return False
+    try:
+        stamp = datetime.fromisoformat(value)
+    except ValueError:
+        return False
+    return (
+        stamp.tzinfo is not None
+        and stamp.utcoffset() == timedelta(0)
+        and stamp.isoformat(timespec="microseconds") == value
+    )
+
+
+def _valid_ref(value: object, limit: int = 128) -> bool:
+    return type(value) is str and len(value) <= limit and _REF.fullmatch(value) is not None
+
+
 @dataclass(frozen=True, slots=True)
 class StoredIntent:
     intent_key: str
@@ -134,6 +169,9 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
             seq != n or old_digest != previous or digest != expected
             or new not in _ALLOWED or (key in latest and latest[key] != old)
             or (key not in latest and old != "")
+            or new not in _ALLOWED_TRANSITIONS.get(old, set())
+            or not _valid_utc_timestamp(recorded)
+            or not _valid_ref(ref, 160)
         ):
             raise OutboxConflict("outbox_audit_invalid")
         latest[key] = new
@@ -150,8 +188,29 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
             or state not in _ALLOWED or latest.get(key) != state
             or action not in {"READY_FOR_ADAPTER", "HUMAN_ACTION_REQUIRED", "PUBLISHED_LINK_OPTION"}
             or (action != "READY_FOR_ADAPTER" and state != "HELD_FOR_HUMAN")
-            or (token is not None and not _SHA.fullmatch(token))
+            or not _valid_ref(case)
+            or not _valid_ref(provider, 64)
+            or not _valid_utc_timestamp(created)
+            or not _valid_utc_timestamp(updated)
+            or updated < created
+            or (token is not None and (type(token) is not str or not _SHA.fullmatch(token)))
             or (token is None) != (until is None)
+            or (until is not None and not _valid_utc_timestamp(until))
+            or (state in {"STAGED", "HELD_FOR_HUMAN"} and (
+                token is not None or until is not None or message is not None or status is not None
+            ))
+            or (state not in {"STAGED", "HELD_FOR_HUMAN"} and token is None)
+            or (state == "STAGED" and action != "READY_FOR_ADAPTER")
+            or (state == "HELD_FOR_HUMAN" and action == "READY_FOR_ADAPTER")
+            or (state in {"RESERVED", "UNKNOWN_REQUIRES_RECONCILIATION"} and (
+                message is not None or status is not None
+            ))
+            or (state in {"QUEUED", "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"}
+                and not _valid_ref(message))
+            or (state == "QUEUED" and status != "QUEUED")
+            or (state == "SENT_UNCONFIRMED" and status != "ACCEPTED")
+            or (state == "DELIVERED" and status != "DELIVERED")
+            or (state == "FAILED_REQUIRES_REVIEW" and status != "FAILED")
         ):
             raise OutboxConflict("outbox_intent_invalid")
         stored[key] = row
