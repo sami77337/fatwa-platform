@@ -48,6 +48,7 @@ class OutboxTests(unittest.TestCase):
         return reserve_for_adapter(
             self.dir, intent_key=key, plan=self.plan, approval=self.receipt,
             evidence=self.evidence, verify_approval=self.verifier,
+            get_current_evidence=lambda key: self.evidence if key == "intake-7" else None,
             synthetic_fixtures_only=True,
         )
 
@@ -105,7 +106,9 @@ class OutboxTests(unittest.TestCase):
             reserve_for_adapter(
                 self.dir, intent_key=key, plan=self.plan, approval=self.receipt,
                 evidence=replace(self.evidence, clarification_pending=True),
-                verify_approval=self.verifier, synthetic_fixtures_only=True,
+                verify_approval=self.verifier,
+                get_current_evidence=lambda key: self.evidence,
+                synthetic_fixtures_only=True,
             )
         claim = self.reserve(key)
         with self.assertRaises(OutboxConflict):
@@ -118,6 +121,37 @@ class OutboxTests(unittest.TestCase):
         self.assertEqual(self.reconcile(claim, "ACCEPTED", "provider-01").state, "SENT_UNCONFIRMED")
         with self.assertRaises(OutboxConflict):
             self.reconcile(claim, "DELIVERED", "provider-02")
+
+    def test_reservation_refuses_missing_reader_and_stale_canonical_evidence(self):
+        key = self.stage()[0].intent_key
+        options = dict(
+            directory=self.dir, intent_key=key, plan=self.plan,
+            approval=self.receipt, evidence=self.evidence,
+            verify_approval=self.verifier, synthetic_fixtures_only=True,
+        )
+        with self.assertRaisesRegex(OutboxConflict, "current_evidence_reader_required"):
+            reserve_for_adapter(**options)
+        with self.assertRaisesRegex(OutboxConflict, "current_evidence_changed"):
+            reserve_for_adapter(
+                **options,
+                get_current_evidence=lambda case: replace(self.evidence, source_digest=C),
+            )
+        with self.assertRaisesRegex(OutboxConflict, "current_evidence_reader_unavailable"):
+            reserve_for_adapter(
+                **options,
+                get_current_evidence=lambda case: 1 / 0,
+            )
+        self.assertEqual(
+            {row.intent_key: row.state for row in list_intents(
+                self.dir, synthetic_fixtures_only=True,
+            )}[key],
+            "STAGED",
+        )
+        reserved = reserve_for_adapter(
+            **options,
+            get_current_evidence=lambda case: self.evidence,
+        )
+        self.assertEqual(reserved.intent_key, key)
 
     def test_production_is_never_activated(self):
         with patch.dict(os.environ, {"FATWA_PRODUCTION": "1"}):
