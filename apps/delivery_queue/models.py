@@ -1,6 +1,7 @@
-"""PostgreSQL-only synthetic delivery queue; never wired to a real sender."""
+"""Synthetic PostgreSQL delivery metadata; no answer bodies or signing keys."""
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import Q
+from django.utils import timezone
 
 
 class ApprovalClaim(models.Model):
@@ -31,11 +32,8 @@ class DeliveryIntent(models.Model):
     DELIVERED = "DELIVERED"
     FAILED_REQUIRES_REVIEW = "FAILED_REQUIRES_REVIEW"
     UNKNOWN_REQUIRES_RECONCILIATION = "UNKNOWN_REQUIRES_RECONCILIATION"
-    STATES = [(x, x) for x in (
-        STAGED, LEASED, SENT_UNCONFIRMED, DELIVERED,
-        FAILED_REQUIRES_REVIEW, UNKNOWN_REQUIRES_RECONCILIATION,
-    )]
-
+    STATES = [(x, x) for x in (STAGED, LEASED, SENT_UNCONFIRMED, DELIVERED,
+                             FAILED_REQUIRES_REVIEW, UNKNOWN_REQUIRES_RECONCILIATION)]
     intent_key = models.CharField(max_length=64, primary_key=True)
     approval = models.ForeignKey(ApprovalClaim, on_delete=models.PROTECT, related_name="intents")
     plan_fingerprint = models.CharField(max_length=64)
@@ -62,25 +60,30 @@ class DeliveryIntent(models.Model):
             models.CheckConstraint(condition=Q(answer_revision__gte=1, ordinal__gte=1, ordinal__lte=16), name="dq_intent_order_bound"),
             models.CheckConstraint(condition=Q(payload_sha256__regex=r"^[a-f0-9]{64}$"), name="dq_intent_payload_sha_format"),
             models.CheckConstraint(condition=Q(plan_fingerprint__regex=r"^[a-f0-9]{64}$"), name="dq_intent_plan_sha_format"),
-            models.CheckConstraint(
-                condition=(
-                    Q(state="STAGED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
-                      lease_expires_at__isnull=True, provider_message_id__isnull=True, provider_status__isnull=True)
-                    | Q(state="LEASED", lease_token_sha256__regex=r"^[a-f0-9]{64}$",
-                        lease_owner__isnull=False, lease_expires_at__isnull=False,
-                        provider_message_id__isnull=True, provider_status__isnull=True)
-                    | Q(state="SENT_UNCONFIRMED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
-                        lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="ACCEPTED")
-                    | Q(state="DELIVERED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
-                        lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="DELIVERED")
-                    | Q(state="FAILED_REQUIRES_REVIEW", lease_token_sha256__isnull=True, lease_owner__isnull=True,
-                        lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="FAILED")
-                    | Q(state="UNKNOWN_REQUIRES_RECONCILIATION", lease_token_sha256__regex=r"^[a-f0-9]{64}$",
-                        lease_owner__isnull=False, lease_expires_at__isnull=False,
-                        provider_message_id__isnull=True, provider_status__isnull=True)
-                ),
-                name="dq_intent_state_consistent",
-            ),
+            models.CheckConstraint(condition=(
+                Q(state="STAGED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                  lease_expires_at__isnull=True, provider_message_id__isnull=True, provider_status__isnull=True)
+                | Q(state="LEASED", lease_token_sha256__regex=r"^[a-f0-9]{64}$", lease_owner__isnull=False,
+                    lease_expires_at__isnull=False, provider_message_id__isnull=True, provider_status__isnull=True)
+                | Q(state="SENT_UNCONFIRMED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="ACCEPTED")
+                | Q(state="DELIVERED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="DELIVERED")
+                | Q(state="FAILED_REQUIRES_REVIEW", lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="FAILED")
+                | Q(state="UNKNOWN_REQUIRES_RECONCILIATION", lease_token_sha256__regex=r"^[a-f0-9]{64}$",
+                    lease_owner__isnull=False, lease_expires_at__isnull=False, provider_message_id__isnull=True,
+                    provider_status__isnull=True)
+            ), name="dq_intent_state_consistent"),
+            # SQL CHECK accepts UNKNOWN. Explicit nullability below closes the
+            # gap left by regex/equality predicates on nullable state fields.
+            models.CheckConstraint(condition=(
+                Q(state="STAGED")
+                | Q(state__in=["LEASED", "UNKNOWN_REQUIRES_RECONCILIATION"],
+                    lease_token_sha256__isnull=False)
+                | Q(state__in=["SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"],
+                    provider_status__isnull=False)
+            ), name="dq_intent_required_state_fields"),
         ]
 
 
@@ -123,3 +126,24 @@ class DeliveryAuditEvent(models.Model):
     class Meta:
         db_table = "fatwa_delivery_audit_event"
         ordering = ["id"]
+
+
+class SignedDeliveryContext(models.Model):
+    approval = models.OneToOneField(ApprovalClaim, primary_key=True, on_delete=models.PROTECT, related_name="signed_context")
+    envelope = models.JSONField()
+    envelope_sha256 = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "fatwa_delivery_signed_context"
+
+
+class DeliveryAttempt(models.Model):
+    intent = models.OneToOneField(DeliveryIntent, primary_key=True, on_delete=models.PROTECT, related_name="attempt")
+    worker_id = models.CharField(max_length=128)
+    token_sha256 = models.CharField(max_length=64)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "fatwa_delivery_attempt"
