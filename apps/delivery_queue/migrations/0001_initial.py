@@ -84,8 +84,7 @@ class Migration(migrations.Migration):
                     | models.Q(("state","FAILED_REQUIRES_REVIEW"),("lease_token_sha256__isnull",True),("lease_owner__isnull",True),("lease_expires_at__isnull",True),("provider_message_id__isnull",False),("provider_status","FAILED"))
                     | models.Q(("state","UNKNOWN_REQUIRES_RECONCILIATION"),("lease_token_sha256__regex",r"^[a-f0-9]{64}$"),("lease_owner__isnull",False),("lease_expires_at__isnull",False),("provider_message_id__isnull",True),("provider_status__isnull",True))
                 ),name="dq_intent_state_consistent"),
-            ]},
-            indexes=[models.Index(fields=["provider","state","created_at"],name="dq_intent_claim_idx")]},
+            ],"indexes":[models.Index(fields=["provider","state","created_at"],name="dq_intent_claim_idx")]},
         ),
         migrations.CreateModel(
             name="ProviderReceipt",
