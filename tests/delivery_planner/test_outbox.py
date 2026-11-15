@@ -174,17 +174,30 @@ class OutboxTests(unittest.TestCase):
             )
 
     def test_provider_receipt_reference_cannot_be_reused_for_another_intent(self):
-        key = self.stage()[0].intent_key
-        claim = self.reserve(key)
-        receipt = ProviderReceipt(key, "provider-01", "ACCEPTED", "globally-unique-event")
+        plan = plan_delivery(
+            case_key="intake-7", source_peer_key="thread:Q1",
+            parts=(Part(1, "text", C, 12), Part(2, "text", B, 14)),
+            capabilities=Capabilities("youtube-comment", "v1", frozenset({"text"}), 280, True),
+            authority=Authority(3, A, True), choice=Choice(),
+        )
+        intents = stage_plan(
+            self.dir, plan=plan, approval=self.receipt,
+            evidence=self.evidence, verify_approval=self.verifier,
+            synthetic_fixtures_only=True,
+        )
+        first = self.reserve(intents[0].intent_key)
+        second = self.reserve(intents[1].intent_key)
+        receipt = ProviderReceipt(
+            first.intent_key, "provider-01", "ACCEPTED", "globally-unique-event"
+        )
         record_provider_receipt(
-            self.dir, reservation=claim, receipt=receipt,
+            self.dir, reservation=first, receipt=receipt,
             verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
         )
-        other = replace(receipt, intent_key="f" * 64)
+        reused = replace(receipt, intent_key=second.intent_key)
         with self.assertRaisesRegex(OutboxConflict, "provider_receipt_reference_reused"):
             record_provider_receipt(
-                self.dir, reservation=claim, receipt=other,
+                self.dir, reservation=second, receipt=reused,
                 verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
             )
 
