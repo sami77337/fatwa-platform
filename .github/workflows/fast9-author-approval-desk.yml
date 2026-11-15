@@ -63,7 +63,7 @@ jobs:
       - name: Verify revision and syntax
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          python -m compileall -q apps/delivery_queue tests/delivery_queue tools/dev/author_desk_acceptance.py
+          python -m compileall -q apps/delivery_queue tests/delivery_queue tools/dev/author_desk_acceptance.py tools/dev/author_desk_browser.py
       - name: Initialize only the fresh owned synthetic database
         run: |
           python - <<'PY'
@@ -84,6 +84,14 @@ jobs:
         run: |
           mkdir -p .local/qa/trusted-journey
           python tools/dev/author_desk_acceptance.py 2>&1 | tee .local/qa/trusted-journey/author-tests.log
+      - name: Native author browser workflow
+        if: matrix.postgres == '17'
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+        run: |
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+          test -x "$FATWA_FASTBUILD_BROWSER"
+          python tools/dev/author_desk_browser.py 2>&1 | tee .local/qa/trusted-journey/author-browser.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

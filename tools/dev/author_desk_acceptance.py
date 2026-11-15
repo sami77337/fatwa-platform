@@ -7,6 +7,6 @@ from tools.dev import trusted_delivery_acceptance as runner
 
 if __name__ == '__main__':
     runner.MODULES = [*runner.MODULES, 'tests.delivery_queue.test_author_handoff',
-                      'tests.delivery_queue.test_author_desk_http']
-    runner.MINIMUM_CASES = 85
+        'tests.delivery_queue.test_author_desk_http', 'tests.delivery_queue.test_approval_packet_context']
+    runner.MINIMUM_CASES = 88
     raise SystemExit(runner.main())

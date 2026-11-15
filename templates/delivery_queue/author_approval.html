@@ -1,0 +1,14 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>طلب اعتماد المفتي</title><link rel="stylesheet" href="/review/author/approval/desk.css"></head><body>
+<a class="skip" href="#main">انتقل إلى المحتوى</a><header><h1>طلب اعتماد المفتي</h1><p class="note">المراجعة الفنية ليست اعتمادًا شرعيًا. المؤلف يجهز الطلب ويستقبل إيصالًا موقّعًا من جهة موثوقة؛ لا تُنشئ هذه الصفحة توقيعًا أو ترسل الجواب.</p></header>
+<main id="main" tabindex="-1"><p>القضية: <bdi>{{ candidate.case_key }}</bdi> — الحد الاصطناعي للجزء: {{ maximum }} حرفًا.</p>
+<form method="get"><label><input type="checkbox" name="split" value="1" {% if split %}checked{% endif %}> أختار تقسيم النص إلى أجزاء دون حذف أو اختصار.</label><button type="submit">تحديث المعاينة</button></form>
+<article><h2>{{ title|default:'لا يوجد عنوان محفوظ' }}</h2><pre id="answer-body">{{ body }}</pre></article>
+{% if blocked %}<p class="note" role="status">الطلب غير جاهز. يلزم أحدث قراءة ومراجعة فنية، وعدم وجود استيضاح أو تعديل مفتوح، واختيار التقسيم عند الحاجة.</p>{% endif %}
+{% if package %}<article><h2>طلب الاعتماد الحالي</h2><p>نسخة الجواب: {{ package.evidence.answer_revision }}. عدد الأجزاء: {{ package.segments|length }}.</p><p>الحالة: <bdi>{{ package.status }}</bdi></p><a href="request.json{% if split %}?split=1{% endif %}">تنزيل طلب الاعتماد بصيغة JSON</a><p class="note">يتضمن الملف نص السؤال المرجعي وبيانات ربطه ونص الجواب المحفوظ حسب الحقول المصدّرة؛ يُشارك فقط مع جهة الاعتماد المخولة. لا يحتوي على اعتماد أو مفتاح خاص.</p></article>
+{% for segment in package.segments %}<article><h2>الجزء {{ segment.ordinal }}</h2><pre>{{ segment.exact_text }}</pre></article>{% endfor %}
+{% if verifier_ready %}<form method="post" action="receipt/">{% csrf_token %}
+<input type="hidden" name="request_sha256" value="{{ package.request_sha256 }}"><input type="hidden" name="confirmation" value="{{ confirmation }}"><input type="hidden" name="split" value="{% if split %}1{% else %}0{% endif %}">
+<h2>استقبال إيصال اعتماد موقّع</h2><label for="signed-response">JSON الصادر من جهة الاعتماد الموثوقة</label><textarea id="signed-response" name="response" required maxlength="16384" spellcheck="false" autocomplete="off"></textarea>
+<label><input id="acknowledge" type="checkbox" name="acknowledge" value="1" required> أطلب التحقق من الإيصال وتسجيل أجزاء هذا الجواب في الطابور فقط، دون إرسال.</label><button type="submit">تسجيل الإيصال وتجهيز الطابور</button></form>
+{% else %}<p class="note">لم تُربط جهة تحقق موثوقة في إعداد الخادم. التصدير متاح، واستقبال الاعتماد معطل.</p>{% endif %}{% endif %}
+</main></body></html>
