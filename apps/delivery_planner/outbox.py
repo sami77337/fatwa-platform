@@ -29,6 +29,7 @@ FILE_NAME = "synthetic-delivery-outbox.sqlite3"
 APP_ID = 0x464F4258  # FOBX
 MAX_INTENTS = 128
 MAX_EVENTS = 512
+MAX_APPROVAL_CLAIMS = 128
 _SHA = re.compile(r"^[a-f0-9]{64}$")
 _REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _ALLOWED = frozenset({"STAGED", "HELD_FOR_HUMAN", "RESERVED", "QUEUED",
@@ -47,6 +48,14 @@ _DDL = (
     "digest TEXT NOT NULL) WITHOUT ROWID",
     "CREATE TABLE audit_head (id INTEGER PRIMARY KEY, seq INTEGER NOT NULL,"
     "digest TEXT NOT NULL) WITHOUT ROWID",
+    "CREATE TABLE approval_claims (receipt_id TEXT PRIMARY KEY, approval_fingerprint TEXT NOT NULL,"
+    "plan_fingerprint TEXT NOT NULL, case_key TEXT NOT NULL, revision INTEGER NOT NULL,"
+    "source_digest TEXT NOT NULL, reply_digest TEXT NOT NULL, approver_id TEXT NOT NULL,"
+    "key_id TEXT NOT NULL, nonce TEXT NOT NULL, created_at TEXT NOT NULL) WITHOUT ROWID",
+    "CREATE TRIGGER immutable_approval_claims_update BEFORE UPDATE ON approval_claims "
+    "BEGIN SELECT RAISE(ABORT,'append_only'); END",
+    "CREATE TRIGGER immutable_approval_claims_delete BEFORE DELETE ON approval_claims "
+    "BEGIN SELECT RAISE(ABORT,'append_only'); END",
     "CREATE TRIGGER immutable_outbox_events_update BEFORE UPDATE ON events "
     "BEGIN SELECT RAISE(ABORT,'append_only'); END",
     "CREATE TRIGGER immutable_outbox_events_delete BEFORE DELETE ON events "
@@ -140,7 +149,7 @@ def _path(directory: Path) -> Path:
 
 def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
     if con.execute("PRAGMA application_id").fetchone() != (APP_ID,) or (
-        con.execute("PRAGMA user_version").fetchone() != (1,)
+        con.execute("PRAGMA user_version").fetchone() != (2,)
     ):
         raise OutboxConflict("wrong_outbox_database")
     schema = con.execute(
@@ -148,6 +157,21 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
     ).fetchall()
     if {r[0] for r in schema} != set(_DDL):
         raise OutboxConflict("outbox_schema_mismatch")
+    claims = con.execute("SELECT * FROM approval_claims LIMIT ?", (MAX_APPROVAL_CLAIMS + 1,)).fetchall()
+    if len(claims) > MAX_APPROVAL_CLAIMS:
+        raise OutboxConflict("approval_claim_capacity")
+    for claim in claims:
+        receipt_id, approval_fp, plan_fp, case, revision, source, reply, approver, key_id, nonce, created = claim
+        if (
+            not _valid_ref(receipt_id)
+            or not all(type(v) is str and _SHA.fullmatch(v) for v in (approval_fp, plan_fp, source))
+            or not _valid_ref(case) or type(revision) is not int or revision < 1
+            or not _valid_ref(approver) or (key_id and not _valid_ref(key_id))
+            or (nonce and re.fullmatch(r"[A-Za-z0-9_-]{32,128}", nonce) is None)
+            or (reply != "" and (type(reply) is not str or _SHA.fullmatch(reply) is None))
+            or not _valid_utc_timestamp(created)
+        ):
+            raise OutboxConflict("approval_claim_invalid")
     rows = con.execute("SELECT * FROM intents LIMIT ?", (MAX_INTENTS + 1,)).fetchall()
     if len(rows) > MAX_INTENTS:
         raise OutboxConflict("outbox_capacity")
@@ -216,6 +240,13 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
         stored[key] = row
     if len(latest) != len(stored):
         raise OutboxConflict("outbox_missing_intent")
+    for claim in claims:
+        if not any(
+            row[1] == claim[2] and row[2] == claim[3] and row[4] == claim[4]
+            and row[6] == claim[1]
+            for row in stored.values()
+        ):
+            raise OutboxConflict("approval_claim_without_matching_intent")
     return stored, len(events), previous
 
 
@@ -239,7 +270,7 @@ def _db(directory: Path, *, writable: bool):
             if con.execute("SELECT count(*) FROM sqlite_schema").fetchone() != (0,):
                 raise OutboxConflict("unrecognized_outbox_file")
             con.execute(f"PRAGMA application_id={APP_ID}")
-            con.execute("PRAGMA user_version=1")
+            con.execute("PRAGMA user_version=2")
             for ddl in _DDL:
                 con.execute(ddl)
             con.execute("INSERT INTO audit_head VALUES (1,0,'')")
@@ -315,9 +346,34 @@ def stage_plan(
         ):
             raise InvalidPlan("invalid_plan_step")
     fingerprint = _plan_fingerprint(plan)
+    receipt_id = approval.receipt_id
+    key_id = getattr(approval, "key_id", "")
+    nonce = getattr(approval, "nonce", "")
+    if not _valid_ref(receipt_id) or (key_id and not _valid_ref(key_id)) or (
+        nonce and re.fullmatch(r"[A-Za-z0-9_-]{32,128}", nonce) is None
+    ):
+        raise InvalidPlan("invalid_approval_claim_identity")
     try:
         with _db(directory, writable=True) as con:
             stored, _, _ = _verified_db(con)
+            claim = con.execute(
+                "SELECT * FROM approval_claims WHERE receipt_id=?", (receipt_id,)
+            ).fetchone()
+            desired_claim = (
+                receipt_id, bound.approval_fingerprint, fingerprint, plan.case_key,
+                plan.answer_revision, approval.source_digest, approval.reply_digest,
+                approval.approver_id, key_id, nonce,
+            )
+            if claim is not None:
+                if claim[:10] != desired_claim:
+                    raise OutboxConflict("approval_receipt_replay_or_changed_plan")
+            else:
+                if con.execute("SELECT count(*) FROM approval_claims").fetchone()[0] >= MAX_APPROVAL_CLAIMS:
+                    raise OutboxConflict("approval_claim_capacity")
+                con.execute(
+                    "INSERT INTO approval_claims VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    (*desired_claim, _now()),
+                )
             for step in plan.steps:
                 desired = "STAGED" if step.action == "READY_FOR_ADAPTER" else "HELD_FOR_HUMAN"
                 row = stored.get(step.idempotency_key)
@@ -385,6 +441,15 @@ def reserve_for_adapter(
             if type(latest) is not CurrentEvidence or latest != evidence:
                 raise OutboxConflict("current_evidence_changed")
             bound = _approval(plan, approval, latest, verify_approval)
+            claim_row = con.execute(
+                "SELECT approval_fingerprint,plan_fingerprint,case_key,revision,source_digest,reply_digest "
+                "FROM approval_claims WHERE receipt_id=?", (approval.receipt_id,)
+            ).fetchone()
+            if claim_row != (
+                bound.approval_fingerprint, _plan_fingerprint(plan), plan.case_key,
+                plan.answer_revision, approval.source_digest, approval.reply_digest,
+            ):
+                raise OutboxConflict("approval_claim_missing_or_mismatched")
             row = stored.get(intent_key)
             if (
                 row is None or row[1] != _plan_fingerprint(plan)
