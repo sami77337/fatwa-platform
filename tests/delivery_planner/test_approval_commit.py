@@ -5,10 +5,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sqlite3
 import unittest
+import hashlib
+import json
 from dataclasses import replace
 
 from apps.delivery_planner.approval import ApprovalReceipt, CurrentEvidence
-from apps.delivery_planner.outbox import FILE_NAME, OutboxConflict, list_intents, stage_plan
+from apps.delivery_planner.outbox import FILE_NAME, OutboxConflict, _DDL, list_intents, stage_plan
 from apps.delivery_planner.planner import Authority, Capabilities, Choice, InvalidPlan, Part, plan_delivery
 
 A, B, C, D = "a" * 64, "b" * 64, "c" * 64, "d" * 64
@@ -98,6 +100,50 @@ class AtomicApprovalCommitTests(unittest.TestCase):
             con.execute("DROP TRIGGER immutable_approval_claims_update")
             con.commit()
         with self.assertRaisesRegex(OutboxConflict, "outbox_schema_mismatch"):
+            list_intents(self.directory, synthetic_fixtures_only=True)
+
+    def test_plan_manifest_rejects_missing_part_even_after_audit_chain_rebuild(self):
+        plan = plan_delivery(
+            case_key="case-atomic-1", source_peer_key="thread:atomic-1",
+            parts=(Part(1, "text", C, 17), Part(2, "text", D, 19)),
+            capabilities=Capabilities("reply-source", "v1", frozenset({"text"}), 200, True),
+            authority=Authority(4, A, True), choice=Choice(),
+        )
+        rows = self.stage(plan)
+        self.assertEqual(len(rows), 2)
+        with sqlite3.connect(self.directory / FILE_NAME) as con:
+            # Simulate a local file editor deleting a part and its corresponding
+            # audit event, then rebuilding the unkeyed event chain consistently.
+            for trigger in ("immutable_outbox_events_update", "immutable_outbox_events_delete"):
+                con.execute(f"DROP TRIGGER {trigger}")
+            missing_key = rows[1].intent_key
+            con.execute("DELETE FROM intents WHERE intent_key=?", (missing_key,))
+            con.execute("DELETE FROM events WHERE intent_key=?", (missing_key,))
+            remaining = con.execute(
+                "SELECT intent_key,old_state,new_state,evidence_ref,recorded_at "
+                "FROM events ORDER BY seq"
+            ).fetchall()
+            con.execute("DELETE FROM events")
+            previous = ""
+            for seq, (key, old, new, ref, recorded) in enumerate(remaining, 1):
+                payload = [seq, key, old, new, ref, recorded]
+                digest = hashlib.sha256((
+                    previous + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+                ).encode()).hexdigest()
+                con.execute(
+                    "INSERT INTO events VALUES (?,?,?,?,?,?,?,?)",
+                    (seq, key, old, new, ref, recorded, previous, digest),
+                )
+                previous = digest
+            con.execute(
+                "UPDATE audit_head SET seq=?,digest=? WHERE id=1",
+                (len(remaining), previous),
+            )
+            for ddl in _DDL:
+                if "immutable_outbox_events_update" in ddl or "immutable_outbox_events_delete" in ddl:
+                    con.execute(ddl)
+            con.commit()
+        with self.assertRaisesRegex(OutboxConflict, "approval_claim_parts_incomplete"):
             list_intents(self.directory, synthetic_fixtures_only=True)
 
     def test_invalid_receipt_identity_is_rejected_before_creating_the_outbox(self):

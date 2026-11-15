@@ -30,6 +30,7 @@ APP_ID = 0x464F4258  # FOBX
 MAX_INTENTS = 128
 MAX_EVENTS = 512
 MAX_APPROVAL_CLAIMS = 128
+MAX_PLAN_PARTS = 16
 MAX_PROVIDER_RECEIPTS = 512
 _SHA = re.compile(r"^[a-f0-9]{64}$")
 _REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -52,7 +53,8 @@ _DDL = (
     "CREATE TABLE approval_claims (receipt_id TEXT PRIMARY KEY, approval_fingerprint TEXT NOT NULL,"
     "plan_fingerprint TEXT NOT NULL, case_key TEXT NOT NULL, revision INTEGER NOT NULL,"
     "source_digest TEXT NOT NULL, reply_digest TEXT NOT NULL, approver_id TEXT NOT NULL,"
-    "key_id TEXT NOT NULL, nonce TEXT NOT NULL, created_at TEXT NOT NULL) WITHOUT ROWID",
+    "key_id TEXT NOT NULL, nonce TEXT NOT NULL, expected_parts INTEGER NOT NULL,"
+    "parts_manifest_sha256 TEXT NOT NULL, created_at TEXT NOT NULL) WITHOUT ROWID",
     "CREATE TRIGGER immutable_approval_claims_update BEFORE UPDATE ON approval_claims "
     "BEGIN SELECT RAISE(ABORT,'append_only'); END",
     "CREATE TRIGGER immutable_approval_claims_delete BEFORE DELETE ON approval_claims "
@@ -157,7 +159,7 @@ def _path(directory: Path) -> Path:
 
 def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
     if con.execute("PRAGMA application_id").fetchone() != (APP_ID,) or (
-        con.execute("PRAGMA user_version").fetchone() != (3,)
+        con.execute("PRAGMA user_version").fetchone() != (4,)
     ):
         raise OutboxConflict("wrong_outbox_database")
     schema = con.execute(
@@ -169,11 +171,17 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
     if len(claims) > MAX_APPROVAL_CLAIMS:
         raise OutboxConflict("approval_claim_capacity")
     for claim in claims:
-        receipt_id, approval_fp, plan_fp, case, revision, source, reply, approver, key_id, nonce, created = claim
+        (
+            receipt_id, approval_fp, plan_fp, case, revision, source, reply,
+            approver, key_id, nonce, expected_parts, manifest_sha, created,
+        ) = claim
         if (
             not _valid_ref(receipt_id)
-            or not all(type(v) is str and _SHA.fullmatch(v) for v in (approval_fp, plan_fp, source))
+            or not all(type(v) is str and _SHA.fullmatch(v) for v in (
+                approval_fp, plan_fp, source, manifest_sha,
+            ))
             or not _valid_ref(case) or type(revision) is not int or revision < 1
+            or type(expected_parts) is not int or not 1 <= expected_parts <= MAX_PLAN_PARTS
             or not _valid_ref(approver) or (key_id and not _valid_ref(key_id))
             or (nonce and re.fullmatch(r"[A-Za-z0-9_-]{32,128}", nonce) is None)
             or (reply != "" and (type(reply) is not str or _SHA.fullmatch(reply) is None))
@@ -249,12 +257,30 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
     if len(latest) != len(stored):
         raise OutboxConflict("outbox_missing_intent")
     for claim in claims:
-        if not any(
-            row[1] == claim[2] and row[2] == claim[3] and row[4] == claim[4]
-            and row[6] == claim[1]
-            for row in stored.values()
-        ):
+        plan_rows = sorted(
+            (row for row in stored.values() if row[1] == claim[2]),
+            key=lambda row: row[5],
+        )
+        if not plan_rows:
             raise OutboxConflict("approval_claim_without_matching_intent")
+        if (
+            len(plan_rows) != claim[10]
+            or [row[5] for row in plan_rows] != list(range(1, claim[10] + 1))
+            or any(
+                row[2] != claim[3] or row[4] != claim[4] or row[6] != claim[1]
+                for row in plan_rows
+            )
+        ):
+            raise OutboxConflict("approval_claim_parts_incomplete")
+        manifest = [
+            [row[5], row[0], row[7]]
+            for row in plan_rows
+        ]
+        manifest_sha = sha256(json.dumps(
+            manifest, ensure_ascii=False, separators=(",", ":")
+        ).encode()).hexdigest()
+        if not compare_digest(manifest_sha, claim[11]):
+            raise OutboxConflict("approval_claim_manifest_mismatch")
     provider_receipts = con.execute(
         "SELECT * FROM provider_receipts LIMIT ?", (MAX_PROVIDER_RECEIPTS + 1,)
     ).fetchall()
@@ -307,7 +333,7 @@ def _db(directory: Path, *, writable: bool):
             if con.execute("SELECT count(*) FROM sqlite_schema").fetchone() != (0,):
                 raise OutboxConflict("unrecognized_outbox_file")
             con.execute(f"PRAGMA application_id={APP_ID}")
-            con.execute("PRAGMA user_version=3")
+            con.execute("PRAGMA user_version=4")
             for ddl in _DDL:
                 con.execute(ddl)
             con.execute("INSERT INTO audit_head VALUES (1,0,'')")
@@ -383,6 +409,13 @@ def stage_plan(
         ):
             raise InvalidPlan("invalid_plan_step")
     fingerprint = _plan_fingerprint(plan)
+    parts_manifest = [
+        [step.ordinal, step.idempotency_key, step.action]
+        for step in plan.steps
+    ]
+    parts_manifest_sha = sha256(json.dumps(
+        parts_manifest, ensure_ascii=False, separators=(",", ":")
+    ).encode()).hexdigest()
     receipt_id = approval.receipt_id
     key_id = getattr(approval, "key_id", "")
     nonce = getattr(approval, "nonce", "")
@@ -399,16 +432,16 @@ def stage_plan(
             desired_claim = (
                 receipt_id, bound.approval_fingerprint, fingerprint, plan.case_key,
                 plan.answer_revision, approval.source_digest, approval.reply_digest,
-                approval.approver_id, key_id, nonce,
+                approval.approver_id, key_id, nonce, len(plan.steps), parts_manifest_sha,
             )
             if claim is not None:
-                if claim[:10] != desired_claim:
+                if claim[:12] != desired_claim:
                     raise OutboxConflict("approval_receipt_replay_or_changed_plan")
             else:
                 if con.execute("SELECT count(*) FROM approval_claims").fetchone()[0] >= MAX_APPROVAL_CLAIMS:
                     raise OutboxConflict("approval_claim_capacity")
                 con.execute(
-                    "INSERT INTO approval_claims VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO approval_claims VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (*desired_claim, _now()),
                 )
             for step in plan.steps:
