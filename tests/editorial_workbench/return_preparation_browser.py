@@ -12,8 +12,9 @@ from tempfile import TemporaryDirectory
 from threading import Thread
 from unittest.mock import patch
 from urllib.parse import urlsplit
-from wsgiref.simple_server import WSGIRequestHandler, make_server
+from wsgiref.simple_server import make_server
 
+from django.core.servers.basehttp import WSGIRequestHandler, WSGIServer
 from django.core.wsgi import get_wsgi_application
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -122,7 +123,10 @@ class QuietHandler(WSGIRequestHandler):
 
 @contextmanager
 def local_server():
-    with make_server("127.0.0.1", 0, get_wsgi_application(), handler_class=QuietHandler) as server:
+    # Django's server handler consumes HEAD responses without sending their body.
+    with make_server(
+        "127.0.0.1", 0, get_wsgi_application(), server_class=WSGIServer, handler_class=QuietHandler
+    ) as server:
         thread = Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True)
         thread.start()
         try:
