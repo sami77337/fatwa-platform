@@ -1,0 +1,75 @@
+name: FAST9 multi-case requester tracking (synthetic)
+on:
+  pull_request:
+    paths:
+      - 'apps/delivery_queue/**'
+      - 'tests/delivery_queue/test_requester_*'
+      - 'config/settings/requester_tracking_review.py'
+      - 'templates/delivery_queue/requester_*'
+      - '.github/workflows/fast9-requester-tracking.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tracking-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['17', '18']
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: wave7_synthetic
+          POSTGRES_PASSWORD: synthetic-only
+          POSTGRES_DB: wave7_synthetic_tracking
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wave7_synthetic -d wave7_synthetic_tracking"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      FATWA_PRODUCTION: '0'
+      FATWA_WAVE7_SYNTHETIC_WRITES: '1'
+      DJANGO_SETTINGS_MODULE: config.settings.delivery_queue_test
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: wave7_synthetic
+      PGPASSWORD: synthetic-only
+      PGDATABASE: wave7_synthetic_tracking
+      PGTESTDATABASE: test_wave7_synthetic_tracking
+      PG_EXPECTED_MAJOR: ${{ matrix.postgres }}
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --no-deps -r requirements.txt
+      - name: Verify exact branch checkout
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Initialize fresh owned synthetic database
+        run: |
+          python - <<'PY'
+          import os, django
+          django.setup()
+          from django.db import connection
+          from apps.intake_workflow.guards import initialize_synthetic_database
+          with connection.cursor() as cursor:
+              cursor.execute("SELECT current_setting('server_version_num')::int / 10000")
+              assert cursor.fetchone()[0] == int(os.environ['PG_EXPECTED_MAJOR'])
+          initialize_synthetic_database(synthetic_fixtures_only=True)
+          PY
+      - name: Apply isolated migrations and verify model drift
+        run: |
+          python manage.py migrate --noinput --settings=config.settings.delivery_queue_test
+          python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
+      - name: Run requester tracking tests
+        run: |
+          set -euo pipefail
+          python manage.py test tests.delivery_queue.test_requester_tracking --settings=config.settings.delivery_queue_test --noinput --verbosity=2
