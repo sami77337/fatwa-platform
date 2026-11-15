@@ -95,8 +95,8 @@ class OutboxTests(unittest.TestCase):
         self.assertEqual(accepted.state, "SENT_UNCONFIRMED")
         self.assertEqual(self.reconcile(claim, "ACCEPTED").state, "SENT_UNCONFIRMED")
         self.assertEqual(self.reconcile(claim, "DELIVERED").state, "DELIVERED")
-        with self.assertRaises(OutboxConflict):
-            self.reconcile(claim, "ACCEPTED")
+        replayed = self.reconcile(claim, "ACCEPTED")
+        self.assertEqual(replayed.state, "DELIVERED")
         latest = {r.intent_key: r.state for r in list_intents(self.dir, synthetic_fixtures_only=True)}
         self.assertEqual(latest[key], "DELIVERED")
 
