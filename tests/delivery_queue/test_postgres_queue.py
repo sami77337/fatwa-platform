@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from hashlib import sha256
 from threading import Barrier
+from unittest.mock import patch
 import unittest
 
 from django.db import connection, close_old_connections
@@ -123,6 +124,35 @@ class PostgreSQLDeliveryQueueTests(TransactionTestCase):
         )
         self.assertEqual(result.state,DeliveryIntent.DELIVERED)
         self.assertTrue(summarize_plan(C).complete)
+
+    def test_approval_commit_rolls_back_all_rows_when_audit_write_fails(self):
+        from apps.delivery_queue import services
+        with patch.object(services, "_audit", side_effect=RuntimeError("injected_audit_failure")):
+            with self.assertRaisesRegex(RuntimeError, "injected_audit_failure"):
+                self.commit()
+        self.assertEqual(ApprovalClaim.objects.count(), 0)
+        self.assertEqual(DeliveryIntent.objects.count(), 0)
+        self.assertEqual(len(self.commit()), 2)
+
+    def test_receipt_commit_rolls_back_state_and_receipt_when_audit_write_fails(self):
+        from apps.delivery_queue import services
+        self.commit(parts=((1,B),))
+        lease=claim_next(provider="reply-source",worker_id="worker-a")
+        with patch.object(services, "_audit", side_effect=RuntimeError("injected_receipt_audit_failure")):
+            with self.assertRaisesRegex(RuntimeError, "injected_receipt_audit_failure"):
+                record_receipt(
+                    lease=lease,receipt_reference="provider-event-rollback",
+                    provider_message_id="provider-message-rollback",reported="DELIVERED",
+                    verify_provider_receipt=lambda proof: True,
+                )
+        self.assertEqual(DeliveryIntent.objects.get(pk=lease.intent_key).state,DeliveryIntent.LEASED)
+        self.assertEqual(ProviderReceipt.objects.count(),0)
+        result=record_receipt(
+            lease=lease,receipt_reference="provider-event-rollback",
+            provider_message_id="provider-message-rollback",reported="DELIVERED",
+            verify_provider_receipt=lambda proof: True,
+        )
+        self.assertEqual(result.state,DeliveryIntent.DELIVERED)
 
     def test_expired_worker_lease_is_quarantined_not_requeued(self):
         self.commit(parts=((1,B),))
