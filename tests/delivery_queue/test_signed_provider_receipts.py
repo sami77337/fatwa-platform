@@ -227,3 +227,64 @@ class SignedProviderReceiptsTests(TransactionTestCase):
         self.assertEqual(queue.DeliveryIntent.objects.get(pk=lease.intent_key).state, "LEASED")
         self.record(lease, event)
         self.assertEqual(ProviderSignatureEvidence.objects.count(), 1)
+
+    def test_verified_provider_audit_requires_all_parts(self):
+        from apps.delivery_queue.signed_provider_receipts import audit_provider_reported_delivery
+        first, second = self.lease(), self.lease()
+        self.record(first, self.signed_event(first))
+        audit = audit_provider_reported_delivery(plan_fingerprint=C, verifier=self.verifier)
+        self.assertFalse(audit.cryptographically_verified_complete)
+        self.assertFalse(audit.provider_reported_complete)
+        self.assertEqual(audit.verified_delivered_parts, 1)
+        self.record(second, self.signed_event(second,
+            receipt_reference="signed-second", provider_message_id="second-message"))
+        audit = audit_provider_reported_delivery(plan_fingerprint=C, verifier=self.verifier)
+        self.assertTrue(audit.provider_reported_complete)
+        self.assertTrue(audit.cryptographically_verified_complete)
+        self.assertEqual(audit.verified_delivered_parts, 2)
+        self.assertEqual(audit.unverified_delivered_parts, 0)
+
+    def test_legacy_boolean_receipts_are_not_cryptographic_provider_evidence(self):
+        from apps.delivery_queue.signed_provider_receipts import audit_provider_reported_delivery
+        first, second = self.lease(), self.lease()
+        for i, lease in enumerate((first, second), 1):
+            queue.record_receipt(
+                lease=lease, receipt_reference=f"legacy-receipt-{i}",
+                provider_message_id=f"legacy-message-{i}", reported="DELIVERED",
+                verify_provider_receipt=lambda proof: True,
+            )
+        self.assertTrue(queue.summarize_plan(C).complete)
+        audit = audit_provider_reported_delivery(plan_fingerprint=C, verifier=self.verifier)
+        self.assertTrue(audit.provider_reported_complete)
+        self.assertFalse(audit.cryptographically_verified_complete)
+        self.assertEqual(audit.unverified_delivered_parts, 2)
+        self.assertEqual(audit.status, "PROVIDER_EVIDENCE_INCOMPLETE")
+
+    def test_revoked_provider_key_invalidates_verified_completeness(self):
+        from apps.delivery_queue.signed_provider_receipts import audit_provider_reported_delivery
+        first, second = self.lease(), self.lease()
+        self.record(first, self.signed_event(first))
+        self.record(second, self.signed_event(second,
+            receipt_reference="proof-two", provider_message_id="message-two"))
+        disabled = self.make_verifier(revoked_key_ids=frozenset({"key-1"}))
+        audit = audit_provider_reported_delivery(plan_fingerprint=C, verifier=disabled)
+        self.assertTrue(audit.provider_reported_complete)
+        self.assertFalse(audit.cryptographically_verified_complete)
+        self.assertEqual(audit.unverified_delivered_parts, 2)
+
+    def test_provider_evidence_audit_is_read_only_and_no_secret_in_summary(self):
+        from apps.delivery_queue.signed_provider_receipts import audit_provider_reported_delivery
+        lease = self.lease()
+        self.record(lease, self.signed_event(lease))
+        before = list(DeliveryAuditEvent.objects.values_list("sequence", "digest"))
+        audit = audit_provider_reported_delivery(plan_fingerprint=C, verifier=self.verifier)
+        self.assertEqual(before, list(DeliveryAuditEvent.objects.values_list("sequence", "digest")))
+        self.assertNotIn(lease.token, str(audit))
+        self.assertNotIn("signature_b64url", str(audit))
+
+    def test_provider_evidence_audit_fails_closed_on_unknown_plan_or_verifier(self):
+        from apps.delivery_queue.signed_provider_receipts import audit_provider_reported_delivery
+        with self.assertRaises(queue.QueueConflict):
+            audit_provider_reported_delivery(plan_fingerprint="e" * 64, verifier=self.verifier)
+        with self.assertRaises(queue.QueueConflict):
+            audit_provider_reported_delivery(plan_fingerprint=C, verifier=lambda event: True)
