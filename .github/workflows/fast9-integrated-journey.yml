@@ -54,6 +54,7 @@ jobs:
             tests.delivery_planner.test_approval_commit \
             tests.delivery_planner.test_multipart_delivery_ledger \
             tests.delivery_planner.test_outbox_crash_consistency \
+            tests.delivery_planner.test_external_audit_attestation \
             tests.delivery_planner.test_segmentation \
             tests.delivery_planner.test_outbox \
             tests.delivery_planner.test_outbox_recovery \
