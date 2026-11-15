@@ -64,18 +64,18 @@ class DeliveryIntent(models.Model):
             models.CheckConstraint(condition=Q(plan_fingerprint__regex=r"^[a-f0-9]{64}$"), name="dq_intent_plan_sha_format"),
             models.CheckConstraint(
                 condition=(
-                    Q(state=STAGED, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    Q(state="STAGED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
                       lease_expires_at__isnull=True, provider_message_id__isnull=True, provider_status__isnull=True)
-                    | Q(state=LEASED, lease_token_sha256__regex=r"^[a-f0-9]{64}$",
+                    | Q(state="LEASED", lease_token_sha256__regex=r"^[a-f0-9]{64}$",
                         lease_owner__isnull=False, lease_expires_at__isnull=False,
                         provider_message_id__isnull=True, provider_status__isnull=True)
-                    | Q(state=SENT_UNCONFIRMED, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    | Q(state="SENT_UNCONFIRMED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
                         lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="ACCEPTED")
-                    | Q(state=DELIVERED, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    | Q(state="DELIVERED", lease_token_sha256__isnull=True, lease_owner__isnull=True,
                         lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="DELIVERED")
-                    | Q(state=FAILED_REQUIRES_REVIEW, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                    | Q(state="FAILED_REQUIRES_REVIEW", lease_token_sha256__isnull=True, lease_owner__isnull=True,
                         lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="FAILED")
-                    | Q(state=UNKNOWN_REQUIRES_RECONCILIATION, lease_token_sha256__regex=r"^[a-f0-9]{64}$",
+                    | Q(state="UNKNOWN_REQUIRES_RECONCILIATION", lease_token_sha256__regex=r"^[a-f0-9]{64}$",
                         lease_owner__isnull=False, lease_expires_at__isnull=False,
                         provider_message_id__isnull=True, provider_status__isnull=True)
                 ),
