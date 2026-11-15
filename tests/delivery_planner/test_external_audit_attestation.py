@@ -10,7 +10,7 @@ from apps.delivery_planner.approval import ApprovalReceipt, CurrentEvidence
 from apps.delivery_planner.audit_attestation import (
     create_audit_attestation, verify_audit_attestation,
 )
-from apps.delivery_planner.outbox import FILE_NAME, list_intents, reserve_for_adapter, stage_plan
+from apps.delivery_planner.outbox import FILE_NAME, _DDL, list_intents, reserve_for_adapter, stage_plan
 from apps.delivery_planner.planner import Authority, Capabilities, Choice, Part, plan_delivery
 
 A, B, C = "a" * 64, "b" * 64, "c" * 64
@@ -108,6 +108,9 @@ class ExternalAuditAttestationTests(unittest.TestCase):
                 )
                 previous = digest
             con.execute("UPDATE audit_head SET digest=? WHERE id=1", (previous,))
+            for ddl in _DDL:
+                if "immutable_outbox_events_update" in ddl or "immutable_outbox_events_delete" in ddl:
+                    con.execute(ddl)
             con.commit()
         # Local hash-chain validation still succeeds, but the external HMAC
         # checkpoint binds the old tip and therefore detects the rewrite.
