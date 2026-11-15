@@ -73,7 +73,8 @@ class RequesterStatusHttpTests(TransactionTestCase):
     def test_two_tokens_only_reveal_their_own_coarse_state(self):
         response = self._post(self.alpha)
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"RECEIVED", response.content)
+        self.assertIn("تم استلام السؤال".encode("utf-8"), response.content)
+        self.assertNotIn(b"RECEIVED", response.content)
         for secret in (self.alpha, self.beta, b"case-alpha", b"case-beta"):
             needle = secret.encode() if isinstance(secret, str) else secret
             self.assertNotIn(needle, response.content)
@@ -83,7 +84,7 @@ class RequesterStatusHttpTests(TransactionTestCase):
             actor_id="synthetic-operator", authorize_actor=lambda *args: True,
         )
         beta = self._post(self.beta)
-        self.assertIn(b"UNDER_REVIEW", beta.content)
+        self.assertIn("قيد المراجعة".encode("utf-8"), beta.content)
         self.assertNotIn(b"case-beta", beta.content)
 
     def test_invalid_or_expired_token_does_not_disclose_case_existence(self):

@@ -127,7 +127,8 @@ class RequesterTrackingBrowserTests(LiveServerTestCase):
                     with page.expect_navigation():
                         page.get_by_role("button", name="استعلام عن الحالة").click()
                     body = page.locator("body").inner_text()
-                    self.assertIn("RECEIVED", body)
+                    self.assertIn("تم استلام السؤال", body)
+                    self.assertNotIn("RECEIVED", body)
                     self.assertNotIn("private-alpha", body)
                     self.assertNotIn("private-beta", body)
                     self.assertNotIn(self.alpha, page.content())
@@ -145,7 +146,7 @@ class RequesterTrackingBrowserTests(LiveServerTestCase):
                 page.locator("#tracking-token").fill(self.beta)
                 with page.expect_navigation():
                     page.get_by_role("button", name="استعلام عن الحالة").click()
-                self.assertIn("UNDER_REVIEW", page.locator("body").inner_text())
+                self.assertIn("قيد المراجعة", page.locator("body").inner_text())
                 self.assertNotIn("private-alpha", page.content())
                 invalid = context.request.get(origin + "/requester/tracking/?token=" + self.alpha)
                 self.assertEqual(invalid.status, 400)
