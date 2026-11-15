@@ -139,6 +139,8 @@ def require_return_approval(
         receipt.approver_id, receipt.approver_role, receipt.decision,
         receipt.receipt_id, receipt.issued_at,
     ]
+    if signed_plan_digest is not None:
+        canonical.append(signed_plan_digest)
     fingerprint = sha256(json.dumps(canonical, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
     return ApprovedForReturn(
         authority=Authority(receipt.answer_revision, receipt.answer_sha256, True),
