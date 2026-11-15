@@ -100,13 +100,25 @@ class ProviderReceipt(models.Model):
         ]
 
 
+class DeliveryAuditHead(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True)
+    sequence = models.PositiveBigIntegerField(default=0)
+    digest = models.CharField(max_length=64, default="")
+
+    class Meta:
+        db_table = "fatwa_delivery_audit_head"
+
+
 class DeliveryAuditEvent(models.Model):
     intent = models.ForeignKey(DeliveryIntent, on_delete=models.PROTECT, related_name="audit_events")
+    sequence = models.PositiveBigIntegerField(unique=True)
+    previous_digest = models.CharField(max_length=64, default="")
+    digest = models.CharField(max_length=64, default="")
     old_state = models.CharField(max_length=40)
     new_state = models.CharField(max_length=40)
     event_reference = models.CharField(max_length=128)
     event_payload_sha256 = models.CharField(max_length=64)
-    recorded_at = models.DateTimeField(auto_now_add=True)
+    recorded_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         db_table = "fatwa_delivery_audit_event"

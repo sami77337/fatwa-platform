@@ -49,12 +49,62 @@ def _postgres_only():
         raise QueueConflict("postgresql_backend_required")
 
 
+def _audit_payload(sequence, intent_id, old_state, new_state, reference, payload_sha, recorded_at):
+    return [sequence, intent_id, old_state, new_state, reference, payload_sha,
+            recorded_at.isoformat(timespec="microseconds")]
+
+
+def verify_audit_chain():
+    _postgres_only()
+    head = DeliveryAuditHead.objects.filter(pk=1).first()
+    if head is None:
+        raise QueueConflict("delivery_audit_head_missing")
+    previous = ""
+    count = 0
+    for event in DeliveryAuditEvent.objects.select_related("intent").order_by("sequence"):
+        count += 1
+        payload = _audit_payload(
+            event.sequence, event.intent_id, event.old_state, event.new_state,
+            event.event_reference, event.event_payload_sha256, event.recorded_at,
+        )
+        expected = sha256((previous + json.dumps(
+            payload, ensure_ascii=False, separators=(",", ":")
+        )).encode()).hexdigest()
+        if (
+            event.sequence != count
+            or not compare_digest(event.previous_digest, previous)
+            or not compare_digest(event.digest, expected)
+            or not _HEX.fullmatch(event.event_payload_sha256)
+            or not _REF.fullmatch(event.event_reference)
+        ):
+            raise QueueConflict("delivery_audit_chain_invalid")
+        previous = expected
+    if head.sequence != count:
+        raise QueueConflict("delivery_audit_head_sequence_mismatch")
+    if not compare_digest(head.digest, previous):
+        raise QueueConflict("delivery_audit_head_digest_mismatch")
+    return head.sequence, head.digest
+
+
 def _audit(intent, old_state, new_state, reference, payload):
-    DeliveryAuditEvent.objects.create(
-        intent=intent, old_state=old_state, new_state=new_state,
-        event_reference=reference,
-        event_payload_sha256=sha256(payload).hexdigest(),
+    head = DeliveryAuditHead.objects.select_for_update().get(pk=1)
+    sequence = head.sequence + 1
+    recorded = timezone.now()
+    payload_sha = sha256(payload).hexdigest()
+    event_payload = _audit_payload(
+        sequence, intent.pk, old_state, new_state, reference, payload_sha, recorded
     )
+    digest = sha256((head.digest + json.dumps(
+        event_payload, ensure_ascii=False, separators=(",", ":")
+    )).encode()).hexdigest()
+    DeliveryAuditEvent.objects.create(
+        intent=intent, sequence=sequence, old_state=old_state, new_state=new_state,
+        event_reference=reference, event_payload_sha256=payload_sha,
+        previous_digest=head.digest, digest=digest, recorded_at=recorded,
+    )
+    head.sequence = sequence
+    head.digest = digest
+    head.save(update_fields=["sequence", "digest"])
 
 
 def commit_approved_plan(
@@ -65,6 +115,7 @@ def commit_approved_plan(
 ):
     """Atomically consume one approved receipt and persist its complete manifest."""
     _postgres_only()
+    verify_audit_chain()
     if (
         not _REF.fullmatch(receipt_id) or type(nonce) is not str or len(nonce) < 32
         or not _HEX.fullmatch(approval_fingerprint) or not _HEX.fullmatch(plan_fingerprint)
@@ -140,6 +191,7 @@ def commit_approved_plan(
 def claim_next(*, provider: str, worker_id: str, lease_seconds: int = 60) -> WorkerLease | None:
     """Claim one staged intent using SKIP LOCKED; no automatic expired-lease retry."""
     _postgres_only()
+    verify_audit_chain()
     if not _REF.fullmatch(provider) or not _REF.fullmatch(worker_id) or not 1 <= lease_seconds <= 300:
         raise QueueConflict("invalid_worker_claim")
     now = timezone.now()
@@ -171,6 +223,7 @@ def record_receipt(
 ):
     """Persist provider proof and state transition atomically; exact replay only."""
     _postgres_only()
+    verify_audit_chain()
     if (
         not isinstance(lease, WorkerLease) or not _REF.fullmatch(receipt_reference)
         or not _REF.fullmatch(provider_message_id)
@@ -250,6 +303,7 @@ def record_receipt(
 def quarantine_expired_leases(*, now=None, limit: int = 100) -> tuple[str, ...]:
     """Move expired leases to reconciliation; never return them to STAGED."""
     _postgres_only()
+    verify_audit_chain()
     if not 1 <= limit <= 500:
         raise QueueConflict("invalid_reconciliation_limit")
     now = now or timezone.now()
@@ -273,6 +327,7 @@ def quarantine_expired_leases(*, now=None, limit: int = 100) -> tuple[str, ...]:
 
 def summarize_plan(plan_fingerprint: str) -> DeliverySummary:
     _postgres_only()
+    verify_audit_chain()
     if not _HEX.fullmatch(plan_fingerprint):
         raise QueueConflict("invalid_plan_fingerprint")
     intents = DeliveryIntent.objects.filter(plan_fingerprint=plan_fingerprint)
