@@ -61,6 +61,11 @@ jobs:
           with psycopg.connect(host=db['HOST'],port=db['PORT'],dbname=db['NAME'],user=db['USER'],password=os.environ['PGPASSWORD']) as con:
               assert con.execute("select current_setting('server_version_num')::int / 10000").fetchone()[0] == int(os.environ['PG_EXPECTED_MAJOR'])
               assert con.execute("select count(*) from pg_namespace where nspname not in ('pg_catalog','pg_toast','information_schema','public')").fetchone()[0] == 0
+              assert con.execute("select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','v','m','S','f','p')").fetchone()[0] == 0
+          import django
+          django.setup()
+          from apps.intake_workflow.guards import initialize_synthetic_database
+          initialize_synthetic_database(synthetic_fixtures_only=True)
           PY
       - name: Verify migration state matches models
         run: python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
