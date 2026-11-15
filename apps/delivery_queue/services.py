@@ -73,7 +73,11 @@ def commit_approved_plan(
         or expires_at <= timezone.now()
     ):
         raise QueueConflict("invalid_approval_plan")
-    if verify_approval() is not True:
+    try:
+        verified_approval = verify_approval()
+    except Exception as exc:
+        raise QueueConflict("approval_verifier_unavailable") from exc
+    if verified_approval is not True:
         raise QueueConflict("approval_not_verified")
     normalized = []
     for ordinal, (number, digest) in enumerate(parts, 1):
@@ -86,7 +90,10 @@ def commit_approved_plan(
     with transaction.atomic():
         # Transaction-scoped advisory lock serializes the absent-row race too.
         with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 201))", [receipt_id])
+            for lock_key in sorted((receipt_id, nonce_sha)):
+                cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 201))", [lock_key])
+        if ApprovalClaim.objects.filter(nonce_digest=nonce_sha).exclude(receipt_id=receipt_id).exists():
+            raise QueueConflict("approval_nonce_already_consumed")
         claim = ApprovalClaim.objects.select_for_update().filter(receipt_id=receipt_id).first()
         if claim:
             if (
@@ -170,7 +177,11 @@ def record_receipt(
     }
     payload = json.dumps(proof, sort_keys=True, separators=(",", ":")).encode()
     payload_sha = sha256(payload).hexdigest()
-    if verify_provider_receipt(proof) is not True:
+    try:
+        verified_receipt = verify_provider_receipt(proof)
+    except Exception as exc:
+        raise QueueConflict("provider_receipt_verifier_unavailable") from exc
+    if verified_receipt is not True:
         raise QueueConflict("provider_receipt_unverified")
     target_state = {
         "ACCEPTED": DeliveryIntent.SENT_UNCONFIRMED,
@@ -178,6 +189,8 @@ def record_receipt(
         "FAILED": DeliveryIntent.FAILED_REQUIRES_REVIEW,
     }[reported]
     with transaction.atomic():
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 202))", [receipt_reference])
         existing = ProviderReceipt.objects.select_for_update().filter(
             receipt_reference=receipt_reference
         ).first()
@@ -192,7 +205,7 @@ def record_receipt(
             return DeliveryIntent.objects.get(pk=lease.intent_key)
         intent = DeliveryIntent.objects.select_for_update().get(pk=lease.intent_key)
         if (
-            intent.state != DeliveryIntent.LEASED
+            intent.state not in {DeliveryIntent.LEASED, DeliveryIntent.UNKNOWN_REQUIRES_RECONCILIATION}
             or intent.lease_owner != lease.owner
             or intent.lease_token_sha256 != sha256(lease.token.encode()).hexdigest()
             or intent.lease_expires_at is None
@@ -234,12 +247,9 @@ def quarantine_expired_leases(*, now=None, limit: int = 100) -> tuple[str, ...]:
         for intent in rows:
             old = intent.state
             intent.state = DeliveryIntent.UNKNOWN_REQUIRES_RECONCILIATION
-            intent.lease_token_sha256 = None
-            intent.lease_owner = None
-            intent.lease_expires_at = None
-            intent.save(update_fields=[
-                "state", "lease_token_sha256", "lease_owner", "lease_expires_at", "updated_at"
-            ])
+            # Preserve the expired lease fingerprint so a late, independently
+            # verified provider receipt can reconcile this exact attempt.
+            intent.save(update_fields=["state", "updated_at"])
             _audit(intent, old, intent.state, "lease-expired:" + intent.intent_key, b"expired")
             changed.append(intent.intent_key)
     return tuple(changed)

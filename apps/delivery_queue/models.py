@@ -7,7 +7,7 @@ class ApprovalClaim(models.Model):
     receipt_id = models.CharField(max_length=128, primary_key=True)
     nonce_digest = models.CharField(max_length=64, unique=True)
     approval_fingerprint = models.CharField(max_length=64)
-    plan_fingerprint = models.CharField(max_length=64)
+    plan_fingerprint = models.CharField(max_length=64, unique=True)
     case_key = models.CharField(max_length=128)
     answer_revision = models.PositiveIntegerField()
     expected_parts = models.PositiveSmallIntegerField()
@@ -56,6 +56,7 @@ class DeliveryIntent(models.Model):
     class Meta:
         db_table = "fatwa_delivery_intent"
         ordering = ["case_key", "answer_revision", "ordinal"]
+        indexes = [models.Index(fields=["provider", "state", "created_at"], name="dq_intent_claim_idx")]
         constraints = [
             models.UniqueConstraint(fields=["approval", "ordinal"], name="dq_intent_approval_ordinal_unique"),
             models.CheckConstraint(condition=Q(answer_revision__gte=1, ordinal__gte=1, ordinal__lte=16), name="dq_intent_order_bound"),
@@ -63,11 +64,22 @@ class DeliveryIntent(models.Model):
             models.CheckConstraint(condition=Q(plan_fingerprint__regex=r"^[a-f0-9]{64}$"), name="dq_intent_plan_sha_format"),
             models.CheckConstraint(
                 condition=(
-                    Q(state__in=[STAGED], lease_token_sha256__isnull=True, lease_owner__isnull=True, lease_expires_at__isnull=True)
-                    | Q(state__in=[LEASED], lease_token_sha256__regex=r"^[a-f0-9]{64}$", lease_owner__isnull=False, lease_expires_at__isnull=False)
-                    | Q(state__in=[SENT_UNCONFIRMED, DELIVERED, FAILED_REQUIRES_REVIEW, UNKNOWN_REQUIRES_RECONCILIATION])
+                    Q(state=STAGED, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                      lease_expires_at__isnull=True, provider_message_id__isnull=True, provider_status__isnull=True)
+                    | Q(state=LEASED, lease_token_sha256__regex=r"^[a-f0-9]{64}$",
+                        lease_owner__isnull=False, lease_expires_at__isnull=False,
+                        provider_message_id__isnull=True, provider_status__isnull=True)
+                    | Q(state=SENT_UNCONFIRMED, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                        lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="ACCEPTED")
+                    | Q(state=DELIVERED, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                        lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="DELIVERED")
+                    | Q(state=FAILED_REQUIRES_REVIEW, lease_token_sha256__isnull=True, lease_owner__isnull=True,
+                        lease_expires_at__isnull=True, provider_message_id__isnull=False, provider_status="FAILED")
+                    | Q(state=UNKNOWN_REQUIRES_RECONCILIATION, lease_token_sha256__regex=r"^[a-f0-9]{64}$",
+                        lease_owner__isnull=False, lease_expires_at__isnull=False,
+                        provider_message_id__isnull=True, provider_status__isnull=True)
                 ),
-                name="dq_intent_lease_state_consistent",
+                name="dq_intent_state_consistent",
             ),
         ]
 

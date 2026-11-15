@@ -41,7 +41,7 @@ class PostgreSQLDeliveryQueueTests(TransactionTestCase):
 
     def test_nonce_cannot_be_reused_by_another_receipt(self):
         self.commit()
-        with self.assertRaises(Exception):
+        with self.assertRaisesRegex(QueueConflict,"approval_nonce_already_consumed"):
             self.commit(receipt_id="pg-approval-2", plan="d"*64)
 
     def test_two_workers_claim_distinct_rows_with_skip_locked(self):
@@ -93,6 +93,18 @@ class PostgreSQLDeliveryQueueTests(TransactionTestCase):
                 provider_message_id="provider-message-1",reported="DELIVERED",
                 verify_provider_receipt=lambda proof: True,
             )
+
+    def test_late_verified_receipt_reconciles_quarantined_attempt_without_requeue(self):
+        self.commit(parts=((1,B),))
+        lease=claim_next(provider="reply-source",worker_id="worker-a",lease_seconds=1)
+        quarantine_expired_leases(now=lease.expires_at+timedelta(seconds=1))
+        result=record_receipt(
+            lease=lease,receipt_reference="late-provider-event",
+            provider_message_id="late-provider-message",reported="DELIVERED",
+            verify_provider_receipt=lambda proof: True,
+        )
+        self.assertEqual(result.state,DeliveryIntent.DELIVERED)
+        self.assertTrue(summarize_plan(C).complete)
 
     def test_expired_worker_lease_is_quarantined_not_requeued(self):
         self.commit(parts=((1,B),))
