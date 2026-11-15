@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import secrets
 import subprocess
 from contextlib import ExitStack, contextmanager
@@ -14,6 +15,8 @@ from urllib.parse import urlsplit
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 
 from django.core.wsgi import get_wsgi_application
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 from apps.fast9_case_source_join.answer_drafts import AUTHOR, REVIEWER
@@ -206,9 +209,13 @@ def keyboard_to(page, locator):
     raise AcceptanceFailure("keyboard_target_unreachable")
 
 
-def check_view(page, context, origin, role, viewport):
+def check_view(page, context, origin, role, viewport, receipt):
+    prefix = f"{role}_{viewport['width']}_preparation"
+    receipt["stage"] = prefix + ":viewport"
     page.set_viewport_size(viewport)
+    receipt["stage"] = prefix + ":initialnav"
     safe_headers(page.goto(origin + URL))
+    receipt["stage"] = prefix + ":textchecks"
     require(page.locator("html").get_attribute("lang") == "ar", "arabic_language_missing")
     require(page.locator("html").get_attribute("dir") == "rtl", "rtl_missing")
     require(page.evaluate("getComputedStyle(document.body).direction") == "rtl", "rtl_style")
@@ -230,6 +237,7 @@ def check_view(page, context, origin, role, viewport):
         "trusted_approval_boundary_missing",
     )
     require(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "overflow")
+    receipt["stage"] = prefix + ":keyboardfocus"
     # The first actual Tab exposes the skip link; Enter focuses the main landmark.
     page.keyboard.press("Tab")
     skip = page.locator(".skip-link")
@@ -240,11 +248,14 @@ def check_view(page, context, origin, role, viewport):
     )
     page.keyboard.press("Enter")
     require(page.locator("#main").evaluate("el => el === document.activeElement"), "main_focus")
+    receipt["stage"] = prefix + ":normalformcontrols"
     # A normal GET form submission initially refuses an implicit split.
     page.locator("#max-chars").fill(str(LIMIT))
     submit = page.locator('form[method="get"] button[type="submit"]')
+    receipt["stage"] = prefix + ":normalformnav"
     with page.expect_navigation(wait_until="load", timeout=TIMEOUT) as navigation:
         submit.click()
+    receipt["stage"] = prefix + ":normalformchecks"
     safe_headers(navigation.value)
     require(
         page.get_by_text(
@@ -254,19 +265,23 @@ def check_view(page, context, origin, role, viewport):
     )
     parts = page.locator("ol.timeline pre.exact-text")
     require(parts.count() == 0, "implicit_split_rendered")
+    receipt["stage"] = prefix + ":keyboardcontrols"
     # Reach and activate the checkbox and submit with keyboard only.
     checkbox = page.locator("#split-choice")
     keyboard_to(page, checkbox)
     page.keyboard.press("Space")
     require(checkbox.is_checked(), "keyboard_checkbox_failed")
     keyboard_to(page, submit)
+    receipt["stage"] = prefix + ":keyboardformnav"
     with page.expect_navigation(wait_until="load", timeout=TIMEOUT) as navigation:
         page.keyboard.press("Enter")
+    receipt["stage"] = prefix + ":previewchecks"
     safe_headers(navigation.value)
     texts = parts.all_text_contents()
     require(len(texts) > 1 and "".join(texts) == BODY, "segments_not_lossless")
     require(all(0 < len(text) <= LIMIT for text in texts), "segment_limit_exceeded")
     require(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), "preview_overflow")
+    receipt["stage"] = prefix + ":head"
     # APIRequestContext is explicitly pinned to this known local URL, without redirects;
     # browser requests are separately enforced by the context route below.
     safe_headers(context.request.head(page.url, max_redirects=0, timeout=TIMEOUT))
@@ -389,7 +404,7 @@ def run(receipt):
             for viewport in VIEWPORTS:
                 receipt["stage"] = f"{role}_{viewport['width']}_preparation"
                 receipt["views"].append(
-                    check_view(pages[role], contexts[role], origin, role, viewport)
+                    check_view(pages[role], contexts[role], origin, role, viewport, receipt)
                 )
                 require(
                     disk_state(directory) == before,
@@ -406,6 +421,58 @@ def run(receipt):
         receipt["final_files"] = disk_state(directory)
         receipt["journal_unchanged"] = True
     receipt["stage"] = "complete"
+
+
+def failure_diagnostics(error):
+    """Serialize only fixed categories/codes and a line in this exact harness."""
+    result = {"category": "non_playwright_error"}
+    if isinstance(error, PlaywrightTimeoutError):
+        result["category"] = "playwright_timeout"
+    elif isinstance(error, PlaywrightError):
+        result["category"] = "unclassified_playwright_error"
+        message = str(error)
+        lowered = message.lower()
+        patterns = (
+            ("strict_locator", ("strict mode violation",)),
+            (
+                "context_destroyed",
+                ("execution context was destroyed", "cannot find context with specified id"),
+            ),
+            ("page_crash", ("page crashed",)),
+            ("target_closed", ("target page, context or browser has been closed",)),
+            ("navigation_interrupted", ("interrupted by another navigation",)),
+        )
+        for category, fragments in patterns:
+            if any(fragment in lowered for fragment in fragments):
+                result["category"] = category
+                break
+        network = re.search(r"\bnet::ERR_[A-Z_]+\b", message)
+        if network:
+            allowed = {
+                "net::ERR_ABORTED",
+                "net::ERR_FAILED",
+                "net::ERR_TIMED_OUT",
+                "net::ERR_CONNECTION_REFUSED",
+                "net::ERR_CONNECTION_RESET",
+                "net::ERR_CONNECTION_CLOSED",
+                "net::ERR_EMPTY_RESPONSE",
+                "net::ERR_ADDRESS_UNREACHABLE",
+                "net::ERR_NAME_NOT_RESOLVED",
+                "net::ERR_NETWORK_CHANGED",
+                "net::ERR_INTERNET_DISCONNECTED",
+            }
+            code = network.group()
+            result["network_error"] = code if code in allowed else "unclassified_network_error"
+            if result["category"] == "unclassified_playwright_error":
+                result["category"] = (
+                    "navigation_aborted" if code == "net::ERR_ABORTED" else "network_error"
+                )
+    traceback = error.__traceback__
+    while traceback is not None:
+        if Path(traceback.tb_frame.f_code.co_filename).resolve() == Path(__file__).resolve():
+            result["harness_line"] = traceback.tb_lineno
+        traceback = traceback.tb_next
+    return result
 
 
 def main():
@@ -440,6 +507,7 @@ def main():
                 else "Acceptance failed; no sensitive diagnostics captured."
             ),
             "type": type(error).__name__,
+            "diagnostics": failure_diagnostics(error),
         }
     finally:
         EVIDENCE.parent.mkdir(parents=True, exist_ok=True)
@@ -459,6 +527,7 @@ def main():
                 "unexpected_network_requests": receipt["unexpected_network_requests"],
                 "page_errors": receipt["page_errors"],
                 "journal_unchanged": receipt["journal_unchanged"],
+                "failure": receipt.get("failure"),
             }
         )
     )
