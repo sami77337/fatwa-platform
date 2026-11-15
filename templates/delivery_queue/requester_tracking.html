@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>متابعة حالة السؤال — بيئة تدريب</title>
+<link rel="stylesheet" href="/requester/tracking/tracking.css"></head>
+<body>
+<header><h1>متابعة حالة السؤال</h1>
+<p class="notice">بيئة تدريب محلية؛ لا تُستخدم بيانات أسئلة حقيقية، ولا تُعرض الفتوى أو بيانات السائل.</p></header>
+<main id="main">
+{% if status %}
+<article aria-live="polite"><h2>نتيجة المتابعة</h2>
+<p>الحالة الحالية: <bdi>{{ status.status }}</bdi></p>
+<p>الأجزاء المبلّغ بتسليمها: {{ status.delivered_parts }} من {{ status.total_parts }}</p>
+{% if not status.delivery_verified %}
+<p class="notice">هذه الحالة لا تثبت وصول الرسالة إلى جهاز السائل أو قراءتها. اكتمال التسليم يحتاج إثباتًا موثوقًا مستقلًا.</p>
+{% endif %}</article>
+{% endif %}
+<form method="post" action="/requester/tracking/">{% csrf_token %}
+<label for="tracking-token">رمز متابعة السؤال الخاص بك</label>
+<input id="tracking-token" type="password" name="token" required
+ maxlength="55" autocomplete="off" spellcheck="false" dir="ltr">
+<button type="submit">استعلام عن الحالة</button>
+</form>
+<p>لا تشارك رمز المتابعة مع الآخرين. إذا فُقد، يلزم إصدار رمز جديد من الجهة المشغلة.</p>
+</main></body></html>

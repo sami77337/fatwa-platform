@@ -35,6 +35,13 @@ class TrackingDenied(ValueError):
     """Fixed safe failure codes. Never echo a token or case identifier."""
 
 
+def _guard_database():
+    try:
+        queue._postgres_only()
+    except queue.QueueConflict as exc:
+        raise TrackingDenied("tracking_backend_unavailable") from exc
+
+
 def _operator_allowed(actor_id, case_key, verifier, *, stage=None):
     if not queue._ref(actor_id) or not queue._ref(case_key) or not callable(verifier):
         raise TrackingDenied("tracking_authorization_required")
@@ -74,7 +81,7 @@ def provision_tracking_case(*, case_key, operator_id, authorize_operator, expire
     """Authorized local provisioning. Token is returned exactly once, never sent."""
     if not queue._ref(case_key) or not _expiry_valid(expires_at):
         raise TrackingDenied("tracking_case_or_expiry_invalid")
-    queue._postgres_only()
+    _guard_database()
     with transaction.atomic():
         _lock_case_key(case_key)
         _operator_allowed(operator_id, case_key, authorize_operator)
@@ -95,7 +102,7 @@ def rotate_tracking_token(*, case_key, operator_id, authorize_operator, expires_
     """Revoke old tracking access and generate one new random capability."""
     if not queue._ref(case_key) or not _expiry_valid(expires_at):
         raise TrackingDenied("tracking_case_or_expiry_invalid")
-    queue._postgres_only()
+    _guard_database()
     with transaction.atomic():
         _lock_case_key(case_key)
         _operator_allowed(operator_id, case_key, authorize_operator)
@@ -116,7 +123,7 @@ def advance_tracking_case(*, case_key, expected_revision, stage, actor_id, autho
         or type(stage) is not str or stage not in _STAGES
     ):
         raise TrackingDenied("tracking_transition_invalid")
-    queue._postgres_only()
+    _guard_database()
     with transaction.atomic():
         _lock_case_key(case_key)
         _operator_allowed(actor_id, case_key, authorize_actor, stage=stage)
@@ -146,7 +153,7 @@ def lookup_case_status(token):
     """
     if type(token) is not str or _TOKEN.fullmatch(token) is None:
         raise TrackingDenied(_GENERIC_TOKEN_DENIAL)
-    queue._postgres_only()
+    _guard_database()
     token_hash = sha256(token.encode("ascii")).hexdigest()
     with transaction.atomic():
         grant = RequesterTrackingToken.objects.select_related(

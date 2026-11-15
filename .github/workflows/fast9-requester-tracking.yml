@@ -72,4 +72,4 @@ jobs:
       - name: Run requester tracking tests
         run: |
           set -euo pipefail
-          python manage.py test tests.delivery_queue.test_requester_tracking --settings=config.settings.delivery_queue_test --noinput --verbosity=2
+          python manage.py test tests.delivery_queue.test_requester_tracking tests.delivery_queue.test_requester_status_http --settings=config.settings.delivery_queue_test --noinput --verbosity=2
