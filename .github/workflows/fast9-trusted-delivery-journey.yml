@@ -17,6 +17,9 @@ jobs:
   trusted-journey:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -74,8 +77,9 @@ jobs:
           python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
       - name: PostgreSQL trusted journey and regression tests
         run: |
+          set -euo pipefail
           mkdir -p .local/qa/trusted-journey
-          python manage.py test tests.delivery_queue.test_postgres_queue tests.delivery_queue.test_queue_regressions --settings=config.settings.delivery_queue_test --noinput --verbosity=2 2>&1 | tee .local/qa/trusted-journey/tests.log
+          python manage.py test tests.delivery_queue.test_postgres_queue tests.delivery_queue.test_signed_approval_bridge tests.delivery_queue.test_postgres_audit_attestation tests.delivery_queue.test_queue_regressions --settings=config.settings.delivery_queue_test --noinput --verbosity=2 2>&1 | tee .local/qa/trusted-journey/tests.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
