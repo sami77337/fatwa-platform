@@ -191,7 +191,10 @@ class RequesterTrackingCase(models.Model):
         constraints = [
             models.CheckConstraint(condition=Q(revision__gte=1), name="dq_track_revision_positive"),
             models.CheckConstraint(
-                condition=Q(stage__in=[key for key, _ in STAGES]),
+                condition=Q(stage__in=[
+                    "RECEIVED", "UNDER_REVIEW", "NEEDS_CLARIFICATION",
+                    "WITH_MUFTI", "RETURNED_FOR_CHANGES",
+                ]),
                 name="dq_track_stage_valid",
             ),
         ]
