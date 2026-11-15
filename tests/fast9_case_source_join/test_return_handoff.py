@@ -371,7 +371,7 @@ class ReturnHandoffTests(TestCase):
         )
 
     def provider_receipt(self, reservation, reported):
-        proof = ProviderReceipt(reservation.intent_key, "test-message-1", reported, "test-proof-1")
+        proof = ProviderReceipt(reservation.intent_key, "test-message-1", reported, "test-proof-" + reported.lower())
         return record_provider_receipt(
             self.directory,
             reservation=reservation,
