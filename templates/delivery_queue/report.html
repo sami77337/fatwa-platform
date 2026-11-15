@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>متابعة تسليم الأجوبة</title><link rel="stylesheet" href="/review/operator/queue.css"></head>
+<body><a class="skip" href="#main">انتقل إلى المحتوى</a><header><h1>متابعة تسليم الأجوبة</h1><p class="note">قراءة فقط للقضايا المعيّنة لهذا المشغّل. قبول القناة لا يعني وصول الجواب. هذه بيئة تدريب دون إرسال فعلي.</p></header>
+<main id="main" tabindex="-1"><nav aria-label="التقارير"><a href="/review/operator/postgres.json{% if request.GET.after %}?after={{ request.GET.after|urlencode }}{% endif %}">تصدير هذه الصفحة بصيغة JSON</a></nav>
+{% for plan in report.plans %}<article aria-labelledby="case-{{ forloop.counter }}"><h2 id="case-{{ forloop.counter }}">القضية: <bdi>{{ plan.case_key }}</bdi></h2>
+<dl><dt>نسخة الجواب</dt><dd>{{ plan.answer_revision }}</dd><dt>القناة</dt><dd><bdi>{{ plan.provider }}</bdi></dd><dt>حالة الخطة</dt><dd><bdi>{{ plan.state }}</bdi></dd><dt>الأجزاء المسلّمة</dt><dd>{{ plan.delivered_parts }} من {{ plan.expected_parts }}</dd><dt>أجزاء غير محسومة</dt><dd>{{ plan.uncertain_parts }}</dd><dt>أجزاء فاشلة</dt><dd>{{ plan.failed_parts }}</dd></dl>
+{% if plan.authorization_expired %}<p class="note">انتهت صلاحية الاعتماد؛ لا يُنشأ حجز جديد بهذا الاعتماد.</p>{% endif %}
+<ul>{% for part in plan.parts %}<li>الجزء {{ part.ordinal }}: <bdi>{{ part.state }}</bdi></li>{% endfor %}</ul>
+</article>{% empty %}<p role="status">لا توجد خطط ضمن النطاق المسموح.</p>{% endfor %}
+{% if report.has_more %}<p class="note">التقرير مجزّأ إلى صفحات؛ توجد نتائج إضافية.</p><a href="?after={{ report.next_cursor|urlencode }}">الصفحة التالية</a>{% endif %}
+</main></body></html>

@@ -8,7 +8,6 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-
 MODULES = [
     'tests.delivery_queue.test_postgres_queue',
     'tests.delivery_queue.test_signed_approval_bridge',
@@ -16,8 +15,9 @@ MODULES = [
     'tests.delivery_queue.test_queue_regressions',
     'tests.delivery_queue.test_trusted_journey',
     'tests.delivery_queue.test_delivery_reports',
+    'tests.delivery_queue.test_queue_safety_extensions',
 ]
-MINIMUM_CASES = 55
+MINIMUM_CASES = 62
 
 
 def main():
