@@ -34,10 +34,11 @@ from apps.fast9_case_source_join.source_journal import (
 from .answer_editor import answer_editor
 from .answer_history import answer_history
 from .author_queue import author_queue
-from .draft_notes import draft_notes
 from .delivery_operator import operator_outbox
+from .draft_notes import draft_notes
 from .reading_diff import reading_diff
 from .requester_reply import requester_reply
+from .return_preparation import return_preparation
 from .reviewer_access import desk_login, desk_logout, signed_in
 from .source_review import (
     CASE_KEY,
@@ -341,6 +342,7 @@ urlpatterns = [
     path("review/author/draft/", answer_editor, name="answer_editor"),
     path("review/author/history/", answer_history, name="answer_history"),
     path("review/author/notes/", draft_notes, name="draft_notes"),
+    path("review/author/return-preparation/", return_preparation, name="return_preparation"),
     path("review/operations/login/", desk_login, {"role": "operator"}, name="operator_login"),
     path("review/operations/logout/", desk_logout, {"role": "operator"}, name="operator_logout"),
     path("review/operations/outbox/", operator_outbox, name="operator_outbox"),

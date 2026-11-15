@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>تحضير إرجاع الجواب</title>
+  <link rel="stylesheet" href="/dev/editorial-workbench/style.css">
+</head>
+<body class="return-preparation">
+<a class="skip-link" href="#main">انتقل إلى تحضير الجواب</a>
+<header class="site-header"><div class="shell">
+  <p class="eyebrow">مكتب التدريب المحلي</p>
+  <h1>تحضير إرجاع الجواب</h1>
+  <nav class="section-nav" aria-label="التنقل في المكتب">
+    <a href="/review/author/queue/">قائمة المسودات</a>
+    <a href="/review/author/history/">سجل النسخ</a>
+    <a href="/review/author/notes/">المراجعة الداخلية</a>
+    {% if can_author %}<a href="/review/author/draft/">محرّر الجواب</a>{% endif %}
+    {% if can_review %}<a href="/review/">السؤال والاستيضاحات</a>{% endif %}
+  </nav>
+</div></header>
+<main class="shell" id="main" tabindex="-1">
+  {% if message %}
+  <p class="notice" role="alert">{{ message }} <a href="/review/author/return-preparation/">فتح المعاينة من جديد</a></p>
+  {% else %}
+  <p>القضية <bdi>{{ candidate.case_key }}</bdi>{% if candidate.draft %} · نسخة الجواب {{ candidate.draft.revision }}{% endif %}.
+    تُقرأ أحدث نسخة محفوظة عند فتح هذه الصفحة. المعاينة لا تحفظ قرارًا ولا ترسل جوابًا.</p>
+
+  <section class="panel" aria-labelledby="readiness-heading">
+    <h2 id="readiness-heading">متطلبات التحضير</h2>
+    {% if blockers %}
+    <ul>{% for blocker in blockers %}<li>{{ blocker }}</li>{% endfor %}</ul>
+    {% else %}
+    <p class="notice" role="status">اكتملت متطلبات التحضير لهذه النسخة.</p>
+    {% endif %}
+    <p class="notice"><strong>بانتظار اعتماد المفتي عبر جهة تحقق موثوقة.</strong>
+      إتمام الفحص الفني لا يمنح إذنًا شرعيًا أو إذنًا بالإرسال.</p>
+    <dl>
+      <dt>قراءة أحدث معلومات القضية</dt>
+      <dd>{% if candidate.reading_current %}مسجّلة على أحدث سؤال وردّ{% else %}غير مكتملة{% endif %}</dd>
+      <dt>الفحص الفني للمسودة الحالية</dt>
+      <dd>{% if candidate.technical_review_current %}مكتمل لهذه النسخة{% else %}غير مكتمل لهذه النسخة{% endif %}</dd>
+    </dl>
+    <p>
+      {% if can_author %}<a href="/review/author/draft/">مراجعة المسودة وحفظ نسخة جديدة</a> · {% endif %}
+      <a href="/review/author/notes/">متابعة الملاحظات وتسليم المسودة</a>
+      {% if can_review %} · <a href="/review/">قراءة السؤال ومتابعة الاستيضاحات</a>{% endif %}
+    </p>
+  </section>
+
+  {% if candidate.source_count %}
+  <section class="panel" aria-labelledby="origin-heading">
+    <h2 id="origin-heading">مصدر السؤال التدريبي</h2>
+    <p>هذه بيانات العينة المحفوظة، ولا تتصل بحساب أو قناة فعلية.</p>
+    <dl>
+      <dt>القناة</dt><dd><bdi>{{ candidate.source_channel }}</bdi></dd>
+      <dt>الحساب</dt><dd><bdi>{{ candidate.source_account }}</bdi></dd>
+      <dt>المحادثة</dt><dd><bdi>{{ candidate.source_conversation }}</bdi></dd>
+      <dt>مرجع السؤال</dt><dd><bdi>{{ candidate.source_reference }}</bdi></dd>
+      <dt>أحداث المصدر المحفوظة</dt><dd>{{ candidate.source_count }}</dd>
+    </dl>
+  </section>
+  {% endif %}
+
+  {% if candidate.draft %}
+  <section class="panel" aria-labelledby="answer-heading">
+    <h2 id="answer-heading">المسودة الحالية · النسخة {{ candidate.draft.revision }}</h2>
+    <h3>العنوان</h3><pre class="exact-text" dir="auto">{{ title }}</pre>
+    <h3>نص الجواب كما حُفظ</h3><pre class="exact-text" dir="auto">{{ body }}</pre>
+  </section>
+
+  <section class="panel" aria-labelledby="preview-heading">
+    <h2 id="preview-heading">معاينة أجزاء النص</h2>
+    <p id="preview-help">اختر حدًّا تدريبيًا لعدد المحارف في الجزء الواحد؛ هذا المثال لا يصف حدود منصة فعلية.
+      التقسيم يخص نص الجواب فقط، ويبقى العنوان منفصلًا. تُحفظ الكلمات والتشكيل والمسافات دون تغيير.</p>
+    <form method="get" action="/review/author/return-preparation/" aria-describedby="preview-help">
+      <label for="max-chars">حدّ تدريبي للمحارف في كل جزء</label>
+      <input id="max-chars" type="number" name="max_chars" min="1" max="6000" required value="{{ max_chars }}" inputmode="numeric">
+      <p><label for="split-choice"><input id="split-choice" type="checkbox" name="split" value="1"{% if split %} checked{% endif %}>
+        أختار معاينة تقسيم النص إذا تجاوز الحدّ</label></p>
+      <button type="submit">تحديث المعاينة</button>
+    </form>
+    {% if split_message %}<p class="notice" role="status">{{ split_message }}</p>{% endif %}
+    {% if segment_rows %}
+    <p>عدد الأجزاء المعروضة: {{ segment_rows|length }}. لم تُنشأ محاولة إرسال.</p>
+    <ol class="timeline">
+      {% for part in segment_rows %}<li>
+        <h3>الجزء {{ part.ordinal }} · {{ part.length }} محرفًا</h3>
+        <pre class="exact-text" dir="auto">{{ part.text }}</pre>
+      </li>{% endfor %}
+    </ol>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% endif %}
+</main>
+</body>
+</html>

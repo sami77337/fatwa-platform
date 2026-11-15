@@ -11,6 +11,9 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+# Native same-origin POSTs must retain Origin for Django CSRF verification.
+# Keep the public catalog profile's stricter no-referrer policy unchanged.
+SECURE_REFERRER_POLICY = "same-origin"
 CSRF_COOKIE_NAME = "fatwa_training_desk_csrf"
 CSRF_COOKIE_PATH = "/review/"
 CSRF_COOKIE_SECURE = False  # This profile binds to literal HTTP loopback.
