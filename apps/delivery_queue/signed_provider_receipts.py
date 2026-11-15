@@ -233,28 +233,22 @@ def record_signed_provider_event(*, lease, event, verifier):
     return queue.summarize_plan(event.plan_fingerprint)
 
 
-def verify_stored_provider_evidence(*, receipt_reference, verifier) -> bool:
-    """Historical audit: validate original signed statement at recording time."""
-    if not _ref(receipt_reference) or not isinstance(verifier, Ed25519ProviderEventVerifier):
-        return False
-    queue._postgres_only()
+def _valid_saved_evidence(saved, verifier) -> bool:
+    """Pure verification of already-selected evidence; safe inside a DB snapshot."""
     try:
-        saved = ProviderSignatureEvidence.objects.select_related(
-            "receipt__intent",
-        ).get(pk=receipt_reference)
         receipt = saved.receipt
         intent = receipt.intent
         attempt = DeliveryAttempt.objects.get(intent_id=intent.pk)
-        evidence = saved.envelope
+        envelope = saved.envelope
         if (
-            type(evidence) is not dict
+            type(envelope) is not dict
             or not compare_digest(
-                sha256(queue._canonical(evidence)).hexdigest(),
+                sha256(queue._canonical(envelope)).hexdigest(),
                 saved.envelope_sha256,
             )
         ):
             return False
-        event = SignedProviderEvent(**evidence)
+        event = SignedProviderEvent(**envelope)
         if not verifier(event, at=receipt.recorded_at):
             return False
         if not (
@@ -284,3 +278,83 @@ def verify_stored_provider_evidence(*, receipt_reference, verifier) -> bool:
         queue.QueueConflict,
     ):
         return False
+
+
+def verify_stored_provider_evidence(*, receipt_reference, verifier) -> bool:
+    """Historical audit: validate original signed statement at recording time."""
+    if not _ref(receipt_reference) or not isinstance(verifier, Ed25519ProviderEventVerifier):
+        return False
+    queue._postgres_only()
+    try:
+        saved = ProviderSignatureEvidence.objects.select_related(
+            "receipt__intent",
+        ).get(pk=receipt_reference)
+    except (ProviderSignatureEvidence.DoesNotExist, DatabaseError):
+        return False
+    return _valid_saved_evidence(saved, verifier)
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderEvidenceAudit:
+    """Attests only the provider's signed report, not human consumption."""
+
+    plan_fingerprint: str
+    expected_parts: int
+    provider_reported_delivered_parts: int
+    verified_delivered_parts: int
+    unverified_delivered_parts: int
+    provider_reported_complete: bool
+    cryptographically_verified_complete: bool
+    status: str
+
+
+def audit_provider_reported_delivery(*, plan_fingerprint, verifier) -> ProviderEvidenceAudit:
+    """Conservative, read-only per-plan check within one locked audit snapshot.
+
+    Unlike the local state projection, an unverified legacy boolean callback
+    cannot count toward cryptographic provider-reported delivery.
+    """
+    if not _sha(plan_fingerprint) or not isinstance(verifier, Ed25519ProviderEventVerifier):
+        raise queue.QueueConflict("invalid_provider_evidence_audit_request")
+    queue._postgres_only()
+    from django.db import transaction
+    from .models import ApprovalClaim
+
+    with transaction.atomic():
+        queue._verify_locked_head(queue._locked_head())
+        claim = ApprovalClaim.objects.filter(plan_fingerprint=plan_fingerprint).first()
+        if claim is None:
+            raise queue.QueueConflict("plan_not_found")
+        rows = list(DeliveryIntent.objects.filter(approval=claim).order_by("ordinal"))
+        summary = queue._summary_from_rows(claim, rows)
+        verified = 0
+        for intent in rows:
+            if intent.state != "DELIVERED":
+                continue
+            saved_proofs = ProviderSignatureEvidence.objects.select_related(
+                "receipt__intent",
+            ).filter(
+                receipt__intent_id=intent.pk,
+                receipt__reported="DELIVERED",
+            )[:4]
+            if any(_valid_saved_evidence(saved, verifier) for saved in saved_proofs):
+                verified += 1
+        complete = summary.complete and verified == summary.expected_parts
+        if complete:
+            status = "PROVIDER_REPORTED_DELIVERY_VERIFIED"
+        elif summary.complete:
+            status = "PROVIDER_EVIDENCE_INCOMPLETE"
+        elif summary.state == "NEEDS_RECONCILIATION":
+            status = "NEEDS_RECONCILIATION"
+        else:
+            status = "NOT_FULLY_DELIVERED"
+        return ProviderEvidenceAudit(
+            plan_fingerprint=plan_fingerprint,
+            expected_parts=summary.expected_parts,
+            provider_reported_delivered_parts=summary.delivered_parts,
+            verified_delivered_parts=verified,
+            unverified_delivered_parts=summary.delivered_parts - verified,
+            provider_reported_complete=summary.complete,
+            cryptographically_verified_complete=complete,
+            status=status,
+        )
