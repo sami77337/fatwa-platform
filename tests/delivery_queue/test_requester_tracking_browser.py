@@ -33,6 +33,7 @@ OUTPUT = Path(".local/qa/requester-tracking/browser")
     CSRF_COOKIE_SAMESITE="Strict",
     CSRF_COOKIE_HTTPONLY=True,
     CSRF_COOKIE_SECURE=False,  # Test-only loopback HTTP; production remains secure.
+    DEBUG=True,  # Only for diagnosing the native CSRF rejection.
     FATWA_REQUESTER_TRACKING_ENABLED=True,
 )
 class RequesterTrackingBrowserTests(LiveServerTestCase):
