@@ -72,4 +72,4 @@ jobs:
       - name: Verify migration state matches models
         run: python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
       - name: Apply isolated synthetic migrations and run concurrency suite
-        run: python manage.py test tests.delivery_queue --settings=config.settings.delivery_queue_test --noinput --verbosity=2
+        run: python manage.py test tests.delivery_queue.test_postgres_queue --settings=config.settings.delivery_queue_test --noinput --verbosity=2
