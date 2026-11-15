@@ -55,8 +55,8 @@ class OutboxTests(unittest.TestCase):
     def reconcile(self, reservation, status, message="provider-01"):
         return record_provider_receipt(
             self.dir, reservation=reservation,
-            receipt=ProviderReceipt(reservation.intent_key, message, status, "receipt-01"),
-            verify_provider_receipt=lambda proof: proof.receipt_reference == "receipt-01",
+            receipt=ProviderReceipt(reservation.intent_key, message, status, "receipt-" + status.lower()),
+            verify_provider_receipt=lambda proof: proof.receipt_reference == "receipt-" + status.lower(),
             synthetic_fixtures_only=True,
         )
 
@@ -95,8 +95,8 @@ class OutboxTests(unittest.TestCase):
         self.assertEqual(accepted.state, "SENT_UNCONFIRMED")
         self.assertEqual(self.reconcile(claim, "ACCEPTED").state, "SENT_UNCONFIRMED")
         self.assertEqual(self.reconcile(claim, "DELIVERED").state, "DELIVERED")
-        with self.assertRaises(OutboxConflict):
-            self.reconcile(claim, "ACCEPTED")
+        replayed = self.reconcile(claim, "ACCEPTED")
+        self.assertEqual(replayed.state, "DELIVERED")
         latest = {r.intent_key: r.state for r in list_intents(self.dir, synthetic_fixtures_only=True)}
         self.assertEqual(latest[key], "DELIVERED")
 
@@ -152,6 +152,62 @@ class OutboxTests(unittest.TestCase):
             get_current_evidence=lambda case: self.evidence,
         )
         self.assertEqual(reserved.intent_key, key)
+
+    def test_provider_receipt_reference_is_unique_and_exact_replay_is_idempotent(self):
+        key = self.stage()[0].intent_key
+        claim = self.reserve(key)
+        first = ProviderReceipt(key, "provider-01", "ACCEPTED", "provider-event-1")
+        result = record_provider_receipt(
+            self.dir, reservation=claim, receipt=first,
+            verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+        )
+        duplicate = record_provider_receipt(
+            self.dir, reservation=claim, receipt=first,
+            verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+        )
+        self.assertEqual(result, duplicate)
+        altered = replace(first, reported="DELIVERED")
+        with self.assertRaisesRegex(OutboxConflict, "provider_receipt_reference_reused"):
+            record_provider_receipt(
+                self.dir, reservation=claim, receipt=altered,
+                verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+            )
+
+    def test_provider_receipt_reference_cannot_be_reused_for_another_intent(self):
+        plan = plan_delivery(
+            case_key="intake-7", source_peer_key="thread:Q1",
+            parts=(Part(1, "text", C, 12), Part(2, "text", B, 14)),
+            capabilities=Capabilities("youtube-comment", "v1", frozenset({"text"}), 280, True),
+            authority=Authority(3, A, True), choice=Choice(),
+        )
+        intents = stage_plan(
+            self.dir, plan=plan, approval=self.receipt,
+            evidence=self.evidence, verify_approval=self.verifier,
+            synthetic_fixtures_only=True,
+        )
+        def reserve_for_plan(intent):
+            return reserve_for_adapter(
+                self.dir, intent_key=intent.intent_key, plan=plan,
+                approval=self.receipt, evidence=self.evidence,
+                verify_approval=self.verifier,
+                get_current_evidence=lambda case: self.evidence,
+                synthetic_fixtures_only=True,
+            )
+        first = reserve_for_plan(intents[0])
+        second = reserve_for_plan(intents[1])
+        receipt = ProviderReceipt(
+            first.intent_key, "provider-01", "ACCEPTED", "globally-unique-event"
+        )
+        record_provider_receipt(
+            self.dir, reservation=first, receipt=receipt,
+            verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+        )
+        reused = replace(receipt, intent_key=second.intent_key)
+        with self.assertRaisesRegex(OutboxConflict, "provider_receipt_reference_reused"):
+            record_provider_receipt(
+                self.dir, reservation=second, receipt=reused,
+                verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+            )
 
     def test_production_is_never_activated(self):
         with patch.dict(os.environ, {"FATWA_PRODUCTION": "1"}):

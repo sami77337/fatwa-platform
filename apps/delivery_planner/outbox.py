@@ -30,6 +30,7 @@ APP_ID = 0x464F4258  # FOBX
 MAX_INTENTS = 128
 MAX_EVENTS = 512
 MAX_APPROVAL_CLAIMS = 128
+MAX_PROVIDER_RECEIPTS = 512
 _SHA = re.compile(r"^[a-f0-9]{64}$")
 _REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _ALLOWED = frozenset({"STAGED", "HELD_FOR_HUMAN", "RESERVED", "QUEUED",
@@ -55,6 +56,13 @@ _DDL = (
     "CREATE TRIGGER immutable_approval_claims_update BEFORE UPDATE ON approval_claims "
     "BEGIN SELECT RAISE(ABORT,'append_only'); END",
     "CREATE TRIGGER immutable_approval_claims_delete BEFORE DELETE ON approval_claims "
+    "BEGIN SELECT RAISE(ABORT,'append_only'); END",
+    "CREATE TABLE provider_receipts (receipt_reference TEXT PRIMARY KEY, intent_key TEXT NOT NULL,"
+    "provider_message_id TEXT NOT NULL, reported TEXT NOT NULL, payload_sha256 TEXT NOT NULL,"
+    "recorded_at TEXT NOT NULL) WITHOUT ROWID",
+    "CREATE TRIGGER immutable_provider_receipts_update BEFORE UPDATE ON provider_receipts "
+    "BEGIN SELECT RAISE(ABORT,'append_only'); END",
+    "CREATE TRIGGER immutable_provider_receipts_delete BEFORE DELETE ON provider_receipts "
     "BEGIN SELECT RAISE(ABORT,'append_only'); END",
     "CREATE TRIGGER immutable_outbox_events_update BEFORE UPDATE ON events "
     "BEGIN SELECT RAISE(ABORT,'append_only'); END",
@@ -149,7 +157,7 @@ def _path(directory: Path) -> Path:
 
 def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
     if con.execute("PRAGMA application_id").fetchone() != (APP_ID,) or (
-        con.execute("PRAGMA user_version").fetchone() != (2,)
+        con.execute("PRAGMA user_version").fetchone() != (3,)
     ):
         raise OutboxConflict("wrong_outbox_database")
     schema = con.execute(
@@ -247,6 +255,35 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
             for row in stored.values()
         ):
             raise OutboxConflict("approval_claim_without_matching_intent")
+    provider_receipts = con.execute(
+        "SELECT * FROM provider_receipts LIMIT ?", (MAX_PROVIDER_RECEIPTS + 1,)
+    ).fetchall()
+    if len(provider_receipts) > MAX_PROVIDER_RECEIPTS:
+        raise OutboxConflict("provider_receipt_capacity")
+    expected_states = {
+        "QUEUED": "QUEUED",
+        "ACCEPTED": "SENT_UNCONFIRMED",
+        "DELIVERED": "DELIVERED",
+        "FAILED": "FAILED_REQUIRES_REVIEW",
+    }
+    for receipt_ref, intent_key, message_id, reported, payload_sha, recorded in provider_receipts:
+        if (
+            not _valid_ref(receipt_ref) or intent_key not in stored
+            or not _valid_ref(message_id) or reported not in expected_states
+            or type(payload_sha) is not str or _SHA.fullmatch(payload_sha) is None
+            or not compare_digest(payload_sha, sha256(json.dumps(
+                [intent_key, message_id, reported, receipt_ref],
+                ensure_ascii=False, separators=(",", ":"),
+            ).encode()).hexdigest())
+            or stored[intent_key][11] != message_id
+            or not _valid_utc_timestamp(recorded)
+            or not any(
+                event[1] == intent_key and event[3] == expected_states[reported]
+                and event[4] == receipt_ref
+                for event in events
+            )
+        ):
+            raise OutboxConflict("provider_receipt_ledger_invalid")
     return stored, len(events), previous
 
 
@@ -270,7 +307,7 @@ def _db(directory: Path, *, writable: bool):
             if con.execute("SELECT count(*) FROM sqlite_schema").fetchone() != (0,):
                 raise OutboxConflict("unrecognized_outbox_file")
             con.execute(f"PRAGMA application_id={APP_ID}")
-            con.execute("PRAGMA user_version=2")
+            con.execute("PRAGMA user_version=3")
             for ddl in _DDL:
                 con.execute(ddl)
             con.execute("INSERT INTO audit_head VALUES (1,0,'')")
@@ -479,16 +516,15 @@ def record_provider_receipt(
     verify_provider_receipt: Callable[[ProviderReceipt], bool],
     synthetic_fixtures_only: bool = False,
 ) -> StoredIntent:
-    """Reconcile one verified provider event. Accepted != delivered."""
+    """Reconcile one verified provider event with a unique append-only receipt ledger."""
     require_development(synthetic_fixtures_only)
     if (
         not isinstance(reservation, Reservation)
         or not isinstance(receipt, ProviderReceipt)
         or reservation.intent_key != receipt.intent_key
         or type(reservation.token) is not str
-        or not all(_REF.fullmatch(value) is not None and type(value) is str for value in (
-            receipt.provider_message_id, receipt.receipt_reference
-        ))
+        or not _valid_ref(receipt.provider_message_id)
+        or not _valid_ref(receipt.receipt_reference)
         or receipt.reported not in {"QUEUED", "ACCEPTED", "DELIVERED", "FAILED"}
         or not callable(verify_provider_receipt)
     ):
@@ -499,9 +535,36 @@ def record_provider_receipt(
         raise OutboxConflict("provider_receipt_verifier_unavailable") from exc
     if verified is not True:
         raise OutboxConflict("provider_receipt_unverified")
+    payload_sha = sha256(json.dumps(
+        [receipt.intent_key, receipt.provider_message_id, receipt.reported, receipt.receipt_reference],
+        ensure_ascii=False, separators=(",", ":"),
+    ).encode()).hexdigest()
+    expected_states = {
+        "QUEUED": "QUEUED",
+        "ACCEPTED": "SENT_UNCONFIRMED",
+        "DELIVERED": "DELIVERED",
+        "FAILED": "FAILED_REQUIRES_REVIEW",
+    }
     try:
         with _db(directory, writable=True) as con:
             stored, _, _ = _verified_db(con)
+            existing = con.execute(
+                "SELECT intent_key,provider_message_id,reported,payload_sha256 "
+                "FROM provider_receipts WHERE receipt_reference=?",
+                (receipt.receipt_reference,),
+            ).fetchone()
+            desired = (
+                receipt.intent_key, receipt.provider_message_id,
+                receipt.reported, payload_sha,
+            )
+            if existing is not None:
+                if existing != desired:
+                    raise OutboxConflict("provider_receipt_reference_reused")
+                row = stored.get(receipt.intent_key)
+                if row is None:
+                    raise OutboxConflict("provider_receipt_intent_missing")
+                return _read_only_intents((row,))[0]
+
             row = stored.get(receipt.intent_key)
             if (
                 row is None or row[9] is None
@@ -517,17 +580,25 @@ def record_provider_receipt(
             if row[11] is not None and row[11] != receipt.provider_message_id:
                 raise OutboxConflict("multiple_provider_message_ids")
             if old == state and row[12] == receipt.reported:
-                return _read_only_intents((row,))[0]
+                raise OutboxConflict("duplicate_provider_state_requires_same_receipt")
             allowed = {
                 "RESERVED": {"QUEUED", "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
                 "QUEUED": {"SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
                 "SENT_UNCONFIRMED": {"DELIVERED", "FAILED_REQUIRES_REVIEW"},
-                # An expired reservation is not permission to send again. A
-                # verified late receipt may still establish what actually happened.
-                "UNKNOWN_REQUIRES_RECONCILIATION": {"SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"},
+                "UNKNOWN_REQUIRES_RECONCILIATION": {
+                    "SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"
+                },
             }
             if state not in allowed.get(old, set()):
                 raise OutboxConflict("provider_receipt_invalid_transition")
+            recorded = _now()
+            con.execute(
+                "INSERT INTO provider_receipts VALUES (?,?,?,?,?,?)",
+                (
+                    receipt.receipt_reference, receipt.intent_key,
+                    receipt.provider_message_id, receipt.reported, payload_sha, recorded,
+                ),
+            )
             con.execute(
                 "UPDATE intents SET state=?,provider_message_id=?,provider_status=?,updated_at=?"
                 " WHERE intent_key=?",

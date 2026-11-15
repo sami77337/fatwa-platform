@@ -93,6 +93,36 @@ class OutboxIntegrityTests(TestCase):
         with self.assertRaises(OutboxConflict):
             list_intents(self.directory, synthetic_fixtures_only=True)
 
+    def test_provider_receipt_ledger_is_append_only_and_verified_on_read(self):
+        claim = self.reserve()
+        receipt = ProviderReceipt(
+            claim.intent_key, "provider-01", "DELIVERED", "provider-event-1"
+        )
+        record_provider_receipt(
+            self.directory, reservation=claim, receipt=receipt,
+            verify_provider_receipt=lambda value: True,
+            synthetic_fixtures_only=True,
+        )
+        con = sqlite3.connect(self.directory / FILE_NAME)
+        try:
+            with self.assertRaises(sqlite3.IntegrityError):
+                con.execute(
+                    "UPDATE provider_receipts SET reported='ACCEPTED' "
+                    "WHERE receipt_reference='provider-event-1'"
+                )
+            con.rollback()
+            with self.assertRaises(sqlite3.IntegrityError):
+                con.execute(
+                    "DELETE FROM provider_receipts WHERE receipt_reference='provider-event-1'"
+                )
+            con.rollback()
+            con.execute("DROP TRIGGER immutable_provider_receipts_update")
+            con.commit()
+        finally:
+            con.close()
+        with self.assertRaisesRegex(OutboxConflict, "outbox_schema_mismatch"):
+            list_intents(self.directory, synthetic_fixtures_only=True)
+
     def test_corrupt_timestamp_is_rejected(self):
         self.stage()
         self.mutate("updated_at='not-a-time'")
