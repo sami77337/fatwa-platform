@@ -16,7 +16,7 @@ from django.utils import timezone
 from apps.intake_workflow.guards import require_synthetic_write, SyntheticWriteDenied
 from .models import (
     ApprovalClaim, DeliveryAttempt, DeliveryAuditEvent, DeliveryAuditHead,
-    DeliveryIntent, ProviderReceipt, SignedDeliveryContext,
+    DeliveryIntent, ProviderReceipt, ProviderSignatureEvidence, SignedDeliveryContext,
 )
 
 _HEX = re.compile(r"[a-f0-9]{64}")
@@ -311,7 +311,8 @@ def _authenticate_attempt(intent, lease):
         raise QueueConflict("worker_lease_mismatch")
 
 
-def record_receipt(*, lease, receipt_reference, provider_message_id, reported, verify_provider_receipt):
+def record_receipt(*, lease, receipt_reference, provider_message_id, reported, verify_provider_receipt,
+                   signed_evidence=None):
     """Exact signed-event replay is idempotent, but still authenticates its attempt."""
     _postgres_only()
     if (not isinstance(lease, WorkerLease) or not _hex(lease.intent_key)
@@ -321,6 +322,21 @@ def record_receipt(*, lease, receipt_reference, provider_message_id, reported, v
         or type(reported) is not str or reported not in {"ACCEPTED", "DELIVERED", "FAILED"}
         or not callable(verify_provider_receipt)):
         raise QueueConflict("invalid_provider_receipt")
+    # This optional evidence is reserved for the offline signed-provider adapter.
+    # The low-level bool callback remains a synthetic-fixture interface only.
+    evidence_sha = None
+    if signed_evidence is not None:
+        if (type(signed_evidence) is not dict
+            or "signature_b64url" not in signed_evidence
+            or type(signed_evidence["signature_b64url"]) is not str):
+            raise QueueConflict("signed_provider_evidence_invalid")
+        try:
+            serialized = _canonical(signed_evidence)
+        except (ValueError, TypeError, UnicodeError) as exc:
+            raise QueueConflict("signed_provider_evidence_invalid") from exc
+        if len(serialized) > 4096:
+            raise QueueConflict("signed_provider_evidence_too_large")
+        evidence_sha = sha256(serialized).hexdigest()
     proof = {"intent_key": lease.intent_key, "receipt_reference": receipt_reference,
              "provider_message_id": provider_message_id, "reported": reported}
     # Retain the original ASCII-escaped canonical representation for existing proofs.
@@ -340,6 +356,13 @@ def record_receipt(*, lease, receipt_reference, provider_message_id, reported, v
             if (existing.intent_id != lease.intent_key or existing.provider_message_id != provider_message_id
                 or existing.reported != reported or not compare_digest(existing.payload_sha256, payload_sha)):
                 raise QueueConflict("provider_receipt_reference_reused")
+            if signed_evidence is not None:
+                saved = ProviderSignatureEvidence.objects.filter(
+                    receipt_id=receipt_reference
+                ).first()
+                if (saved is None or saved.envelope != signed_evidence
+                    or not compare_digest(saved.envelope_sha256, evidence_sha)):
+                    raise QueueConflict("signed_provider_evidence_replay_mismatch")
             _verify_locked_head(_locked_head())
             return intent
         if target not in _TRANSITIONS.get(intent.state, set()):
@@ -351,8 +374,16 @@ def record_receipt(*, lease, receipt_reference, provider_message_id, reported, v
         intent.lease_token_sha256 = intent.lease_owner = intent.lease_expires_at = None
         intent.save(update_fields=["state", "provider_message_id", "provider_status", "lease_token_sha256",
                                    "lease_owner", "lease_expires_at", "updated_at"])
-        ProviderReceipt.objects.create(receipt_reference=receipt_reference, intent=intent,
-            provider_message_id=provider_message_id, reported=reported, payload_sha256=payload_sha)
+        saved_receipt = ProviderReceipt.objects.create(
+            receipt_reference=receipt_reference, intent=intent,
+            provider_message_id=provider_message_id, reported=reported,
+            payload_sha256=payload_sha,
+        )
+        if signed_evidence is not None:
+            ProviderSignatureEvidence.objects.create(
+                receipt=saved_receipt, envelope=signed_evidence,
+                envelope_sha256=evidence_sha,
+            )
         _audit(intent, old, target, receipt_reference, payload)
         return intent
 
