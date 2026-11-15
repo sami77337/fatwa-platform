@@ -10,7 +10,7 @@ from apps.delivery_planner.approval import ApprovalReceipt, CurrentEvidence
 from apps.delivery_planner.audit_attestation import (
     create_audit_attestation, verify_audit_attestation,
 )
-from apps.delivery_planner.outbox import FILE_NAME, list_intents, stage_plan
+from apps.delivery_planner.outbox import FILE_NAME, list_intents, reserve_for_adapter, stage_plan
 from apps.delivery_planner.planner import Authority, Capabilities, Choice, Part, plan_delivery
 
 A, B, C = "a" * 64, "b" * 64, "c" * 64
@@ -24,19 +24,23 @@ class ExternalAuditAttestationTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.directory = Path(temp.name)
         evidence = CurrentEvidence("case-attest-1", 2, A, B, "")
+        self.evidence = evidence
         approval = ApprovalReceipt(
             "case-attest-1", 2, A, B, "", "mufti-training", "MUFTI",
             "APPROVE_RETURN_TO_ORIGIN", "attest-approval-1", NOW.isoformat(),
         )
+        self.approval = approval
         plan = plan_delivery(
             case_key="case-attest-1", source_peer_key="thread:attest-1",
             parts=(Part(1, "text", C, 25),),
             capabilities=Capabilities("reply-source", "v1", frozenset({"text"}), 100, True),
             authority=Authority(2, A, True), choice=Choice(),
         )
+        self.plan = plan
+        self.verify = lambda item: item == approval
         stage_plan(
             self.directory, plan=plan, approval=approval, evidence=evidence,
-            verify_approval=lambda item: item == approval, synthetic_fixtures_only=True,
+            verify_approval=self.verify, synthetic_fixtures_only=True,
         )
 
     def attest(self, key_id="audit-key-1", key=KEY):
@@ -114,11 +118,14 @@ class ExternalAuditAttestationTests(unittest.TestCase):
 
     def test_new_audit_event_invalidates_old_checkpoint_and_new_one_verifies(self):
         old = self.attest()
-        from apps.delivery_planner.outbox import _db, _audit
-        with _db(self.directory, writable=True) as con:
-            row = con.execute("SELECT intent_key,state FROM intents").fetchone()
-            _audit(con, row[0], row[1], row[1], "checkpoint:test")
-            con.commit()
+        row, = list_intents(self.directory, synthetic_fixtures_only=True)
+        reserve_for_adapter(
+            self.directory, intent_key=row.intent_key, plan=self.plan,
+            approval=self.approval, evidence=self.evidence,
+            verify_approval=self.verify,
+            get_current_evidence=lambda case: self.evidence,
+            synthetic_fixtures_only=True,
+        )
         self.assertFalse(verify_audit_attestation(
             self.directory, attestation=old, trusted_keys={"audit-key-1": KEY},
         ))

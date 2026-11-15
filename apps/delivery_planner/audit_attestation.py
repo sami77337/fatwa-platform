@@ -13,6 +13,7 @@ from hashlib import sha256
 import hmac
 import json
 import re
+import sqlite3
 from typing import Mapping
 
 from .outbox import APP_ID, FILE_NAME, OutboxConflict, _db, _valid_ref, _valid_utc_timestamp, _verified_db
