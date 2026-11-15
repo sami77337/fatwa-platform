@@ -182,7 +182,13 @@ class SignedProviderReceiptsTests(TransactionTestCase):
         lease = self.lease()
         event = self.signed_event(lease, receipt_reference="late-signed-receipt")
         queue.quarantine_expired_leases(now=lease.expires_at + timedelta(seconds=1))
-        self.assertIsNone(self.lease())
+        self.assertEqual(
+            queue.DeliveryIntent.objects.get(pk=lease.intent_key).state,
+            "UNKNOWN_REQUIRES_RECONCILIATION",
+        )
+        other = self.lease()
+        self.assertIsNotNone(other)
+        self.assertNotEqual(other.intent_key, lease.intent_key)
         result = self.record(lease, event)
         self.assertFalse(result.complete)
         self.assertEqual(result.state, "PARTIALLY_DELIVERED")
