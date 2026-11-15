@@ -1,4 +1,5 @@
 """Actual sandboxed Chrome over a loopback server and owned PostgreSQL."""
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from hashlib import sha256
 import json
@@ -9,6 +10,7 @@ import shutil
 from unittest.mock import patch
 from urllib.parse import urlsplit
 
+from django.db import close_old_connections, connections
 from django.test import LiveServerTestCase, override_settings
 from django.utils import timezone
 from apps.delivery_queue import services as q
@@ -62,11 +64,20 @@ class DeliveryReportBrowserTests(LiveServerTestCase):
             verify_provider_receipt=lambda proof: True)
 
     def snapshot(self):
-        return {
-            model._meta.label: list(model.objects.order_by('pk').values())
-            for model in (ApprovalClaim, DeliveryIntent, DeliveryAttempt,
-                          ProviderReceipt, DeliveryAuditEvent, DeliveryAuditHead, SignedDeliveryContext)
-        }
+        # Playwright's synchronous facade owns an event loop. Read Django ORM
+        # on a separate synchronous thread; never disable Django's async guard.
+        def read():
+            close_old_connections()
+            try:
+                return {
+                    model._meta.label: list(model.objects.order_by('pk').values())
+                    for model in (ApprovalClaim, DeliveryIntent, DeliveryAttempt,
+                                  ProviderReceipt, DeliveryAuditEvent, DeliveryAuditHead, SignedDeliveryContext)
+                }
+            finally:
+                connections.close_all()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(read).result(timeout=10)
 
     def test_native_login_mobile_desktop_scope_keyboard_and_read_only_export(self):
         from playwright.sync_api import sync_playwright
