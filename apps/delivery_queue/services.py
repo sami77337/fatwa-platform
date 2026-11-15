@@ -204,13 +204,22 @@ def record_receipt(
                 raise QueueConflict("provider_receipt_reference_reused")
             return DeliveryIntent.objects.get(pk=lease.intent_key)
         intent = DeliveryIntent.objects.select_for_update().get(pk=lease.intent_key)
-        if (
-            intent.state not in {DeliveryIntent.LEASED, DeliveryIntent.UNKNOWN_REQUIRES_RECONCILIATION}
-            or intent.lease_owner != lease.owner
-            or intent.lease_token_sha256 != sha256(lease.token.encode()).hexdigest()
-            or intent.lease_expires_at is None
-        ):
+        token_sha = sha256(lease.token.encode()).hexdigest()
+        lease_matches = (
+            intent.state in {DeliveryIntent.LEASED, DeliveryIntent.UNKNOWN_REQUIRES_RECONCILIATION}
+            and intent.lease_owner == lease.owner
+            and intent.lease_token_sha256 == token_sha
+            and intent.lease_expires_at is not None
+        )
+        accepted_attempt_matches = (
+            intent.state == DeliveryIntent.SENT_UNCONFIRMED
+            and intent.provider_message_id == provider_message_id
+            and intent.provider_status == "ACCEPTED"
+        )
+        if not (lease_matches or accepted_attempt_matches):
             raise QueueConflict("worker_lease_mismatch")
+        if accepted_attempt_matches and reported == "ACCEPTED":
+            raise QueueConflict("provider_receipt_state_not_advancing")
         old = intent.state
         intent.state = target_state
         intent.provider_message_id = provider_message_id

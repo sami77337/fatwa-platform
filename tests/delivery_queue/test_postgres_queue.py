@@ -79,6 +79,24 @@ class PostgreSQLDeliveryQueueTests(TransactionTestCase):
         self.assertEqual(summarize_plan(C).state,"DELIVERED")
         self.assertTrue(summarize_plan(C).complete)
 
+    def test_accepted_receipt_can_advance_to_delivered_with_a_new_event(self):
+        self.commit(parts=((1,B),))
+        lease=claim_next(provider="reply-source",worker_id="worker-a")
+        accepted=record_receipt(
+            lease=lease,receipt_reference="provider-event-accepted",
+            provider_message_id="provider-message-progress",reported="ACCEPTED",
+            verify_provider_receipt=lambda proof: True,
+        )
+        self.assertEqual(accepted.state,DeliveryIntent.SENT_UNCONFIRMED)
+        delivered=record_receipt(
+            lease=lease,receipt_reference="provider-event-delivered",
+            provider_message_id="provider-message-progress",reported="DELIVERED",
+            verify_provider_receipt=lambda proof: True,
+        )
+        self.assertEqual(delivered.state,DeliveryIntent.DELIVERED)
+        self.assertEqual(ProviderReceipt.objects.count(),2)
+        self.assertTrue(summarize_plan(C).complete)
+
     def test_changed_receipt_payload_is_rejected(self):
         self.commit(parts=((1,B),))
         lease=claim_next(provider="reply-source",worker_id="worker-a")

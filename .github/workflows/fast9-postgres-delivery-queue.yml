@@ -62,5 +62,7 @@ jobs:
               assert con.execute("select current_setting('server_version_num')::int / 10000").fetchone()[0] == int(os.environ['PG_EXPECTED_MAJOR'])
               assert con.execute("select count(*) from pg_namespace where nspname not in ('pg_catalog','pg_toast','information_schema','public')").fetchone()[0] == 0
           PY
+      - name: Verify migration state matches models
+        run: python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
       - name: Apply isolated synthetic migrations and run concurrency suite
         run: python manage.py test tests.delivery_queue --settings=config.settings.delivery_queue_test --noinput --verbosity=2
