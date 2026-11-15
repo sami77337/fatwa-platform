@@ -3,49 +3,64 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-FORWARD = r"""
-CREATE OR REPLACE FUNCTION public.fatwa_delivery_immutable_rows() RETURNS trigger
-LANGUAGE plpgsql AS $$
-BEGIN
-    RAISE EXCEPTION 'delivery audit rows are append-only' USING ERRCODE='23514';
-END; $$;
-CREATE TRIGGER fatwa_delivery_claim_immutable
-BEFORE UPDATE OR DELETE ON public.fatwa_delivery_approval_claim
-FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows();
-CREATE TRIGGER fatwa_delivery_receipt_immutable
-BEFORE UPDATE OR DELETE ON public.fatwa_delivery_provider_receipt
-FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows();
-CREATE TRIGGER fatwa_delivery_audit_immutable
-BEFORE UPDATE OR DELETE ON public.fatwa_delivery_audit_event
-FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows();
+def install_delivery_triggers(apps, schema_editor):
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute("""
+            CREATE OR REPLACE FUNCTION public.fatwa_delivery_immutable_rows() RETURNS trigger
+            LANGUAGE plpgsql AS $$
+            BEGIN
+                RAISE EXCEPTION 'delivery audit rows are append-only' USING ERRCODE='23514';
+            END;
+            $$
+        """)
+        cursor.execute("""
+            CREATE TRIGGER fatwa_delivery_claim_immutable
+            BEFORE UPDATE OR DELETE ON public.fatwa_delivery_approval_claim
+            FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows()
+        """)
+        cursor.execute("""
+            CREATE TRIGGER fatwa_delivery_receipt_immutable
+            BEFORE UPDATE OR DELETE ON public.fatwa_delivery_provider_receipt
+            FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows()
+        """)
+        cursor.execute("""
+            CREATE TRIGGER fatwa_delivery_audit_immutable
+            BEFORE UPDATE OR DELETE ON public.fatwa_delivery_audit_event
+            FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows()
+        """)
+        cursor.execute("""
+            CREATE OR REPLACE FUNCTION public.fatwa_delivery_intent_identity_immutable() RETURNS trigger
+            LANGUAGE plpgsql AS $$
+            BEGIN
+                IF TG_OP = 'DELETE' THEN
+                    RAISE EXCEPTION 'delivery intent identity is immutable' USING ERRCODE='23514';
+                END IF;
+                IF ROW(OLD.intent_key, OLD.approval_id, OLD.plan_fingerprint, OLD.case_key,
+                       OLD.provider, OLD.answer_revision, OLD.ordinal, OLD.payload_sha256, OLD.created_at)
+                   IS DISTINCT FROM
+                   ROW(NEW.intent_key, NEW.approval_id, NEW.plan_fingerprint, NEW.case_key,
+                       NEW.provider, NEW.answer_revision, NEW.ordinal, NEW.payload_sha256, NEW.created_at) THEN
+                    RAISE EXCEPTION 'delivery intent identity is immutable' USING ERRCODE='23514';
+                END IF;
+                RETURN NEW;
+            END;
+            $$
+        """)
+        cursor.execute("""
+            CREATE TRIGGER fatwa_delivery_intent_identity_immutable
+            BEFORE UPDATE OR DELETE ON public.fatwa_delivery_intent
+            FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_intent_identity_immutable()
+        """)
 
-CREATE OR REPLACE FUNCTION public.fatwa_delivery_intent_identity_immutable() RETURNS trigger
-LANGUAGE plpgsql AS $
-BEGIN
-    IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'delivery intent identity is immutable' USING ERRCODE='23514';
-    END IF;
-    IF ROW(OLD.intent_key, OLD.approval_id, OLD.plan_fingerprint, OLD.case_key,
-           OLD.provider, OLD.answer_revision, OLD.ordinal, OLD.payload_sha256, OLD.created_at)
-       IS DISTINCT FROM
-       ROW(NEW.intent_key, NEW.approval_id, NEW.plan_fingerprint, NEW.case_key,
-           NEW.provider, NEW.answer_revision, NEW.ordinal, NEW.payload_sha256, NEW.created_at) THEN
-        RAISE EXCEPTION 'delivery intent identity is immutable' USING ERRCODE='23514';
-    END IF;
-    RETURN NEW;
-END; $;
-CREATE TRIGGER fatwa_delivery_intent_identity_immutable
-BEFORE UPDATE OR DELETE ON public.fatwa_delivery_intent
-FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_intent_identity_immutable();
-"""
-REVERSE = r"""
-DROP TRIGGER IF EXISTS fatwa_delivery_intent_identity_immutable ON public.fatwa_delivery_intent;
-DROP FUNCTION IF EXISTS public.fatwa_delivery_intent_identity_immutable();
-DROP TRIGGER IF EXISTS fatwa_delivery_audit_immutable ON public.fatwa_delivery_audit_event;
-DROP TRIGGER IF EXISTS fatwa_delivery_receipt_immutable ON public.fatwa_delivery_provider_receipt;
-DROP TRIGGER IF EXISTS fatwa_delivery_claim_immutable ON public.fatwa_delivery_approval_claim;
-DROP FUNCTION IF EXISTS public.fatwa_delivery_immutable_rows();
-"""
+
+def remove_delivery_triggers(apps, schema_editor):
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute("DROP TRIGGER IF EXISTS fatwa_delivery_intent_identity_immutable ON public.fatwa_delivery_intent")
+        cursor.execute("DROP FUNCTION IF EXISTS public.fatwa_delivery_intent_identity_immutable()")
+        cursor.execute("DROP TRIGGER IF EXISTS fatwa_delivery_audit_immutable ON public.fatwa_delivery_audit_event")
+        cursor.execute("DROP TRIGGER IF EXISTS fatwa_delivery_receipt_immutable ON public.fatwa_delivery_provider_receipt")
+        cursor.execute("DROP TRIGGER IF EXISTS fatwa_delivery_claim_immutable ON public.fatwa_delivery_approval_claim")
+        cursor.execute("DROP FUNCTION IF EXISTS public.fatwa_delivery_immutable_rows()")
 
 
 class Migration(migrations.Migration):
@@ -146,5 +161,5 @@ class Migration(migrations.Migration):
             ],
             options={"db_table":"fatwa_delivery_audit_event","ordering":["id"]},
         ),
-        migrations.RunSQL(FORWARD, REVERSE),
+        migrations.RunPython(install_delivery_triggers, remove_delivery_triggers),
     ]
