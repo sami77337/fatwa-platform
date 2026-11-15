@@ -50,3 +50,9 @@
 - [ ] Perform independent diff review and update Draft PR with PASS/FAIL facts.
 
 **Non-goals:** actual channel connector, automatic issuer of receipts, operator approval based on pasted text, production DB migration, live revocation service, main merge, deployment.
+
+## Task 4: Verified provider-reported multipart audit
+- [x] RED tests for signed-vs-unsigned complete plan, revoked keys, and read-only audit.
+- [x] Conservative all-parts audit within one locked PostgreSQL head snapshot.
+- [ ] GREEN PG17/18 and check exact head SHA.
+- [ ] Update Draft PR and evidence report, no merge/deploy.
