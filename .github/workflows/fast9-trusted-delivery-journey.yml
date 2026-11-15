@@ -5,7 +5,7 @@ on:
       - 'apps/delivery_queue/**'
       - 'apps/delivery_planner/**'
       - 'tests/delivery_queue/**'
-      - 'tools/dev/trusted_delivery_acceptance.py'
+      - 'tools/dev/trusted_delivery*'
       - 'templates/delivery_queue/**'
       - 'config/settings/delivery_queue*'
       - '.github/workflows/fast9-trusted-delivery-journey.yml'
@@ -62,7 +62,7 @@ jobs:
       - name: Verify source and compile changed modules
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          python -m compileall -q apps/delivery_queue tests/delivery_queue tools/dev/trusted_delivery_acceptance.py
+          python -m compileall -q apps/delivery_queue tests/delivery_queue tools/dev/trusted_delivery_acceptance.py tools/dev/trusted_delivery_browser.py
       - name: Claim only the fresh isolated PostgreSQL database
         run: |
           python - <<'PY'
@@ -84,6 +84,15 @@ jobs:
           set -euo pipefail
           mkdir -p .local/qa/trusted-journey
           python tools/dev/trusted_delivery_acceptance.py 2>&1 | tee .local/qa/trusted-journey/tests.log
+      - name: Actual report browser acceptance on PostgreSQL
+        if: matrix.postgres == '17'
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+        run: |
+          set -euo pipefail
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+          test -x "$FATWA_FASTBUILD_BROWSER"
+          python tools/dev/trusted_delivery_browser.py 2>&1 | tee .local/qa/trusted-journey/browser.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

@@ -75,6 +75,15 @@ class DeliveryIntent(models.Model):
                     lease_owner__isnull=False, lease_expires_at__isnull=False, provider_message_id__isnull=True,
                     provider_status__isnull=True)
             ), name="dq_intent_state_consistent"),
+            # SQL CHECK accepts UNKNOWN. Explicit nullability below closes the
+            # gap left by regex/equality predicates on nullable state fields.
+            models.CheckConstraint(condition=(
+                Q(state="STAGED")
+                | Q(state__in=["LEASED", "UNKNOWN_REQUIRES_RECONCILIATION"],
+                    lease_token_sha256__isnull=False)
+                | Q(state__in=["SENT_UNCONFIRMED", "DELIVERED", "FAILED_REQUIRES_REVIEW"],
+                    provider_status__isnull=False)
+            ), name="dq_intent_required_state_fields"),
         ]
 
 
