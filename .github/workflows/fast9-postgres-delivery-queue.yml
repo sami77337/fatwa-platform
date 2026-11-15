@@ -40,10 +40,14 @@ jobs:
       PGDATABASE: wave7_synthetic_queue
       PGTESTDATABASE: test_wave7_synthetic_queue
       PG_EXPECTED_MAJOR: ${{ matrix.postgres }}
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Verify tested branch head
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.13'
@@ -72,4 +76,4 @@ jobs:
       - name: Verify migration state matches models
         run: python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
       - name: Apply isolated synthetic migrations and run concurrency suite
-        run: python manage.py test tests.delivery_queue.test_postgres_queue tests.delivery_queue.test_signed_approval_bridge tests.delivery_queue.test_postgres_audit_attestation --settings=config.settings.delivery_queue_test --noinput --verbosity=2
+        run: python manage.py test tests.delivery_queue.test_postgres_queue tests.delivery_queue.test_signed_approval_bridge tests.delivery_queue.test_postgres_audit_attestation tests.delivery_queue.test_signed_provider_receipts --settings=config.settings.delivery_queue_test --noinput --verbosity=2

@@ -147,3 +147,24 @@ class DeliveryAttempt(models.Model):
 
     class Meta:
         db_table = "fatwa_delivery_attempt"
+
+
+class ProviderSignatureEvidence(models.Model):
+    """Immutable signed provider statement, never a private signing key."""
+
+    receipt = models.OneToOneField(
+        ProviderReceipt, on_delete=models.PROTECT, primary_key=True,
+        related_name="signature_evidence",
+    )
+    envelope = models.JSONField()
+    envelope_sha256 = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "fatwa_delivery_provider_signature_evidence"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(envelope_sha256__regex=r"^[a-f0-9]{64}$"),
+                name="dq_provider_sig_sha_format",
+            ),
+        ]
