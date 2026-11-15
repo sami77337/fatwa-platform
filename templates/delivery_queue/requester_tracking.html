@@ -10,9 +10,13 @@
 <main id="main">
 {% if status %}
 <article aria-live="polite"><h2>نتيجة المتابعة</h2>
-<p>الحالة الحالية: <bdi>{{ status.status }}</bdi></p>
+<p>الحالة الحالية: <bdi>{{ status_label }}</bdi></p>
+{% if status.total_parts %}
 <p>الأجزاء المبلّغ بتسليمها: {{ status.delivered_parts }} من {{ status.total_parts }}</p>
-{% if not status.delivery_verified %}
+{% else %}
+<p>لم يبدأ تجهيز أجزاء الجواب للتسليم بعد.</p>
+{% endif %}
+{% if status.total_parts and not status.delivery_verified %}
 <p class="notice">هذه الحالة لا تثبت وصول الرسالة إلى جهاز السائل أو قراءتها. اكتمال التسليم يحتاج إثباتًا موثوقًا مستقلًا.</p>
 {% endif %}</article>
 {% endif %}

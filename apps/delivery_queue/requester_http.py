@@ -13,6 +13,20 @@ from django.views.decorators.debug import sensitive_post_parameters
 from .requester_tracking import TrackingDenied, lookup_case_status
 
 BASE = "/requester/tracking/"
+_STATUS_LABELS = {
+    "RECEIVED": "تم استلام السؤال",
+    "UNDER_REVIEW": "قيد المراجعة",
+    "NEEDS_CLARIFICATION": "نحتاج إلى استيضاح",
+    "WITH_MUFTI": "معروض للمراجعة الشرعية",
+    "RETURNED_FOR_CHANGES": "أُعيد للمؤلف للتعديل",
+    "PREPARING_DELIVERY": "يجري تجهيز الجواب",
+    "DELIVERY_IN_PROGRESS": "تجري متابعة التسليم مع القناة",
+    "PARTIALLY_REPORTED": "أبلغت القناة عن وصول بعض الأجزاء",
+    "PROVIDER_REPORTED_DELIVERY_UNVERIFIED": "أبلغت القناة عن التسليم، والإثبات غير متحقق",
+    "DELIVERY_NEEDS_RECONCILIATION": "حالة التسليم تحتاج إلى مراجعة",
+    "DELIVERY_REQUIRES_REVIEW": "تعذّر التسليم ويلزم تدخل المشغّل",
+}
+
 CSS = """body{margin:0;background:#f4f6f9;color:#182638;font:18px/1.75 system-ui,sans-serif}
 main,header{max-width:780px;margin:auto;padding:1.1rem;box-sizing:border-box}
 h1{font-size:1.65rem;line-height:1.4}
@@ -79,7 +93,10 @@ def portal(request):
     except TrackingDenied:
         return _denied("tracking_token_invalid_or_expired", 404)
     return _private(render(
-        request, "delivery_queue/requester_tracking.html", {"status": result},
+        request, "delivery_queue/requester_tracking.html",
+        {"status": result, "status_label": _STATUS_LABELS.get(
+            result["status"], "حالة السؤال تحتاج إلى مراجعة",
+        )},
     ))
 
 
