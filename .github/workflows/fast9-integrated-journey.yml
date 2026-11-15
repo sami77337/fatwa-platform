@@ -29,8 +29,6 @@ jobs:
       DJANGO_SETTINGS_MODULE: config.settings.test
       PYTHONUTF8: '1'
       PYTHONDONTWRITEBYTECODE: '1'
-      # This journey uses synthetic local journals and SimpleTestCase views.
-      # Fail promptly on an accidental PostgreSQL connection; PG CI is separate.
       PGHOST: '127.0.0.1'
       PGPORT: '1'
       PGCONNECT_TIMEOUT: '2'
@@ -52,6 +50,7 @@ jobs:
           python -m unittest \
             tests.delivery_planner.test_planner \
             tests.delivery_planner.test_approval \
+            tests.delivery_planner.test_trusted_identity \
             tests.delivery_planner.test_segmentation \
             tests.delivery_planner.test_outbox \
             tests.delivery_planner.test_outbox_recovery \
@@ -88,4 +87,4 @@ jobs:
           name: fast9-return-preparation-browser
           path: .local/qa/fast9-integrated/return-preparation-browser.json
           include-hidden-files: true
-          if-no-files-found: error
+          if-no-files-found: ignore

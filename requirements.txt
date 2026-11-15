@@ -7,3 +7,6 @@ django-htmx==1.29.0
 psycopg==3.3.6
 psycopg-binary==3.3.6
 typing_extensions==4.16.0
+cryptography==50.0.2
+cffi==2.1.1
+pycparser==3.12

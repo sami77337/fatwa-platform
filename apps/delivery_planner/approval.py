@@ -4,7 +4,7 @@ This module never issues approvals or checks live accounts. A trusted identity
 adapter must verify the approval receipt against the MUFTI account. Merely
 showing a technical review or having a Python boolean is not an approval.
 """
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 from hmac import compare_digest
@@ -118,6 +118,15 @@ def require_return_approval(
         or plan.answer_revision != receipt.answer_revision
     ):
         raise InvalidPlan("approval_not_bound_to_current_evidence")
+    signed_plan_digest = getattr(receipt, "plan_sha256", None)
+    if signed_plan_digest is not None:
+        expected_plan_digest = sha256(json.dumps(
+            asdict(plan), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")).hexdigest()
+        if not _digest(signed_plan_digest) or not compare_digest(
+            signed_plan_digest, expected_plan_digest
+        ):
+            raise InvalidPlan("approval_not_bound_to_exact_delivery_plan")
     try:
         verified = verify_receipt(receipt)
     except Exception as exc:
@@ -130,6 +139,8 @@ def require_return_approval(
         receipt.approver_id, receipt.approver_role, receipt.decision,
         receipt.receipt_id, receipt.issued_at,
     ]
+    if signed_plan_digest is not None:
+        canonical.append(signed_plan_digest)
     fingerprint = sha256(json.dumps(canonical, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
     return ApprovedForReturn(
         authority=Authority(receipt.answer_revision, receipt.answer_sha256, True),
