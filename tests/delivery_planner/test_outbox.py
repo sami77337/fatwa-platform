@@ -185,8 +185,16 @@ class OutboxTests(unittest.TestCase):
             evidence=self.evidence, verify_approval=self.verifier,
             synthetic_fixtures_only=True,
         )
-        first = self.reserve(intents[0].intent_key)
-        second = self.reserve(intents[1].intent_key)
+        def reserve_for_plan(intent):
+            return reserve_for_adapter(
+                self.dir, intent_key=intent.intent_key, plan=plan,
+                approval=self.receipt, evidence=self.evidence,
+                verify_approval=self.verifier,
+                get_current_evidence=lambda case: self.evidence,
+                synthetic_fixtures_only=True,
+            )
+        first = reserve_for_plan(intents[0])
+        second = reserve_for_plan(intents[1])
         receipt = ProviderReceipt(
             first.intent_key, "provider-01", "ACCEPTED", "globally-unique-event"
         )
