@@ -55,8 +55,8 @@ class OutboxTests(unittest.TestCase):
     def reconcile(self, reservation, status, message="provider-01"):
         return record_provider_receipt(
             self.dir, reservation=reservation,
-            receipt=ProviderReceipt(reservation.intent_key, message, status, "receipt-01"),
-            verify_provider_receipt=lambda proof: proof.receipt_reference == "receipt-01",
+            receipt=ProviderReceipt(reservation.intent_key, message, status, "receipt-" + status.lower()),
+            verify_provider_receipt=lambda proof: proof.receipt_reference == "receipt-" + status.lower(),
             synthetic_fixtures_only=True,
         )
 
@@ -152,6 +152,41 @@ class OutboxTests(unittest.TestCase):
             get_current_evidence=lambda case: self.evidence,
         )
         self.assertEqual(reserved.intent_key, key)
+
+    def test_provider_receipt_reference_is_unique_and_exact_replay_is_idempotent(self):
+        key = self.stage()[0].intent_key
+        claim = self.reserve(key)
+        first = ProviderReceipt(key, "provider-01", "ACCEPTED", "provider-event-1")
+        result = record_provider_receipt(
+            self.dir, reservation=claim, receipt=first,
+            verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+        )
+        duplicate = record_provider_receipt(
+            self.dir, reservation=claim, receipt=first,
+            verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+        )
+        self.assertEqual(result, duplicate)
+        altered = replace(first, reported="DELIVERED")
+        with self.assertRaisesRegex(OutboxConflict, "provider_receipt_reference_reused"):
+            record_provider_receipt(
+                self.dir, reservation=claim, receipt=altered,
+                verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+            )
+
+    def test_provider_receipt_reference_cannot_be_reused_for_another_intent(self):
+        key = self.stage()[0].intent_key
+        claim = self.reserve(key)
+        receipt = ProviderReceipt(key, "provider-01", "ACCEPTED", "globally-unique-event")
+        record_provider_receipt(
+            self.dir, reservation=claim, receipt=receipt,
+            verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+        )
+        other = replace(receipt, intent_key="f" * 64)
+        with self.assertRaisesRegex(OutboxConflict, "provider_receipt_reference_reused"):
+            record_provider_receipt(
+                self.dir, reservation=claim, receipt=other,
+                verify_provider_receipt=lambda proof: True, synthetic_fixtures_only=True,
+            )
 
     def test_production_is_never_activated(self):
         with patch.dict(os.environ, {"FATWA_PRODUCTION": "1"}):
