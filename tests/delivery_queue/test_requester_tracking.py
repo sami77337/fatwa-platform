@@ -178,3 +178,47 @@ class RequesterTrackingTests(TransactionTestCase):
             self.issue()
         self.assertEqual(RequesterTrackingToken.objects.count(), 1)
         self.assertEqual(tracking.lookup_case_status(first)["status"], "RECEIVED")
+
+    def test_tracking_token_identity_and_expiry_are_immutable_in_postgres(self):
+        self.issue()
+        with self.assertRaises(IntegrityError):
+            RequesterTrackingToken.objects.update(
+                expires_at=timezone.now() + timedelta(days=10),
+            )
+        with self.assertRaises(IntegrityError):
+            RequesterTrackingToken.objects.update(token_sha256="c" * 64)
+        with self.assertRaises(IntegrityError):
+            RequesterTrackingToken.objects.all().delete()
+        self.assertEqual(RequesterTrackingToken.objects.count(), 1)
+
+    def test_tampered_current_stage_without_matching_history_is_rejected(self):
+        token = self.issue()
+        RequesterTrackingCase.objects.filter(pk="case-alpha").update(
+            stage="WITH_MUFTI",
+        )
+        with self.assertRaisesRegex(tracking.TrackingDenied, "tracking_history_inconsistent"):
+            tracking.lookup_case_status(token)
+
+    def test_two_operator_commands_on_same_revision_cannot_both_commit(self):
+        from django.db import close_old_connections, connections
+        from threading import Barrier
+        self.issue()
+        barrier = Barrier(2)
+        def advance():
+            close_old_connections()
+            try:
+                barrier.wait()
+                return tracking.advance_tracking_case(
+                    case_key="case-alpha", expected_revision=1,
+                    stage="UNDER_REVIEW", actor_id="synthetic-operator",
+                    authorize_actor=lambda *args: True,
+                )["revision"]
+            except tracking.TrackingDenied:
+                return "DENIED"
+            finally:
+                connections.close_all()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            result = list(pool.map(lambda _: advance(), range(2)))
+        self.assertEqual(sorted(map(str, result)), ["2", "DENIED"])
+        self.assertEqual(RequesterTrackingCase.objects.get(pk="case-alpha").revision, 2)
+        self.assertEqual(RequesterTrackingEvent.objects.count(), 2)
