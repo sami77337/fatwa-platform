@@ -62,7 +62,7 @@ jobs:
       - name: Check exact revision and syntax
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          python -m compileall -q apps/mufti_review tests/mufti_review tools/dev/mufti_review_acceptance.py
+          python -m compileall -q apps/mufti_review tests/mufti_review tools/dev/mufti_review_acceptance.py tools/dev/mufti_review_browser.py
       - name: Claim only the isolated empty synthetic DB
         run: |
           python - <<'PY'
@@ -84,6 +84,15 @@ jobs:
           set -euo pipefail
           mkdir -p .local/qa/trusted-journey
           python tools/dev/mufti_review_acceptance.py 2>&1 | tee .local/qa/trusted-journey/mufti-tests.log
+      - name: Real author and Mufti browser round trip
+        if: matrix.postgres == '17'
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+        run: |
+          set -euo pipefail
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+          test -x "$FATWA_FASTBUILD_BROWSER"
+          python tools/dev/mufti_review_browser.py 2>&1 | tee .local/qa/trusted-journey/mufti-browser.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
