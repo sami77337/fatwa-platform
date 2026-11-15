@@ -52,6 +52,7 @@ jobs:
             tests.delivery_planner.test_approval \
             tests.delivery_planner.test_trusted_identity \
             tests.delivery_planner.test_approval_commit \
+            tests.delivery_planner.test_multipart_delivery_ledger \
             tests.delivery_planner.test_segmentation \
             tests.delivery_planner.test_outbox \
             tests.delivery_planner.test_outbox_recovery \

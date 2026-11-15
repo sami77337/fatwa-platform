@@ -144,3 +144,88 @@ def flag_expired_reservations(
             return tuple(changed)
     except sqlite3.Error as exc:
         raise OutboxConflict("outbox_reconciliation_unavailable") from exc
+
+
+
+@dataclass(frozen=True, slots=True)
+class PlanDeliverySummary:
+    """Read-only aggregate; a plan is delivered only when every part is delivered."""
+
+    plan_fingerprint: str
+    case_key: str
+    provider: str
+    answer_revision: int
+    part_count: int
+    delivered_parts: int
+    failed_parts: int
+    held_parts: int
+    uncertain_parts: int
+    pending_parts: int
+    state: str
+    complete: bool
+    parts: tuple[tuple[int, str], ...]
+
+
+def plan_delivery_summaries(
+    directory: Path, *, synthetic_fixtures_only: bool = False
+) -> tuple[PlanDeliverySummary, ...]:
+    """Aggregate every persisted part of each exact plan without changing state.
+
+    No individual receipt or single successful part can mark a multi-part plan
+    complete. Only an all-DELIVERED set receives complete=True.
+    """
+    require_development(synthetic_fixtures_only)
+    with _db(directory, writable=False) as con:
+        if con is None:
+            return ()
+        stored, _, _ = _verified_db(con)
+    grouped: dict[str, list[tuple]] = {}
+    for row in stored.values():
+        grouped.setdefault(row[1], []).append(row)
+
+    summaries = []
+    for fingerprint, rows in grouped.items():
+        rows.sort(key=lambda row: (row[5], row[0]))
+        states = [row[8] for row in rows]
+        delivered = states.count("DELIVERED")
+        failed = states.count("FAILED_REQUIRES_REVIEW")
+        held = states.count("HELD_FOR_HUMAN")
+        uncertain = states.count("UNKNOWN_REQUIRES_RECONCILIATION")
+        pending = sum(state in {
+            "STAGED", "RESERVED", "QUEUED", "SENT_UNCONFIRMED"
+        } for state in states)
+        if delivered == len(states):
+            state = "DELIVERED"
+        elif failed and delivered:
+            state = "PARTIALLY_FAILED"
+        elif failed:
+            state = "FAILED_REQUIRES_REVIEW"
+        elif uncertain:
+            state = "NEEDS_RECONCILIATION"
+        elif delivered:
+            state = "PARTIALLY_DELIVERED"
+        elif held:
+            state = "HUMAN_ACTION_REQUIRED"
+        elif pending and any(s in {"RESERVED", "QUEUED", "SENT_UNCONFIRMED"} for s in states):
+            state = "IN_PROGRESS"
+        else:
+            state = "STAGED"
+        summaries.append(PlanDeliverySummary(
+            plan_fingerprint=fingerprint,
+            case_key=rows[0][2],
+            provider=rows[0][3],
+            answer_revision=rows[0][4],
+            part_count=len(rows),
+            delivered_parts=delivered,
+            failed_parts=failed,
+            held_parts=held,
+            uncertain_parts=uncertain,
+            pending_parts=pending,
+            state=state,
+            complete=(delivered == len(rows) and len(rows) > 0),
+            parts=tuple((row[5], row[8]) for row in rows),
+        ))
+    return tuple(sorted(
+        summaries,
+        key=lambda item: (item.case_key, item.answer_revision, item.plan_fingerprint),
+    ))
