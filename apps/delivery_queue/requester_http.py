@@ -29,7 +29,7 @@ def _private(response, *, head=False):
     response["Cache-Control"] = "private, no-store, max-age=0"
     response["Vary"] = "Cookie"
     response["X-Content-Type-Options"] = "nosniff"
-    response["Referrer-Policy"] = "no-referrer"
+    response["Referrer-Policy"] = "same-origin"
     response["Content-Security-Policy"] = (
         "default-src 'none'; style-src 'self'; form-action 'self'; "
         "base-uri 'none'; frame-ancestors 'none'"

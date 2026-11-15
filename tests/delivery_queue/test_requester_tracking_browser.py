@@ -33,7 +33,7 @@ OUTPUT = Path(".local/qa/requester-tracking/browser")
     CSRF_COOKIE_SAMESITE="Strict",
     CSRF_COOKIE_HTTPONLY=True,
     CSRF_COOKIE_SECURE=False,  # Test-only loopback HTTP; production remains secure.
-    DEBUG=True,  # Only for diagnosing the native CSRF rejection.
+
     FATWA_REQUESTER_TRACKING_ENABLED=True,
 )
 class RequesterTrackingBrowserTests(LiveServerTestCase):
@@ -112,6 +112,7 @@ class RequesterTrackingBrowserTests(LiveServerTestCase):
                     response = page.goto(origin + "/requester/tracking/")
                     self.assertEqual(response.status, 200)
                     self.assertIn("no-store", response.headers["cache-control"])
+                    self.assertEqual(response.headers["referrer-policy"], "same-origin")
                     csrf_cookie = next(cookie for cookie in context.cookies()
                         if cookie["name"] == "fatwa_tracking_csrf")
                     self.assertFalse(csrf_cookie["secure"])
