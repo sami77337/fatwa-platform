@@ -18,8 +18,29 @@ FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows();
 CREATE TRIGGER fatwa_delivery_audit_immutable
 BEFORE UPDATE OR DELETE ON public.fatwa_delivery_audit_event
 FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_immutable_rows();
+
+CREATE OR REPLACE FUNCTION public.fatwa_delivery_intent_identity_immutable() RETURNS trigger
+LANGUAGE plpgsql AS $
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'delivery intent identity is immutable' USING ERRCODE='23514';
+    END IF;
+    IF ROW(OLD.intent_key, OLD.approval_id, OLD.plan_fingerprint, OLD.case_key,
+           OLD.provider, OLD.answer_revision, OLD.ordinal, OLD.payload_sha256, OLD.created_at)
+       IS DISTINCT FROM
+       ROW(NEW.intent_key, NEW.approval_id, NEW.plan_fingerprint, NEW.case_key,
+           NEW.provider, NEW.answer_revision, NEW.ordinal, NEW.payload_sha256, NEW.created_at) THEN
+        RAISE EXCEPTION 'delivery intent identity is immutable' USING ERRCODE='23514';
+    END IF;
+    RETURN NEW;
+END; $;
+CREATE TRIGGER fatwa_delivery_intent_identity_immutable
+BEFORE UPDATE OR DELETE ON public.fatwa_delivery_intent
+FOR EACH ROW EXECUTE FUNCTION public.fatwa_delivery_intent_identity_immutable();
 """
 REVERSE = r"""
+DROP TRIGGER IF EXISTS fatwa_delivery_intent_identity_immutable ON public.fatwa_delivery_intent;
+DROP FUNCTION IF EXISTS public.fatwa_delivery_intent_identity_immutable();
 DROP TRIGGER IF EXISTS fatwa_delivery_audit_immutable ON public.fatwa_delivery_audit_event;
 DROP TRIGGER IF EXISTS fatwa_delivery_receipt_immutable ON public.fatwa_delivery_provider_receipt;
 DROP TRIGGER IF EXISTS fatwa_delivery_claim_immutable ON public.fatwa_delivery_approval_claim;

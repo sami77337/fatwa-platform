@@ -154,6 +154,22 @@ class PostgreSQLDeliveryQueueTests(TransactionTestCase):
         )
         self.assertEqual(result.state,DeliveryIntent.DELIVERED)
 
+    def test_intent_manifest_identity_is_immutable_but_state_transitions_remain_allowed(self):
+        self.commit(parts=((1,B),))
+        intent=DeliveryIntent.objects.get()
+        with self.assertRaises(Exception):
+            DeliveryIntent.objects.filter(pk=intent.intent_key).update(payload_sha256=C)
+        with self.assertRaises(Exception):
+            DeliveryIntent.objects.filter(pk=intent.intent_key).delete()
+        lease=claim_next(provider="reply-source",worker_id="worker-a")
+        result=record_receipt(
+            lease=lease,receipt_reference="immutable-intent-proof",
+            provider_message_id="immutable-intent-message",reported="DELIVERED",
+            verify_provider_receipt=lambda proof: True,
+        )
+        self.assertEqual(result.state,DeliveryIntent.DELIVERED)
+        self.assertTrue(summarize_plan(C).complete)
+
     def test_expired_worker_lease_is_quarantined_not_requeued(self):
         self.commit(parts=((1,B),))
         lease=claim_next(provider="reply-source",worker_id="worker-a",lease_seconds=1)

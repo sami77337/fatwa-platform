@@ -16,7 +16,7 @@
 ## الضوابط
 - التطبيق غير مسجل في `config.settings.base` ولا `config.settings.development`.
 - إعداد اختبار منفصل يرث حراسة قاعدة Wave7 الاصطناعية، ولا يفتح إعداد الإنتاج.
-- migrations تضيف triggers تمنع تعديل/حذف approval claims وprovider receipts وaudit events.
+- migrations تضيف triggers تمنع تعديل/حذف approval claims وprovider receipts وaudit events، وتمنع حذف intent أو تغيير هويته الثابتة مع السماح بتغيّر حالة التشغيل فقط.
 - لا يوجد sender أو HTTP أو connector أو نشر.
 - اختبارات PostgreSQL 17 و18 في قواعد مؤقتة معزولة، لا تستخدم قواعد خارج CI.
 

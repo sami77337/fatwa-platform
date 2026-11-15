@@ -107,7 +107,13 @@ def commit_approved_plan(
             ):
                 raise QueueConflict("approval_receipt_already_consumed_for_other_plan")
             intents = list(DeliveryIntent.objects.filter(approval=claim).order_by("ordinal"))
-            if len(intents) != len(parts):
+            if len(intents) != len(parts) or any(
+                intent.ordinal != number or intent.payload_sha256 != digest
+                or intent.provider != provider or intent.case_key != case_key
+                or intent.answer_revision != answer_revision
+                or intent.plan_fingerprint != plan_fingerprint
+                for intent, (number, digest) in zip(intents, normalized)
+            ):
                 raise QueueConflict("persisted_plan_manifest_incomplete")
             return tuple(intents)
         claim = ApprovalClaim.objects.create(
@@ -272,6 +278,15 @@ def summarize_plan(plan_fingerprint: str) -> DeliverySummary:
     claim = ApprovalClaim.objects.filter(plan_fingerprint=plan_fingerprint).first()
     if claim is None:
         raise QueueConflict("plan_not_found")
+    rows = list(intents.order_by("ordinal"))
+    manifest = [[row.ordinal, row.payload_sha256] for row in rows]
+    manifest_sha = sha256(json.dumps(manifest, separators=(",", ":")).encode()).hexdigest()
+    if (
+        len(rows) != claim.expected_parts
+        or [row.ordinal for row in rows] != list(range(1, claim.expected_parts + 1))
+        or manifest_sha != claim.parts_manifest_sha256
+    ):
+        raise QueueConflict("plan_manifest_integrity_mismatch")
     counts = intents.aggregate(
         delivered=Count("pk", filter=Q(state=DeliveryIntent.DELIVERED)),
         failed=Count("pk", filter=Q(state=DeliveryIntent.FAILED_REQUIRES_REVIEW)),
