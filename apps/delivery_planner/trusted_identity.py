@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 import json
 import re
 from typing import Callable, Mapping
@@ -26,6 +27,7 @@ class SignedApprovalReceipt(ApprovalReceipt):
     key_id: str
     expires_at: str
     nonce: str
+    plan_sha256: str
     signature_b64url: str
 
 
@@ -36,12 +38,19 @@ class IdentityStatus:
     active: bool
 
 
+def canonical_plan_sha256(plan: object) -> str:
+    payload = json.dumps(
+        asdict(plan), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return sha256(payload).hexdigest()
+
+
 def approval_signing_payload(receipt: SignedApprovalReceipt) -> bytes:
     """Canonical UTF-8 JSON bytes signed by the trusted identity provider."""
     if not isinstance(receipt, SignedApprovalReceipt):
         raise TypeError("signed_approval_receipt_required")
     claims = {
-        "schema": "fatwa.muﬁ.approval.v1",
+        "schema": "fatwa.mufti.approval.v1",
         "issuer": receipt.issuer,
         "audience": receipt.audience,
         "key_id": receipt.key_id,
@@ -57,6 +66,7 @@ def approval_signing_payload(receipt: SignedApprovalReceipt) -> bytes:
         "issued_at": receipt.issued_at,
         "expires_at": receipt.expires_at,
         "nonce": receipt.nonce,
+        "plan_sha256": receipt.plan_sha256,
     }
     return json.dumps(claims, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -121,6 +131,7 @@ class Ed25519ApprovalVerifier:
             and _ID.fullmatch(receipt.approver_id) is not None
             and _NONCE.fullmatch(receipt.nonce) is not None
             and _B64URL.fullmatch(receipt.signature_b64url) is not None
+            and re.fullmatch(r"[0-9a-f]{64}", receipt.plan_sha256) is not None
             and receipt.approver_role == "MUFTI"
             and receipt.decision == "APPROVE_RETURN_TO_ORIGIN"
         ):

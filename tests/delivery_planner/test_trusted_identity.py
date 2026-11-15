@@ -15,6 +15,7 @@ from apps.delivery_planner.outbox import stage_plan, reserve_for_adapter
 from apps.delivery_planner.planner import Authority, Capabilities, Choice, InvalidPlan, Part, plan_delivery
 from apps.delivery_planner.trusted_identity import (
     Ed25519ApprovalVerifier, IdentityStatus, SignedApprovalReceipt, approval_signing_payload,
+    canonical_plan_sha256,
 )
 
 A, B, C = "a" * 64, "b" * 64, "c" * 64
@@ -54,7 +55,7 @@ class TrustedIdentityTests(unittest.TestCase):
         claims = dict(
             issuer=ISSUER, audience=AUDIENCE, key_id=KEY_ID,
             expires_at=(self.now + timedelta(minutes=4)).isoformat(),
-            nonce="N" * 43, signature_b64url="",
+            nonce="N" * 43, plan_sha256=canonical_plan_sha256(self.plan), signature_b64url="",
         )
         claims.update(changes)
         unsigned = SignedApprovalReceipt(
@@ -69,7 +70,7 @@ class TrustedIdentityTests(unittest.TestCase):
 
     def make_verifier(self, *, identities=None, revoked_key_ids=frozenset(), keys=None):
         return Ed25519ApprovalVerifier(
-            issuer=ISSUER, audience=AUDIENCE, trusted_public_keys=keys or {KEY_ID: self.public},
+            issuer=ISSUER, audience=AUDIENCE, trusted_public_keys=keys if keys is not None else {KEY_ID: self.public},
             identity_lookup=lambda subject: (identities or {SUBJECT: self.identity}).get(subject),
             is_revoked_or_consumed=lambda rid, nonce, kid: (rid, nonce, kid) in self.revoked,
             revoked_key_ids=revoked_key_ids, clock=lambda: self.now,
@@ -159,6 +160,19 @@ class TrustedIdentityTests(unittest.TestCase):
         )
         self.assertFalse(retired(self.receipt))
         self.assertTrue(retired(new_receipt))
+
+    def test_signed_receipt_is_bound_to_exact_plan(self):
+        changed_plan = plan_delivery(
+            case_key="intake-7", source_peer_key="thread:Q2",
+            parts=(Part(1, "text", B, 21),),
+            capabilities=Capabilities("reply-source", "v1", frozenset({"text"}), 100, True),
+            authority=Authority(3, A, True), choice=Choice(),
+        )
+        with self.assertRaisesRegex(InvalidPlan, "approval_not_bound_to_exact_delivery_plan"):
+            require_return_approval(
+                receipt=self.receipt, evidence=self.evidence,
+                plan=changed_plan, verify_receipt=self.verifier,
+            )
 
     def test_ed25519_verifier_integrates_with_outbox_stage_and_reservation(self):
         with TemporaryDirectory() as tmp:
