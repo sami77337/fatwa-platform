@@ -11,6 +11,7 @@ from apps.delivery_planner.trusted_identity import SignedApprovalReceipt, Ed2551
 from apps.editorial_export.services import require_development
 from apps.fast9_case_source_join.answer_drafts import CASE_KEY
 from apps.fast9_case_source_join.return_handoff import read_return_candidate
+from apps.fast9_case_source_join.source_journal import read_case_review, history_digest
 from .approval_adapter import prepare_text_return, commit_signed_approved_plan
 
 SHA = re.compile(r'[a-f0-9]{64}')
@@ -30,6 +31,25 @@ def _canonical(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
+def _review_context(directory, candidate):
+    snapshot = read_case_review(directory, synthetic_fixtures_only=True)
+    latest_draft = snapshot.drafts[-1] if snapshot.drafts else None
+    note = snapshot.draft_notes[-1] if snapshot.draft_notes else None
+    if (not snapshot.events or snapshot.events[-1].body_utf8 is None
+        or len(snapshot.events) != candidate.source_count
+        or history_digest(snapshot.events) != candidate.evidence.source_digest
+        or snapshot.reply_digest != candidate.evidence.reply_digest
+        or latest_draft != candidate.draft or note is None
+        or (note.action, note.revision, note.draft_digest) != ('confirm', candidate.draft.revision, candidate.draft.digest)
+        or (snapshot.clarifications and snapshot.clarifications[-1].kind == 'request')):
+        raise HandoffBlocked('journal_changed_during_request_read')
+    question = {'exact_text': snapshot.events[-1].body_utf8.decode('utf-8'),
+        'source_count': len(snapshot.events), 'source_digest': candidate.evidence.source_digest}
+    dialogue = [{'number': event.number, 'kind': event.kind, 'exact_text': event.text,
+                 'digest': event.digest} for event in snapshot.clarifications]
+    return question, dialogue
+
+
 def _build(directory: Path, *, case_key: str, max_chars: int, split: bool,
            synthetic_fixtures_only: bool):
     require_development(synthetic_fixtures_only)
@@ -39,20 +59,20 @@ def _build(directory: Path, *, case_key: str, max_chars: int, split: bool,
     candidate = read_return_candidate(directory, synthetic_fixtures_only=True)
     if candidate.blockers or candidate.draft is None or candidate.evidence is None:
         raise HandoffBlocked('current_journal_not_ready')
+    question, dialogue = _review_context(directory, candidate)
     target = dict(channel=candidate.source_channel, account=candidate.source_account,
                   conversation=candidate.source_conversation, reference=candidate.source_reference)
     if any(type(value) is not str or not value for value in target.values()):
         raise HandoffBlocked('origin_identity_missing')
-    # The target is reconstructed only from the journal, including account and
-    # message identity. Browser input cannot supply a destination or capability.
     peer = 'origin:' + sha256(_canonical(target)).hexdigest()
+    # This is a declared synthetic capability, not evidence about a live channel.
     capabilities = Capabilities(candidate.source_channel, 'author-desk-synthetic.v1',
                                 frozenset({'text'}), max_chars, True)
     prepared = prepare_text_return(title=candidate.draft.title, body=candidate.draft.body,
         evidence=candidate.evidence, source_peer_key=peer, capabilities=capabilities,
         explicit_human_choice=split)
     request = dict(schema=SCHEMA, status='REQUEST_NOT_APPROVED',
-        evidence=asdict(candidate.evidence),
+        question=question, clarifications=dialogue, evidence=asdict(candidate.evidence),
         answer={'title': candidate.draft.title, 'body': candidate.draft.body},
         target=target, plan=asdict(prepared.plan), plan_sha256=canonical_plan_sha256(prepared.plan),
         segments=[asdict(segment) for segment in prepared.segments],
@@ -120,10 +140,8 @@ def stage_signed_response(directory: Path, *, case_key: str, max_chars: int, spl
         raise HandoffBlocked('approval_request_is_stale')
 
     def current_evidence(requested_case):
-        # Called by PR204's signed bridge inside the PostgreSQL transaction,
-        # after receipt/nonce locks. Rebuild full technical readiness as well
-        # as the CurrentEvidence booleans; neither a browser hash nor an old
-        # signed context can substitute for reading the actual source journal.
+        # Called inside the PG transaction after receipt/nonce locks. This does
+        # not claim a distributed lock across PostgreSQL and the source journal.
         current, fresh = _build(directory, case_key=requested_case, max_chars=max_chars,
                                 split=split, synthetic_fixtures_only=True)
         if not compare_digest(current['request_sha256'], requested_digest):

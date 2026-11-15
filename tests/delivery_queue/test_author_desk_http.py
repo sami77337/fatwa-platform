@@ -5,6 +5,7 @@ import importlib.util
 import os
 import re
 from unittest.mock import patch
+from urllib.parse import urlencode
 from django.db import connection
 from django.test import Client, TransactionTestCase, override_settings
 from django.test.utils import CaptureQueriesContext
@@ -14,6 +15,16 @@ from tests.delivery_queue.author_desk_fixtures import JournalFixture
 
 BASE = '/review/author/approval/'
 LOGIN = '/review/author/approval/login/'
+
+
+class NativeFormClient(Client):
+    def post(self, path, data=None, **kwargs):
+        # Django's default test-client encoding is multipart; the real page
+        # uses an ordinary URL-encoded form and intentionally rejects uploads.
+        if isinstance(data, dict) and 'content_type' not in kwargs:
+            data = urlencode(data, doseq=True)
+            kwargs['content_type'] = 'application/x-www-form-urlencoded'
+        return super().post(path, data=data, **kwargs)
 
 
 class AuthorDeskHttpTests(TransactionTestCase):
@@ -28,17 +39,15 @@ class AuthorDeskHttpTests(TransactionTestCase):
         self.addCleanup(env.stop)
         config = override_settings(ROOT_URLCONF='apps.delivery_queue.author_urls',
             ALLOWED_HOSTS=['testserver', '127.0.0.1'],
-            MIDDLEWARE=['apps.delivery_queue.author_http.AuthorDeskGuard',
-                        'django.middleware.csrf.CsrfViewMiddleware'],
+            MIDDLEWARE=['apps.delivery_queue.author_http.AuthorDeskGuard', 'django.middleware.csrf.CsrfViewMiddleware'],
             CSRF_COOKIE_NAME='fatwa_training_desk_csrf', CSRF_COOKIE_PATH='/review/',
             CSRF_COOKIE_HTTPONLY=True, CSRF_COOKIE_SECURE=False, CSRF_COOKIE_SAMESITE='Strict',
-            FATWA_AUTHOR_APPROVAL_ENABLED=True,
-            FATWA_AUTHOR_APPROVAL_DIRECTORY=self.fixture.directory,
+            FATWA_AUTHOR_APPROVAL_ENABLED=True, FATWA_AUTHOR_APPROVAL_DIRECTORY=self.fixture.directory,
             FATWA_AUTHOR_APPROVAL_CASES=(CASE_KEY,), FATWA_AUTHOR_APPROVAL_MAX_CHARS=32,
             FATWA_AUTHOR_APPROVAL_VERIFIER=self.fixture.verifier)
         config.enable()
         self.addCleanup(config.disable)
-        self.client = Client(enforce_csrf_checks=True)
+        self.client = NativeFormClient(enforce_csrf_checks=True)
 
     def hidden(self, response, name):
         found = re.search(r'name="' + re.escape(name) + r'"[^>]*value="([^"]*)"', response.content.decode())
@@ -50,7 +59,7 @@ class AuthorDeskHttpTests(TransactionTestCase):
         self.assertEqual(form.status_code, 200)
         response = self.client.post(LOGIN, {'token': self.token,
             'csrfmiddlewaretoken': self.hidden(form, 'csrfmiddlewaretoken')})
-        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.status_code, 303, response.content)
 
     def page_and_request(self):
         self.login()
@@ -140,7 +149,7 @@ class AuthorDeskHttpTests(TransactionTestCase):
 
     def test_role_cookie_alone_in_another_browser_is_insufficient(self):
         self.login()
-        other = Client(enforce_csrf_checks=True)
+        other = NativeFormClient(enforce_csrf_checks=True)
         other.cookies['fatwa_training_author'] = self.client.cookies['fatwa_training_author']
         self.assertEqual(other.get(BASE).status_code, 403)
 
@@ -152,3 +161,18 @@ class AuthorDeskHttpTests(TransactionTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertNotIn(b'do-not-echo-this', response.content)
         self.assertNotIn(b'Traceback', response.content)
+
+    def test_non_ascii_confirmation_and_request_hash_are_rejected_not_server_errors(self):
+        page, request = self.page_and_request()
+        for key in ('confirmation', 'request_sha256'):
+            fields = self.stage_fields(page, request)
+            fields[key] = 'ن' * 64
+            self.assertEqual(self.client.post(BASE + 'receipt/', fields).status_code, 400)
+        self.assertEqual(ApprovalClaim.objects.count(), 0)
+
+    def test_repeated_form_field_is_rejected(self):
+        page, request = self.page_and_request()
+        fields = self.stage_fields(page, request)
+        fields['response'] = [fields['response'], fields['response']]
+        self.assertEqual(self.client.post(BASE + 'receipt/', fields).status_code, 400)
+        self.assertEqual(ApprovalClaim.objects.count(), 0)

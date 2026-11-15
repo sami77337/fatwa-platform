@@ -2,7 +2,6 @@
 from hmac import compare_digest
 import os
 from pathlib import Path
-
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
@@ -11,7 +10,6 @@ from django.middleware.csrf import get_token, rotate_token
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
-
 from apps.delivery_planner.segmentation import SegmentationNeedsReview
 from apps.delivery_planner.trusted_identity import Ed25519ApprovalVerifier
 from apps.editorial_workbench.reviewer_access import signed_in, set_role_cookie, browser_proof
@@ -19,7 +17,7 @@ from apps.editorial_workbench.source_review_identity import authenticate_fixture
 from apps.fast9_case_source_join.answer_drafts import CASE_KEY
 from apps.fast9_case_source_join.return_handoff import read_return_candidate
 from apps.fast9_case_source_join.source_journal import JournalError
-from .author_handoff import build_approval_request, stage_signed_response, HandoffBlocked, InvalidSignedResponse
+from .author_handoff import build_approval_request, stage_signed_response, HandoffBlocked, InvalidSignedResponse, SHA
 
 BASE = '/review/author/approval/'
 PURPOSE = 'training.author-approval-staging.v1'
@@ -58,14 +56,14 @@ def _author(request):
 
 def _configuration():
     directory = getattr(settings, 'FATWA_AUTHOR_APPROVAL_DIRECTORY', None)
-    max_chars = getattr(settings, 'FATWA_AUTHOR_APPROVAL_MAX_CHARS', 280)
+    maximum = getattr(settings, 'FATWA_AUTHOR_APPROVAL_MAX_CHARS', 280)
     if (not isinstance(directory, (str, Path)) or not str(directory)
-        or type(max_chars) is not int or not 1 <= max_chars <= 6000):
+        or type(maximum) is not int or not 1 <= maximum <= 6000):
         raise OSError('author_desk_configuration_missing')
     directory = Path(directory)
     if not directory.is_dir():
         raise OSError('author_journal_directory_unavailable')
-    return directory, max_chars
+    return directory, maximum
 
 
 def _split_query(request):
@@ -145,7 +143,8 @@ def import_response(request):
         expected = {'csrfmiddlewaretoken', 'request_sha256', 'confirmation', 'split', 'acknowledge', 'response'}
         if (set(fields) != expected or any(len(fields.getlist(key)) != 1 for key in fields)
             or fields['split'] not in ('0', '1') or fields['acknowledge'] != '1'
-            or len(fields['request_sha256']) != 64 or len(fields['confirmation']) != 64):
+            or SHA.fullmatch(fields['request_sha256']) is None
+            or SHA.fullmatch(fields['confirmation']) is None):
             return _deny('invalid_receipt_form', 400)
         verifier = getattr(settings, 'FATWA_AUTHOR_APPROVAL_VERIFIER', None)
         if not isinstance(verifier, Ed25519ApprovalVerifier):
@@ -155,8 +154,7 @@ def import_response(request):
         package = _package(directory, maximum, split)
         if not compare_digest(package['request_sha256'], fields['request_sha256']):
             return _deny('author_preview_is_stale', 409)
-        expected_confirmation = browser_proof(request, PURPOSE, package['request_sha256'])
-        if not compare_digest(expected_confirmation, fields['confirmation']):
+        if not compare_digest(browser_proof(request, PURPOSE, package['request_sha256']), fields['confirmation']):
             return _deny('browser_confirmation_invalid', 403)
         result = stage_signed_response(directory, case_key=CASE_KEY, max_chars=maximum,
             split=split, response_json=fields['response'], verifier=verifier,
