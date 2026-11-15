@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -47,22 +48,27 @@ class TrustedIdentityTests(unittest.TestCase):
         )
 
     def make_receipt(self, **changes):
-        base = ApprovalReceipt(
-            "intake-7", 3, A, B, "", SUBJECT, "MUFTI",
-            "APPROVE_RETURN_TO_ORIGIN", "approval-2026-001",
-            (self.now - timedelta(seconds=10)).isoformat(),
-        )
-        claims = dict(
-            issuer=ISSUER, audience=AUDIENCE, key_id=KEY_ID,
+        values = dict(
+            case_key="intake-7",
+            answer_revision=3,
+            answer_sha256=A,
+            source_digest=B,
+            reply_digest="",
+            approver_id=SUBJECT,
+            approver_role="MUFTI",
+            decision="APPROVE_RETURN_TO_ORIGIN",
+            receipt_id="approval-2026-001",
+            issued_at=(self.now - timedelta(seconds=10)).isoformat(),
+            issuer=ISSUER,
+            audience=AUDIENCE,
+            key_id=KEY_ID,
             expires_at=(self.now + timedelta(minutes=4)).isoformat(),
-            nonce="N" * 43, plan_sha256=canonical_plan_sha256(self.plan), signature_b64url="",
+            nonce="N" * 43,
+            plan_sha256=canonical_plan_sha256(self.plan),
+            signature_b64url="",
         )
-        claims.update(changes)
-        unsigned = SignedApprovalReceipt(
-            base.case_key, base.answer_revision, base.answer_sha256, base.source_digest,
-            base.reply_digest, base.approver_id, base.approver_role, base.decision,
-            base.receipt_id, base.issued_at, **claims
-        )
+        values.update(changes)
+        unsigned = SignedApprovalReceipt(**values)
         signature = base64.urlsafe_b64encode(
             self.private.sign(approval_signing_payload(unsigned))
         ).decode("ascii").rstrip("=")
@@ -112,7 +118,8 @@ class TrustedIdentityTests(unittest.TestCase):
             self.assertFalse(self.make_verifier()(self.make_receipt(**changes)))
 
     def test_unknown_or_revoked_key_and_revoked_receipt_fail(self):
-        self.assertFalse(self.make_verifier(keys={})(self.receipt))
+        with self.assertRaisesRegex(ValueError, "incomplete_trust_configuration"):
+            self.make_verifier(keys={})
         self.assertFalse(self.make_verifier(revoked_key_ids=frozenset({KEY_ID}))(self.receipt))
         self.revoked.add((self.receipt.receipt_id, self.receipt.nonce, self.receipt.key_id))
         self.assertFalse(self.verifier(self.receipt))

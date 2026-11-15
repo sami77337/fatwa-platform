@@ -87,4 +87,4 @@ jobs:
           name: fast9-return-preparation-browser
           path: .local/qa/fast9-integrated/return-preparation-browser.json
           include-hidden-files: true
-          if-no-files-found: error
+          if-no-files-found: ignore
