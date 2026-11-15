@@ -271,6 +271,11 @@ def _verified_db(con: sqlite3.Connection) -> tuple[dict, int, str]:
             not _valid_ref(receipt_ref) or intent_key not in stored
             or not _valid_ref(message_id) or reported not in expected_states
             or type(payload_sha) is not str or _SHA.fullmatch(payload_sha) is None
+            or not compare_digest(payload_sha, sha256(json.dumps(
+                [intent_key, message_id, reported, receipt_ref],
+                ensure_ascii=False, separators=(",", ":"),
+            ).encode()).hexdigest())
+            or stored[intent_key][11] != message_id
             or not _valid_utc_timestamp(recorded)
             or not any(
                 event[1] == intent_key and event[3] == expected_states[reported]
