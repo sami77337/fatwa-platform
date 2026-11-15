@@ -7,6 +7,7 @@ from hashlib import sha256
 import json
 import re
 import secrets
+from hmac import compare_digest
 
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Count, Q
@@ -284,7 +285,7 @@ def summarize_plan(plan_fingerprint: str) -> DeliverySummary:
     if (
         len(rows) != claim.expected_parts
         or [row.ordinal for row in rows] != list(range(1, claim.expected_parts + 1))
-        or manifest_sha != claim.parts_manifest_sha256
+        or not compare_digest(manifest_sha, claim.parts_manifest_sha256)
     ):
         raise QueueConflict("plan_manifest_integrity_mismatch")
     counts = intents.aggregate(

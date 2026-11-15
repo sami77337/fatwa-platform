@@ -6,7 +6,7 @@ from threading import Barrier
 from unittest.mock import patch
 import unittest
 
-from django.db import connection, close_old_connections
+from django.db import IntegrityError, connection, close_old_connections
 from django.test import TransactionTestCase
 from django.utils import timezone
 
@@ -157,9 +157,9 @@ class PostgreSQLDeliveryQueueTests(TransactionTestCase):
     def test_intent_manifest_identity_is_immutable_but_state_transitions_remain_allowed(self):
         self.commit(parts=((1,B),))
         intent=DeliveryIntent.objects.get()
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             DeliveryIntent.objects.filter(pk=intent.intent_key).update(payload_sha256=C)
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             DeliveryIntent.objects.filter(pk=intent.intent_key).delete()
         lease=claim_next(provider="reply-source",worker_id="worker-a")
         result=record_receipt(
