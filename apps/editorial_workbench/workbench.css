@@ -5,3 +5,4 @@
 
 .answer-editor textarea{width:100%;max-width:100%;box-sizing:border-box;font:inherit;padding:.55rem}
 .answer-editor input[type=checkbox]{width:auto;min-height:0}
+.return-preparation input[type=checkbox]{width:auto;min-height:0}

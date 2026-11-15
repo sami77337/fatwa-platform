@@ -1,0 +1,28 @@
+name: FAST9 lossless Arabic message segmentation
+on:
+  push:
+    paths:
+      - 'apps/delivery_planner/segmentation.py'
+      - 'tests/delivery_planner/test_segmentation.py'
+      - '.github/workflows/fast9-segmentation.yml'
+  pull_request:
+    paths:
+      - 'apps/delivery_planner/segmentation.py'
+      - 'tests/delivery_planner/test_segmentation.py'
+      - '.github/workflows/fast9-segmentation.yml'
+permissions:
+  contents: read
+
+jobs:
+  segmentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Lossless Arabic text and planner part hashes
+        run: python -m unittest tests.delivery_planner.test_segmentation -v

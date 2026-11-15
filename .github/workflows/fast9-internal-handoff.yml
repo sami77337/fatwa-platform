@@ -1,0 +1,47 @@
+name: FAST9 internal draft handoff
+on:
+  push:
+    paths:
+      - 'apps/fast9_case_source_join/answer_drafts.py'
+      - 'apps/fast9_case_source_join/source_journal.py'
+      - 'apps/editorial_workbench/draft_notes.py'
+      - 'tests/fast9_case_source_join/test_internal_handoff.py'
+      - '.github/workflows/fast9-internal-handoff.yml'
+  pull_request:
+    paths:
+      - 'apps/fast9_case_source_join/answer_drafts.py'
+      - 'apps/fast9_case_source_join/source_journal.py'
+      - 'apps/editorial_workbench/draft_notes.py'
+      - 'tests/fast9_case_source_join/test_internal_handoff.py'
+      - '.github/workflows/fast9-internal-handoff.yml'
+permissions:
+  contents: read
+
+jobs:
+  draft-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      FATWA_PRODUCTION: '0'
+      DJANGO_SETTINGS_MODULE: config.settings.test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements.txt
+      - name: Author and reviewer transitions with real local journal
+        run: |
+          python - <<'PY'
+          import django
+          import unittest
+          django.setup()
+          suite = unittest.defaultTestLoader.loadTestsFromName(
+              'tests.fast9_case_source_join.test_internal_handoff'
+          )
+          assert suite.countTestCases() == 2, 'missing handoff cases'
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful(), 'internal review handoff failed'
+          PY
