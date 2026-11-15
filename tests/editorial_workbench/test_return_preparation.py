@@ -1,6 +1,7 @@
 """A private preparation preview joins the real local human review journey."""
 
 import os
+import re
 import secrets
 from hashlib import sha256
 from pathlib import Path
@@ -298,3 +299,112 @@ class ReturnPreparationTests(SimpleTestCase):
             ],
             ["submit", "confirm"],
         )
+
+
+@override_settings(
+    SETTINGS_MODULE=desk.__name__,
+    **{
+        name: getattr(desk, name)
+        for name in (
+            "ROOT_URLCONF",
+            "MIDDLEWARE",
+            "ALLOWED_HOSTS",
+            "SECURE_REFERRER_POLICY",
+            "CSRF_TRUSTED_ORIGINS",
+            "CSRF_COOKIE_NAME",
+            "CSRF_COOKIE_PATH",
+            "CSRF_COOKIE_SECURE",
+            "CSRF_COOKIE_SAMESITE",
+            "CSRF_COOKIE_HTTPONLY",
+        )
+    },
+)
+class ReviewerNativeFormSecurityTests(SimpleTestCase):
+    """Use the actual isolated profile values, including its response policy."""
+
+    roles = {
+        "author": ("/review/author/login/", "/review/author/queue/"),
+        "reviewer": ("/review/login/", "/review/"),
+        "operator": ("/review/operations/login/", "/review/operations/outbox/"),
+    }
+
+    def setUp(self):
+        self.directory = self.enterContext(TemporaryDirectory())
+        self.tokens = {role: secrets.token_hex(32) for role in self.roles}
+        self.enterContext(
+            patch.dict(
+                os.environ,
+                {
+                    "FATWA_PRODUCTION": "0",
+                    "FATWA_SYNTHETIC_SOURCE_JOURNAL_DIR": self.directory,
+                    **{
+                        f"FATWA_SYNTHETIC_{role.upper()}_TOKEN_SHA256": sha256(
+                            token.encode()
+                        ).hexdigest()
+                        for role, token in self.tokens.items()
+                    },
+                },
+            )
+        )
+        (event,) = sample_source_events("intake-7", "received")
+        append_source_event(Path(self.directory), event, synthetic_fixtures_only=True)
+
+    def open_form(self, role):
+        client = Client(enforce_csrf_checks=True, HTTP_HOST="127.0.0.1:8765")
+        screen = client.get(self.roles[role][0])
+        self.assertEqual(screen.status_code, 200)
+        field = re.search(rb'name="csrfmiddlewaretoken" value="([A-Za-z0-9]+)"', screen.content)
+        self.assertIsNotNone(field, "Missing rendered CSRF input")
+        return (
+            client,
+            screen,
+            {"token": self.tokens[role], "csrfmiddlewaretoken": field[1].decode()},
+        )
+
+    def post_form(self, client, role, fields, origin):
+        return client.post(
+            self.roles[role][0],
+            urlencode(fields),
+            content_type="application/x-www-form-urlencoded",
+            HTTP_ORIGIN=origin,
+        )
+
+    def assert_no_login(self, client, response, role):
+        self.assertEqual(response.status_code, 403)
+        cookie = f"fatwa_training_{role}"
+        self.assertNotIn(cookie, response.cookies)
+        self.assertNotIn(cookie, client.cookies)
+        self.assertEqual(client.get(self.roles[role][1]).status_code, 302)
+
+    def test_same_origin_rendered_form_logs_in_each_role_with_profile_policy(self):
+        for role, (_, landing) in self.roles.items():
+            with self.subTest(role=role):
+                client, screen, fields = self.open_form(role)
+                self.assertEqual(screen["Referrer-Policy"], "same-origin")
+                self.assertEqual(client.head(self.roles[role][0])["Referrer-Policy"], "same-origin")
+                response = self.post_form(client, role, fields, "http://127.0.0.1:8765")
+                self.assertEqual(response.status_code, 303)
+                self.assertEqual(response["Location"], landing)
+                self.assertIn(f"fatwa_training_{role}", response.cookies)
+                opened = client.get(landing)
+                self.assertEqual(opened.status_code, 200)
+                self.assertEqual(opened["Referrer-Policy"], "same-origin")
+
+    def test_null_and_foreign_origins_cannot_create_role_cookie(self):
+        for role in self.roles:
+            for origin in ("null", "http://foreign.invalid", "http://127.0.0.1:8766"):
+                with self.subTest(role=role, origin_kind="null" if origin == "null" else "foreign"):
+                    client, _, fields = self.open_form(role)
+                    self.assert_no_login(client, self.post_form(client, role, fields, origin), role)
+
+    def test_missing_and_wrong_csrf_cannot_create_role_cookie(self):
+        for role in self.roles:
+            for failure in ("missing", "wrong"):
+                with self.subTest(role=role, csrf=failure):
+                    client, _, fields = self.open_form(role)
+                    if failure == "missing":
+                        del fields["csrfmiddlewaretoken"]
+                    else:
+                        fields["csrfmiddlewaretoken"] = "0" * 64
+                    response = self.post_form(client, role, fields, "http://127.0.0.1:8765")
+                    self.assert_no_login(client, response, role)

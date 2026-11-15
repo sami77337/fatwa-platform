@@ -135,6 +135,7 @@ def safe_headers(response):
     require(response is not None and response.status == 200, "safe_response_status")
     headers = response.headers
     require(headers.get("cache-control") == "no-store", "safe_response_cache")
+    require(headers.get("referrer-policy") == "same-origin", "safe_response_referrer_policy")
     require(
         headers.get("content-security-policy")
         == "default-src 'none'; style-src 'self'; form-action 'self'; "
@@ -143,7 +144,7 @@ def safe_headers(response):
     )
 
 
-def form_login(page, origin, role, credential):
+def form_login(page, origin, role, credential, observations):
     login, landing = {
         "author": ("/review/author/login/", "/review/author/queue/"),
         "reviewer": ("/review/login/", "/review/"),
@@ -153,12 +154,48 @@ def form_login(page, origin, role, credential):
     # Real browser form posts the rendered CSRF field and receives its own cookie jar.
     require(page.locator('input[name="csrfmiddlewaretoken"]').count() == 1, "login_csrf_missing")
     page.locator('input[name="token"]').fill(credential)
-    with page.expect_navigation(wait_until="load", timeout=TIMEOUT) as navigation:
-        page.locator('button[type="submit"]').click()
-    response = navigation.value
-    require(response is not None and response.status == 200, "login_failed")
-    require(page.url == origin + landing, "login_failed")
+    observed = {
+        "role": role,
+        "post_status": None,
+        "origin_kind": "missing",
+        "expected_location": False,
+        "final_status": None,
+        "expected_landing": False,
+    }
+    observations.append(observed)
+
+    def observe_post(response):
+        request = response.request
+        if request.method != "POST" or response.url != origin + login:
+            return
+        value = request.header_value("origin")
+        observed["origin_kind"] = (
+            "same_origin"
+            if value == origin
+            else "null"
+            if value == "null"
+            else "missing"
+            if value is None
+            else "other"
+        )
+        observed["post_status"] = response.status
+        observed["expected_location"] = response.headers.get("location") == landing
+
+    page.on("response", observe_post)
+    try:
+        with page.expect_navigation(wait_until="load", timeout=TIMEOUT) as navigation:
+            page.locator('button[type="submit"]').click()
+        response = navigation.value
+        observed["final_status"] = response.status if response is not None else None
+        observed["expected_landing"] = page.url == origin + landing
+    finally:
+        page.remove_listener("response", observe_post)
+    require(observed["post_status"] == 303, "login_post_failed")
+    require(observed["origin_kind"] == "same_origin", "login_origin_failed")
+    require(observed["expected_location"], "login_redirect_failed")
+    require(observed["final_status"] == 200 and observed["expected_landing"], "login_failed")
     require(page.locator('input[name="token"]').count() == 0, "login_failed")
+    safe_headers(response)
 
 
 def keyboard_to(page, locator):
@@ -323,7 +360,7 @@ def run(receipt):
             contexts[role], pages[role] = context, page
             if role != "anonymous":
                 receipt["stage"] = f"{role}_form_login"
-                form_login(page, origin, role, tokens[role])
+                form_login(page, origin, role, tokens[role], receipt["login_observations"])
         receipt["checks"].append("separate_context_real_csrf_form_logins")
         for role in ("anonymous", "operator"):
             receipt["stage"] = f"{role}_denial"
@@ -381,6 +418,7 @@ def main():
         "viewports": list(VIEWPORTS),
         "checks": [],
         "views": [],
+        "login_observations": [],
         "unexpected_network_requests": 0,
         "page_errors": 0,
         "journal_unchanged": False,
@@ -417,6 +455,7 @@ def main():
                 "evidence": str(EVIDENCE),
                 "browser": receipt["browser"],
                 "views": receipt["views"],
+                "login_observations": receipt["login_observations"],
                 "unexpected_network_requests": receipt["unexpected_network_requests"],
                 "page_errors": receipt["page_errors"],
                 "journal_unchanged": receipt["journal_unchanged"],
