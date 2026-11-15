@@ -106,4 +106,36 @@ class Migration(migrations.Migration):
                 "ON public.fatwa_requester_tracking_event"
             ),
         ),
+        migrations.RunSQL(
+            sql=r"""
+            CREATE FUNCTION public.fatwa_tracking_token_immutable() RETURNS trigger
+            LANGUAGE plpgsql AS $tracking$
+            BEGIN
+              IF TG_OP = 'DELETE' THEN
+                RAISE EXCEPTION 'tracking grant rows cannot be deleted' USING ERRCODE='23514';
+              END IF;
+              IF NEW.token_sha256 IS DISTINCT FROM OLD.token_sha256
+                 OR NEW.case_id IS DISTINCT FROM OLD.case_id
+                 OR NEW.issued_at IS DISTINCT FROM OLD.issued_at
+                 OR NEW.expires_at IS DISTINCT FROM OLD.expires_at
+                 OR OLD.revoked_at IS NOT NULL
+                 OR NEW.revoked_at IS NULL
+                 OR NEW.revoked_at < OLD.issued_at
+              THEN
+                RAISE EXCEPTION 'tracking grant identity is immutable' USING ERRCODE='23514';
+              END IF;
+              RETURN NEW;
+            END
+            $tracking$;
+            CREATE TRIGGER fatwa_requester_tracking_token_immutable
+            BEFORE UPDATE OR DELETE ON public.fatwa_requester_tracking_token
+            FOR EACH ROW EXECUTE FUNCTION public.fatwa_tracking_token_immutable();
+            """,
+            reverse_sql=r"""
+            DROP TRIGGER IF EXISTS fatwa_requester_tracking_token_immutable
+              ON public.fatwa_requester_tracking_token;
+            DROP FUNCTION IF EXISTS public.fatwa_tracking_token_immutable();
+            """,
+        ),
+
     ]

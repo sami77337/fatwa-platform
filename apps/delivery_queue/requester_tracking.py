@@ -29,6 +29,7 @@ _TRANSITIONS = {
 }
 _TICKET_MAX_LIFETIME = timedelta(days=30)
 _GENERIC_TOKEN_DENIAL = "tracking_token_invalid_or_expired"
+MAX_TRACKING_HISTORY = 128
 
 
 class TrackingDenied(ValueError):
@@ -58,6 +59,34 @@ def _expiry_valid(value):
         queue._utc(value)
         and timezone.now() < value <= timezone.now() + _TICKET_MAX_LIFETIME
     )
+
+
+def _verify_case_history(case):
+    """Fail closed if the current lifecycle lacks an exact append-only chain."""
+    events = list(
+        RequesterTrackingEvent.objects.filter(case=case)
+        .order_by("sequence")[:MAX_TRACKING_HISTORY + 1]
+    )
+    if (
+        not 1 <= case.revision <= MAX_TRACKING_HISTORY
+        or len(events) != case.revision
+    ):
+        raise TrackingDenied("tracking_history_inconsistent")
+    current = ""
+    for number, event in enumerate(events, 1):
+        if (
+            event.sequence != number
+            or event.old_stage != current
+            or not queue._ref(event.actor_id)
+            or (
+                (number == 1 and event.new_stage != "RECEIVED")
+                or (number > 1 and event.new_stage not in _TRANSITIONS.get(current, frozenset()))
+            )
+        ):
+            raise TrackingDenied("tracking_history_inconsistent")
+        current = event.new_stage
+    if current != case.stage:
+        raise TrackingDenied("tracking_history_inconsistent")
 
 
 def _lock_case_key(case_key):
@@ -109,6 +138,7 @@ def rotate_tracking_token(*, case_key, operator_id, authorize_operator, expires_
         case = RequesterTrackingCase.objects.select_for_update().filter(pk=case_key).first()
         if case is None:
             raise TrackingDenied("tracking_case_not_found")
+        _verify_case_history(case)
         RequesterTrackingToken.objects.filter(
             case=case, revoked_at__isnull=True,
         ).update(revoked_at=timezone.now())
@@ -130,6 +160,7 @@ def advance_tracking_case(*, case_key, expected_revision, stage, actor_id, autho
         case = RequesterTrackingCase.objects.select_for_update().filter(pk=case_key).first()
         if case is None:
             raise TrackingDenied("tracking_case_not_found")
+        _verify_case_history(case)
         if case.revision != expected_revision:
             raise TrackingDenied("tracking_revision_changed")
         if stage not in _TRANSITIONS.get(case.stage, frozenset()):
@@ -167,6 +198,7 @@ def lookup_case_status(token):
         case = RequesterTrackingCase.objects.select_for_update().get(
             pk=grant.case_id,
         )
+        _verify_case_history(case)
         # Verify against the same locked audit-head snapshot as operator reports.
         queue._verify_locked_head(queue._locked_head())
         candidates = list(
