@@ -13,7 +13,7 @@ def require_empty_provider_receipts(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("delivery_queue", "0003_signed_context_and_attempt")]
+    dependencies = [("delivery_queue", "0004_required_state_fields")]
     operations = [
         migrations.RunPython(require_empty_provider_receipts, migrations.RunPython.noop),
         migrations.CreateModel(
