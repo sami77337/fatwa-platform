@@ -21,13 +21,13 @@ jobs:
       postgres:
         image: postgres:${{ matrix.postgres }}
         env:
-          POSTGRES_USER: wave7_synthetic_owner
+          POSTGRES_USER: wave7_synthetic
           POSTGRES_PASSWORD: synthetic-only
           POSTGRES_DB: wave7_synthetic_queue
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U wave7_synthetic_owner -d wave7_synthetic_queue"
+          --health-cmd "pg_isready -U wave7_synthetic -d wave7_synthetic_queue"
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       FATWA_PRODUCTION: '0'
@@ -35,7 +35,7 @@ jobs:
       DJANGO_SETTINGS_MODULE: config.settings.delivery_queue_test
       PGHOST: 127.0.0.1
       PGPORT: '5432'
-      PGUSER: wave7_synthetic_owner
+      PGUSER: wave7_synthetic
       PGPASSWORD: synthetic-only
       PGDATABASE: wave7_synthetic_queue
       PGTESTDATABASE: test_wave7_synthetic_queue
@@ -56,7 +56,7 @@ jobs:
           from django.conf import settings
           db=settings.DATABASES['default']
           assert db['NAME']=='wave7_synthetic_queue'
-          assert db['USER']=='wave7_synthetic_owner'
+          assert db['USER']=='wave7_synthetic'
           assert db['HOST']=='127.0.0.1'
           with psycopg.connect(host=db['HOST'],port=db['PORT'],dbname=db['NAME'],user=db['USER'],password=os.environ['PGPASSWORD']) as con:
               assert con.execute("select current_setting('server_version_num')::int / 10000").fetchone()[0] == int(os.environ['PG_EXPECTED_MAJOR'])
@@ -67,6 +67,8 @@ jobs:
           from apps.intake_workflow.guards import initialize_synthetic_database
           initialize_synthetic_database(synthetic_fixtures_only=True)
           PY
+      - name: Migrate the isolated owned base schema required by the guarded runner
+        run: python manage.py migrate --noinput --settings=config.settings.delivery_queue_test
       - name: Verify migration state matches models
         run: python manage.py makemigrations --check --dry-run --settings=config.settings.delivery_queue_test
       - name: Apply isolated synthetic migrations and run concurrency suite
