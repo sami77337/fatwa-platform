@@ -9,7 +9,7 @@
   <p>رقم المتابعة: <bdi id="workspace-reference">{{ result.public_ref }}</bdi></p>
   <p>التحديث الحالي: <bdi>{{ result.revision }}</bdi> · عدد التعقيبات المحفوظة: <bdi id="followup-count">{{ result.evidence_version|add:"-1" }}</bdi></p>
   {% if result.clarification %}<h3>الاستيضاح المطلوب</h3><p class="original" id="requested-clarification">{{ result.clarification }}</p>{% endif %}
-  <p class="notice">حالة معالجة السؤال مستقلة عن إثبات التسليم أو القراءة. لا يُعرض نص الجواب في هذه المساحة حاليًا.</p>
+  <p class="notice">اعتماد الجواب لا يثبت تسليمه أو قراءته. لا يُعرض نص الجواب إلا ضمن الوصول الخاص وبسماح صريح بعد إثبات التسليم الموقّع.</p>
   {% if result.delivery_status %}
   <section id="requester-delivery-evidence" aria-labelledby="requester-delivery-heading">
     <h3 id="requester-delivery-heading">حالة تسليم الجواب</h3>
@@ -20,6 +20,14 @@
     {% else %}
       <p>لا يوجد حاليًا إثبات مكتمل وموثوق لتسليم جميع أجزاء الجواب. لا يُعد قبول المزود للرسالة تسليمًا.</p>
     {% endif %}
+  </section>
+  {% endif %}
+  {% if private_answer %}
+  <section id="requester-approved-answer" aria-labelledby="requester-approved-answer-heading">
+    <h3 id="requester-approved-answer-heading">الجواب المعتمد المتاح لك</h3>
+    <p>إصدار الجواب المعتمد: <bdi>{{ private_answer.revision }}</bdi></p>
+    <div class="original" id="requester-answer-text">{{ private_answer.text }}</div>
+    <p>هذا عرض خاص للنسخة المعتمدة حاليًا. فتح الصفحة لا يُثبت أنك قرأت الجواب أو سمعته.</p>
   </section>
   {% endif %}
   <a href="/casework/status/">تحديث الحالة</a>
