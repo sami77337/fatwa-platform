@@ -97,6 +97,11 @@ and production/NFS workers are outside the supported rehearsal. Start all
 participating processes with the same bound control directory; keep unsupported
 writers and GC stopped. Source migration/bootstrap must finish before opening the
 application. Missing control configuration must close the V11 composition.
+Stock Django `flush`, `loaddata`, `clearsessions`, `dbshell` and `shell` are not
+maintenance-aware administrative entrypoints: prohibit them against an active or
+frozen V11 database. Test teardown uses its separately owned disposable database
+only after the V11 application profile and its processes have stopped. Direct
+database-owner access is not presented as a permission granted by this product.
 
 Encrypted backup is bounded to 32 MiB captured file bytes / 64 MiB ciphertext,
 held in memory, with no secure-memory-erasure or production KMS claim. V10's

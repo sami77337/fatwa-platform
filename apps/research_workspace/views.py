@@ -83,6 +83,9 @@ def _load(raw, binding):
 
 
 def _page(request, *, code=200, **context):
+    # An authorization failure must not retry the failed current-case projection
+    # while rendering this denial through the shared Mufti shell.
+    request._mufti_workspace_error = code >= 400
     get_token(request)
     return private(render(request, "research_workspace/desk.html", context, status=code))
 

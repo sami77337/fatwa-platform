@@ -17,6 +17,7 @@ LABELS = (
     "apps.experimental_publication.tests_ui",
     "tests.casework.test_v11_answer_parts",
     "tests.casework.test_v11_publication_frame",
+    "tests.casework.test_v11_navigation",
     "tests.casework.test_v11_rights_boundaries",
     "tests.casework.test_v11_answer_rights",
     "tests.casework.test_v11_maintenance",
