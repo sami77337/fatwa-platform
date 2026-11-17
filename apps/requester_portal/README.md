@@ -76,3 +76,50 @@ publication remain outside this app. The profile's UI switch does not revoke
 existing independently guarded media capabilities.
 
 **Gate B NOT_PASSED / C-D-E HOLD / Phase01 BLOCKED / NOT_DEPLOYED.**
+
+## V11 completion: reply and file in one step
+
+The native followup form now submits `action=reply` as multipart, with the existing
+case/CSRF-bound `form_proof`, revision and literal text, plus optional
+`reply_attachment` and `synthetic_only=yes` when a file is selected. A native empty
+file control is explicitly accepted as text-only; arbitrary extra fields, duplicate
+fields, dual text/file representations and non-hex proofs are rejected. The
+legacy text-only `followup` action and standalone upload remain compatible.
+
+`submit_reply(token, text, expected_revision, attachment=None,
+synthetic_fixtures_only=False)` composes the existing `casework.add_followup` and
+`case_attachments.upload` services. `attachment` is exactly
+`{raw: bytes, filename: str, media_type: str}`. A reply to an active clarification
+and its optional file commit atomically. Failure leaves the clarification, previous
+approval and evidence untouched; success invalidates old answer availability.
+Storage digest locks enclose the outer authorized queue/case transaction, preserving
+the V9 filesystem/GC contract. Existing rollback orphan policy is unchanged; this
+service never guesses which external blob to delete.
+
+No Mufti adapter or new table is needed: the same Case gets one new evidence/event
+for text, and another for the optional file. The returned canonical requester status
+contains the final revision (advance +1 without a file, +2 with a file). The existing
+Mufti `read_workspace_case` and attachment services see both immediately. The
+original source/question remains unchanged; no origin event or external send is
+fabricated.
+
+The portal adds an actionable next step and a combined chronological conversation
+including attachment links. After a successful redirect, a signed 90-second,
+HttpOnly, CSRF/capability/case-bound notice confirms the saved action once. It
+contains only case reference, revision, action kind and browser binding; no text,
+file, raw token or answer. It is not access authority, durable audit or reading
+proof. A stale case-switch form cannot transfer text, a file or a notice.
+
+A transient integrity/storage/database read failure now shows an empty retry screen
+with HTTP503 and no-store, retaining a still-valid browser session rather than
+mislabeling it expired. No private snapshot is cached or rendered on that screen.
+Actual invalid/expired/revoked capabilities still close the session. A failed reply
+retains text when the current snapshot remains readable, but files must be selected
+again. For an uncertain response, the screen tells the user to inspect the history
+before resubmitting.
+
+Existing V10 route/profile/flag composition suffices; **no new shared wiring or
+migrations**. Add `apps.requester_portal.workflow_tests` to the focused campaign
+labels; the affected `apps.requester_portal.browser_tests` now exercises one-step
+clarification with a file and writes `.local/qa/v11-requester/browser/` artifacts.
+See [V11_REPORT.md](V11_REPORT.md) for exact evidence and remaining pilot limits.
