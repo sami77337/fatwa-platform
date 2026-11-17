@@ -17,11 +17,9 @@ from . import tests as legacy
 
 
 class V11RecoveryTests(unittest.TestCase):
-    take_snapshot = classmethod(legacy.RecoveryTests.take_snapshot.__func__)
-
     @classmethod
     def setUpClass(cls):
-        legacy.RecoveryTests.setUpClass.__func__(cls)
+        legacy.RecoveryTests.setup_records.__func__(cls)
         from . import admin, encrypted, maintenance
 
         cls.admin, cls.encrypted, cls.maintenance = admin, encrypted, maintenance
@@ -34,6 +32,10 @@ class V11RecoveryTests(unittest.TestCase):
         maintenance.initialize(root=cls.control, storage=cls.storage, synthetic_fixtures_only=True)
         maintenance.enter(root=cls.control, synthetic_fixtures_only=True)
         cls.sealed = cls.seal()
+        with cls.service.connect() as database:
+            cls.manifest = {"postgres_major": database.info.server_version // 10000}
+        if list(cls.root.rglob("database.dump")):
+            raise AssertionError("V11 fixture must not create a plaintext backup")
 
     @classmethod
     def seal(cls):

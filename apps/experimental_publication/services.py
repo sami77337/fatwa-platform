@@ -459,6 +459,10 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
             except cases.CaseConflict:
                 continue
             public = _projection(edition, rights_usage="PREVIEW_METADATA")
+            try:
+                _require_publication_sources(case, edition.citations)
+            except cases.CaseConflict:
+                continue
             haystack = normalize_editorial_search(
                 " ".join((public["title"], public["category"], public["body"]))
             )

@@ -104,6 +104,9 @@ class JournalError(ValueError):
 
 
 def _path(directory: Path) -> Path:
+    from config.legacy_stores import require_isolated_legacy_store
+
+    require_isolated_legacy_store()
     if not isinstance(directory, Path) or directory.is_symlink() or not directory.is_dir():
         raise JournalError("journal_directory_unavailable")
     return directory.resolve(strict=True) / JOURNAL_FILENAME
@@ -155,6 +158,9 @@ def _exists(path: Path) -> bool:
 
 
 def _initialize(path: Path) -> None:
+    from config.legacy_stores import require_isolated_legacy_store
+
+    require_isolated_legacy_store()
     # Build the complete schema privately, then publish it without replacing another writer's file.
     fd, tmp = tempfile.mkstemp(prefix=".synthetic-source-", dir=path.parent)
     os.close(fd)
@@ -332,6 +338,9 @@ def _verified(con: sqlite3.Connection):
 
 
 def _connect(path: Path, writable: bool) -> sqlite3.Connection:
+    from config.legacy_stores import require_isolated_legacy_store
+
+    require_isolated_legacy_store()
     mode = "rw" if writable else "ro"
     con = sqlite3.connect(
         path.as_uri() + "?mode=" + mode, uri=True, isolation_level=None, timeout=5

@@ -17,7 +17,7 @@ from apps.case_attachments.storage_bindings import (
 )
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
-from apps.platform_recovery.integration import mutation_service
+from apps.platform_recovery.integration import mutation_service, require_admission
 from apps.private_media.storage import configured_storage
 from apps.private_media.validation import TYPES, MediaValidationError, validate
 
@@ -444,6 +444,7 @@ def clone_parts_for_new_answer(previous, answer):
     New part identities and manifest include the new canonical human text. No
     approval or private availability is inherited from the source revision.
     """
+    require_admission()
     if previous is None:
         return None
     if previous.case_id != answer.case_id or previous.revision + 1 != answer.revision:

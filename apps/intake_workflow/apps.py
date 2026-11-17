@@ -8,4 +8,7 @@ class IntakeWorkflowConfig(AppConfig):
 
     def ready(self):
         from .guards import require_owned_migration
+        from .management.admission import install_management_boundary
+
+        install_management_boundary()
         pre_migrate.connect(require_owned_migration, dispatch_uid='wave7.owned-migrations', weak=False)

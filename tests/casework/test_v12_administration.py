@@ -1,19 +1,22 @@
 """P0 administration entrypoints use the same owned synthetic PostgreSQL database."""
 
 import importlib
+import os
+import subprocess
+import sys
 import tempfile
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 from django.core.management import call_command, get_commands
-from django.core.management.base import CommandError
+from django.core.management.base import BaseCommand, CommandError
 from django.db.models.signals import post_migrate
 from django.test import Client, TransactionTestCase, override_settings
 
 from apps.casework_web.models import ThrottleBucket
 from apps.platform_recovery import maintenance
-from apps.platform_recovery.integration import require_admission
+from apps.platform_recovery.integration import MaintenanceUnavailable, require_admission
 from apps.private_media.filesystem import FileSystemStorage
 from apps.source_case_intake import services, simulators
 from apps.source_case_intake.models import SourceReceipt
@@ -127,6 +130,64 @@ class StrictAdministrationTests(TransactionTestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(ThrottleBucket.objects.count(), 0)
         self.assertEqual(len(response.cookies), 0)
+
+    def test_unknown_command_instance_and_known_nonreviewed_command_are_closed(self):
+        reached = []
+
+        class Probe(BaseCommand):
+            requires_system_checks = []
+
+            def handle(self, *args, **options):
+                reached.append(True)
+
+        with self.strict:
+            for command, options in ((Probe(), {}), ("makemigrations", {"dry_run": True})):
+                with self.assertRaisesMessage(CommandError, "STRICT_ADMINISTRATION_UNSUPPORTED"):
+                    call_command(command, **options)
+            with patch("django.core.management.commands.check.Command.handle") as check:
+                check.side_effect = lambda *a, **kw: require_admission()
+                call_command("check", stdout=StringIO())
+                check.assert_called_once()
+        self.assertEqual(reached, [])
+
+    def test_internal_clone_helpers_require_admission_before_orm_or_arguments(self):
+        from apps.answer_media.services import clone_parts_for_new_answer
+        from apps.case_citations.services import clone_citations_for_new_answer
+
+        with self.strict:
+            for clone in (clone_parts_for_new_answer, clone_citations_for_new_answer):
+                with self.subTest(clone=clone.__name__), self.assertRaises(MaintenanceUnavailable):
+                    clone(None, None)
+
+    def test_legacy_sqlite_stores_refused_before_filesystem_or_connection(self):
+        from apps.delivery_planner import outbox
+        from apps.fast9_case_source_join import source_journal
+
+        unknown = self.root / "must-not-create"
+        with self.strict:
+            for operation in (
+                lambda: outbox._path(unknown),
+                lambda: source_journal._path(unknown),
+                lambda: source_journal._initialize(unknown),
+                lambda: source_journal._connect(unknown, True),
+            ):
+                with self.assertRaisesMessage(MaintenanceUnavailable, "legacy_store_unavailable"):
+                    operation()
+        self.assertFalse(unknown.exists())
+
+    def test_strict_module_cold_cli_refuses_shell_without_control_or_secret_output(self):
+        marker = self.root / "strict-shell-must-not-run"
+        result = subprocess.run(
+            [sys.executable, "manage.py", "shell", "--command",
+             f"from pathlib import Path; Path({str(marker)!r}).touch()"],
+            env={**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings.campaign_strict"},
+            text=True, capture_output=True, timeout=20,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("STRICT_ADMINISTRATION_UNSUPPORTED", result.stderr)
+        self.assertNotIn(str(self.root), result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertFalse(marker.exists())
 
     def test_full_get_boundary_preserves_budget_and_cookies_when_frozen(self):
         web = {

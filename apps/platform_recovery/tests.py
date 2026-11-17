@@ -24,6 +24,12 @@ def setup():
 class RecoveryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.setup_records()
+        cls.setup_legacy_snapshot()
+
+    @classmethod
+    def setup_records(cls):
+        """Canonical service fixture shared without choosing a recovery format."""
         from django.test import override_settings
 
         from apps.answer_media import services as answers
@@ -88,6 +94,10 @@ class RecoveryTests(unittest.TestCase):
             manifest_sha256=manifest.sha256,
             confirmed=True,
         )
+    @classmethod
+    def setup_legacy_snapshot(cls):
+        from . import service
+
         cls.backup = cls.take_snapshot()
         cls.manifest = service.verify_bundle(cls.backup["bundle"], cls.backup["manifest_sha256"])
         print(

@@ -124,6 +124,13 @@ def _current(selected: PreviewPolicy, publication_id: str):
             raise PreviewUnavailable() from None
         yield edition
         _recheck(selected)
+        # Clock expiry can occur while material/history is projected even though
+        # the case lock serializes explicit revocation. Policy and source grants
+        # must both remain valid at the projection's return boundary.
+        try:
+            publication._require_publication_sources(case, edition.citations)
+        except cases.CaseConflict:
+            raise PreviewUnavailable() from None
 
 
 def _permitted_source(selected: PreviewPolicy, item: dict, case) -> dict | None:
@@ -270,7 +277,11 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
         for grant in selected.publications:
             try:
                 with _current(selected, grant.publication_id) as edition:
-                    available.append(_projection(selected, edition))
+                    projected = _projection(selected, edition)
+                # Publish to the response collection only after the context's
+                # return-boundary checks succeeded. Failed exits cannot leave a
+                # stale item, category or count in the response.
+                available.append(projected)
             except PreviewUnavailable:
                 continue
         _recheck(selected)

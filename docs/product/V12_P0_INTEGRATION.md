@@ -69,3 +69,53 @@ PostgreSQL 17.12, isolated disposable cluster:
 
 PG18, external lane integration and independent security review: pending. This
 checkpoint is not P0 closure and does not authorize P1 by itself.
+
+## Integrated handoffs and final-check candidate
+
+Delivered lane heads (preserved as commits in the integration history):
+
+- Recovery: `a067bb58cb8068d5ec8689069668e4cbddc641be`.
+- Maintenance: `9b5fafffbbf937444cc5df81f1130a98bf26f502`.
+- Rights: `ca86c0dc89534ff4a8ff06665a25a8bf98440de3`.
+- Independent security: `e25b2345d48c18eec839d07db5eb6fd4fcb40e52`.
+
+The maintenance hook is now installed from IntakeWorkflowConfig into the shared
+Django BaseCommand execution boundary. The reviewed allowlist is enforced for
+CLI, normal call_command and command-instance invocation; explicit stock command
+overrides additionally reject specialized execute paths. Arbitrary calls to handle
+or arbitrary custom Python remain unsupported. The casework GET budget and both
+internal clone helpers assert existing admission before database work.
+
+Historical SQLite outbox/source journal paths explicitly refuse opening or
+initializing storage when maintenance is required. Those files cannot silently
+join a PostgreSQL/private-original recovery cut. Unconfigured pure legacy tests
+retain their separate historical behavior.
+
+`config.settings.campaign_strict` selects required maintenance, source rights and
+encryption without provisioning authorities, control, identity or storage. It is
+closed when unconfigured. Stopped-writer test bootstrap remains separate; the V11
+human rehearsal explicitly enables the same strict policy before serving. The
+V10 CI uses the exact dedicated compatibility settings. V11 recovery fixtures now
+seed canonical records without producing a legacy plaintext bundle, then encrypt.
+
+Historical combined PG17 first run: **56/57 passed, one failed**. Independent
+SEC12-03 reproduced expiry after projection even on the delivered rights head.
+The integration repair rechecks publication source eligibility after yield, and
+only appends library results after the context successfully exits. The staff
+library also rechecks after projection. Thus an expired item cannot remain in
+body, source metadata, search result, category or count. Shared V11 expectations
+were tightened for the new independent publication rights requirement, not relaxed.
+
+Focused post-repair PG17 rights batch: **36/36 passed**. V11 encrypted-only fixture
+regression: **16/16 passed**. Additional integration tests cover unknown command
+instances, actual cold strict CLI, internal clones and excluded legacy stores.
+The complete final candidate is tested by `infra/dev/v12_verify.py` and the V12
+P0 workflow on each major. Final matrix and independent final-head review remain
+pending; P1 is still closed at this checkpoint.
+
+Local PG18.7 was built under `.local/runtime/pg18` from Debian's source archive
+SHA256 `441dfae4280cae3e0425e5f876f80559fb0731c140f1aae22b3e5a54d0411bfd`.
+No host packages, production settings or GitHub protections were changed. The
+PGDG index returned HTTP403 and apt had no package candidates; locally extracted
+build tools and the verified Debian source were used instead. These preparation
+failures are not test passes.

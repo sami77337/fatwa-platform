@@ -9,7 +9,7 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
-from apps.platform_recovery.integration import mutation_service
+from apps.platform_recovery.integration import mutation_service, require_admission
 from apps.reference import services as catalog
 from apps.reference.models import ReferenceEdition, ReferenceHeading
 from apps.reference.normalization import normalize_title
@@ -361,6 +361,7 @@ def clone_citations_for_new_answer(previous, answer):
     event, and cleared approval. Copies source snapshots, never approval/release.
     PostgreSQL rejects writes outside the answer's creation transaction as well.
     """
+    require_admission()
     if (
         previous.case_id != answer.case_id
         or previous.pk == answer.pk

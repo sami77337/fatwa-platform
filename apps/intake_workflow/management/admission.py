@@ -1,7 +1,10 @@
 """Strict application administration boundaries; not a PostgreSQL privilege firewall."""
 
-from django.core.management.base import CommandError
+from functools import wraps
 
+from django.core.management.base import BaseCommand, CommandError
+
+from apps.platform_recovery.admission import require_supported_command
 from apps.platform_recovery.integration import (
     MaintenanceUnavailable,
     mutation_scope,
@@ -32,3 +35,34 @@ class AdmittedCommand:
                 return super().execute(*args, **options)
         except MaintenanceUnavailable:
             raise CommandError("MAINTENANCE_ADMINISTRATION_UNAVAILABLE") from None
+
+
+def install_management_boundary():
+    """Cover Django CLI and direct call_command, including command instances.
+
+    Installed once by the synthetic app config; evaluated against current settings
+    at every call. Stock execute->handle commands share this boundary. Arbitrary
+    Python calling handle/ORM directly remains outside supported administration.
+    Explicit overrides also reject stock commands that specialize execute.
+    """
+    original = BaseCommand.execute
+    if getattr(original, "fatwa_maintenance_boundary", False):
+        return
+
+    @wraps(original)
+    def execute(command, *args, **options):
+        if not required():
+            return original(command, *args, **options)
+        name = type(command).__module__.rsplit(".", 1)[-1]
+        try:
+            require_supported_command(name)
+        except MaintenanceUnavailable:
+            raise CommandError("STRICT_ADMINISTRATION_UNSUPPORTED") from None
+        try:
+            with mutation_scope():
+                return original(command, *args, **options)
+        except MaintenanceUnavailable:
+            raise CommandError("MAINTENANCE_ADMINISTRATION_UNAVAILABLE") from None
+
+    execute.fatwa_maintenance_boundary = True
+    BaseCommand.execute = execute
