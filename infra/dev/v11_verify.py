@@ -36,7 +36,11 @@ def main():
         parser.error("checked-out head does not match EXPECTED_SHA")
     (logs / "tested-sha.txt").write_text(head + "\n")
     print("TESTED_SHA=" + head, flush=True)
-    env = {**os.environ, "FATWA_RECOVERY_PG_BIN": str(args.pg_bin.resolve(strict=True))}
+    env = {
+        **os.environ,
+        "FATWA_RECOVERY_PG_BIN": str(args.pg_bin.resolve(strict=True)),
+        "FATWA_TEST_PG_BIN": str(args.pg_bin.resolve(strict=True)),
+    }
     commands = [
         ("system", ["manage.py", "check"]),
         ("drift", ["manage.py", "makemigrations", "--check", "--dry-run"]),
