@@ -161,7 +161,7 @@ class PublicPageTests(SimpleTestCase):
         fields = {i["name"]: i for i in document.find("input")}
         self.assertEqual(set(fields), {"q"})
         self.assertEqual(fields["q"]["maxlength"], "160")
-        self.assertIn("required", fields["q"])
+        self.assertNotIn("required", fields["q"])
         self.assertTrue(
             any(label.get("for") == fields["q"]["id"] for label in document.find("label"))
         )
