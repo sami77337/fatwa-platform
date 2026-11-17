@@ -12,21 +12,35 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--restore-bundle")
     parser.add_argument("--manifest-sha256")
+    parser.add_argument("--ciphertext-sha256")
+    parser.add_argument("--key-file")
     parser.add_argument("--scratch")
     parser.add_argument("--pg-bin")
     args = parser.parse_args()
     django.setup()
     if args.restore_bundle:
-        from .service import restore
+        if args.ciphertext_sha256:
+            from .encrypted import restore
 
-        restored = restore(
-            bundle=args.restore_bundle,
-            expected_manifest_sha256=args.manifest_sha256,
-            scratch=args.scratch,
-            pg_bin=args.pg_bin,
-            synthetic_fixtures_only=True,
-            offline=True,
-        )
+            restored = restore(
+                bundle=args.restore_bundle,
+                expected_ciphertext_sha256=args.ciphertext_sha256,
+                key_file=args.key_file,
+                scratch=args.scratch,
+                pg_bin=args.pg_bin,
+                synthetic_fixtures_only=True,
+            )
+        else:
+            from .service import restore
+
+            restored = restore(
+                bundle=args.restore_bundle,
+                expected_manifest_sha256=args.manifest_sha256,
+                scratch=args.scratch,
+                pg_bin=args.pg_bin,
+                synthetic_fixtures_only=True,
+                offline=True,
+            )
         # Exec guarantees a brand new Django connection/profile after restoration.
         os.environ.update(
             PGDATABASE=restored["database"],
