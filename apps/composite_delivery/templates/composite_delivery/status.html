@@ -1,0 +1,26 @@
+{# Staff-only inclusion: status is the authorized composite_status projection. #}
+<section dir="rtl" aria-label="حالة تجهيز الجواب المركب">
+  <h2>توصيل أجزاء الجواب</h2>
+  {% if status.delivery_verified %}
+    <p>اكتمل تقرير التسليم الموقّع لجميع الأجزاء في المحاكي.</p>
+  {% else %}
+    <p>لم يثبت اكتمال تسليم جميع الأجزاء.</p>
+  {% endif %}
+  <p>أجزاء لها إيصال تسليم متحقق: {{ status.verified_parts }} من {{ status.expected_parts }}.</p>
+  <p>هذه تجربة محلية؛ لا تثبت قراءة الجواب ولا إرسالًا خارجيًا.</p>
+  <ol>
+    {% for part in status.parts %}
+      <li>
+        {% if part.kind == "TEXT" %}نص{% elif part.kind == "AUDIO" %}صوت{% elif part.kind == "IMAGE" %}صورة{% else %}ملف{% endif %}:
+        {% if part.state == "STAGED" %}مجهز، لم يُرسل
+        {% elif part.state == "LEASED" %}محجوز للمعالجة
+        {% elif part.state == "SENT_UNCONFIRMED" %}قبول المزود فقط؛ التسليم غير مؤكد
+        {% elif part.state == "DELIVERED" %}{% if part.delivery_verified %}تقرير تسليم موقّع متحقق{% else %}تقرير تسليم غير متحقق، يحتاج مراجعة بشرية{% endif %}
+        {% elif part.state == "FAILED_REQUIRES_REVIEW" %}فشل الجزء، يحتاج مراجعة بشرية
+        {% elif part.state == "UNKNOWN_REQUIRES_RECONCILIATION" %}نتيجة غير محسومة، تحتاج مطابقة بشرية
+        {% else %}حالة غير متاحة{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+  {% if status.human_action %}<p role="status">يلزم تدخل بشري ومراجعة الإيصالات. لا إعادة إرسال تلقائية.</p>{% endif %}
+</section>
