@@ -1,0 +1,5 @@
+{% extends "team_workspace/workspace.html" %}
+{% block content %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="transcripts"><button type="submit">ربط التفريغات بالقضايا</button></form>
+{{ block.super }}
+{% endblock %}
