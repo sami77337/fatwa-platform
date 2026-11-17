@@ -32,6 +32,7 @@ def main():
     origin = f"http://127.0.0.1:{port}"
     rows = segments()
     rows[1]["start_ms"] = 1000  # Deliberate repairable overlap.
+    rows[1]["pair_id"] = "unpaired-answer"  # Requires explicit human association too.
     raw = encode(rows)
     env = dict(os.environ, FATWA_PRODUCTION="0")
     results = []
@@ -117,6 +118,10 @@ def main():
                     page.locator("#segment").select_option("1")
                     page.get_by_role("button", name="عرض المقطع").click()
                     page.wait_for_load_state("domcontentloaded")
+                    page.locator('[name="question_index"][value="0"]').check()
+                    page.get_by_role("button", name="تأكيد ربط الجواب بالسؤال المختار").click()
+                    page.wait_for_load_state("domcontentloaded")
+                    assert page.get_by_role("button", name="تنزيل الحزمة ZIP").count() == 0
                     page.locator("#start").fill("1017")
                     page.get_by_role("button", name="حفظ التعديل في المراجعة").click()
                     page.wait_for_load_state("domcontentloaded")
@@ -133,8 +138,10 @@ def main():
                         assert reviewed["items"][0]["text"] == rows[0]["text"]
                         assert reviewed["items"][0]["start_ms"] == 18
                         assert reviewed["items"][1]["start_ms"] == 1017
+                        assert reviewed["items"][1]["pair_id"] == rows[0]["pair_id"]
                         manifest = json.loads(archive.read("manifest.json"))
                         assert manifest["case_binding"] == "NOT_CONNECTED"
+                        assert manifest["schema"] == "fatwa.transcript-workbench.bundle.v2"
                     page.screenshot(path=str(output / f"review-{width}.png"), full_page=True)
                     assert not errors and not external
                     results.append(
@@ -154,6 +161,7 @@ def main():
                 "viewports": results,
                 "case_binding": "NOT_CONNECTED",
                 "checkpoint_resume": "PASS",
+                "manual_answer_pairing": "PASS",
                 "deployment": "NOT_DEPLOYED",
             }
             (output / "browser-result.json").write_text(json.dumps(result, indent=2) + "\n")
