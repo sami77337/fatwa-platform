@@ -1,6 +1,6 @@
 """Bounded, read-only SSR entry points; no catalog mutations."""
 
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -11,7 +11,14 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_safe
 
-from apps.reference.query import InvalidQuery, Page, bounded_int, strict_bool, validate_search
+from apps.reference.query import (
+    MAX_OFFSET,
+    InvalidQuery,
+    Page,
+    bounded_int,
+    strict_bool,
+    validate_search,
+)
 from apps.reference.services import (
     CatalogUnavailable,
     HeadingNotFound,
@@ -64,7 +71,23 @@ def _render_page(request: HttpRequest, context: dict, *, status: int = 200) -> H
         origin = _public_origin()
         if origin:
             context["canonical_url"] = origin + reverse("public_help" if page == "help" else "home")
-    return render(request, f"public_site/{page}.html", context, status=status)
+    response = render(request, f"public_site/{page}.html", context, status=status)
+    if context["withhold_preview"]:
+        response["X-Robots-Tag"] = "noindex, nosnippet"
+    return response
+
+
+def _search_link(context: dict, offset: int) -> str:
+    # Rebuild only validated search fields; never copy arbitrary request parameters.
+    params = {
+        key: context[key]
+        for key in ("query", "mode", "depth", "has_children")
+        if context[key] != ""
+    }
+    params["q"] = params.pop("query")
+    if offset:
+        params["offset"] = offset
+    return reverse("home") + "?" + urlencode(params) + "#results-title"
 
 
 @require_safe
@@ -80,7 +103,7 @@ def home(request: HttpRequest) -> HttpResponse:
     }
     try:
         if any(
-            key not in {"q", "mode", "depth", "has_children"} or len(values) != 1
+            key not in {"q", "mode", "depth", "has_children", "offset"} or len(values) != 1
             for key, values in request.GET.lists()
         ):
             raise InvalidQuery("Unknown or duplicate parameter")
@@ -88,6 +111,9 @@ def home(request: HttpRequest) -> HttpResponse:
         validate_search(text, mode)
         depth = bounded_int(context["depth"], 1, 5) if context["depth"] else None
         has_children = strict_bool(context["has_children"]) if context["has_children"] else None
+        offset = bounded_int(request.GET.get("offset", "0"), 0, MAX_OFFSET)
+        if not text.strip() and (depth or has_children is not None or "offset" in request.GET):
+            raise InvalidQuery("Search text required")
         books = list_books(Page(1))
         if books.total != 1:
             context["catalog_state"] = "multiple" if books.total else "empty"
@@ -108,16 +134,33 @@ def home(request: HttpRequest) -> HttpResponse:
                 }
             )
             if context["searching"]:
-                # The service requires text; filters alone cannot trigger a full catalog scan.
-                if not text.strip():
-                    raise InvalidQuery("Search text required")
-                context["results"] = search(
+                # The homepage keeps text required, even with filters or pagination.
+                results = search(
                     edition,
                     text,
                     mode,
-                    Page(30),
+                    Page(30, offset),
                     depth=depth,
                     has_children=has_children,
+                )
+                context.update(
+                    results=results,
+                    result_start=offset + 1 if results.items else 0,
+                    result_end=offset + len(results.items),
+                    first_results_url=_search_link(context, 0) if offset else "",
+                    previous_results_url=(
+                        _search_link(context, max(0, offset - 30)) if offset else ""
+                    ),
+                    next_results_url=(
+                        _search_link(context, results.next_offset)
+                        if results.next_offset is not None
+                        else ""
+                    ),
+                    search_limit_reached=(
+                        bool(results.items)
+                        and results.next_offset is None
+                        and offset + len(results.items) < results.total
+                    ),
                 )
     except InvalidQuery:
         if context["catalog_state"] != "available":

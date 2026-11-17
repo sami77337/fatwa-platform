@@ -39,14 +39,28 @@
     <p>عدد عناوين المصدر: {{ heading_count }}. عدد الجذور: {{ roots.total }}.</p>
     {% if searching %}
     <section aria-labelledby="results-title">
-      <h2 id="results-title">نتائج البحث</h2>
+      <h2 id="results-title" tabindex="-1">نتائج البحث</h2>
       {% if results %}
-      <p>عدد النتائج: {{ results.total }}. تُعرض أول {{ results.limit }} نتيجة كحد أقصى؛ ضيّق البحث للوصول إلى عنوان محدد.</p>
-      <ul>
+      <p>عدد النتائج: {{ results.total }}.{% if results.items %} عرض النتائج {{ result_start }}–{{ result_end }}.{% endif %}</p>
+      {% if results.items %}
+      <ol start="{{ result_start }}">
       {% for heading in results.items %}
         <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a></li>
-      {% empty %}<li>لا توجد عناوين مطابقة. جرّب كلمة أخرى أو أزل المرشحات.</li>{% endfor %}
-      </ul>
+      {% endfor %}
+      </ol>
+      {% elif results.total %}
+      <p>لا توجد نتائج في هذه الصفحة. ارجع إلى أول النتائج أو غيّر البحث.</p>
+      {% else %}
+      <p>لا توجد عناوين مطابقة. جرّب كلمة أخرى أو أزل المرشحات.</p>
+      {% endif %}
+      {% if previous_results_url or next_results_url %}
+      <nav aria-label="صفحات نتائج البحث">
+        {% if first_results_url %}<a href="{{ first_results_url }}">أول النتائج</a>{% endif %}
+        {% if previous_results_url %}<a href="{{ previous_results_url }}" rel="prev">النتائج السابقة</a>{% endif %}
+        {% if next_results_url %}<a href="{{ next_results_url }}" rel="next">النتائج التالية</a>{% endif %}
+      </nav>
+      {% endif %}
+      {% if search_limit_reached %}<p>بلغت حد التصفح لهذا البحث. ضيّق العبارة أو المرشحات للوصول إلى بقية العناوين.</p>{% endif %}
       {% endif %}
       <p><a href="{% url 'home' %}">مسح البحث والمرشحات</a></p>
     </section>
