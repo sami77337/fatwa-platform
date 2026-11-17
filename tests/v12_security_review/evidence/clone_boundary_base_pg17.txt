@@ -1,5 +1,5 @@
 SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
-test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) ... 
+test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) ...
   test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) (helper='clone_parts_for_new_answer') ... FAIL
   test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) (helper='clone_citations_for_new_answer') ... FAIL
 
