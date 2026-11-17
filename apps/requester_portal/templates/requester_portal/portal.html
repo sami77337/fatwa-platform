@@ -1,0 +1,82 @@
+{% extends "casework/base.html" %}
+{% block title %}بوابة السائل الخاصة{% endblock %}
+{% block content %}
+<h2>بوابة السائل الخاصة</h2>
+{% if message %}<p role="status">{{ message }}</p>{% endif %}
+{% if not result %}
+<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="unlock">
+<label for="portal-token">رمز الوصول الخاص</label>
+<input id="portal-token" name="token" type="password" autocomplete="off" maxlength="46" required>
+<button>فتح قضيتي</button>
+</form>
+<p>عند فقد الرمز، اطلب من الفريق استعادة موثوقة للهوية. لا يمنح الاسم أو رقم القضية وصولًا.</p>
+{% else %}
+<p>القضية <bdi>{{ result.public_ref }}</bdi> · إصدار الوقائع {{ result.evidence_version }}</p>
+<nav aria-label="أقسام قضيتك">
+<a href="#conversation">السؤال والتعقيبات</a><a href="#attachments">مرفقاتي</a>
+<a href="#answer">الجواب والإحالات</a><a href="#delivery">حالة التسليم</a><a href="#followup">إضافة تعقيب</a>
+</nav>
+<form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="leave"><button>إغلاق الوصول في هذا المتصفح</button></form>
+<section id="answer" aria-labelledby="answer-heading">
+<h3 id="answer-heading">الجواب والإحالات</h3>
+<p role="status" data-answer-state="{{ result.answer_state }}">{{ result.answer_label }}</p>
+{% if result.answer %}
+<p>إصدار الجواب {{ result.answer.revision }} · مرتبط بالوقائع الحالية.</p>
+<article><h4>نص الجواب المصرح به</h4><p class="original" id="authorized-answer">{{ result.answer.text }}</p></article>
+{% for part in result.answer.parts %}
+<article><h4>الجزء {{ part.ordinal }}: <bdi>{{ part.filename }}</bdi></h4>
+<p>{{ part.media_type }} · {{ part.size }} بايت</p>
+{% if part.kind == 'AUDIO' %}<audio controls preload="none" aria-label="صوت الجواب {{ part.ordinal }}" src="/casework/status/answer-media/{{ part.id }}/"></audio>
+{% elif part.kind == 'IMAGE' %}<img loading="lazy" src="/casework/status/answer-media/{{ part.id }}/" alt="صورة الجواب {{ part.filename }}">
+{% else %}<details><summary>معاينة ملف الجواب {{ part.ordinal }}</summary><iframe loading="lazy" title="ملف الجواب {{ part.filename }}" src="/casework/status/answer-media/{{ part.id }}/"></iframe></details>{% endif %}
+<p><a href="/casework/status/answer-media/{{ part.id }}/">فتح جزء الجواب {{ part.ordinal }}</a> · <a href="/casework/status/answer-media/{{ part.id }}/" download>تنزيل جزء الجواب {{ part.ordinal }}</a></p>
+</article>{% endfor %}
+{% if result.answer.citations %}<section aria-label="مصادر الجواب"><h4>إحالات الجواب المصرح بها</h4>
+<p>المعروض عنوان الفهرس وموضعه الموثق، وليس متن الكتاب أو اقتباسًا مولدًا.</p>
+{% for citation in result.answer.citations %}<article><h5>{{ citation.heading_title }}</h5>
+<p>{{ citation.work_title }} — {{ citation.edition_title }} — {{ citation.publisher }}</p>
+<p>الجزء {{ citation.printed_part }} · الصفحة {{ citation.printed_page }}</p>
+<p>{{ citation.path|join:" / " }}</p></article>{% endfor %}</section>{% endif %}
+{% else %}<p>لا يوجد محتوى جواب مصرح بعرضه الآن. أي تغيير في الوقائع أو الجواب يستلزم مراجعة جديدة؛ لا تُعرض النسخة القديمة.</p>{% endif %}
+</section>
+<section id="delivery" aria-labelledby="delivery-heading"><h3 id="delivery-heading">حالة التسليم عبر القناة</h3>
+<p data-delivery-state="{{ result.delivery.state }}">{{ result.delivery.label }}</p>
+{% with summary=result.delivery.summary %}{% if summary %}
+<p>الأجزاء ذات الإثبات الموقّع: {{ summary.verified_parts }} / {{ summary.expected_parts }}.</p>
+<p>قبول مزود بلا تسليم مثبت: {{ summary.accepted_parts }} · أجزاء فاشلة: {{ summary.failed_parts }} · غير محسومة: {{ summary.unresolved_parts }}.</p>
+{% if summary.human_action %}<p>تحتاج الحالة متابعة بشرية؛ لا تُعاد محاولة الإرسال تلقائيًا من هذه الصفحة.</p>{% endif %}
+{% endif %}{% endwith %}
+<p>الإتاحة داخل البوابة مستقلة عن قبول المزود وعن إثبات تسليم كل الأجزاء. فتح الصفحة أو تشغيل الصوت لا يثبت قراءة الجواب أو استماعه.</p>
+</section>
+<section id="conversation" aria-labelledby="conversation-heading"><h3 id="conversation-heading">السؤال والتعقيبات والاستيضاحات</h3>
+{% if result.clarification %}<aside class="notice" aria-label="استيضاح ينتظر ردك"><h4>استيضاح ينتظر ردك</h4><p class="original">{{ result.clarification }}</p><a href="#followup">الرد على الاستيضاح</a></aside>{% endif %}
+{% for entry in result.history %}<article><h4>{{ entry.label }}</h4><p><time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at }}</time> · الوقائع {{ entry.evidence_version }}</p><p class="original">{{ entry.text }}</p></article>{% endfor %}
+</section>
+<section id="attachments" aria-labelledby="attachments-heading"><h3 id="attachments-heading">مرفقات السؤال</h3>
+{% if result.attachments_enabled %}
+{% for attachment in result.attachments %}<article><h4><bdi>{{ attachment.filename }}</bdi></h4><p>الوقائع {{ attachment.evidence_version }} · {{ attachment.size }} بايت</p>
+{% if attachment.kind == 'audio' %}<audio controls preload="none" aria-label="مرفق صوتي {{ attachment.filename }}" src="/casework/status/attachments/{{ attachment.id }}/"></audio>
+{% elif attachment.kind == 'image' %}<img loading="lazy" src="/casework/status/attachments/{{ attachment.id }}/" alt="مرفق السؤال {{ attachment.filename }}">
+{% else %}<details><summary>معاينة المرفق {{ forloop.counter }}</summary><iframe loading="lazy" title="مرفق السؤال {{ attachment.filename }}" src="/casework/status/attachments/{{ attachment.id }}/"></iframe></details>{% endif %}
+<p><a href="/casework/status/attachments/{{ attachment.id }}/">فتح المرفق {{ forloop.counter }}</a> · <a href="/casework/status/attachments/{{ attachment.id }}/" download>تنزيل المرفق {{ forloop.counter }}</a></p></article>
+{% empty %}<p>لا توجد مرفقات محفوظة.</p>{% endfor %}
+{% if not result.clarification %}
+<form method="post" action="/casework/status/" enctype="multipart/form-data">{% csrf_token %}
+<input type="hidden" name="action" value="attachment_upload"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="upload_proof" value="{{ upload_proof }}">
+<label for="portal-attachment">مرفق اصطناعي للسؤال</label><input id="portal-attachment" type="file" name="attachment" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav" required>
+<p>الحد 192000 بايت، وللنص 65536 بايت؛ تطبق حدود النوع والتحليل القائمة. لا ادعاء بفحص فيروسات.</p>
+<label><input type="checkbox" name="synthetic_only" value="yes" required>ملف اصطناعي مخصص لهذه التجربة</label><button>حفظ مرفق السؤال</button>
+</form>{% else %}<p>أجب عن الاستيضاح أولًا قبل إضافة مرفق.</p>{% endif %}
+{% else %}<p>خدمة المرفقات غير متاحة في هذا الإعداد.</p>{% endif %}
+</section>
+<section id="followup" aria-labelledby="followup-heading"><h3 id="followup-heading">إضافة تعقيب أو رد على الاستيضاح</h3>
+<form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="followup"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="form_proof" value="{{ form_proof }}">
+<label for="portal-followup">نص التعقيب</label><textarea id="portal-followup" name="text" maxlength="16000" required>{{ text }}</textarea>
+<p>يُحفظ النص ضمن قضيتك ويعيد الجواب للمراجعة. لا تُعرض الأجوبة السابقة بعد تغير الوقائع.</p><button>إرسال التعقيب</button></form>
+</section>
+<details><summary>حماية رمز الوصول</summary><p>إذا انكشف الرمز، اطلب مراجعة الفريق. إغلاق هذا المتصفح لا يبطل الرمز لدى الآخرين.</p>
+<form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="request_access_review"><input type="hidden" name="review_proof" value="{{ review_proof }}"><input type="hidden" name="reason" value="EXPOSED"><button>طلب مراجعة أمان الرمز</button></form>
+{% for review in result.access_reviews %}<p>{{ review.reason_label }} — {{ review.state_label }}</p>{% endfor %}</details>
+{% endif %}
+{% endblock %}
