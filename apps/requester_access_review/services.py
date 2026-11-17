@@ -49,7 +49,7 @@ def requester_snapshot(
             # evidence match the separately signed return plan.
             decision, _, _ = delivery._bound(case)
             answer = case.approved_answer
-            if answer is None or answer.decision_id != decision.pk:
+            if answer is None or answer.pk != decision.answer_id:
                 raise cases.CaseConflict("current_private_answer_unavailable")
             private_answer = {"text": answer.text, "revision": answer.revision}
         reviews = list(AccessReview.objects.filter(case=case).select_related("grant")
