@@ -141,10 +141,20 @@ def case_workspace(request):
         or getattr(request, "_mufti_workspace_error", False) is True
         or request.path != "/casework/staff/"
         or request.method != "POST"
-        or "case_ref" not in request.POST
+        or (
+            "case_ref" not in request.POST
+            and not getattr(request, "publication_authorized_case_ref", None)
+        )
     ):
         return {}
     references = request.POST.getlist("case_ref")
+    resolved = getattr(request, "publication_authorized_case_ref", None)
+    # The native publication view sets this only after canonical desk authorization.
+    # It is never a browser field or a replacement for the fresh scope check below.
+    if not references and request.POST.get("action") == "pub_open" and resolved:
+        references = [resolved]
+    elif resolved and references != [resolved]:
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if len(references) != 1 or REFERENCE.fullmatch(references[0]) is None:
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if len(request.POST.getlist("action")) != 1:
