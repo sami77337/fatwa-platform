@@ -3,7 +3,7 @@ name = "fatwa-reference-development"
 version = "0.1.0"
 description = "Non-production public source-book index; no fatwa operations"
 requires-python = ">=3.13,<3.14"
-dependencies = ["Django==5.2.18", "psycopg[binary]==3.3.6", "django-htmx==1.29.0"]
+dependencies = ["Django==5.2.18", "psycopg[binary]==3.3.6", "django-htmx==1.29.0", "Pillow==13.0.0", "pypdf==7.1.0", "mutagen==1.48.1"]
 
 [tool.ruff]
 target-version = "py313"

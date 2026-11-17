@@ -67,6 +67,8 @@ def read_workspace_case(**common):
         common["synthetic_fixtures_only"],
     ) as (case, _identity):
         snapshot = describe(services._staff(case))
+        latest = case.answers.order_by("-revision").first()
+        snapshot["answer_manifest"] = services._answer_manifest(latest)
         evidence = {item.version: item.text for item in case.evidence.all()}
         snapshot["timeline"] = [
             {

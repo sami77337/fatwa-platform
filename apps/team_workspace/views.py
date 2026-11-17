@@ -48,6 +48,7 @@ def _page(request, provider, identity, *, common=None, selected_filter="all", qu
         **queue(rows, selected_filter, query), "selected": selected,
         "message": message, "attempted_text": attempted_text, "access": access,
         "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
+        "answer_media_enabled": getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True,
         "citations_enabled": getattr(settings, "FATWA_CASE_CITATIONS_ENABLED", False) is True,
         "publication_enabled": getattr(settings, "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED", False) is True,
         "recovery_available": callable(getattr(settings, "FATWA_CASEWORK_RECOVERY_RESOLVER", None)),

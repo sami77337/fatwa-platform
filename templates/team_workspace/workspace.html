@@ -27,6 +27,7 @@
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
 <nav aria-label="أدوات القضية">
+{% if answer_media_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="answer_media"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">تحرير جواب متعدد الأجزاء</button></form>{% endif %}
 {% if attachments_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="attachment_list"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">مرفقات القضية</button></form>{% endif %}
 {% if citations_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="citations"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">تحرير جواب بإحالة موثقة</button></form>{% endif %}
 {% if publication_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">نسخة النشر التجريبية</button></form>{% endif %}
@@ -48,12 +49,17 @@
 {% else %}
 {% if selected.stale_answer %}<p class="notice" id="stale-answer">تغيّرت الوقائع بعد آخر مسودة. راجع التعقيب ثم احفظ إصدارًا جديدًا؛ المسودة السابقة غير قابلة للاعتماد.</p>{% endif %}
 {% if selected.status == "ANSWERED" %}<p class="notice">حفظ تعديل جديد يُلغي اعتماد النسخة السابقة ويتطلب مراجعة جديدة.</p>{% endif %}
+{% if selected.answer_manifest %}<p class="notice">هذا الجواب يحتوي ملفات أو صوتًا. المحرر النصي أدناه ينشئ نسخة نصية فقط؛ استخدم محرر الأجزاء للاحتفاظ بالملفات أو تعديلها.</p>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}
 <input type="hidden" name="action" value="draft"><label for="answer-text">{% if selected.latest_answer %}تحرير أحدث مسودة — الإصدار {{ selected.latest_answer.revision }}{% else %}مسودة جواب بشرية جديدة{% endif %}</label>
 <textarea id="answer-text" name="text" required maxlength="16000">{{ selected.latest_answer.text }}</textarea>
 <p>الحفظ ينشئ إصدارًا جديدًا ويحفظ النصوص السابقة. راجع السؤال والتعقيبات قبل الحفظ.</p><button type="submit">حفظ مسودة الجواب</button>
 </form>{% endif %}</section>
 <section id="review" aria-labelledby="review-heading"><h2 id="review-heading">مراجعة أحدث إصدار</h2>
+{% if selected.answer_manifest %}
+<h3>جميع أجزاء إصدار الجواب</h3><p>يشمل الاعتماد النص وجميع الأجزاء التالية. راجعها قبل اتخاذ القرار.</p>
+{% include "answer_media/parts.html" with package=selected.answer_manifest is_staff=True %}
+{% endif %}
 {% if selected.can_review %}
 <article><h3>إصدار الجواب {{ selected.latest_answer.revision }}</h3><p class="original" id="review-answer">{{ selected.latest_answer.text }}</p>
 <p>مبني على إصدار الوقائع الحالي {{ selected.evidence_version }}.</p>

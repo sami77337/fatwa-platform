@@ -46,11 +46,15 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if action in {"answer_media", "answer_media_save", "answer_media_release"}:
+            from apps.answer_media.views import staff as answer_media
+
+            return _panel(answer_media(request), "cases")
         if action in {"attachment_list", "attachment_preview", "attachment_download"}:
             from apps.case_attachments.views import staff as attachments
 
             return _panel(attachments(request), "cases")
-        if action in {"citations", "citation_search", "citation_select", "citation_save", "citation_source"}:
+        if action in {"citations", "citation_search", "citation_select", "citation_save", "citation_source", "citation_compose"}:
             from apps.case_citations.views import desk as citations
 
             return _panel(citations(request), "cases")

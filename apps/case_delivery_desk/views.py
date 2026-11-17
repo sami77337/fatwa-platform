@@ -191,6 +191,13 @@ def desk(request):
         approved = next(
             (a for a in selected["answers"] if a["id"] == selected["approved_answer_id"]), None
         )
+        media_requires_human = False
+        if approved:
+            with services._staff_case(
+                common["case_id"], identity.subject_id, provider, True
+            ) as (case, _):
+                manifest = services._answer_manifest(case.approved_answer)
+                media_requires_human = bool(manifest and manifest["requires_human_delivery"])
         report = _report(common) if approved else None
         return _page(
             request,
@@ -201,6 +208,7 @@ def desk(request):
                 "status_label": LABELS[selected["status"]],
             },
             approved=approved,
+            media_requires_human=media_requires_human,
             report=report,
             prepared=prepared,
             options=options,
@@ -210,7 +218,13 @@ def desk(request):
         return _error(request, "يلزم دخول المفتي المخوّل لهذه القضية. سجّل الدخول مجددًا.", 403)
     except (InvalidForm, InvalidSignedResponse, SuspiciousOperation):
         return _error(request, "لم يُقبل النموذج. تحقق من الحقول وصيغة الرد الموقّع.", 400)
-    except (services.CaseConflict, queue.QueueConflict, InvalidPlan):
+    except (services.CaseConflict, queue.QueueConflict, InvalidPlan) as exc:
+        if str(exc) == "unsupported_media_requires_human_action":
+            return _error(
+                request,
+                "هذا الجواب يحتوي ملفات أو صوتًا. موصل التسليم الحالي نصي فقط؛ يلزم إجراء بشري ولا تُجهّز خطة تسقط أجزاء الجواب.",
+                409,
+            )
         return _error(
             request,
             "لم يُقبل الإجراء. أعد فتح القضية وتحقق من الاعتماد والخطة والتوقيع الحالي.",

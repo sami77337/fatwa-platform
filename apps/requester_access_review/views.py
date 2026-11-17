@@ -23,6 +23,7 @@ from apps.mufti_review.identity import IdentityUnavailable, require_provider
 from . import recovery, services
 
 DELIVERY_LABELS = {
+    "UNSUPPORTED_MEDIA_REQUIRES_HUMAN_ACTION": "الجواب يحتوي ملفات أو صوتًا؛ تسليم المزود غير مدعوم حاليًا ويتطلب إجراءً بشريًا",
     "CURRENT_APPROVAL_REQUIRED": "ينتظر الجواب اعتمادًا مطابقًا للوقائع الحالية",
     "NOT_STAGED": "الجواب المعتمد لم يُجهز للتسليم بعد",
     "EVIDENCE_UNAVAILABLE": "لا يتوفر تحقق موثوق من إثبات التسليم حاليًا",
@@ -100,6 +101,10 @@ def _recover(request):
 def requester(request):
     if request.method == "POST":
         action = request.POST.get("action")
+        if action == "answer_media":
+            from apps.answer_media.views import requester as answer_media
+
+            return answer_media(request)
         if action in {"attachments", "attachment_upload", "attachment_preview", "attachment_download"}:
             from apps.case_attachments.views import requester as attachments
 
@@ -140,6 +145,7 @@ def requester(request):
             "private_answer": snapshot["private_answer"],
             "requester_history": snapshot.get("requester_history", []),
             "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
+            "answer_media_enabled": getattr(settings, "FATWA_ANSWER_MEDIA_PRIVATE_ENABLED", False) is True,
             "delivery_label": DELIVERY_LABELS.get(
                 result.get("delivery_status"), "حالة التسليم غير محسومة"
             ),

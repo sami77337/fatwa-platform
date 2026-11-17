@@ -14,10 +14,13 @@ INSTALLED_APPS = [
     "apps.case_attachments",
     "apps.case_citations",
     "apps.experimental_publication",
+    "apps.answer_media",
 ]
 # Explicit, separate opt-ins for the closed synthetic V7 workflow.
 FATWA_CASE_ATTACHMENTS_ENABLED = False
 FATWA_CASE_CITATIONS_ENABLED = False
+FATWA_ANSWER_MEDIA_ENABLED = False
+FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = False
 FATWA_EXPERIMENTAL_PUBLICATION_ENABLED = False
 FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY = None
 FATWA_CASE_DELIVERY_APPROVAL_VERIFIER = None

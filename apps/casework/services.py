@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from datetime import timedelta
 from hashlib import sha256
 
+from django.apps import apps as django_apps
 from django.db import connection, transaction
 from django.utils import timezone
 
@@ -37,6 +38,15 @@ class CaseConflict(ValueError):
 
 def _digest(text):
     return sha256(text.encode("utf-8")).hexdigest()
+
+
+def _answer_manifest(answer):
+    """Validate an optional multipart revision under the caller's case lock."""
+    if answer is None or not django_apps.is_installed("apps.answer_media"):
+        return None
+    from apps.answer_media.services import manifest_for_locked_answer
+
+    return manifest_for_locked_answer(answer)
 
 
 def _guard(ack):
@@ -483,6 +493,9 @@ def record_decision(
             raise CaseConflict("current_answer_required")
         if CaseDecision.objects.filter(answer=answer).exists():
             raise CaseConflict("answer_already_decided")
+        # The human decision covers every immutable part of this exact revision,
+        # even if the optional editing UI is disabled after a draft was created.
+        _answer_manifest(answer)
         decision = CaseDecision.objects.create(
             case=case,
             answer=answer,

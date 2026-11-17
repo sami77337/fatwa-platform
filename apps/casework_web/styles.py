@@ -5,4 +5,5 @@ label{display:block;margin:.4rem 0}input,textarea,button{font:inherit;max-width:
 input[type=password],code{direction:ltr}code,bdi,pre{overflow-wrap:anywhere;white-space:pre-wrap}button{width:auto;cursor:pointer;border:1px solid #607e8a;border-radius:5px;background:#eef5f8}
 .notice{border-right:4px solid #977123;padding:.65rem;background:#fffcf2}.original{white-space:pre-wrap;overflow-wrap:anywhere}a:focus,button:focus,input:focus,textarea:focus{outline:3px solid #9c6800;outline-offset:3px}
 .actions{display:flex;gap:.6rem;flex-wrap:wrap}.actions form{margin:.2rem 0}small{display:block}table{width:100%;border-collapse:collapse}td,th{text-align:right;padding:.4rem;border-bottom:1px solid #ddd;overflow-wrap:anywhere}
+img,audio,video,iframe{max-width:100%}iframe{width:100%;min-height:24rem;border:1px solid #cdd7df}
 @media(max-width:480px){header,main{padding:.65rem}article,form{padding:.7rem}h1{font-size:1.45rem}}"""
