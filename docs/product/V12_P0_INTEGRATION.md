@@ -1,7 +1,46 @@
-# V12 P0 integration checkpoint (in progress)
+# V12 P0 integration — engineering checkpoint and retained history
 
 Base: PR #230, `5ecc46fbb252adc06e0e0a1cbeb129eb7fe00c64`.
 Branch: `codex/20261117-v12-integration`. V11 is preserved.
+
+
+## Current checkpoint
+
+Draft PR: [#231](https://github.com/sami77337/fatwa-platform/pull/231), above #230.
+The integrated P0 workflow on `6abaeb91e58902e4ae1e028cf8d81828f75618da`
+**passed on both PostgreSQL 17.12 and 18.7**: 173 functional/security checks,
+8 strict recovery checks, 16 encrypted V11 regressions, 22 isolated V10 recovery
+compatibility checks per major. The 14 independently authored security probes are
+included in the 173, not counted a second time. System/migration drift checks passed.
+
+- [Exact-head P0 run 44198979109](https://github.com/sami77337/fatwa-platform/actions/runs/44198979109)
+- [PG17 evidence](https://github.com/sami77337/fatwa-platform/actions/runs/44198979109/artifacts/14379219907)
+- [PG18 evidence](https://github.com/sami77337/fatwa-platform/actions/runs/44198979109/artifacts/14379409269)
+
+A final V10 browser-fixture correction preserves its selected isolated profile at
+the offline operation, after LiveServerTestCase's extra settings holder. It changes
+no recovery permission or application behavior. The affected browser passed locally
+(1/1, 28.035s; Chromium sandbox=False). Protected Chrome must be judged from final
+CI, not this local result. Its prior exact-head CI failure is retained below.
+The latest PR head and final checks supersede this earlier exact-head checkpoint.
+
+**P1/P2 are not started.** The independent reviewer supplied the failing contracts
+and reviewed lane heads; those tests now pass in the integrated matrix. The final
+reviewer's report still says OPEN and has not yet been updated against this repaired
+integration head. Deliver this head for that independent check before opening P1.
+This is an engineering checkpoint, not formal acceptance or a new completion estimate.
+
+Actual external task identifiers (no invented task URLs):
+
+| Task | Thread |
+|---|---|
+| Recovery | `6afc9ae5-b338-8191-bcff-7654953230ed` |
+| Maintenance | `6afc807f-d7cc-8191-ad01-1d971f53f019` |
+| Rights | `6afc808d-03cc-8191-8171-3bfbe0ad201c` |
+| Independent security | `6afc80af-d6a4-8191-a0ac-08f14e1b300b` |
+
+The remainder is chronological evidence; earlier pending/failed checkpoints are
+retained as history and are not the current passing P0 matrix result.
 
 P1 is not started. Its prerequisite is integrated P0, passing affected PostgreSQL
 17 and 18 checks, an independent security review and a recorded integration SHA.
@@ -148,3 +187,11 @@ browser creation with Playwright TimeoutError at launch (10s), sandbox enabled.
 There were no page assertions, page errors or network requests yet. This is a
 recorded startup failure with cause not established, not a passing browser test
 or an assumed flake. The next exact-head CI run must supply its own result.
+
+
+CI V10 browser run44198979013/job134447798997 passed 67 functional and 22 recovery
+checks, then failed at the offline snapshot because LiveServerTestCase adds another
+settings holder after class-level overrides. The fixture now preserves the actually
+selected module at that operation only. Protected CI must verify the final head;
+local affected browser passed as recorded above. V11's protected workflow and FAST9
+startup both passed on6abaeb9. The earlier FAST9 startup timeout is not erased.
