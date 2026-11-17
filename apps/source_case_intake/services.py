@@ -225,6 +225,8 @@ def resolve_review(
     provider,
     case_id=None,
     token=None,
+    expected_revision=None,
+    expected_evidence_version=None,
     synthetic_fixtures_only=False,
 ):
     """A scoped human may resolve correlation only, never a source edit/conflict.
@@ -258,6 +260,9 @@ def resolve_review(
             result = _new_case(row, audit)
         else:
             with cases._staff_case(case_id, subject_id, provider, True) as (case, case_identity):
+                if expected_revision is not None or expected_evidence_version is not None:
+                    cases._mutation_versions(expected_revision, expected_evidence_version)
+                    cases._versions(case, expected_revision, expected_evidence_version)
                 origins = EvidenceBinding.objects.filter(case=case).select_related("receipt")
                 if not any(_same_origin(row, bound.receipt) for bound in origins):
                     raise IntakeError("source_case_identity_mismatch")
@@ -279,6 +284,10 @@ def attach_fixture(
     raw,
     filename,
     media_type,
+    expected_revision=None,
+    expected_evidence_version=None,
+    staff_subject_id=None,
+    staff_provider=None,
     synthetic_fixtures_only=False,
 ):
     """Bind explicitly supplied synthetic bytes through the existing V8 upload API.
@@ -298,6 +307,12 @@ def attach_fixture(
         with cases._token_case(token, True) as case:
             if case.pk != bound.case_id:
                 raise IntakeError("source_case_identity_mismatch")
+            identity = None
+            if staff_subject_id is not None or staff_provider is not None:
+                identity = cases._identity(staff_provider, staff_subject_id, case)
+            if expected_revision is not None or expected_evidence_version is not None:
+                cases._mutation_versions(expected_revision, expected_evidence_version)
+                cases._versions(case, expected_revision, expected_evidence_version)
             existing = (
                 AttachmentBinding.objects.filter(receipt=row, source_file_id=source_file_id)
                 .select_related("attachment")
@@ -323,6 +338,10 @@ def attach_fixture(
             AttachmentBinding.objects.create(
                 receipt=row, source_file_id=source_file_id, attachment_id=result["id"]
             )
+            if identity is not None:
+                current = cases._identity(staff_provider, staff_subject_id, case)
+                if current.auth_epoch != identity.auth_epoch:
+                    raise IntakeError("review_identity_changed")
             return {**result, "created": True}
 
 
