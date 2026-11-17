@@ -430,14 +430,20 @@ def record_receipt(*, lease, receipt_reference, provider_message_id, reported, v
         return intent
 
 
-def quarantine_expired_leases(*, now=None, limit=100):
+def quarantine_expired_leases(*, now=None, limit=100, plan_fingerprint=None):
+    """Quarantine uncertainty without retry; optionally restrict to one exact plan."""
     _postgres_only()
-    if type(limit) is not int or not 1 <= limit <= 500 or (now is not None and not _utc(now)):
+    if (type(limit) is not int or not 1 <= limit <= 500
+        or (now is not None and not _utc(now))
+        or (plan_fingerprint is not None and not _hex(plan_fingerprint))):
         raise QueueConflict("invalid_reconciliation_limit_or_clock")
     current, changed = now or timezone.now(), []
     with transaction.atomic():
-        rows = list(DeliveryIntent.objects.select_for_update(skip_locked=True).filter(
-            state="LEASED", lease_expires_at__lte=current).order_by("lease_expires_at", "intent_key")[:limit])
+        query = DeliveryIntent.objects.select_for_update(skip_locked=True).filter(
+            state="LEASED", lease_expires_at__lte=current)
+        if plan_fingerprint is not None:
+            query = query.filter(plan_fingerprint=plan_fingerprint)
+        rows = list(query.order_by("lease_expires_at", "intent_key")[:limit])
         for intent in rows:
             intent.state = "UNKNOWN_REQUIRES_RECONCILIATION"
             intent.save(update_fields=["state", "updated_at"])
