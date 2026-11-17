@@ -15,6 +15,7 @@ from apps.composite_delivery.models import CompositeDelivery
 from apps.delivery_queue import approval_adapter
 from apps.delivery_queue import services as queue
 from apps.delivery_queue.models import DeliveryIntent
+from apps.platform_recovery.integration import mutation_service
 
 from .fixtures import MAX_LEASES, PilotFixture
 
@@ -79,6 +80,7 @@ def _profile_still_current(fixture):
         raise cases.CaseConflict("pilot_fixture_profile_changed")
 
 
+@mutation_service
 def read_workbench(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     fixture = _fixture(synthetic_fixtures_only)
     with (
@@ -113,6 +115,7 @@ def read_workbench(*, case_id, subject_id, provider, synthetic_fixtures_only=Fal
         return result
 
 
+@mutation_service
 def apply_action(
     *,
     case_id,

@@ -21,6 +21,7 @@ from apps.delivery_planner.trusted_identity import (
     approval_signing_payload,
 )
 from apps.mufti_review.identity import IdentityUnavailable, require_provider, resolve_identity
+from apps.platform_recovery.integration import mutation_service
 
 MAX_ISSUED = 64
 MAX_LEASES = 32
@@ -200,6 +201,7 @@ class PilotFixture:
         }
 
 
+@mutation_service
 def setup_synthetic_fixture(
     *, operator_authority, identity_provider, synthetic_fixtures_only=False
 ):
