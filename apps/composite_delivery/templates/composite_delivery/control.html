@@ -1,0 +1,61 @@
+{% extends "casework/base.html" %}
+{% block title %}مكتب متابعة أجزاء الجواب{% endblock %}
+{% block content %}
+<h2>مكتب متابعة أجزاء الجواب</h2>
+<p>تجهيز وتسوية محلية؛ لا إرسال خارجي. قبول المزود وإثبات التسليم والإتاحة الخاصة حالات مستقلة، ولا يثبت أي منها قراءة السائل.</p>
+{% if error %}<p role="alert">{{ error }}</p><a href="/casework/staff/">العودة إلى مكتب القضية</a>{% endif %}
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+{% if desk %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>العودة إلى القضية</button></form>
+<p>القضية <bdi>{{ desk.public_ref }}</bdi> · إصدار الوقائع {{ desk.evidence_version }}{% if desk.answer_revision %} · إصدار الجواب {{ desk.answer_revision }}{% endif %}</p>
+{% if desk.blocked %}<p role="alert">{{ desk.blocked }}</p>{% else %}
+<section aria-labelledby="destination-title"><h3 id="destination-title">أصل القناة ومرجع الوجهة</h3>
+<p>القناة: <strong>{{ desk.origin.label }}</strong>. الوجهة مقيدة بالأصل المحفوظ؛ ليست عنوان إرسال خارجيًا مفعلًا ولا يمكن استبدالها من النموذج.</p>
+<dl>{% if desk.origin.account %}<dt>حساب المصدر</dt><dd><bdi>{{ desk.origin.account }}</bdi></dd>{% endif %}
+{% if desk.origin.conversation %}<dt>المحادثة</dt><dd><bdi>{{ desk.origin.conversation }}</bdi></dd>{% endif %}
+{% if desk.origin.thread %}<dt>الموضوع</dt><dd><bdi>{{ desk.origin.thread }}</bdi></dd>{% endif %}
+<dt>الرسالة الأصلية</dt><dd><bdi>{{ desk.origin.message_id }}</bdi></dd></dl>
+<details><summary>بصمات الربط والاعتماد</summary>
+<dl><dt>هوية المصدر والوجهة</dt><dd><bdi>{{ desk.origin.identity_sha256 }}</bdi></dd>
+<dt>قرار الاعتماد البشري الحالي</dt><dd><bdi>{{ desk.decision_id }}</bdi></dd>
+<dt>الخطة الكاملة</dt><dd><bdi>{{ desk.plan_sha256 }}</bdi></dd>
+<dt>مجموعة الأجزاء</dt><dd><bdi>{{ desk.manifest_sha256 }}</bdi></dd>
+<dt>قدرات القناة</dt><dd><bdi>{{ desk.capability_sha256 }}</bdi></dd></dl></details>
+</section>
+<section aria-labelledby="permission-title"><h3 id="permission-title">إذن التجهيز المستقل</h3><p>{{ desk.permission }}</p>
+{% if desk.permission_expires_at %}<p>نهاية صلاحية حجز محاولات جديدة: <time datetime="{{ desk.permission_expires_at|date:'c' }}"><bdi>{{ desk.permission_expires_at|date:"Y-m-d H:i:s T" }}</bdi></time>.</p>{% endif %}
+{% if desk.staged and not desk.provider_verifier_available %}<p role="alert">التحقق من توقيع المزود غير متاح. لا يُدّعى اكتمال التسليم.</p>{% endif %}
+{% if desk.status %}<p role="status">{{ desk.status_label }}</p><p>أجزاء لها إثبات تسليم متحقق: <strong>{{ desk.status.verified_parts }} من {{ desk.status.expected_parts }}</strong>.</p>
+{% if desk.status.delivery_verified %}<p role="status">اكتمل تقرير التسليم الموقّع لكل الأجزاء في المحاكي.</p>{% else %}<p>لم يثبت اكتمال تسليم جميع الأجزاء.</p>{% endif %}{% endif %}
+{% if desk.requires_human %}<p role="status">يلزم تدخل بشري؛ راجع الإجراء المطلوب بجانب كل جزء. لا يُختزل الجواب إلى النص إذا تعذر ملف أو صوت.</p>{% endif %}
+</section>
+<section aria-label="أجزاء الجواب"><h3>متابعة كل جزء</h3>
+{% for part in desk.parts %}<article id="part-{{ part.ordinal }}" aria-labelledby="part-title-{{ part.ordinal }}">
+<h4 id="part-title-{{ part.ordinal }}">الجزء {{ part.ordinal }} — {{ part.kind_label }}</h4>
+<p>{{ part.filename|default:"نص الجواب المعتمد" }} · {{ part.size }} بايت · <bdi>{{ part.media_type }}</bdi></p>
+<p>قدرة القناة: {{ part.capability_reason }}.</p><p>الحالة: <strong>{{ part.state_label }}</strong>.</p>
+{% if part.delivery_verified %}<p>إيصال تسليم موقّع متحقق لهذا الجزء.</p>{% endif %}
+{% if part.lease_expires_at %}<p>نهاية مهلة المحاولة: <time datetime="{{ part.lease_expires_at|date:'c' }}"><bdi>{{ part.lease_expires_at|date:"Y-m-d H:i:s T" }}</bdi></time>.</p>{% endif %}
+<p>{{ part.next_action }}</p>
+<details><summary>هوية وبصمة الجزء {{ part.ordinal }}</summary><dl>
+<dt>هوية الجزء</dt><dd><bdi>{{ part.id }}</bdi></dd><dt>بصمة المحتوى</dt><dd><bdi>{{ part.sha256 }}</bdi></dd>
+<dt>بصمة الجزء داخل الخطة الموقّعة</dt><dd><bdi>{{ part.envelope_sha256 }}</bdi></dd></dl></details>
+{% if part.may_import %}<details><summary>مطابقة إيصال الجزء {{ part.ordinal }}</summary>
+<p>ألصق حزمة الإيصال الموقّع الصادرة من العامل التجريبي المخوّل لهذه المحاولة فقط. لا تُدخل مفتاح توقيع أو كلمة مرور.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+{% include "composite_delivery/snapshot_fields.html" %}
+<input type="hidden" name="action" value="composite_receipt"><input type="hidden" name="part_id" value="{{ part.id }}">
+<label for="receipt-{{ part.ordinal }}">حزمة إيصال الجزء {{ part.ordinal }}</label><textarea id="receipt-{{ part.ordinal }}" name="response_json" maxlength="16000" required autocomplete="off"></textarea>
+<label><input type="checkbox" name="confirm" value="yes" required>راجعت تطابق الجزء والمحاولة، ولا أطلب إعادة الإرسال.</label><button>تسجيل إيصال الجزء {{ part.ordinal }}</button>
+</form></details>{% endif %}
+</article>{% endfor %}</section>
+{% if desk.staged %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_reconcile"><label><input type="checkbox" name="confirm" value="yes" required>أطلب تسجيل الحجوزات المنتهية كغير محسومة فقط.</label><button>مطابقة المحاولات المنتهية</button></form>
+{% else %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_export"><button>تنزيل طلب إذن جميع الأجزاء</button></form>
+{% if desk.plan_status == 'PLANNED_NOT_SENT' %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_stage"><label for="return-permission">إيصال الإذن المستقل الموقّع</label><textarea id="return-permission" name="response_json" maxlength="16000" required autocomplete="off"></textarea><label><input type="checkbox" name="confirm" value="yes" required>راجعت القناة والوجهة وجميع الأجزاء وأطلب تسجيل الإذن الحالي فقط.</label><button>تسجيل خطة الأجزاء الموقّعة</button></form>{% endif %}
+{% endif %}
+{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_open"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>تحديث متابعة الأجزاء</button></form>
+{% endif %}
+{% endblock %}
