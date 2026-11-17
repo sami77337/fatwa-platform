@@ -1,0 +1,77 @@
+{% extends "casework/base.html" %}
+{% block title %}مساحة الشيخ والفريق — القضايا{% endblock %}
+{% block content %}
+<h2>مساحة الشيخ والفريق</h2>
+<p>المكتب الدائم للشيخ المخوّل بالقضية. صلاحيات المؤلف والمراجع والمشغّل في مساحة التدريب باقية كما هي.</p>
+{% if message %}<p class="notice" role="status">{{ message }}</p>{% endif %}
+{% if attempted_text != None %}
+<article><h3>نص المحاولة غير المحفوظة</h3><p>انسخ النص عند الحاجة. لم يُستبدل به الجواب الحالي، ولم يُربط تلقائيًا بالوقائع الجديدة.</p>
+<label for="attempted-text">نسخة للاسترجاع فقط</label><textarea id="attempted-text" readonly>{{ attempted_text }}</textarea></article>
+{% endif %}
+<section aria-labelledby="queue-heading">
+<h2 id="queue-heading">القضايا المخوّلة ({{ total }})</h2>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="filter">
+<label for="queue-query">بحث برقم القضية</label><input id="queue-query" name="query" value="{{ query }}" maxlength="40" autocomplete="off">
+<label for="queue-state">مرحلة العمل</label>
+<select id="queue-state" name="state">{% for item in filters %}<option value="{{ item.key }}"{% if item.key == selected_filter %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
+<button type="submit">عرض القضايا</button><a href="/casework/staff/">كل القضايا</a>
+</form>
+<div class="actions">{% for case in rows %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ case.public_ref }}">
+<button type="submit">{{ case.public_ref }}</button><small>{{ case.stage_label }}</small><small>{{ case.next_step }}</small>
+</form>{% empty %}<p id="empty-queue">لا توجد قضايا مطابقة ضمن صلاحيتك.</p>{% endfor %}</div>
+</section>
+{% if selected %}
+<article aria-labelledby="case-heading">
+<h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
+<p id="workspace-status">{{ selected.stage_label }} · إصدار الوقائع {{ selected.evidence_version }} · نسخة السجل {{ selected.revision }}</p>
+<nav aria-label="أقسام القضية"><a href="#question">السؤال والاستيضاحات</a><a href="#editor">تحرير الجواب</a><a href="#review">المراجعة</a><a href="#history">سجل الإجراءات</a></nav>
+<h3 id="question">السؤال الأصلي كما وصل</h3><p class="original" id="original-question">{{ selected.original_question }}</p>
+{% for followup in selected.followups %}<h3>تعقيب — إصدار الوقائع {{ followup.version }}</h3><p class="original">{{ followup.text }}</p>{% endfor %}
+{% for clarification in selected.clarifications %}<h3>طلب استيضاح {{ forloop.counter }}</h3><p class="original">{{ clarification }}</p>{% endfor %}
+{% if selected.status == "NEEDS_CLARIFICATION" %}<p class="notice">بانتظار تعقيب السائل. لا يمكن اعتماد الجواب في هذه الحالة.</p>{% endif %}
+</article>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+{% include "team_workspace/versions.html" %}
+<input type="hidden" name="action" value="clarify"><label for="clarification-text">الاستيضاح المطلوب من السائل</label><textarea id="clarification-text" name="text" required maxlength="16000"></textarea><button type="submit">طلب استيضاح</button>
+</form>
+<section id="editor" aria-labelledby="editor-heading"><h2 id="editor-heading">تحرير الجواب البشري</h2>
+{% if selected.stale_answer %}<p class="notice" id="stale-answer">تغيّرت الوقائع بعد آخر مسودة. راجع التعقيب ثم احفظ إصدارًا جديدًا؛ المسودة السابقة غير قابلة للاعتماد.</p>{% endif %}
+{% if selected.status == "ANSWERED" %}<p class="notice">حفظ تعديل جديد يُلغي اعتماد النسخة السابقة ويتطلب مراجعة جديدة.</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}
+<input type="hidden" name="action" value="draft"><label for="answer-text">{% if selected.latest_answer %}تحرير أحدث مسودة — الإصدار {{ selected.latest_answer.revision }}{% else %}مسودة جواب بشرية جديدة{% endif %}</label>
+<textarea id="answer-text" name="text" required maxlength="16000">{{ selected.latest_answer.text }}</textarea>
+<p>الحفظ ينشئ إصدارًا جديدًا ويحفظ النصوص السابقة. راجع السؤال والتعقيبات قبل الحفظ.</p><button type="submit">حفظ مسودة الجواب</button>
+</form></section>
+<section id="review" aria-labelledby="review-heading"><h2 id="review-heading">مراجعة أحدث إصدار</h2>
+{% if selected.can_review %}
+<article><h3>إصدار الجواب {{ selected.latest_answer.revision }}</h3><p class="original" id="review-answer">{{ selected.latest_answer.text }}</p>
+<p>مبني على إصدار الوقائع الحالي {{ selected.evidence_version }}.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}
+<input type="hidden" name="answer_id" value="{{ selected.latest_answer.id }}"><input type="hidden" name="action" value="approve">
+<label for="approval-note">ملاحظة الاعتماد (اختيارية)</label><textarea id="approval-note" name="note" maxlength="16000"></textarea><button type="submit">اعتماد هذه النسخة</button>
+</form>
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}
+<input type="hidden" name="answer_id" value="{{ selected.latest_answer.id }}"><input type="hidden" name="action" value="return">
+<label for="return-note">سبب الإعادة للتعديل (مطلوب)</label><textarea id="return-note" name="note" required maxlength="16000"></textarea><button type="submit">إعادة للمراجعة</button>
+</form></article>
+{% elif selected.status == "ANSWERED" %}<p>اعتماد بشري حالي لهذه النسخة. لا يثبت التسليم أو قراءة السائل.</p>
+{% elif selected.status == "RETURNED_FOR_CHANGES" %}<p>راجع سبب الإعادة في سجل الإجراءات واحفظ إصدارًا جديدًا لبدء المراجعة.</p>
+{% else %}<p>لا يوجد إصدار حالي قابل للاعتماد. استكمل الوقائع واحفظ المسودة أولًا.</p>{% endif %}
+</section>
+<details><summary>إصدارات الجواب المحفوظة ({{ selected.answers|length }})</summary>
+{% for answer in selected.answers %}<article><h3>إصدار الجواب {{ answer.revision }}</h3><p>إصدار الوقائع {{ answer.evidence_version }}</p><p class="original">{{ answer.text }}</p>{% if answer.id == selected.approved_answer_id %}<p>النسخة المعتمدة حاليًا.</p>{% endif %}</article>{% empty %}<p>لم تُحفظ مسودة بعد.</p>{% endfor %}
+</details>
+<section id="history" aria-labelledby="history-heading"><h2 id="history-heading">سجل الإجراءات</h2>
+<ol>{% for event in selected.timeline %}<li><strong>{{ event.label }}</strong> — الوقائع {{ event.evidence_version }}{% if event.answer_revision %}، الجواب {{ event.answer_revision }}{% endif %}{% if event.note %}<p class="original">{{ event.note }}</p>{% endif %}</li>{% endfor %}</ol></section>
+<article><h3>إدارة وصول السائل</h3>
+{% if recovery_available %}<p>يتطلب الاسترداد تحققًا موثوقًا من ارتباط السائل بالقضية.</p><div class="actions">
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit" name="action" value="revoke">إبطال رموز الوصول</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit" name="action" value="rotate">استرداد رمز جديد</button></form></div>
+{% else %}<p>إدارة الوصول غير متاحة حتى يُضبط مصدر الاسترداد الموثوق على الخادم.</p>{% endif %}
+</article>
+{% endif %}
+{% if access %}<article id="access-result">{% if access.rotated %}<h3>رمز بديل بعد إبطال السابق</h3><code id="replacement-token">{{ access.token }}</code><p>الرمز يظهر مرة واحدة. لم يُرسل إلى قناة خارجية.</p>{% else %}<p>أُبطلت رموز الوصول الحالية.</p>{% endif %}</article>{% endif %}
+<form method="post" action="/casework/staff/logout/">{% csrf_token %}<button type="submit">خروج</button></form>
+{% endblock %}
