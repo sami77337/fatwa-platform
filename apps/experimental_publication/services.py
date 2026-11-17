@@ -85,6 +85,10 @@ def _citation_snapshot(answer):
     # The citation app supplies only source-pinned, human-verified references.
     # Without that optional app there is no free-form citation input fallback.
     if not apps.is_installed("apps.case_citations"):
+        from apps.source_rights.enforcement import required
+
+        if required():
+            raise cases.CaseConflict("citation_schema_unavailable")
         return []
     from apps.case_citations.services import citations_for_locked_answer
 
@@ -94,12 +98,35 @@ def _citation_snapshot(answer):
     ]
 
 
+def _require_publication_sources(case, citations):
+    """Current rights are conditions of availability, never publication approval.
+
+    Called under the canonical case lock on every publication transition/read.
+    Persisted editorial text and approval history are retained when rights lapse.
+    """
+    from apps.source_rights.enforcement import required
+
+    if not required():
+        return
+    from apps.case_citations.services import _require_source, _rights_services
+
+    _rights_services()  # Missing/disabled registry must not turn into an empty grant.
+    for item in citations:
+        for usage in ("READ", "CITE", "PREVIEW_METADATA"):
+            _require_source(case, item, usage)
+
+
 def _projection(edition, *, editorial=False, rights_usage="READ"):
     _verify(edition)
+    if not editorial:
+        _require_publication_sources(edition.case, edition.citations)
     from apps.case_citations.services import _permits_source
 
     visible_citations = [
-        item for item in edition.citations if _permits_source(edition.case, item, rights_usage)
+        item
+        for item in edition.citations
+        if _permits_source(edition.case, item, rights_usage)
+        and _permits_source(edition.case, item, "READ")
     ]
     actions = set(edition.actions.values_list("action", flat=True))
     result = {
@@ -207,6 +234,7 @@ def act(
             answer, decision = _approved(case, edition)
             if edition.citations != _citation_snapshot(answer):
                 raise cases.CaseConflict("publication_citation_source_changed")
+            _require_publication_sources(case, edition.citations)
             if edition.number != PublicationEdition.objects.filter(case=case).count():
                 raise cases.CaseConflict("publication_edition_changed")
             if action == "REVIEW":
@@ -286,6 +314,7 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             source_current = False
             try:
                 answer, _ = _approved(case, edition)
+                _require_publication_sources(case, edition.citations)
                 source_current = edition.citations == _citation_snapshot(answer)
             except cases.CaseConflict:
                 pass
@@ -426,6 +455,7 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
                 _verify(edition)
                 if edition.citations != _citation_snapshot(edition.answer):
                     continue
+                _require_publication_sources(case, edition.citations)
             except cases.CaseConflict:
                 continue
             public = _projection(edition, rights_usage="PREVIEW_METADATA")

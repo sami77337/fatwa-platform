@@ -40,17 +40,26 @@ def allowed(actor, provider, case, action, resource):
     if not isinstance(policy, ResearchRights):
         return False
     try:
-        return (
-            policy.permits(
-                provider_id=provider.provider_id,
-                subject_id=actor.subject_id,
-                auth_epoch=actor.auth_epoch,
-                case_ref=case.public_ref,
-                action=action,
-                resource=resource,
-            )
-            is True
+        from apps.source_rights.enforcement import required
+
+        strict = required()
+        arguments = dict(
+            provider_id=provider.provider_id,
+            subject_id=actor.subject_id,
+            auth_epoch=actor.auth_epoch,
+            case_ref=case.public_ref,
+            action=action,
+            resource=resource,
         )
+        if policy.permits(**arguments) is not True:
+            return False
+        # A legacy/custom workspace policy cannot replace the authoritative ledger.
+        # Case media continues to require its explicit separate policy.
+        if strict and resource.kind not in {"ATTACHMENT", "ANSWER_MEDIA"}:
+            from .source_rights_adapter import SourceRightsAdapter
+
+            return SourceRightsAdapter().permits(**arguments) is True
+        return True
     except Exception as exc:
         raise CaseConflict("research_rights_unavailable") from exc
 

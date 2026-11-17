@@ -105,6 +105,7 @@ def _current(selected: PreviewPolicy, publication_id: str):
             cases._verify(case)
             publication._approved(case, edition)
             publication._verify(edition)
+            publication._require_publication_sources(case, edition.citations)
             latest = (
                 PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
                 .order_by("-number")
@@ -127,7 +128,9 @@ def _current(selected: PreviewPolicy, publication_id: str):
 
 def _permitted_source(selected: PreviewPolicy, item: dict, case) -> dict | None:
     source = item["source"]
-    if not citations._permits_source(case, item, "PREVIEW_METADATA"):
+    if not all(
+        citations._permits_source(case, item, usage) for usage in ("READ", "PREVIEW_METADATA")
+    ):
         return None
     if not any(
         grant.edition_id == source["edition_id"]
@@ -192,7 +195,9 @@ def _relationships(selected: PreviewPolicy, edition: PublicationEdition) -> dict
             # raw-evidence URL, timing, source name, or path to the staff API.
             # Private transcript rights cannot authorize anonymous metadata.
             # With rights enforced, even relationship existence remains private.
-            if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is not True:
+            from apps.source_rights.enforcement import required
+
+            if not required():
                 private_related = True
     return {"references": references, "private_related": private_related}
 

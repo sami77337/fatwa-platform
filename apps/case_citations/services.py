@@ -30,7 +30,9 @@ def _enabled():
 
 def _rights_services():
     """Additional rights only; caller already owns the canonical case lock."""
-    if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is not True:
+    from apps.source_rights.enforcement import required
+
+    if not required():
         return None
     if not django_apps.is_installed("apps.source_rights"):
         raise cases.CaseConflict("current_source_rights_required")
@@ -134,13 +136,15 @@ def _search_sources_for_rights_review(
 
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         rights._permit(actor, provider, case, "VIEW")
-        result = _search_sources_for_locked_case(case, query=query, edition_id=edition_id)
+        result = _search_sources_for_locked_case(
+            case, query=query, edition_id=edition_id, enforce_rights=False
+        )
         rights._identity(case, actor, provider)
         return result
 
 
 def _search_sources_for_locked_case(
-    case, *, query="", edition_id=None, printed_part="", printed_page=None, enforce_rights=False
+    case, *, query="", edition_id=None, printed_part="", printed_page=None, enforce_rights=True
 ):
     _enabled()
     if type(query) is not str or len(query) > 100:
@@ -390,7 +394,12 @@ def read_citations(*, case_id, subject_id, provider, answer_id=None, synthetic_f
             if answer_id:
                 raise cases.CaseConflict("case_answer_unavailable")
             return []
-        return citations_for_locked_answer(answer)
+        rows = citations_for_locked_answer(answer)
+        for row in rows:
+            _require_source(
+                case, {"source": row["source"], "source_sha256": row["source_sha256"]}, "READ"
+            )
+        return rows
 
 
 @mutation_service
@@ -446,6 +455,14 @@ def read_citation_history(
                     case, {"source": row.source, "source_sha256": row.source_sha256}, "READ"
                 )
                 correction = getattr(row, "correction", None)
+                previous_readable = correction is not None and _permits_source(
+                    case,
+                    {
+                        "source": correction.previous.source,
+                        "source_sha256": correction.previous.source_sha256,
+                    },
+                    "READ",
+                )
                 rows.append(
                     dict(
                         id=str(row.pk),
@@ -458,18 +475,11 @@ def read_citation_history(
                         correction=None
                         if correction is None
                         else dict(
-                            reason=correction.reason,
+                            reason=correction.reason if readable and previous_readable else "",
                             previous_id=str(correction.previous_id),
                             previous_revision=correction.previous.answer.revision,
                             previous_source=correction.previous.source
-                            if _permits_source(
-                                case,
-                                {
-                                    "source": correction.previous.source,
-                                    "source_sha256": correction.previous.source_sha256,
-                                },
-                                "READ",
-                            )
+                            if previous_readable
                             else None,
                         ),
                     )
