@@ -1,0 +1,12 @@
+<section aria-labelledby="reference-title">
+  <h2 id="reference-title" tabindex="-1">إحالة العنوان ومساره</h2>
+  <h3>{{ reference.title }}</h3>
+  <nav aria-label="مسار العنوان في المصدر">
+    <ol>{% for title in reference.path %}<li{% if forloop.last %} aria-current="location"{% endif %}>{{ title }}</li>{% endfor %}</ol>
+  </nav>
+  <blockquote>
+    <p>{{ source }}؛ «{{ reference.title }}»؛ الجزء: {{ reference.part|default_if_none:"غير متاح" }}، الصفحة المطبوعة: {{ reference.page|default_if_none:"غير متاحة" }}.</p>
+  </blockquote>
+  <p>يمكنك تحديد الإحالة ونسخها يدويًا. إذا غاب الجزء أو الصفحة فلا تخمّن موضعًا؛ راجع المصدر قبل الاستشهاد. هذه إحالة إلى عنوان في الفهرس، وليست نص المسألة أو حكمًا شرعيًا.</p>
+  <p><a href="{{ reference.url }}">فتح تفاصيل العنوان ورابطه</a> · <a href="{{ reference_return_url }}">{% if searching %}العودة إلى النتائج نفسها{% else %}العودة إلى أبواب المصدر{% endif %}</a></p>
+</section>

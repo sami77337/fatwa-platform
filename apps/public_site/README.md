@@ -137,3 +137,52 @@ python tests/public_site/browser_sections.py /tmp/fatwa-section-evidence
 The local evidence directory contains two screenshots and `browser-report.json`.
 Privacy boundaries from #210 continue to apply, including GET search history/logs.
 **NOT_DEPLOYED / GATES_HOLD**; no main merge, publication or owner acceptance.
+
+## Reference preview with a return to the same search
+
+Base: #213 (`096a9b6dd6b5143715c9f0790495bec5b03bd6f3`), the latest public-site
+slice when this work began. The integration branch then contained #210 and the
+separate editorial reference-card change, but had not yet included #213.
+
+Each homepage result now has **الإحالة والمسار**. It opens a server-rendered
+preview on the homepage with the source's exact original title, bounded ancestor
+path, printed part/page and an existing source-pinned details link. The return
+link preserves the query, mode, root, depth, child filter and results offset.
+Pagination or resubmitting the form drops the preview selection. No JavaScript,
+clipboard permission, session, bookmark storage or new shared route is needed.
+
+`heading` is a bounded source-row ID, resolved only inside the sole current
+reference edition. A selected root must also match the preview's validated root.
+Unknown/out-of-scope headings return generic 404 without partial results; broken
+hierarchies fail closed to the unavailable state. The preview explicitly says
+it is a reference heading, not the text of a ruling. Missing part/page fields say
+unavailable instead of inventing citations. The details link contains only
+`basic` and `edition`, never the search phrase; preview/search URLs retain the
+existing GET history/log boundary and no-store/no-referrer/noindex protections.
+
+Verification (synthetic `public-source-sections-v1`, no owner source archive):
+
+- **76/76 PASS** on Python 3.13.5 / Django 5.2.18 / PostgreSQL 17.12: 67 existing
+  public tests, 6 new preview boundary cases, 3 new real database journeys.
+- Second-page preview/return preserves exact filters and result rows; depth-five
+  citations lead to the existing detail page; wrong-root previews are rejected.
+  Captured requests use SELECT only, at most 14 queries including the deepest
+  path, and do not query private case/editorial tables. Heading rows unchanged.
+- Chromium 154.0.8037.57: **PASS** at 320×780 and 1280×900 with JavaScript off;
+  keyboard preview entry, printed citation, details link, back and same-page
+  results return. No overflow, external requests, page errors or cookies.
+- Ruff and `git diff --check`: PASS. CI and PostgreSQL 18 not claimed.
+
+Add `tests.public_site.test_reference_preview` to the scoped Django command.
+For the browser check, seed a disposable database with the existing
+`tests.public_site.section_fixture.seed_sections()`, serve test settings on
+`127.0.0.1:8041`, and run:
+
+```sh
+python tests/public_site/browser_reference_preview.py /tmp/fatwa-reference-preview-evidence
+```
+
+The local directory contains two synthetic screenshots and a JSON report.
+Only public-site code/templates/tests change; `config/urls.py`, reference services,
+private workflows and publishing remain untouched. Final design is deferred.
+**NOT_DEPLOYED / GATES_HOLD**; no merge to main or owner acceptance inferred.
