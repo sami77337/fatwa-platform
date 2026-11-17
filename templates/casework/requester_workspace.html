@@ -32,6 +32,18 @@
   {% endif %}
   <a href="/casework/status/">تحديث الحالة</a>
 </article>
+{% if requester_history %}
+<section aria-labelledby="requester-history-heading" id="requester-history">
+<h3 id="requester-history-heading">تاريخ سؤالي والنسخ المتاحة لي</h3>
+<ol>{% for item in requester_history %}<li><strong>{{ item.label }}</strong>
+<time datetime="{{ item.created_at|date:'c' }}">{{ item.created_at|date:"Y-m-d H:i" }}</time>
+{% if item.evidence_version %}<small>إصدار الوقائع {{ item.evidence_version }}</small>{% endif %}
+{% if item.answer_revision %}<small>إصدار الجواب {{ item.answer_revision }}</small>{% endif %}
+<p class="original">{{ item.text }}</p></li>{% endfor %}</ol>
+<p>تظهر هنا المعلومات التي أرسلتها والاستيضاحات والجواب المسموح حاليًا. النسخ غير المتاحة لا تظهر في هذا السجل.</p>
+</section>{% endif %}
+{% if attachments_enabled %}<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="attachments"><button type="submit">مرفقات سؤالي</button></form>{% endif %}
 <form method="post" action="/casework/status/">
   {% csrf_token %}<input type="hidden" name="action" value="followup">
   <input type="hidden" name="revision" value="{{ result.revision }}">

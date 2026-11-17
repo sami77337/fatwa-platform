@@ -27,9 +27,9 @@
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
 <nav aria-label="أدوات القضية">
-<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="attachment_list"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">مرفقات القضية</button></form>
-<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="citations"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">تحرير جواب بإحالة موثقة</button></form>
-<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">نسخة النشر التجريبية</button></form>
+{% if attachments_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="attachment_list"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">مرفقات القضية</button></form>{% endif %}
+{% if citations_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="citations"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">تحرير جواب بإحالة موثقة</button></form>{% endif %}
+{% if publication_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">نسخة النشر التجريبية</button></form>{% endif %}
 </nav>
 <p id="workspace-status">{{ selected.stage_label }} · إصدار الوقائع {{ selected.evidence_version }} · نسخة السجل {{ selected.revision }}</p>
 <nav aria-label="أقسام القضية"><a href="#question">السؤال والاستيضاحات</a><a href="#editor">تحرير الجواب</a><a href="#review">المراجعة</a><a href="#history">سجل الإجراءات</a></nav>

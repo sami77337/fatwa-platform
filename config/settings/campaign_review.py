@@ -11,7 +11,15 @@ INSTALLED_APPS = [
     "apps.team_updates.apps.TeamUpdatesConfig",
     "apps.case_delivery_desk",
     "apps.transcript_case_links.apps.TranscriptCaseLinksConfig",
+    "apps.case_attachments",
+    "apps.case_citations",
+    "apps.experimental_publication",
 ]
+# Explicit, separate opt-ins for the closed synthetic V7 workflow.
+FATWA_CASE_ATTACHMENTS_ENABLED = False
+FATWA_CASE_CITATIONS_ENABLED = False
+FATWA_EXPERIMENTAL_PUBLICATION_ENABLED = False
+FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY = None
 FATWA_CASE_DELIVERY_APPROVAL_VERIFIER = None
 FATWA_CASE_DELIVERY_PROVIDER_VERIFIER = None
 # One-time recovery requires an independent, server-configured identity verifier.

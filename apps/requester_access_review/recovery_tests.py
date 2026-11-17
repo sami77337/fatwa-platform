@@ -1,9 +1,9 @@
 """Trusted recovery is a real PostgreSQL workflow, but the verifier is synthetic."""
+import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import timedelta
 from hashlib import sha256
-import re
 
 from django.db import IntegrityError, close_old_connections, connections, transaction
 from django.test import Client, TransactionTestCase, override_settings
@@ -15,7 +15,9 @@ from tests.casework.test_http import WEB_SETTINGS, hidden, post
 
 from .models import UsedRecoveryAssertion
 from .recovery import (
-    TrustedRecoveryAuthority, VerifiedRecovery, recover_lost_access,
+    TrustedRecoveryAuthority,
+    VerifiedRecovery,
+    recover_lost_access,
 )
 
 URL = "/casework/status/"
@@ -212,7 +214,10 @@ class TrustedRecoveryHTTPTests(TransactionTestCase):
             self.assertTrue(confirmed.cookies["fatwa_casework_private"]["httponly"])
             self.assertContains(self.client.get(URL), self.case["public_ref"])
             self.assertNotContains(self.client.get(URL), token)
-            self.assertNotContains(self.client.get(URL), "SECRET ORIGINAL QUESTION")
+            # V7 exposes the owner's question only after trusted recovery has
+            # issued and bound a valid new capability; the anonymous check above
+            # still verifies that it cannot leak before authentication.
+            self.assertContains(self.client.get(URL), "SECRET ORIGINAL QUESTION")
             with self.assertRaises(cases.CaseConflict):
                 cases.requester_status(self.case["token"], synthetic_fixtures_only=True)
             self.assertEqual(self.submit(page).status_code, 404)

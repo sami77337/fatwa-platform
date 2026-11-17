@@ -1,6 +1,6 @@
-from hmac import compare_digest
 import re
 import secrets
+from hmac import compare_digest
 
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
@@ -21,7 +21,6 @@ from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable, require_provider
 
 from . import recovery, services
-
 
 DELIVERY_LABELS = {
     "CURRENT_APPROVAL_REQUIRED": "ينتظر الجواب اعتمادًا مطابقًا للوقائع الحالية",
@@ -101,6 +100,10 @@ def _recover(request):
 def requester(request):
     if request.method == "POST":
         action = request.POST.get("action")
+        if action in {"attachments", "attachment_upload", "attachment_preview", "attachment_download"}:
+            from apps.case_attachments.views import requester as attachments
+
+            return attachments(request)
         if action == "trusted_recover":
             return _recover(request)
         if action != "request_access_review":
@@ -135,6 +138,8 @@ def requester(request):
             "review_proof": workspace._binding(request, token, "access-review:" + result["public_ref"]),
             "access_reviews": snapshot["reviews"],
             "private_answer": snapshot["private_answer"],
+            "requester_history": snapshot.get("requester_history", []),
+            "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
             "delivery_label": DELIVERY_LABELS.get(
                 result.get("delivery_status"), "حالة التسليم غير محسومة"
             ),
