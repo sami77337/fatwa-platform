@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>مرفقات القضية الخاصة</title><link rel="stylesheet" href="/casework/casework.css"></head>
+<body><main>
+<h1>مرفقات القضية الخاصة</h1>
+<p>القضية {{ result.public_ref }} — ملفات اصطناعية فقط. كل مرفق محفوظ بأصله ومرتبط بإصدار وقائع محدد.</p>
+{% if is_staff %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
+{% else %}<a href="/casework/status/">العودة إلى متابعة السؤال</a>
+<h2>إضافة مرفق</h2>
+<p>ملف نص UTF-8 فقط، حتى 64 كيلوبايت. اسم لاتيني ينتهي بـ .txt. إضافة ملف تُبطل الاعتماد السابق وتتطلب مراجعة الوقائع. إذا كان استيضاح معلقًا فأرسل الرد النصي أولًا.</p>
+<form method="post" enctype="multipart/form-data" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="attachment_upload"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="upload_proof" value="{{ upload_proof }}">
+<label>الملف الاصطناعي <input type="file" name="attachment" accept=".txt,text/plain" required></label>
+<label><input type="checkbox" name="synthetic_only" value="yes" required>أؤكد أن الملف اصطناعي ولا يحتوي بيانات حقيقية</label><button>حفظ الأصل وإضافة الوقائع</button></form>{% endif %}
+<h2>المرفقات المحفوظة</h2>
+{% for item in result.attachments %}<section><h3>{{ item.filename }}</h3><p>إصدار الوقائع {{ item.evidence_version }} — {{ item.size }} بايت — {{ item.media_type }} — {{ item.created_at|date:"c" }}</p><p>المصدر: تحميل السائل</p><p>SHA256: <code>{{ item.sha256 }}</code></p>
+<form method="post" action="{% if is_staff %}/casework/staff/{% else %}/casework/status/{% endif %}">{% csrf_token %}
+{% if is_staff %}<input type="hidden" name="case_ref" value="{{ result.public_ref }}">{% endif %}
+<input type="hidden" name="attachment_id" value="{{ item.id }}"><button name="action" value="attachment_preview">معاينة {{ item.filename }}</button><button name="action" value="attachment_download">تنزيل الأصل {{ item.filename }}</button></form></section>
+{% empty %}<p>لا توجد مرفقات محفوظة.</p>{% endfor %}
+{% if preview %}<section><h2>معاينة الأصل: {{ preview.filename }}</h2><p>نص المصدر الأصلي دون تحرير — إصدار الوقائع {{ preview.evidence_version }}</p><pre>{{ preview.text }}</pre></section>{% endif %}
+</main></body></html>
