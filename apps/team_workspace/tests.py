@@ -144,6 +144,12 @@ class TeamWorkspaceTests(contracts.CaseworkHTTPTests):
         self.assertEqual(case.decisions.count(), 0)
         page = self.mutation(page, "clarify", text="ماذا تقصد؟")
         self.assertNotContains(page, 'value="approve"')
+        self.assertNotContains(page, 'name="action" value="draft"')
+        refused = self.mutation(page, "draft", text="محاولة تجاوز انتظار الاستيضاح")
+        self.assertEqual(refused.status_code, 409)
+        self.assertEqual(case.answers.count(), 1)
+        case.refresh_from_db()
+        self.assertEqual(case.stage, "NEEDS_CLARIFICATION")
         refused = self.mutation(page, "approve", answer_id=answer_id, note="")
         self.assertEqual(refused.status_code, 409)
         self.assertEqual(case.decisions.count(), 0)
@@ -173,6 +179,22 @@ class TeamWorkspaceTests(contracts.CaseworkHTTPTests):
         self.assertNotIn("PRIVATE UNSAVED TEXT", response.content.decode())
         self.assertEqual(self.client.get("/casework/staff/").status_code, 403)
         self.assertEqual(case.answers.count(), 0)
+
+    def test_clarification_between_preflight_and_save_rejects_stale_write(self):
+        case, _, page = self.setup_case()
+        save_answer = services.save_answer
+
+        def clarify_before_save(**kwargs):
+            services.request_clarification(**{**kwargs, "text": "استيضاح وصل أثناء التحرير"})
+            return save_answer(**kwargs)
+
+        with patch("apps.team_workspace.views.services.save_answer", side_effect=clarify_before_save):
+            response = self.mutation(page, "draft", text="مسودة سبقتها وقائع جديدة")
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(case.answers.count(), 0)
+        case.refresh_from_db()
+        self.assertEqual(case.stage, "NEEDS_CLARIFICATION")
+        self.assertContains(response, "استيضاح وصل أثناء التحرير", status_code=409)
 
     def test_open_and_head_are_read_only_and_recovery_requires_resolver(self):
         case, _, page = self.setup_case()

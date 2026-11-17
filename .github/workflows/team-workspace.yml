@@ -64,6 +64,8 @@ jobs:
               assert str(cursor.fetchone()[0]) == os.environ['PG_EXPECTED_MAJOR']
           initialize_synthetic_database(synthetic_fixtures_only=True)
           PY
+          python manage.py migrate --noinput
+          python manage.py check
       - name: Focused workspace and core contracts
         run: |
           set -euo pipefail

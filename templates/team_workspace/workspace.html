@@ -37,13 +37,16 @@
 <input type="hidden" name="action" value="clarify"><label for="clarification-text">الاستيضاح المطلوب من السائل</label><textarea id="clarification-text" name="text" required maxlength="16000"></textarea><button type="submit">طلب استيضاح</button>
 </form>
 <section id="editor" aria-labelledby="editor-heading"><h2 id="editor-heading">تحرير الجواب البشري</h2>
+{% if selected.status == "NEEDS_CLARIFICATION" %}
+<p>الحفظ متوقف حتى يصل تعقيب السائل. تبقى المسودات السابقة في سجل الإصدارات.</p>
+{% else %}
 {% if selected.stale_answer %}<p class="notice" id="stale-answer">تغيّرت الوقائع بعد آخر مسودة. راجع التعقيب ثم احفظ إصدارًا جديدًا؛ المسودة السابقة غير قابلة للاعتماد.</p>{% endif %}
 {% if selected.status == "ANSWERED" %}<p class="notice">حفظ تعديل جديد يُلغي اعتماد النسخة السابقة ويتطلب مراجعة جديدة.</p>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}
 <input type="hidden" name="action" value="draft"><label for="answer-text">{% if selected.latest_answer %}تحرير أحدث مسودة — الإصدار {{ selected.latest_answer.revision }}{% else %}مسودة جواب بشرية جديدة{% endif %}</label>
 <textarea id="answer-text" name="text" required maxlength="16000">{{ selected.latest_answer.text }}</textarea>
 <p>الحفظ ينشئ إصدارًا جديدًا ويحفظ النصوص السابقة. راجع السؤال والتعقيبات قبل الحفظ.</p><button type="submit">حفظ مسودة الجواب</button>
-</form></section>
+</form>{% endif %}</section>
 <section id="review" aria-labelledby="review-heading"><h2 id="review-heading">مراجعة أحدث إصدار</h2>
 {% if selected.can_review %}
 <article><h3>إصدار الجواب {{ selected.latest_answer.revision }}</h3><p class="original" id="review-answer">{{ selected.latest_answer.text }}</p>

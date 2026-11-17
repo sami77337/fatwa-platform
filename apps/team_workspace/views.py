@@ -94,6 +94,17 @@ def workspace(request):
                     "expected_evidence_version": _integer(fields["evidence_version"]),
                 }
                 if action == "draft":
+                    # Keep a draft from implicitly closing a pending clarification.
+                    # Check under a case lock, then let the core write recheck these
+                    # exact revision pins. Any intervening action increments revision.
+                    # The synthetic DB guard deliberately rejects nested transactions.
+                    with services._staff_case(
+                        common["case_id"], identity.subject_id, provider, True,
+                        expected_revision=current["expected_revision"],
+                        expected_evidence_version=current["expected_evidence_version"],
+                    ) as (case, _identity):
+                        if case.stage == "NEEDS_CLARIFICATION":
+                            raise services.CaseConflict("clarification_reply_required")
                     services.save_answer(**current, text=fields["text"])
                 elif action == "clarify":
                     services.request_clarification(**current, text=fields["text"])
