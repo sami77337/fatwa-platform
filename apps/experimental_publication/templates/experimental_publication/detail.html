@@ -1,0 +1,5 @@
+{% extends "casework/base.html" %}
+{% block title %}{{ edition.title }} | المكتبة التجريبية{% endblock %}
+{% block content %}<p>نسخة اصطناعية في مكتبة تجريبية مغلقة — لا نشر إنتاجي.</p>
+<article><h2>{{ edition.title }}</h2><p>{{ edition.category }} · نسخة {{ edition.number }}</p><p class="original">{{ edition.body }}</p>{% include "experimental_publication/references.html" %}</article>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_library"><input type="hidden" name="query" value=""><button>العودة إلى المكتبة التجريبية</button></form>{% endblock %}
