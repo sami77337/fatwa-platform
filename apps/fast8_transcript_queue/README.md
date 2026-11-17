@@ -1,5 +1,9 @@
 # FAST8 synthetic transcript-to-intake queue
 
+The [local Arabic review workbench](workbench/README.md) now provides file upload,
+manual text/timing review and portable export over this same queue. Durable case
+binding remains a separate integration step; no shared casework files are modified.
+
 Development-only, offline, **EPHEMERAL**. This adapter connects existing domain
 services rather than adding ingestion, persistence, a public route or a fatwa.
 Base: `92fa517ecdefe3f1a92a1ab145ff55943474df44` (FAST7 CI Draft PR #134).
