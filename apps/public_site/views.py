@@ -23,6 +23,7 @@ from apps.reference.query import (
 from apps.reference.services import (
     CatalogUnavailable,
     HeadingNotFound,
+    heading_path,
     list_books,
     node,
     resolve_edition,
@@ -79,7 +80,7 @@ def _render_page(request: HttpRequest, context: dict, *, status: int = 200) -> H
     return response
 
 
-def _search_link(context: dict, offset: int) -> str:
+def _search_link(context: dict, offset: int, heading_id: int | None = None) -> str:
     # Rebuild only validated search fields; never copy arbitrary request parameters.
     params = {
         key: context[key]
@@ -90,7 +91,11 @@ def _search_link(context: dict, offset: int) -> str:
         params["q"] = params.pop("query")
     if offset:
         params["offset"] = offset
-    return reverse("home") + "?" + urlencode(params) + "#results-title"
+    fragment = "results-title"
+    if heading_id is not None:
+        params["heading"] = heading_id
+        fragment = "reference-title"
+    return reverse("home") + "?" + urlencode(params) + "#" + fragment
 
 
 @require_safe
@@ -107,7 +112,8 @@ def home(request: HttpRequest) -> HttpResponse:
     }
     try:
         if any(
-            key not in {"q", "mode", "depth", "has_children", "offset", "root"} or len(values) != 1
+            key not in {"q", "mode", "depth", "has_children", "offset", "root", "heading"}
+            or len(values) != 1
             for key, values in request.GET.lists()
         ):
             raise InvalidQuery("Unknown or duplicate parameter")
@@ -117,6 +123,11 @@ def home(request: HttpRequest) -> HttpResponse:
         has_children = strict_bool(context["has_children"]) if context["has_children"] else None
         offset = bounded_int(request.GET.get("offset", "0"), 0, MAX_OFFSET)
         root_id = bounded_int(context["root"], 1, MAX_SOURCE_ID) if context["root"] else None
+        heading_id = (
+            bounded_int(request.GET["heading"], 1, MAX_SOURCE_ID)
+            if "heading" in request.GET
+            else None
+        )
         if (
             not text.strip()
             and root_id is None
@@ -171,6 +182,14 @@ def home(request: HttpRequest) -> HttpResponse:
                 )
                 context.update(
                     results=results,
+                    result_rows=[
+                        {
+                            "id": item["id"],
+                            "title": item["title"],
+                            "reference_url": _search_link(context, offset, item["id"]),
+                        }
+                        for item in results.items
+                    ],
                     result_start=offset + 1 if results.items else 0,
                     result_end=offset + len(results.items),
                     first_results_url=_search_link(context, 0) if offset else "",
@@ -192,6 +211,42 @@ def home(request: HttpRequest) -> HttpResponse:
                         if text.strip()
                         else reverse("home")
                     ),
+                )
+            if heading_id is not None:
+                try:
+                    selected = node(edition, heading_id)
+                    path = heading_path(edition, selected)
+                    if root_id is not None and path[0]["id"] != root_id:
+                        raise HeadingNotFound("Heading outside selected source section")
+                except HeadingNotFound:
+                    return _render_page(
+                        request,
+                        {
+                            "current_page": "home",
+                            "catalog_state": "invalid",
+                            "error": "العنوان المطلوب غير متاح في هذا النطاق. عد إلى الفهرس واختر عنوانًا متاحًا.",
+                        },
+                        status=404,
+                    )
+                # A projection of validated reference metadata, never a model or private case.
+                context["reference"] = {
+                    "title": path[-1]["title"],
+                    "part": path[-1]["part"],
+                    "page": path[-1]["page"],
+                    "path": [item["title"] for item in path],
+                    "url": reverse("heading", args=[heading_id])
+                    + "?"
+                    + urlencode(
+                        {
+                            "basic": 1,
+                            "edition": metadata["id"],
+                        }
+                    ),
+                }
+                context["reference_return_url"] = (
+                    _search_link(context, offset)
+                    if context["searching"]
+                    else reverse("home") + "#roots-title"
                 )
     except InvalidQuery:
         if context["catalog_state"] != "available":
