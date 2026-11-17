@@ -1,5 +1,49 @@
 # Unified Arabic editorial search (FAST4)
 
+## Original-text match locations (2026-11-17, third slice)
+
+Base: `da7576a9c9ae90ad3f6bcc2993863fa6b989835e`, the case/revision scope slice.
+Branch: `codex/20261117-search-match-locations`.
+
+Search results now mark matching text in its original form and expose links to
+the matching fields within each result. Native fragment targets have unique
+page-local IDs and keyboard focus targets. Underlining supplements the highlight
+color. Existing case/revision scopes, reference cards and evidence links continue
+to work; the matcher, ranking and source data are not changed.
+
+The pure highlighter maps the existing normalization onto original code-point
+spans, retaining Arabic marks/tatweel, ligatures, case-fold expansions, combining
+characters and original line endings. Alias matches use the existing query-term
+normalizer/patterns; a length-changing alias highlights its whole original word.
+Literal matches retain literal substring semantics. Every rendered segment is
+escaped before adding static `<mark>` elements, and original CRs remain character
+entities. Concatenating displayed segment text reconstructs the exact source.
+
+Work is bounded to 20,000 original code points and 100 candidate matches per
+field. If a normalization mapping cannot be proven equal to the existing whole
+string normalization (for example Hangul Jamo composition across clusters),
+highlighting is skipped rather than guessing positions. Limits/fallbacks are
+labelled in the UI; the complete original text remains visible. Counts describe
+merged displayed highlight spans, not scholarly relevance or additional search
+results. These limits do not change search eligibility or ranking.
+
+Validation: 74 focused synthetic tests passed on Python 3.13.16 / Django 5.2.18,
+including 12 new pure/HTTP tests for original text, Unicode mapping, alias word
+boundaries, HTML escaping, limits, actual anchor targets and unchanged hit
+identities/ranking. Existing scope and reference-card navigation tests pass.
+Ruff lint/format, Django system check and whitespace checks passed. Tests use the
+existing synthetic queue plus in-memory original-text/limit fixtures; they forbid
+database access. No new PostgreSQL or browser acceptance is claimed for this
+presentation-only slice. Run:
+
+```sh
+python manage.py test tests.editorial_search.test_highlights tests.editorial_search.test_scope tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_reference_cards tests.editorial_search.test_query_terms tests.editorial_search.test_relevance --settings=config.settings.test --noinput
+```
+
+Changes stay inside search code, CSS, templates and tests. No new routes,
+dependencies, schema, owner sources or scientific material. Revert this commit
+independently to remove match-location navigation. NOT_DEPLOYED; gates unchanged.
+
 ## Case and exact revision search scope (2026-11-17, second slice)
 
 Base: reference cards commit `705b3abfb2c2568f36610a4ac293b81c25ddc355`.

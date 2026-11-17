@@ -18,6 +18,7 @@ from apps.editorial_workbench.services import WorkbenchDataError
 from apps.research_bridge.services import bridge_reference
 from apps.revision_core.revision_history import HistoryDataError
 
+from .highlights import highlight
 from .reference_cards import ReferenceNotFound, reference_card
 from .services import SOURCE_TYPES, SearchHit, search_catalog, validate_query
 
@@ -86,6 +87,33 @@ def _scope_url(params: dict, case_key: str, revision: int | None = None) -> str:
     return reverse("editorial_search:index") + "?" + urlencode(scoped)
 
 
+def _search_row(hit: SearchHit, params: dict, index: int) -> dict:
+    fields = []
+    for ordinal, field in enumerate(hit.fields, 1):
+        result = highlight(field.text, params["q"], hit.match_kind)
+        parts = []
+        for segment in result.segments:
+            safe = str(escape(segment.text)).replace("\r", "&#13;")
+            parts.append(f"<mark>{safe}</mark>" if segment.matched else safe)
+        fields.append(
+            {
+                "id": f"result-{index}-field-{ordinal}",
+                "label": field.label,
+                "text": mark_safe("<code>" + "".join(parts) + "</code>"),
+                "matches": result.count,
+                "limited": result.limited,
+            }
+        )
+    return {
+        "hit": hit,
+        "url": _hit_url(hit),
+        "reference_url": _reference_url(hit, params),
+        "case_search_url": _scope_url(params, hit.case_key) if hit.case_key else None,
+        "fields": tuple(fields),
+        "matched_fields": tuple(field for field in fields if field["matches"]),
+    }
+
+
 @require_safe
 def search(request: HttpRequest) -> HttpResponse:
     local_only(request)
@@ -135,16 +163,7 @@ def search(request: HttpRequest) -> HttpResponse:
             ),
             "result": result,
             "rows": tuple(
-                {
-                    "hit": hit,
-                    "url": _hit_url(hit),
-                    "reference_url": _reference_url(hit, params),
-                    "case_search_url": _scope_url(params, hit.case_key) if hit.case_key else None,
-                    "fields": tuple(
-                        {"label": field.label, "text": _exact(field.text)} for field in hit.fields
-                    ),
-                }
-                for hit in result.hits
+                _search_row(hit, params, index) for index, hit in enumerate(result.hits, 1)
             ),
             "previous_url": page_url(result.page - 1) if result.page > 1 else None,
             "next_url": page_url(result.page + 1) if result.page < result.pages else None,

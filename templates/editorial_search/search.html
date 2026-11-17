@@ -12,6 +12,7 @@
 {% if selected_case %}<p role="status">نطاق البحث: السجل <bdi>{{ selected_case.case.key }}</bdi>{% if scope_revision %} · المراجعة {{ scope_revision }}{% endif %}. <a href="{{ clear_scope_url }}">البحث خارج نطاق السجل</a></p>{% endif %}
 <p id="search-help">تُطابق الكلمات معًا مع تجاهل التشكيل والتطويل واختلاف الألف والياء المقصورة. يشمل البحث تكافؤ «بلا» و«بدون»، ويبيّن سببه عند استخدامه؛ ولا يعامل «دون» وحدها كمرادف لهما. تبقى النصوص المعروضة كما وردت، دون إعادة صياغة. يشمل البحث المراجعات السابقة؛ وقد يتكرر النص في مراجعات مختلفة.</p>
 <p>المراجع المتاحة هويات وإحالات وفهرس اصطناعي فقط؛ ليست توثيقًا علميًا أو بحثًا في الكتب الأصلية.</p>
+<p>تُميَّز مواضع كلمات البحث داخل النص الأصلي. استخدم روابط «الحقول المطابقة» للانتقال إليها؛ التمييز يساعد القراءة ولا يثبت صحة الإحالة العلمية.</p>
 <section aria-labelledby="results-title">
 <h2 id="results-title">النتائج: {{ result.total }}{% if result.truncated %} على الأقل{% endif %}</h2>
 {% if result.truncated %}<p role="status">عُرضت أول ٢٠٠ نتيجة فقط. ضيّق البحث أو اختر دفعة أو نوع مصدر.</p>{% endif %}
@@ -22,7 +23,8 @@
   {% if row.case_search_url %}<p><a href="{{ row.case_search_url }}">البحث داخل هذا السجل</a></p>{% endif %}
   {% if row.reference_url %}<p><a href="{{ row.reference_url }}">فتح بطاقة الإحالة {{ row.hit.reference_ordinal }}{% if row.hit.reference_origin == 'revision' %} في المراجعة {{ row.hit.revision }}{% else %} في التشخيص المحفوظ{% endif %}</a></p>{% endif %}
   <p>الدفعة: <bdi>{{ row.hit.batch_id }}</bdi> · {% if row.hit.revision %}المراجعة: {{ row.hit.revision }}{% else %}مصدر الاستلام أو الدفعة؛ بلا هوية مراجعة{% endif %}</p>
-  <dl>{% for field in row.fields %}<dt>{{ field.label }}</dt><dd><pre>{{ field.text }}</pre></dd>{% endfor %}</dl>
+  {% if row.matched_fields %}<nav aria-label="الحقول المطابقة في النتيجة {{ forloop.counter }}"><p>الحقول المطابقة:</p><ul>{% for field in row.matched_fields %}<li><a href="#{{ field.id }}">{{ field.label }} — مواضع مميزة: {{ field.matches }}</a></li>{% endfor %}</ul></nav>{% endif %}
+  <dl>{% for field in row.fields %}<dt id="{{ field.id }}" tabindex="-1">{{ field.label }}</dt><dd>{% if field.limited %}<p>تمييز محدود في هذا الحقل؛ يظل النص كاملًا ظاهرًا دون حذف.</p>{% endif %}<pre>{{ field.text }}</pre></dd>{% endfor %}</dl>
   <details><summary>هوية المصدر وبصمته</summary>
     <p>{{ row.hit.fixture_label }}</p>
     {% if row.hit.input_sha256 %}<p>SHA-256 للحمولة: <bdi>{{ row.hit.input_sha256 }}</bdi></p>{% endif %}

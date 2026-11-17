@@ -17,6 +17,8 @@ dt { font-weight: bold; }
 dd { margin: 0 0 1rem; }
 pre { font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; margin: .4rem 0; }
 pre code { font: inherit; }
+mark { background: #fff0a3; color: #182c35; text-decoration: underline; text-decoration-thickness: .12em; }
+dt:target { outline: 2px solid #075e68; outline-offset: .25rem; }
 bdi, p, dt, a { overflow-wrap: anywhere; }
 summary { cursor: pointer; }
 .pagination { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1rem; }
