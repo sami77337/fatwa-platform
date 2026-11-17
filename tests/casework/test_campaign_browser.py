@@ -149,6 +149,13 @@ class CampaignBrowserTests(LiveServerTestCase):
                     staff.locator("#answer-text").fill("PRIVATE SYNTHETIC REVISED ANSWER")
                     click(staff, "حفظ مسودة الجواب")
                     click(staff, "اعتماد هذه النسخة")
+                    click(staff, "مكتب متابعة التسليم")
+                    click(staff, "فتح القضية 1")
+                    click(staff, "معاينة خطة الإرجاع")
+                    self.assertEqual(staff.locator("#prepared-plan").count(), 1)
+                    self.assertIn("لم يُعتمد الإرجاع بعد", staff.content())
+                    click(staff, "العودة إلى مساحة القضايا")
+                    click(staff, public_ref)
                     requester.reload(wait_until="networkidle")
                     self.assertIn("اكتملت مراجعة الجواب", requester.content())
                     for secret in ("PRIVATE SYNTHETIC", "الجواب متاح", token):

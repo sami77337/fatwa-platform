@@ -19,6 +19,16 @@ The `team_updates` app/migration records an immutable explicit seen marker per
 provider, subject and event. Opening a case never marks its updates seen, and a
 seen marker never approves evidence, a ruling, delivery or requester reading.
 
+The team screen also opens the delivery desk on the same guarded staff path.
+The canonical profile uses the existing explicit casework enablement; the
+standalone desk retains its own opt-in flag. Approval/provider verifiers default
+to `None` in the canonical profile. Preparing/downloading a request remains read
+only. Staging needs a separately signed exact return plan from the same Mufti;
+quarantine needs explicit confirmation and never retries a send. The panel
+preference selects the desk's read-only `open` screen; all substantive actions
+retain their own exact forms and current scoped service checks. Returning to
+cases restores the current team editor. No sender or receipt generator is wired.
+
 The profile inherits `casework_review` gates, loopback/Host guard, request budgets,
 CSRF and ownership checks. Web enablement remains explicit; the identity provider
 and trusted recovery resolver remain `None`. Configure reviewed synthetic server

@@ -9,6 +9,8 @@ on:
       - 'apps/requester_access_review/**'
       - 'apps/requester_team_journey/**'
       - 'apps/team_updates/**'
+      - 'apps/case_delivery_desk/**'
+      - 'tests/case_delivery_desk/**'
       - 'templates/requester_access_review/**'
       - 'config/campaign_urls.py'
       - 'config/settings/campaign_review.py'
@@ -78,7 +80,7 @@ jobs:
       - name: Focused workspace and core contracts
         run: |
           set -euo pipefail
-          python manage.py test apps.team_workspace.tests apps.requester_access_review.tests apps.requester_team_journey.tests apps.team_updates.tests tests.casework.test_campaign tests.casework.test_campaign_access tests.casework.test_campaign_updates tests.casework.test_core tests.casework.test_adversarial --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/tests.log
+          python manage.py test apps.team_workspace.tests apps.requester_access_review.tests apps.requester_team_journey.tests apps.team_updates.tests tests.casework.test_campaign tests.casework.test_campaign_access tests.casework.test_campaign_updates tests.casework.test_campaign_delivery tests.casework.test_core tests.casework.test_adversarial --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/tests.log
       - name: Real Chrome with browser sandbox
         if: matrix.postgres == '17'
         env:
@@ -86,7 +88,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
-          python manage.py test apps.team_workspace.browser_tests apps.requester_team_journey.browser_tests tests.casework.test_campaign_browser --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/browser.log
+          python manage.py test apps.team_workspace.browser_tests apps.requester_team_journey.browser_tests tests.casework.test_campaign_browser tests.casework.test_campaign_delivery_browser --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/browser.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

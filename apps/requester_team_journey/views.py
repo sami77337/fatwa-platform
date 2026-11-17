@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
 
+from apps.case_delivery_desk.views import desk as delivery_desk
 from apps.casework_web.access import current_staff
 from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _form, _provider
@@ -17,7 +18,13 @@ PANEL_COOKIE = "fatwa_team_panel"
 STAFF = "/casework/staff/"
 ACCESS_ACTIONS = frozenset({"access_queue", "access_acknowledge", "access_close"})
 UPDATE_ACTIONS = frozenset({"updates_filter", "updates_seen"})
-PANELS = {"access": access_review, "updates": updates_inbox, "cases": team_workspace}
+DELIVERY_ACTIONS = frozenset({"prepare", "export", "stage", "quarantine"})
+PANELS = {
+    "access": access_review,
+    "updates": updates_inbox,
+    "cases": team_workspace,
+    "delivery": delivery_desk,
+}
 
 
 def _panel(response, panel):
@@ -37,10 +44,18 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
-        if action == "journey_cases":
+        if action in {"journey_cases", "journey_delivery"}:
             _form(request, {"action"})
             current_staff(request, _provider())
-            return private(_panel(HttpResponse(status=303, headers={"Location": STAFF}), "cases"))
+            panel = "delivery" if action == "journey_delivery" else "cases"
+            return private(_panel(HttpResponse(status=303, headers={"Location": STAFF}), panel))
+        if action in DELIVERY_ACTIONS or (
+            action == "open" and request.COOKIES.get(PANEL_COOKIE) == "delivery"
+        ):
+            response = delivery_desk(request)
+            if response.status_code in (200, 303):
+                _panel(response, "delivery")
+            return response
         panel = (
             "access"
             if action in ACCESS_ACTIONS

@@ -31,7 +31,8 @@ def stylesheet(request):
     return private(HttpResponse(
         CSS + "\nselect{font:inherit;max-width:100%;width:100%;padding:.55rem;"
         "margin-bottom:.7rem}select:focus,summary:focus{outline:3px solid #9c6800;"
-        "outline-offset:3px}summary{cursor:pointer}section{scroll-margin-top:1rem}",
+        "outline-offset:3px}summary{cursor:pointer}section{scroll-margin-top:1rem}"
+        ".exact{white-space:pre-wrap;overflow-wrap:anywhere}",
         content_type="text/css; charset=utf-8",
     ))
 
