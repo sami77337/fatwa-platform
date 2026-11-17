@@ -288,6 +288,17 @@ class V7ConnectedBrowserTests(LiveServerTestCase):
                 ):
                     self.assertNotIn(hidden, publisher.content())
                 self.capture(publisher, "experimental-library")
+                publication_id = publisher.locator('input[name="edition_id"]').input_value()
+                self.click(publisher, "فتح صفحة النسخة")
+                self.assertEqual(publisher.title(), "عنوان نشر اصطناعي متصل | المكتبة التجريبية")
+                self.assertIn(PUBLIC_BODY, publisher.locator("article").inner_text())
+                publisher.locator("article details summary").click()
+                self.assertIn("فَرْعٌ تَجْرِيبِيّ", publisher.locator("article").inner_text())
+                self.assertIn("طبعة اختبار", publisher.locator("article").inner_text())
+                self.assertNotIn(QUESTION, publisher.content())
+                self.assertNotIn(public_ref, publisher.content())
+                self.capture(publisher, "published-page")
+                self.click(publisher, "العودة إلى المكتبة التجريبية")
                 self.click(publisher, "العودة إلى القضايا")
                 self.click(publisher, public_ref)
                 self.click(publisher, "نسخة النشر التجريبية")
@@ -298,6 +309,24 @@ class V7ConnectedBrowserTests(LiveServerTestCase):
                 self.click(publisher, "المكتبة التجريبية المغلقة")
                 self.assertNotIn(PUBLIC_BODY, publisher.content())
                 self.assertIn("لا توجد نتائج متاحة", publisher.content())
+                # A remembered publication ID cannot reopen the withdrawn page.
+                with publisher.expect_navigation(wait_until="domcontentloaded") as withdrawn:
+                    publisher.evaluate(
+                        """id => {
+                        const form=document.createElement('form'); form.method='POST';
+                        form.action='/casework/staff/';
+                        const fields={action:'pub_read',edition_id:id,
+                          csrfmiddlewaretoken:document.querySelector('[name=csrfmiddlewaretoken]').value};
+                        for (const [name,value] of Object.entries(fields)) {
+                            const input=document.createElement('input'); input.type='hidden';
+                            input.name=name; input.value=value; form.appendChild(input);
+                        } document.body.appendChild(form); form.submit();
+                    }""",
+                        publication_id,
+                    )
+                self.assertEqual(withdrawn.value.status, 404)
+                self.assertNotIn(PUBLIC_BODY, publisher.content())
+                self.assertNotIn("عنوان نشر اصطناعي متصل", publisher.content())
 
                 def canonical_links():
                     case = Case.objects.get(pk=case_id)
@@ -345,6 +374,8 @@ class V7ConnectedBrowserTests(LiveServerTestCase):
                             "external_requests": 0,
                             "page_errors": 0,
                             "foreign_download_status": 409,
+                            "withdrawn_page_status": 404,
+                            "published_detail": "PASS",
                             "canonical": evidence,
                         },
                         ensure_ascii=False,
