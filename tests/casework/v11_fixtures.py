@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 
 from apps.pilot_workbench.fixtures import FixtureOperatorAuthority
@@ -102,7 +103,12 @@ def inventory(case_id):
     from apps.experimental_publication.models import PublicationAction, PublicationEdition
     from apps.knowledge_links.models import KnowledgeAction, KnowledgeRevision
     from apps.source_case_intake.models import EvidenceBinding, SourceReviewNote
-    from apps.source_rights.models import RightsAction, RightsRevision, SourceRegistration
+    from apps.source_rights.models import (
+        RightsAction,
+        RightsRevision,
+        SourceRegistration,
+        SourceVersion,
+    )
 
     case = Case.objects.get(pk=case_id)
     answer = case.approved_answer
@@ -128,7 +134,28 @@ def inventory(case_id):
             for p in rows
         ]
 
+    def ledger(model):
+        return [
+            {
+                "id": str(row["id"]),
+                "sha256": sha256(
+                    json.dumps(row, sort_keys=True, default=str, separators=(",", ":")).encode()
+                ).hexdigest(),
+            }
+            for row in model.objects.order_by("id").values()
+        ]
+
     return {
+        "ledger": {
+            model._meta.label: ledger(model)
+            for model in (
+                SourceReviewNote,
+                SourceVersion,
+                SourceRegistration,
+                RightsRevision,
+                RightsAction,
+            )
+        },
         "case_id": str(case.pk),
         "answer_id": str(answer.pk),
         "answer_revision": answer.revision,

@@ -22,7 +22,7 @@ from apps.experimental_publication.models import PublicationEdition
 from apps.library_preview.policy import PreviewPolicy, PublicationGrant, ReferenceGrant
 from apps.pilot_workbench.fixtures import setup_synthetic_fixture
 from apps.platform_recovery import encrypted, maintenance
-from apps.platform_recovery.service import RecoveryError
+from apps.platform_recovery.integration import MaintenanceUnavailable
 from apps.private_media.filesystem import FileSystemStorage
 from apps.private_media.fixtures import synthetic_files
 from apps.research_workspace.source_rights_adapter import SourceRightsAdapter
@@ -329,14 +329,14 @@ class V11Harness(BrowserHarness):
                 self.assertEqual(denied.status, 503)
 
                 def blocked_writes():
-                    with self.assertRaises(RecoveryError):
+                    with self.assertRaises(MaintenanceUnavailable):
                         cases.add_followup(
                             token=self.source["token"],
                             text="must not persist",
                             expected_revision=1,
                             synthetic_fixtures_only=True,
                         )
-                    with self.assertRaises(RecoveryError):
+                    with self.assertRaises(MaintenanceUnavailable):
                         storage.collect_orphans(lambda _: False, grace_seconds=0, dry_run=True)
 
                 self.sync(blocked_writes)
