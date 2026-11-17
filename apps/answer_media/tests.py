@@ -3,6 +3,7 @@
 import io
 import wave
 from dataclasses import replace
+from hashlib import sha256
 from unittest.mock import patch
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -12,6 +13,7 @@ from django.test import Client, TransactionTestCase, override_settings
 
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision, Case
+from apps.private_media.validation import validate
 from tests.casework.test_http import WEB_SETTINGS, Directory, hidden, post
 
 from . import services
@@ -286,10 +288,84 @@ class AnswerMediaTests(TransactionTestCase):
         self.save()
         original = list(AnswerPart.objects.values_list("sha256", "original"))
         call_command("migrate", "answer_media", "0001", verbosity=0)
-        call_command("migrate", "answer_media", "0002", verbosity=0)
+        call_command("migrate", "answer_media", "0003", verbosity=0)
         self.assertEqual(list(AnswerPart.objects.values_list("sha256", "original")), original)
         with self.assertRaises(IntegrityError), transaction.atomic():
             AnswerPart.objects.update(source="REPLACEMENT")
+
+    def test_database_rejects_spoofed_mime_extension_kind_or_validation_metadata(self):
+        valid = validate(**audio_fixture())
+        for change in (
+            {"media_type": "text/html"},
+            {"filename": "answer.pdf"},
+            {"filename": "../answer.wav"},
+            {
+                "metadata": {
+                    "validated": False,
+                    "channels": 1,
+                    "sample_rate": 8000,
+                    "duration_seconds": 0.1,
+                }
+            },
+            {
+                "metadata": {
+                    "validated": True,
+                    "channels": 1,
+                    "sample_rate": 8000,
+                    "duration_seconds": 121,
+                }
+            },
+        ):
+            with patch(
+                "apps.answer_media.services.validate", return_value=replace(valid, **change)
+            ):
+                with self.assertRaises(IntegrityError):
+                    self.save()
+        original_create = AnswerPart.objects.create
+
+        def wrong_kind(**kwargs):
+            if kwargs["ordinal"] > 1:
+                kwargs["kind"] = "FILE"
+            return original_create(**kwargs)
+
+        with patch.object(AnswerPart.objects, "create", side_effect=wrong_kind):
+            with self.assertRaises(IntegrityError):
+                self.save()
+        self.assertEqual(AnswerManifest.objects.count(), 0)
+
+    def test_approval_reparses_originals_and_metadata_without_reparsing_file_reads(self):
+        valid = validate(**audio_fixture())
+        invalid = b"not real waveform bytes"
+        forged = replace(valid, raw=invalid, size=len(invalid), sha256=sha256(invalid).hexdigest())
+        with patch("apps.answer_media.services.validate", return_value=forged):
+            self.save()
+        answer = Case.objects.get().answers.get()
+        with self.assertRaises(cases.CaseConflict):
+            services.validate_for_approval(answer)
+        self.assertEqual(answer.case.decisions.count(), 0)
+        self.assertEqual(PrivateAnswerRelease.objects.count(), 0)
+        spoofed_metadata = replace(valid, metadata={**valid.metadata, "duration_seconds": 0.2})
+        with patch("apps.answer_media.services.validate", return_value=spoofed_metadata):
+            self.save()
+        with self.assertRaises(cases.CaseConflict):
+            services.validate_for_approval(Case.objects.get().answers.latest("revision"))
+        self.save()
+        answer = Case.objects.get().answers.latest("revision")
+        result = services.validate_for_approval(answer)
+        self.assertEqual(result["answer_revision"], 3)
+        self.approve()
+        self.release()
+        with patch(
+            "apps.answer_media.services.validate",
+            side_effect=AssertionError("GET must not spawn parser"),
+        ):
+            part = self.private()["package"]["parts"][1]
+            self.assertEqual(
+                services.requester_read(
+                    token=self.receipt["token"], part_id=part["id"], synthetic_fixtures_only=True
+                )["raw"],
+                audio_fixture()["raw"],
+            )
 
     def test_rejected_media_pending_clarification_and_stale_revision_do_not_write(self):
         with self.assertRaises(cases.CaseConflict):

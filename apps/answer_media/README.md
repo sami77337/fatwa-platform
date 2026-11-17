@@ -26,7 +26,13 @@ PostgreSQL bytes (the bounded synthetic inline adapter); no static/public URL or
 object-storage credential is introduced. Canonical answer identity supplies the
 author/provider/epoch, answer version, facts version, decision and timestamps.
 Database guards reject update/delete, late append, wrong canonical version, altered
-original hash/size and incomplete manifests. New citation edits copy media into new
+original hash/size and incomplete manifests. A separate metadata guard also rejects
+unsupported MIME/kind/filename combinations, missing validation markers, excess
+fields and out-of-bounds parser metadata. `validate_for_approval(answer)` re-runs
+the bounded real content parser and compares all canonical metadata before human
+approval; private release repeats it. A valid hash or fabricated validation marker
+alone is insufficient. Ordinary file reads verify immutable hashes/metadata without
+spawning parsers again. New citation edits copy media into new
 identities and new manifest, with the new human text. New media edits carry verified
 citations forward through the citation app's same-transaction helper. Neither copies
 approval or private release. The original source revisions remain intact.
@@ -74,6 +80,10 @@ Service entrypoints: `save_multipart_answer`, `staff_snapshot`, `staff_read`,
 helpers: `manifest_for_locked_answer(answer)` and
 `clone_parts_for_new_answer(previous, answer)`; both are deliberately flag-independent
 so disabled editing never stops validation of existing immutable records.
+The core approval path must call the similarly flag-independent
+`validate_for_approval(answer)` for an APPROVE action, not only its cheap manifest
+projection. Same-origin PDF framing requires the byte response's strict sandbox CSP
+and `X-Frame-Options: SAMEORIGIN` to be preserved by middleware.
 
 ## Focused verification
 

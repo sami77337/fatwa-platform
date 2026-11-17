@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import uuid
 from hashlib import sha256
 
@@ -10,11 +11,63 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
-from apps.private_media.validation import MediaValidationError, validate
+from apps.private_media.validation import TYPES, MediaValidationError, validate
 
 from .models import AnswerManifest, AnswerPart, PrivateAnswerRelease
 
 MAX_PARTS = 8
+
+
+def _metadata_valid(row):
+    """Cheap read-time shape checks; full isolated parsing occurs at approval."""
+    if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_. -]{0,94}\.[A-Za-z0-9]{2,4}", row.filename) is None:
+        return False
+    expected = TYPES.get("." + row.filename.rsplit(".", 1)[-1].lower())
+    kind = (
+        "AUDIO"
+        if row.media_type.startswith("audio/")
+        else "IMAGE"
+        if row.media_type.startswith("image/")
+        else "FILE"
+    )
+    data = row.metadata
+    if (
+        expected is None
+        or expected[0] != row.media_type
+        or row.kind != kind
+        or type(data) is not dict
+        or data.get("validated") is not True
+    ):
+        return False
+    if row.media_type == "text/plain":
+        return row.size <= 65536 and data == {"validated": True, "encoding": "UTF-8"}
+    if row.media_type == "application/pdf":
+        return (
+            set(data) == {"validated", "pages", "active_content"}
+            and type(data["pages"]) is int
+            and 1 <= data["pages"] <= 10
+            and data["active_content"] is False
+        )
+    if kind == "IMAGE":
+        return (
+            set(data) == {"validated", "width", "height", "format"}
+            and type(data["width"]) is int
+            and type(data["height"]) is int
+            and data["width"] > 0
+            and data["height"] > 0
+            and data["width"] * data["height"] <= 4000000
+            and data["format"]
+            == {"image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP"}[row.media_type]
+        )
+    return (
+        set(data) == {"validated", "channels", "sample_rate", "duration_seconds"}
+        and type(data["channels"]) is int
+        and 1 <= data["channels"] <= 2
+        and type(data["sample_rate"]) is int
+        and 8000 <= data["sample_rate"] <= 96000
+        and type(data["duration_seconds"]) in (int, float)
+        and 0 < data["duration_seconds"] <= 120
+    )
 
 
 def _enabled():
@@ -77,10 +130,17 @@ def _verified(manifest):
         ):
             raise cases.CaseConflict("answer_parts_inconsistent")
         if ordinal == 1:
-            if row.kind != "TEXT" or raw != manifest.answer.text.encode() or row.filename:
+            if (
+                row.kind != "TEXT"
+                or raw != manifest.answer.text.encode()
+                or row.filename
+                or row.metadata != {}
+            ):
                 raise cases.CaseConflict("answer_text_inconsistent")
         elif row.kind == "TEXT":
             raise cases.CaseConflict("answer_parts_inconsistent")
+        elif not _metadata_valid(row):
+            raise cases.CaseConflict("answer_media_metadata_inconsistent")
     if _digest([_fields(row) for row in rows]) != manifest.sha256:
         raise cases.CaseConflict("answer_manifest_inconsistent")
     return rows
@@ -255,6 +315,7 @@ def release_private(
         if manifest is None or manifest.sha256 != manifest_sha256:
             raise cases.CaseConflict("current_multipart_approval_required")
         decision = _current(case, manifest)
+        validate_for_approval(manifest.answer)
         if (decision.subject_id, decision.provider_id, decision.auth_epoch) != (
             actor.subject_id,
             provider.provider_id,
@@ -318,6 +379,32 @@ def manifest_for_locked_answer(answer):
         "parts": [_fields(row) for row in _verified(manifest)],
         "requires_human_delivery": True,
     }
+
+
+def validate_for_approval(answer):
+    """Flag-independent, caller-locked full content check before human APPROVE.
+
+    Re-run the bounded isolated parser so even a same-transaction internal write
+    with fabricated MIME/metadata cannot be approved merely by matching hashes.
+    File GETs use immutable hashes and cheap metadata checks instead of subprocesses.
+    """
+    manifest = AnswerManifest.objects.filter(answer=answer).first()
+    if manifest is None:
+        return None
+    for row in _verified(manifest)[1:]:
+        try:
+            checked = validate(bytes(row.original), row.filename, row.media_type)
+        except MediaValidationError as exc:
+            raise cases.CaseConflict("answer_media_content_invalid") from exc
+        if (
+            checked.sha256 != row.sha256
+            or checked.size != row.size
+            or checked.filename != row.filename
+            or checked.media_type != row.media_type
+            or checked.metadata != row.metadata
+        ):
+            raise cases.CaseConflict("answer_media_validation_changed")
+    return manifest_for_locked_answer(answer)
 
 
 def clone_parts_for_new_answer(previous, answer):

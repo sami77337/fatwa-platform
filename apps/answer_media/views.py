@@ -174,6 +174,7 @@ def _file(row):
     )
     # Embedded content cannot execute scripts, submit forms or access another origin.
     response["Content-Security-Policy"] = "default-src 'none'; sandbox; frame-ancestors 'self'"
+    response["X-Frame-Options"] = "SAMEORIGIN"
     return response
 
 
