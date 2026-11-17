@@ -85,6 +85,10 @@ def workspace(request):
         if request.method in ("GET", "HEAD"):
             return _page(request, provider, identity)
         action = request.POST.get("action", "")
+        if action == "case_workspace" and getattr(
+            settings, "FATWA_MUFTI_WORKSPACE_ENABLED", False
+        ) is not True:
+            raise InvalidForm("connected_workspace_disabled")
         if action == "filter":
             fields = _form(request, {"action", "state", "query"})
             if fields["state"] not in FILTERS or len(fields["query"]) > 40 or "\x00" in fields["query"]:
@@ -96,7 +100,7 @@ def workspace(request):
             required |= {"text", "revision", "evidence_version"}
         elif action in {"approve", "return"}:
             required |= {"answer_id", "note", "revision", "evidence_version"}
-        elif action not in {"open", "rotate", "revoke"}:
+        elif action not in {"open", "case_workspace", "rotate", "revoke"}:
             raise InvalidForm("unknown_action")
         fields = _form(request, required)
         validate_identity(identity, case_key=fields["case_ref"])
