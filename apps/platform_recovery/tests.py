@@ -561,6 +561,97 @@ service.restore(**json.load(sys.stdin))
         with self.assertRaises(self.service.RecoveryError):
             self.service.safe_directory(Path.cwd())
 
+    def test_20_failed_ready_publication_records_failure_and_rolls_back(self):
+        before = self.databases()
+        paths = set(self.root.glob("restore-*"))
+        write_journal = self.service.journal
+        states = []
+
+        def fail_ready(path, state):
+            states.append(state["state"])
+            if state["state"] == "READY":
+                raise OSError("synthetic READY publication failure")
+            return write_journal(path, state)
+
+        with patch.object(self.service, "journal", side_effect=fail_ready):
+            with self.assertRaisesRegex(self.service.RecoveryError, "target_quarantined"):
+                self.restore()
+        target = (set(self.root.glob("restore-*")) - paths).pop()
+        saved = json.loads((target / "journal.json").read_text())
+        self.assertEqual(
+            states[-3:], ["READY", "FAILED_READY_PUBLICATION", "ROLLED_BACK_FILES_PRESERVED"]
+        )
+        self.assertEqual(saved["state"], "ROLLED_BACK_FILES_PRESERVED")
+        self.assertEqual(saved["failure_code"], "OSError")
+        self.assertEqual(self.databases(), before)
+        self.assertTrue(list((target / "private" / "objects").iterdir()))
+        self.service.verify_bundle(self.backup["bundle"], self.backup["manifest_sha256"])
+        self.assert_source_unchanged()
+
+    def test_21_persistent_ready_journal_failure_keeps_nonready_identity(self):
+        for replaced in (False, True):
+            with self.subTest(ready_already_replaced=replaced):
+                before = self.databases()
+                paths = set(self.root.glob("restore-*"))
+                write_journal = self.service.journal
+                failing = False
+
+                def fail_from_ready(path, state):
+                    nonlocal failing
+                    if state["state"] == "READY":
+                        if replaced:
+                            write_journal(path, state)
+                        failing = True
+                    if failing:
+                        raise OSError("synthetic persistent journal failure")
+                    return write_journal(path, state)
+
+                with patch.object(self.service, "journal", side_effect=fail_from_ready):
+                    with self.assertRaisesRegex(self.service.RecoveryError, "rollback_pending"):
+                        self.restore()
+                target = (set(self.root.glob("restore-*")) - paths).pop()
+                saved = json.loads((target / "journal.json").read_text())
+                self.assertEqual(saved["state"], "FAILED_READY_PUBLICATION")
+                # DROP used the durable recorded OID/nonce, but its completion
+                # journal failed. Retry reconciles this without adopting a DB.
+                self.assertEqual(self.databases(), before)
+                result = self.service.rollback(
+                    target=target, synthetic_fixtures_only=True, offline=True
+                )
+                self.assertEqual(result["state"], "ROLLED_BACK_FILES_PRESERVED")
+                self.assertTrue(list((target / "private" / "objects").iterdir()))
+                self.service.verify_bundle(self.backup["bundle"], self.backup["manifest_sha256"])
+                self.assert_source_unchanged()
+
+    def test_22_failed_ready_directory_sync_preserves_target_for_safe_retry(self):
+        before = self.databases()
+        paths = set(self.root.glob("restore-*"))
+        sync = self.service.sync_directory
+        failing = False
+
+        def fail_after_ready_replace(path):
+            nonlocal failing
+            record = path / "journal.json"
+            if record.exists() and json.loads(record.read_text())["state"] == "READY":
+                failing = True
+            if failing:
+                raise OSError("synthetic persistent directory fsync failure")
+            return sync(path)
+
+        with patch.object(self.service, "sync_directory", side_effect=fail_after_ready_replace):
+            with self.assertRaisesRegex(self.service.RecoveryError, "rollback_pending"):
+                self.restore()
+        target = (set(self.root.glob("restore-*")) - paths).pop()
+        saved = json.loads((target / "journal.json").read_text())
+        self.assertEqual(saved["state"], "FAILED_READY_PUBLICATION")
+        self.assertIn((saved["oid"], saved["database"]), self.databases())
+        self.assertEqual(len(self.databases()), len(before) + 1)
+        result = self.service.rollback(target=target, synthetic_fixtures_only=True, offline=True)
+        self.assertEqual(result["state"], "ROLLED_BACK_FILES_PRESERVED")
+        self.assertEqual(self.databases(), before)
+        self.service.verify_bundle(self.backup["bundle"], self.backup["manifest_sha256"])
+        self.assert_source_unchanged()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

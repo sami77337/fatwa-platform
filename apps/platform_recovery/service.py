@@ -626,16 +626,34 @@ def restore(
         checkpoint("verified")
         # Detect damage to the pinned backup during restoration too.
         verify_bundle(bundle, expected_manifest_sha256)
+        # Keep a durable non-READY identity before attempting the completion
+        # publication. If its replacement succeeds but directory fsync fails,
+        # disk-full must not strand a misleading READY journal or authorize a
+        # guessed cleanup target. Replacing this saved record needs no new file.
+        write_file(
+            target / "ready-publication-failure.json",
+            canonical({**state, "state": "FAILED_READY_PUBLICATION"}),
+        )
+        sync_directory(target)
         state.update(state="READY", private_root=str(store.root))
         journal(target, state)
         return {**state, "target": str(target)}
     except BaseException as exc:
+        failed_ready = state["state"] == "READY"
+        state["state"] = "FAILED_READY_PUBLICATION" if failed_ready else "FAILED"
         state["failure_code"] = str(exc) if isinstance(exc, RecoveryError) else type(exc).__name__
         try:
             journal(target, state)
         except OSError:
             # Disk-full must not prevent rollback using the last durable identity.
-            pass
+            if failed_ready:
+                try:
+                    os.replace(target / "ready-publication-failure.json", target / "journal.json")
+                    sync_directory(target)
+                except OSError:
+                    # Storage itself may be unavailable. Never claim readiness
+                    # or delete a DB without a readable non-READY identity record.
+                    raise RecoveryError("restore_failed_rollback_pending:" + str(target)) from None
         if created:
             # A crash before the durable OID/nonce journal is intentionally manual/quarantined.
             try:
