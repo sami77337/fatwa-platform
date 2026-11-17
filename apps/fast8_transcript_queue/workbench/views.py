@@ -27,6 +27,8 @@ from .services import (
     document_changes,
     export_bundle,
     open_document,
+    pairing_options,
+    relink_answer,
     restore_bundle,
     review,
     revise,
@@ -47,8 +49,8 @@ FINDING_LABELS = {
     "input_order": "ترتيب الإدخال يختلف عن ترتيب الأزمنة",
     "duplicate_segment_id": "معرّف مقطع مكرر؛ صححه في الملف ثم أعد الاستيراد",
     "duplicate_span": "الفترة الزمنية مكررة",
-    "ambiguous_pair": "أكثر من سؤال أو جواب في الزوج نفسه؛ صحح الربط في الملف",
-    "question_required": "الزوج لا يحتوي على سؤال؛ صحح الملف ثم أعد الاستيراد",
+    "ambiguous_pair": "أكثر من سؤال أو جواب في الزوج نفسه؛ اختر الجواب وصحح ربطه بسؤال واحد",
+    "question_required": "الجواب بلا سؤال؛ اختر المقطع واربطه بسؤال موجود من المصدر نفسه",
     "answer_must_follow_question": "يجب أن يبدأ الجواب بعد نهاية السؤال",
     "answer_not_supplied": "لم يُرفق جواب لهذا السؤال",
 }
@@ -185,6 +187,7 @@ def _page(request, document=None, *, index=0, error="", status=200):
             selected_original=original_rows[index],
             selected_changed=rows[index] != original_rows[index],
             changed_count=len(changes),
+            pairing_options=pairing_options(document, index),
             index=index,
             timeline=timeline,
             can_export=queue is not None,
@@ -234,11 +237,13 @@ def update(request):
     try:
         action = request.POST.get("action")
         names = {"state", "action"}
-        if action in {"select", "revise"}:
+        if action in {"select", "revise", "pair"}:
             names |= {"index"}
+        if action == "pair":
+            names |= {"question_index"}
         if action == "revise":
             names |= {"start_ms", "end_ms", "text"}
-        if action not in {"select", "revise", "export", "checkpoint"}:
+        if action not in {"select", "revise", "pair", "export", "checkpoint"}:
             raise ValidationError("form: invalid_action")
         fields = _fields(request, names, {"replace_text"} if action == "revise" else ())
         if request.FILES:
@@ -275,6 +280,20 @@ def update(request):
                     document,
                     index=index,
                     error="لم يُحفظ التعديل. أدخل فترة صحيحة ونصًا غير فارغ ضمن الحدود.",
+                    status=400,
+                )
+        if action == "pair":
+            try:
+                document = relink_answer(
+                    document, index=index, question_index=_integer(fields["question_index"])
+                )
+            except ValidationError:
+                return _page(
+                    request,
+                    document,
+                    index=index,
+                    error="لم يتغير الربط. اختر سؤالًا واضحًا من المصدر نفسه "
+                    "لا يرتبط بجواب آخر؛ لا تُستبدل الأجوبة تلقائيًا.",
                     status=400,
                 )
         return _page(request, document, index=index)
