@@ -1,5 +1,13 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>{% block title %}رحلة السؤال{% endblock %}</title><link rel="stylesheet" href="/casework/casework.css"></head>
-<body><header><a href="#main">انتقل إلى المحتوى</a><h1>رحلة السؤال والجواب</h1><p class="notice">بيئة تجريبية محلية لبيانات اصطناعية فقط.</p><nav aria-label="التنقل"><a href="/casework/">إرسال سؤال تجريبي</a><a href="/casework/status/">متابعة سؤالي</a><a href="/casework/staff/">مكتب الشيخ</a></nav></header>
-<main id="main">{% block content %}{% endblock %}</main></body></html>
+<body><header><a href="#main">انتقل إلى المحتوى</a><h1>رحلة السؤال والجواب</h1><p class="notice">بيئة تجريبية محلية لبيانات اصطناعية فقط.</p><nav aria-label="التنقل"><a href="/casework/">إرسال سؤال تجريبي</a><a href="/casework/status/">متابعة سؤالي</a><a href="/casework/staff/">مكتب الشيخ</a>{% if library_preview_navigation %}<a href="/library-preview/">معاينة المكتبة التجريبية</a>{% endif %}</nav></header>
+<main id="main"{% if mufti_workspace %} class="mufti-main"{% endif %}>
+{% if source_desk_navigation %}<nav aria-label="الاستقبال التجريبي"><form method="post" action="/casework/staff/">{% csrf_token %}<button name="action" value="source_inbox">مكتب استقبال المصادر</button></form></nav>{% endif %}
+{% if mufti_workspace %}
+{% include "mufti_workspace/header.html" %}
+<div class="mufti-layout"><aside class="mufti-context" aria-label="وقائع القضية الحالية">{% include "mufti_workspace/aside.html" %}</aside><section class="mufti-task" aria-label="العمل على القضية الحالية">
+{% endif %}
+{% block content %}{% endblock %}
+{% if mufti_workspace %}</section></div>{% endif %}
+</main></body></html>

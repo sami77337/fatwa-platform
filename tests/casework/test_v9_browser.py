@@ -309,7 +309,7 @@ class V9ConnectedBrowserTests(LiveServerTestCase):
                     prepared = self.sync(lambda: composite.prepare_composite_delivery(**common))
                     self.assertEqual(len(prepared["parts"]), 2)
                     signed = signing_fixture.receipt(prepared)
-                    staff.locator("#composite-response").fill(
+                    staff.locator("#return-permission").fill(
                         json.dumps(
                             {"request_sha256": prepared["plan_sha256"], "receipt": asdict(signed)}
                         )
@@ -342,14 +342,14 @@ class V9ConnectedBrowserTests(LiveServerTestCase):
 
                     first = self.sync(lambda: composite.reserve_composite_part(**worker))
                     self.sync(lambda: outcome(first, "ACCEPTED"))
-                    self.click(staff, "تحديث خطة التوصيل")
+                    self.click(staff, "تحديث متابعة الأجزاء")
                     self.assertIn("قبول المزود فقط", staff.content())
                     self.assertIn("لم يثبت اكتمال", staff.content())
                     self.capture(staff, "accepted-is-not-delivered")
                     self.sync(lambda: outcome(first, "DELIVERED"))
                     second = self.sync(lambda: composite.reserve_composite_part(**worker))
                     self.sync(lambda: outcome(second, "DELIVERED"))
-                    self.click(staff, "تحديث خطة التوصيل")
+                    self.click(staff, "تحديث متابعة الأجزاء")
                     self.assertIn("اكتمل تقرير التسليم الموقّع", staff.content())
                     self.capture(staff, "signed-composite-complete")
                     requester.goto(self.live_server_url + "/casework/status/")

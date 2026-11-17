@@ -1,6 +1,7 @@
 """Dispatch to existing authenticated views; the panel cookie grants no authority."""
 
 from django.apps import apps as django_apps
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_protect
@@ -47,6 +48,12 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.source_case_intake"):
+            from apps.source_case_intake.views import ACTIONS as SOURCE_ACTIONS
+            from apps.source_case_intake.views import desk as source_desk
+
+            if action in SOURCE_ACTIONS:
+                return _panel(source_desk(request), "cases")
         if django_apps.is_installed("apps.knowledge_links"):
             from apps.knowledge_links.views import ACTIONS as KNOWLEDGE_ACTIONS
             from apps.knowledge_links.views import workspace as knowledge
@@ -54,8 +61,8 @@ def staff(request):
             if action in KNOWLEDGE_ACTIONS:
                 return _panel(knowledge(request), "cases")
         if django_apps.is_installed("apps.composite_delivery"):
-            from .composite import ACTIONS as COMPOSITE_ACTIONS
-            from .composite import desk as composite
+            from apps.composite_delivery.views import ACTIONS as COMPOSITE_ACTIONS
+            from apps.composite_delivery.views import desk as composite
 
             if action in COMPOSITE_ACTIONS:
                 return _panel(composite(request), "cases")
@@ -108,3 +115,14 @@ def staff(request):
         return denied("staff_form_invalid", 400)
     except IdentityUnavailable:
         return denied("staff_identity_required", 403)
+
+
+def requester(request):
+    """Explicit V10 opt-in; preserve the independently guarded V9 composition."""
+    if getattr(settings, "FATWA_REQUESTER_PORTAL_ENABLED", False) is True:
+        from apps.requester_portal.views import portal
+
+        return portal(request)
+    from apps.requester_access_review.views import requester as existing_requester
+
+    return existing_requester(request)

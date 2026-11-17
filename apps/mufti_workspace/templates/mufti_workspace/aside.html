@@ -1,0 +1,13 @@
+<section aria-labelledby="mufti-facts-heading">
+<h2 id="mufti-facts-heading">السؤال والوقائع الحالية</h2>
+<p>{% if mufti_workspace.source_label_is_origin %}مصدر السؤال الأصلي{% else %}قناة سجل القضية{% endif %}: <strong>{{ mufti_workspace.source_label }}</strong></p>
+<h3>السؤال الأصلي كما وصل</h3><p class="original" id="mufti-original-question">{{ mufti_workspace.case.original_question }}</p>
+{% if mufti_workspace.case.clarification %}<p class="notice">استيضاح بانتظار رد السائل:</p><p class="original">{{ mufti_workspace.case.clarification }}</p>{% endif %}
+<details{% if mufti_workspace.case.stale_answer %} open{% endif %}><summary>تعقيبات الوقائع ({{ mufti_workspace.case.followups|length }})</summary>
+{% for item in mufti_workspace.case.followups %}<article><h3>الوقائع {{ item.version }}</h3><p class="original">{{ item.text }}</p></article>{% empty %}<p>لا توجد تعقيبات إضافية.</p>{% endfor %}</details>
+{% if mufti_workspace.origins %}<details><summary>مصادر الرسائل وأصلها ({{ mufti_workspace.origins|length }})</summary>{% for origin in mufti_workspace.origins %}<article><h3>{{ origin.source }} — الوقائع {{ origin.evidence_version }}</h3><p>{{ origin.display_name }}</p><dl><dt>حساب المصدر</dt><dd><bdi>{{ origin.account }}</bdi></dd><dt>الرسالة والمحادثة</dt><dd><bdi>{{ origin.message_id }} / {{ origin.conversation }}</bdi></dd><dt>الرد على</dt><dd><bdi>{{ origin.parent_id|default:"رسالة مستقلة" }}</bdi></dd></dl><p class="original">{{ origin.original_text }}</p><details><summary>بصمة أصل الرسالة</summary><code>{{ origin.sha256 }}</code></details></article>{% endfor %}</details>{% endif %}
+<details><summary>مرفقات الوقائع ({{ mufti_workspace.attachments|length }})</summary>
+{% for item in mufti_workspace.attachments %}<article><h3>{{ item.filename }}</h3><p>الوقائع {{ item.evidence_version }} · {{ item.media_type }} · {{ item.size }} بايت</p><p><a href="{{ item.preview_url }}" target="_blank" rel="noopener">معاينة {{ item.filename }}</a> · <a href="{{ item.preview_url }}" download="{{ item.filename }}">تنزيل الأصل</a></p><details><summary>بصمة الأصل</summary><code>{{ item.sha256 }}</code></details></article>{% empty %}<p>لا توجد مرفقات معروضة ضمن هذه القضية.</p>{% endfor %}</details>
+{% if mufti_workspace.manifest %}<p>أحدث جواب: {{ mufti_workspace.manifest.part_count }} أجزاء محفوظة. مراجعتها واعتمادها يتمان كإصدار واحد.</p>{% endif %}
+<details><summary>الإتاحة والتوصيل</summary><p>{{ mufti_workspace.private_status }}</p><p>{{ mufti_workspace.delivery_status }}</p></details>
+</section>

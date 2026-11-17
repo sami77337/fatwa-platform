@@ -1,7 +1,7 @@
-<!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>مرفقات القضية الخاصة</title><link rel="stylesheet" href="/casework/casework.css"></head>
-<body><main>
-<h1>مرفقات القضية الخاصة</h1>
+{% extends "casework/base.html" %}
+{% block title %}مرفقات القضية الخاصة{% endblock %}
+{% block content %}
+<h2>مرفقات القضية الخاصة</h2>
 <p>القضية {{ result.public_ref }} — ملفات اصطناعية فقط. كل مرفق محفوظ بأصله ومرتبط بإصدار وقائع محدد.</p>
 {% if is_staff %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
 {% else %}<a href="/casework/status/">العودة إلى متابعة السؤال</a>
@@ -22,4 +22,4 @@
 {% elif preview.kind == "audio" %}<audio controls preload="metadata" src="{{ preview.media_url }}">متصفحك لا يدعم تشغيل الصوت.</audio>
 {% elif preview.kind == "pdf" %}<iframe title="معاينة PDF الخاصة" src="{{ preview.media_url }}" sandbox width="280" height="400"></iframe>
 {% endif %}</section>{% endif %}
-</main></body></html>
+{% endblock %}

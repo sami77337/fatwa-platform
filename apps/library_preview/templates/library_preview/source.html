@@ -1,0 +1,3 @@
+{% extends "library_preview/base.html" %}{% block content %}
+<nav aria-label="العودة"><a href="{{ publication_url }}">العودة إلى {{ publication_title }}</a><a href="{{ return_url }}">العودة إلى نتائج البحث والتصفية</a></nav><h1>{{ source.heading_title }}</h1>{% include "library_preview/reference_metadata.html" %}
+{% endblock %}

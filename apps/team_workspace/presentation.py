@@ -56,7 +56,7 @@ def describe(snapshot):
     }
 
 
-def read_workspace_case(**common):
+def read_workspace_case(*, include_answer_manifest=True, **common):
     # The public read omits decision notes. Reuse its exact locked identity and
     # integrity boundary for this additional projection; never query by a naked ref.
     # Integration can promote this adapter into a public core read API later.
@@ -68,7 +68,9 @@ def read_workspace_case(**common):
     ) as (case, _identity):
         snapshot = describe(services._staff(case))
         latest = case.answers.order_by("-revision").first()
-        snapshot["answer_manifest"] = services._answer_manifest(latest)
+        snapshot["answer_manifest"] = (
+            services._answer_manifest(latest) if include_answer_manifest else None
+        )
         evidence = {item.version: item.text for item in case.evidence.all()}
         snapshot["timeline"] = [
             {

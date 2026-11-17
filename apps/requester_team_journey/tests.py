@@ -128,7 +128,7 @@ class RequesterTeamJourneyTests(TransactionTestCase):
         self.assertContains(page, "طلبات مراجعة الوصول الخاص", count=1)
         self.assertIn("no-store", page["Cache-Control"])
         self.assertIn("noindex", page["X-Robots-Tag"])
-        self.assertEqual(resolve(STATUS).func.__module__, "apps.requester_access_review.views")
+        self.assertEqual(resolve(STATUS).func.__module__, "apps.requester_team_journey.views")
         self.assertEqual(resolve("/casework/").func.__module__, "apps.casework_web.requester_intake")
         self.assertEqual(resolve("/casework/casework.css").func.__module__, "apps.team_workspace.views")
         self.assertEqual(self.staff.get(STAFF + "?panel=access").status_code, 400)

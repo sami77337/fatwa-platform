@@ -32,7 +32,14 @@ def stylesheet(request):
         CSS + "\nselect{font:inherit;max-width:100%;width:100%;padding:.55rem;"
         "margin-bottom:.7rem}select:focus,summary:focus{outline:3px solid #9c6800;"
         "outline-offset:3px}summary{cursor:pointer}section{scroll-margin-top:1rem}"
-        ".exact{white-space:pre-wrap;overflow-wrap:anywhere}",
+        ".exact{white-space:pre-wrap;overflow-wrap:anywhere}"
+        ".mufti-main{max-width:1400px}.mufti-layout{display:grid;"
+        "grid-template-columns:minmax(220px,320px) minmax(0,1fr);gap:1rem}"
+        ".mufti-context,.mufti-task{min-width:0}.mufti-context details{margin:.8rem 0}"
+        ".mufti-context p{overflow-wrap:anywhere}.mufti-case-nav{display:flex;"
+        "flex-wrap:wrap;gap:.4rem}.mufti-case-nav form{margin:0;padding:.3rem}"
+        ".mufti-case-nav [aria-current=page]{outline:2px solid #12516c}"
+        "@media(max-width:850px){.mufti-layout{grid-template-columns:minmax(0,1fr)}}",
         content_type="text/css; charset=utf-8",
     ))
 
@@ -49,7 +56,12 @@ def _page(request, provider, identity, *, common=None, selected_filter="all", qu
 
         source_origins = staff_origins(**common)
     get_token(request)
-    return private(render(request, "team_workspace/workspace.html", {
+    template = (
+        "mufti_workspace/overview.html"
+        if selected and getattr(settings, "FATWA_MUFTI_WORKSPACE_ENABLED", False) is True
+        else "team_workspace/workspace.html"
+    )
+    return private(render(request, template, {
         **queue(rows, selected_filter, query), "selected": selected,
         "source_origins": source_origins,
         "composite_delivery_enabled": getattr(settings, "FATWA_COMPOSITE_DELIVERY_ENABLED", False) is True,
@@ -73,6 +85,10 @@ def workspace(request):
         if request.method in ("GET", "HEAD"):
             return _page(request, provider, identity)
         action = request.POST.get("action", "")
+        if action == "case_workspace" and getattr(
+            settings, "FATWA_MUFTI_WORKSPACE_ENABLED", False
+        ) is not True:
+            raise InvalidForm("connected_workspace_disabled")
         if action == "filter":
             fields = _form(request, {"action", "state", "query"})
             if fields["state"] not in FILTERS or len(fields["query"]) > 40 or "\x00" in fields["query"]:
@@ -84,7 +100,7 @@ def workspace(request):
             required |= {"text", "revision", "evidence_version"}
         elif action in {"approve", "return"}:
             required |= {"answer_id", "note", "revision", "evidence_version"}
-        elif action not in {"open", "rotate", "revoke"}:
+        elif action not in {"open", "case_workspace", "rotate", "revoke"}:
             raise InvalidForm("unknown_action")
         fields = _form(request, required)
         validate_identity(identity, case_key=fields["case_ref"])
