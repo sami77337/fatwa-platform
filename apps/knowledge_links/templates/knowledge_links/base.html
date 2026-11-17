@@ -1,0 +1,6 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>روابط المعرفة التجريبية</title><link rel="stylesheet" href="/casework/casework.css"></head><body><main>
+<h1>روابط المعرفة التجريبية</h1><p>بيانات اصطناعية للتطوير. ليست نشرًا عامًا أو قبولًا شرعيًا. المصادر الفقهية المعروضة فهارس كتب وليست متنًا كاملًا.</p>
+{% block content %}{% endblock %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="knowledge_browse"><input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="query" value="{{ query }}"><button>العودة إلى العلاقات وموضع البحث السابق</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_read"><input type="hidden" name="edition_id" value="{{ publication_id }}"><button>العودة إلى نسخة الفتوى التجريبية</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="knowledge_history"><input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="query" value="{{ query }}"><button>تاريخ العلاقات الخاص المحفوظ</button></form></main></body></html>

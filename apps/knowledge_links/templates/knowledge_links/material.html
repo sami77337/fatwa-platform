@@ -1,0 +1,3 @@
+{% extends "knowledge_links/base.html" %}{% block content %}
+<h2>{{ material.title }}</h2><p>حالة العلاقة: {{ material.state }}</p>{% if material.source %}{% include "knowledge_links/source.html" with source=material.source %}{% else %}<p>عرض خاص مصرح من التفريغ الاصطناعي؛ لا يمنح نشر النص في المكتبة.</p><dl><dt>هوية مصدر الدرس / التفريغ</dt><dd>{{ material.material.source_id }}</dd><dt>موضع السؤال</dt><dd>{{ material.material.pair_id }}</dd><dt>البداية / النهاية بالمللي ثانية</dt><dd>{{ material.material.start_ms }} / {{ material.material.end_ms }}</dd></dl><blockquote>{{ material.material.text }}</blockquote>{% endif %}
+{% endblock %}
