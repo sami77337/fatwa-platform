@@ -32,19 +32,35 @@ def _verify_binding(review, case):
         raise cases.CaseConflict("access_review_resolution_invalid")
 
 
-def requester_snapshot(token, *, verifier=None, synthetic_fixtures_only=False):
-    """Read access reviews and signed delivery state under one scoped snapshot.
+def requester_snapshot(
+    token, *, verifier=None, show_approved_answer=False, synthetic_fixtures_only=False
+):
+    """Read private case, access reviews and signed proof under one locked snapshot.
 
-    The verifier can only come from trusted server settings, never requester input.
-    Missing trust configuration intentionally yields an unverified status.
+    A text-only answer can be shown only when the server explicitly enables this
+    private view AND all current delivery parts have verified signed evidence.
+    A scholarly decision or an ACCEPTED callback alone never unlocks content.
     """
     with delivery._token_case(token, synthetic_fixtures_only) as case:
         result = delivery._requester_delivery_locked(case, verifier)
+        private_answer = None
+        if show_approved_answer is True and result["delivery_verified"] is True:
+            # _bound checks that this exact immutable current answer, decision and
+            # evidence match the separately signed return plan.
+            decision, _, _ = delivery._bound(case)
+            answer = case.approved_answer
+            if answer is None or answer.decision_id != decision.pk:
+                raise cases.CaseConflict("current_private_answer_unavailable")
+            private_answer = {"text": answer.text, "revision": answer.revision}
         reviews = list(AccessReview.objects.filter(case=case).select_related("grant")
                        .order_by("-created_at")[:10])
         for review in reviews:
             _verify_binding(review, case)
-        return {"case": result, "reviews": [_public(review) for review in reviews]}
+        return {
+            "case": result,
+            "reviews": [_public(review) for review in reviews],
+            "private_answer": private_answer,
+        }
 
 
 def request_review(*, token, reason, expected_case_ref, synthetic_fixtures_only=False):
