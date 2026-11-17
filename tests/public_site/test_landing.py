@@ -85,7 +85,7 @@ class LandingTests(SimpleTestCase):
     def test_no_edition_control_or_publisher_clutter(self):
         response = self.client.get("/")
         controls = Elements(response.content).find("select")
-        self.assertEqual({c["name"] for c in controls}, {"mode", "depth", "has_children"})
+        self.assertEqual({c["name"] for c in controls}, {"root", "mode", "depth", "has_children"})
         for value in [SOURCE["publisher"], SOURCE["title"], SOURCE["edition_key"]]:
             self.assertNotContains(response, value)
 

@@ -8,8 +8,15 @@
     <p>المرجع المتاح: <cite>{{ source }}</cite>.</p>
     <form role="search" method="get" action="{% url 'home' %}">
       <label for="home-query">كلمة أو عبارة من العنوان</label>
-      <input id="home-query" name="q" type="search" maxlength="160" value="{{ query }}" required aria-describedby="search-help">
-      <p id="search-help">حتى ١٦٠ حرفًا وعشر كلمات. البحث في عناوين الفهرس، ولا يشمل نص الكتاب كاملًا.</p>
+      <input id="home-query" name="q" type="search" maxlength="160" value="{{ query }}" aria-describedby="search-help">
+      <p id="search-help">اكتب حتى ١٦٠ حرفًا وعشر كلمات، أو اختر بابًا لتصفح عناوينه. البحث في عناوين الفهرس، ولا يشمل نص الكتاب كاملًا.</p>
+      <label for="home-root">الباب من المصدر</label>
+      <select id="home-root" name="root">
+        <option value="">جميع أبواب المصدر</option>
+        {% for option in section_options %}
+        <option value="{{ option.id }}"{% if root == option.id|stringformat:'s' %} selected{% endif %}>{{ option.title }}</option>
+        {% endfor %}
+      </select>
       <details>
       <summary>خيارات البحث والمرشحات</summary>
       <label for="home-mode">طريقة البحث</label>
@@ -40,6 +47,10 @@
     {% if searching %}
     <section aria-labelledby="results-title">
       <h2 id="results-title" tabindex="-1">نتائج البحث</h2>
+      {% if section %}
+      <p>النطاق الحالي: <strong>{{ section.title }}</strong>. يشمل الباب والعناوين التابعة له في المصدر.</p>
+      <p><a href="{% url 'heading' section.id %}?basic=1&amp;edition={{ edition_id }}">تفاصيل الباب</a> · <a href="{{ all_sections_url }}">العودة إلى جميع أبواب المصدر</a></p>
+      {% endif %}
       {% if results %}
       <p>عدد النتائج: {{ results.total }}.{% if results.items %} عرض النتائج {{ result_start }}–{{ result_end }}.{% endif %}</p>
       {% if results.items %}
@@ -70,7 +81,7 @@
       <p>العناوين بترتيب المصدر الأصلي، وتشمل مقدماته؛ ليست جميع الجذور كتبًا فقهية.</p>
       <ol>
       {% for heading in roots.items %}
-        <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a> — {{ heading.children_count }} عنوانًا فرعيًا</li>
+        <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a> — {{ heading.children_count }} عنوانًا فرعيًا · <a href="{% url 'home' %}?root={{ heading.id }}#results-title" aria-label="تصفح عناوين: {{ heading.title }}">تصفح عناوين الباب</a></li>
       {% empty %}<li>المصدر مسجل، لكن لا توجد جذور محمّلة للتصفح بعد.</li>{% endfor %}
       </ol>
       {% if roots.next_offset %}<p><a href="{% url 'catalog' %}?basic=1&amp;edition={{ edition_id }}&amp;offset={{ roots.next_offset }}&amp;limit=100">بقية الجذور</a></p>{% endif %}

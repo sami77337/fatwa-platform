@@ -81,3 +81,59 @@ python tests/public_site/browser_search.py /tmp/fatwa-public-evidence
 It uses `/usr/bin/chromium` and writes two synthetic screenshots plus a JSON
 report. Local evidence was generated at that path; it is not a deployed site.
 **NOT_DEPLOYED / GATES_HOLD.** No merge to main and no owner acceptance inferred.
+
+## Source-section browsing (follow-up to #210)
+
+Base: `57d72abe355a2a6b7675279d4d68cd2b1d596ab1` (#210).
+The homepage now offers **تصفح عناوين الباب** on each source root and a labeled
+source-section selector. `/?root=<source-row-id>` lists that root and all its
+source descendants with the existing 30-result pagination. Search text becomes
+optional only when a valid source root is selected. Depth and child filters may
+then narrow the section; a keyword searches only inside it. Clearing the section
+preserves an existing keyword/filter search and resets its offset, or returns to
+the clean homepage when browsing without text.
+
+The root must belong to the sole resolved reference edition and have depth one
+and no parent. Unknown/nonroot IDs receive a generic 400 without source details;
+invalid or duplicate numeric parameters are rejected before storage reads. Multiple
+editions still fail closed at the homepage. Roots beyond the bounded first root
+page remain selected when opened by a valid ID. Original source titles are escaped
+without rewriting them. No approved-fatwa taxonomy or publishing policy is assumed.
+
+Only `apps/public_site`, `templates/public_site`, and their tests change. Shared
+URLs, reference services, schema, private casework and editorial routes remain
+untouched. New sibling search-reference-cards work was checked: it changes only
+editorial-search areas, outside this patch. The integration branch had advanced
+to #210's head during this work; this follow-up stays based directly on that head.
+
+### Follow-up verification
+
+Fixture **public-source-sections-v1** contains 67 synthetic headings: two roots,
+61 matching children in the first root, descendants through depth five, and a
+matching peer in the other root. No real questions, rulings or owner corpus.
+
+- **67/67 PASS** on Python 3.13.5, Django 5.2.18, PostgreSQL 17.12: 57 public
+  regression cases plus 6 new boundary cases and 4 new database journeys.
+- Real database reads cover all three section pages, isolation from the other
+  root, keyword scope removal, depth-five filtering and source-pinned details.
+  Captured requests use SELECT only, at most 12 queries, no private tables, and
+  preserve the heading rows. Invalid roots and write attempts remain rejected.
+- Chromium 154.0.8037.57: **PASS** at 320×780 and 1280×900 with JavaScript off;
+  keyboard entry, section paging, detail navigation, keyword search, scope clearing,
+  root switching and blank-query browsing. No overflow, external requests,
+  page errors or cookies. Mobile screenshot inspected.
+- Ruff and `git diff --check`: PASS. CI/PostgreSQL 18 are not claimed.
+
+Run the prior scoped Django command with
+`tests.public_site.test_source_sections` added. For the optional browser check,
+seed **only a disposable empty reference database** using
+`tests.public_site.section_fixture.seed_sections()`, serve test settings on
+`127.0.0.1:8040`, then run:
+
+```sh
+python tests/public_site/browser_sections.py /tmp/fatwa-section-evidence
+```
+
+The local evidence directory contains two screenshots and `browser-report.json`.
+Privacy boundaries from #210 continue to apply, including GET search history/logs.
+**NOT_DEPLOYED / GATES_HOLD**; no main merge, publication or owner acceptance.
