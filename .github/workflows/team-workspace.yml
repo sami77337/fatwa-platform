@@ -80,7 +80,7 @@ jobs:
       - name: Focused workspace and core contracts
         run: |
           set -euo pipefail
-          python manage.py test apps.team_workspace.tests apps.requester_access_review.tests apps.requester_team_journey.tests apps.team_updates.tests tests.casework.test_campaign tests.casework.test_campaign_access tests.casework.test_campaign_updates tests.casework.test_campaign_delivery tests.casework.test_core tests.casework.test_adversarial --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/tests.log
+          python manage.py test apps.team_workspace.tests apps.requester_access_review.tests apps.requester_access_review.recovery_tests apps.requester_team_journey.tests apps.team_updates.tests tests.casework.test_campaign tests.casework.test_campaign_access tests.casework.test_campaign_updates tests.casework.test_campaign_delivery tests.casework.test_core tests.casework.test_adversarial --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/tests.log
       - name: Real Chrome with browser sandbox
         if: matrix.postgres == '17'
         env:

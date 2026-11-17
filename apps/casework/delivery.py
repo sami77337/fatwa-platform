@@ -330,35 +330,43 @@ def record_case_provider_event(
         return result
 
 
-def requester_delivery_status(token, *, verifier=None, synthetic_fixtures_only=False):
-    """Private, read-only projection, verified anew under the case + queue locks.
+def _requester_delivery_locked(case, verifier):
+    """Project trusted delivery evidence while the requester case row is locked.
 
-    Verifier is trusted server configuration. Never pass one from request fields.
-    No text, PK, plan, approval, signature, worker or channel identifier is exposed.
+    Caller owns the case lock; the audit helper validates the existing queue
+    snapshot without issuing a lease, sending content or exposing answer text.
+    """
+    result = {**cases._public(case), "delivery_status": "NOT_STAGED"}
+    if case.stage != "ANSWERED":
+        result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
+        return result
+    if not CaseDelivery.objects.filter(decision__answer_id=case.approved_answer_id).exists():
+        return result
+    if not isinstance(verifier, Ed25519ProviderEventVerifier):
+        result["delivery_status"] = "EVIDENCE_UNAVAILABLE"
+        return result
+    try:
+        _, binding, _ = _bound(case)
+        audit = audit_provider_reported_delivery(
+            plan_fingerprint=binding.approval.plan_fingerprint,
+            verifier=verifier,
+        )
+    except (cases.CaseConflict, queue.QueueConflict):
+        result["delivery_status"] = "EVIDENCE_UNAVAILABLE"
+        return result
+    result.update(
+        delivery_verified=audit.cryptographically_verified_complete,
+        delivery_status=audit.status,
+        expected_parts=audit.expected_parts,
+        verified_parts=audit.verified_delivered_parts,
+    )
+    return result
+
+
+def requester_delivery_status(token, *, verifier=None, synthetic_fixtures_only=False):
+    """Private read-only projection; the trusted verifier is server supplied.
+
+    No text, PK, plan, approval, signature, worker or channel ID is exposed.
     """
     with _token_case(token, synthetic_fixtures_only) as case:
-        result = {**cases._public(case), "delivery_status": "NOT_STAGED"}
-        if case.stage != "ANSWERED":
-            result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
-            return result
-        if not CaseDelivery.objects.filter(decision__answer_id=case.approved_answer_id).exists():
-            return result
-        if not isinstance(verifier, Ed25519ProviderEventVerifier):
-            result["delivery_status"] = "EVIDENCE_UNAVAILABLE"
-            return result
-        try:
-            _, binding, _ = _bound(case)
-            audit = audit_provider_reported_delivery(
-                plan_fingerprint=binding.approval.plan_fingerprint,
-                verifier=verifier,
-            )
-        except (cases.CaseConflict, queue.QueueConflict):
-            result["delivery_status"] = "EVIDENCE_UNAVAILABLE"
-            return result
-        result.update(
-            delivery_verified=audit.cryptographically_verified_complete,
-            delivery_status=audit.status,
-            expected_parts=audit.expected_parts,
-            verified_parts=audit.verified_delivered_parts,
-        )
-        return result
+        return _requester_delivery_locked(case, verifier)

@@ -9,7 +9,27 @@
   <p>رقم المتابعة: <bdi id="workspace-reference">{{ result.public_ref }}</bdi></p>
   <p>التحديث الحالي: <bdi>{{ result.revision }}</bdi> · عدد التعقيبات المحفوظة: <bdi id="followup-count">{{ result.evidence_version|add:"-1" }}</bdi></p>
   {% if result.clarification %}<h3>الاستيضاح المطلوب</h3><p class="original" id="requested-clarification">{{ result.clarification }}</p>{% endif %}
-  <p class="notice">هذه حالة معالجة السؤال، وليست إثبات تسليم أو قراءة. لا يُعرض الجواب في هذه المساحة حاليًا.</p>
+  <p class="notice">اعتماد الجواب لا يثبت تسليمه أو قراءته. لا يُعرض نص الجواب إلا ضمن الوصول الخاص وبسماح صريح بعد إثبات التسليم الموقّع.</p>
+  {% if result.delivery_status %}
+  <section id="requester-delivery-evidence" aria-labelledby="requester-delivery-heading">
+    <h3 id="requester-delivery-heading">حالة تسليم الجواب</h3>
+    <p id="requester-delivery-status">{{ delivery_label }}</p>
+    {% if result.delivery_verified %}
+      <p id="requester-verified-parts">الأجزاء التي تحقق توقيع المزود على تسليمها: <bdi>{{ result.verified_parts }}</bdi> من <bdi>{{ result.expected_parts }}</bdi>.</p>
+      <p>هذا إثبات لما أبلغ عنه مزود القناة، وليس إثباتًا لقراءة الجواب أو وصوله إلى جهاز المستفتي.</p>
+    {% else %}
+      <p>لا يوجد حاليًا إثبات مكتمل وموثوق لتسليم جميع أجزاء الجواب. لا يُعد قبول المزود للرسالة تسليمًا.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% if private_answer %}
+  <section id="requester-approved-answer" aria-labelledby="requester-approved-answer-heading">
+    <h3 id="requester-approved-answer-heading">الجواب المعتمد المتاح لك</h3>
+    <p>إصدار الجواب المعتمد: <bdi>{{ private_answer.revision }}</bdi></p>
+    <div class="original" id="requester-answer-text">{{ private_answer.text }}</div>
+    <p>هذا عرض خاص للنسخة المعتمدة حاليًا. فتح الصفحة لا يُثبت أنك قرأت الجواب أو سمعته.</p>
+  </section>
+  {% endif %}
   <a href="/casework/status/">تحديث الحالة</a>
 </article>
 <form method="post" action="/casework/status/">
@@ -29,5 +49,5 @@
 <form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="unlock"><label for="workspace-token">رمز الوصول الخاص</label><input type="password" id="workspace-token" name="token" required maxlength="128" autocomplete="off"><button type="submit">فتح المتابعة الخاصة</button></form>
 {% if result %}</details>{% endif %}
 <p>يبقى الوصول مفتوحًا لمدة ١٥ دقيقة من فتحه، ويمكن فتحه مجددًا بالرمز. أغلقه عند استعمال جهاز مشترك.</p>
-<details id="recovery-help"><summary>فقدت رمز الوصول أو انتهت صلاحيته</summary><p>احتفظ برقم المتابعة واطلب الاستعادة من الفريق عبر مسار التحقق الموثوق في البيئة التجريبية. رقم المتابعة وحده لا يثبت ملكية القضية. بعد التحقق يصدر الفريق رمزًا جديدًا ويُبطل القديم؛ لا تُحذف القضية أو تعقيباتها. لا تُرسل سؤالًا جديدًا لاستعادة السؤال السابق.</p><p>هذه الصفحة لا تستعيد الوصول تلقائيًا ولا ترسل طلب استعادة. لا توجد استعادة ذاتية مفعلة حاليًا.</p></details>
+<details id="recovery-help"><summary>فقدت رمز الوصول أو انتهت صلاحيته</summary><p>احتفظ برقم المتابعة واطلب الاستعادة من الفريق عبر مسار التحقق الموثوق في البيئة التجريبية. رقم المتابعة وحده لا يثبت ملكية القضية. بعد التحقق يصدر الفريق رمزًا جديدًا ويُبطل القديم؛ لا تُحذف القضية أو تعقيباتها. لا تُرسل سؤالًا جديدًا لاستعادة السؤال السابق.</p>{% if recovery_enabled %}<p>تتوفر في الأسفل استعادة مقيدة بإثبات تحقق خارجي صالح ومربوط بقضيتك؛ الرقم المرجعي وحده لا يمنح الوصول.</p>{% else %}<p>لا توجد استعادة ذاتية مفعلة حاليًا. قد يتيح إعداد تطوير مستقل مسار تحقق خارجي موثوقًا دون إصدار صلاحيات عامة.</p>{% endif %}</details>
 {% endblock %}

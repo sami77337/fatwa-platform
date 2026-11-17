@@ -31,3 +31,20 @@ class AccessReview(models.Model):
                      closed_at__isnull=False) & ~Q(acknowledged_by="") & ~Q(closed_by=""))
             ), name="rar_state_revision"),
         ]
+
+
+class UsedRecoveryAssertion(models.Model):
+    """A consumed external identity assertion; its original secret is never stored."""
+
+    digest = models.CharField(max_length=64, primary_key=True)
+    case = models.ForeignKey("casework.Case", on_delete=models.PROTECT)
+    issuer_id = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(digest__regex=r"^[a-f0-9]{64}$"),
+                name="rar_recovery_digest",
+            ),
+        ]
