@@ -47,6 +47,9 @@ def _page(request, provider, identity, *, common=None, selected_filter="all", qu
     return private(render(request, "team_workspace/workspace.html", {
         **queue(rows, selected_filter, query), "selected": selected,
         "message": message, "attempted_text": attempted_text, "access": access,
+        "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
+        "citations_enabled": getattr(settings, "FATWA_CASE_CITATIONS_ENABLED", False) is True,
+        "publication_enabled": getattr(settings, "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED", False) is True,
         "recovery_available": callable(getattr(settings, "FATWA_CASEWORK_RECOVERY_RESOLVER", None)),
     }, status=status))
 
@@ -64,7 +67,7 @@ def workspace(request):
         action = request.POST.get("action", "")
         if action == "filter":
             fields = _form(request, {"action", "state", "query"})
-            if fields["state"] not in FILTERS or len(fields["query"]) > 40:
+            if fields["state"] not in FILTERS or len(fields["query"]) > 40 or "\x00" in fields["query"]:
                 raise InvalidForm("invalid_queue_filter")
             return _page(request, provider, identity,
                          selected_filter=fields["state"], query=fields["query"])

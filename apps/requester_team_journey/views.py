@@ -46,6 +46,18 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if action in {"attachment_list", "attachment_preview", "attachment_download"}:
+            from apps.case_attachments.views import staff as attachments
+
+            return _panel(attachments(request), "cases")
+        if action in {"citations", "citation_search", "citation_select", "citation_save", "citation_source"}:
+            from apps.case_citations.views import desk as citations
+
+            return _panel(citations(request), "cases")
+        if action in {"pub_open", "pub_create", "pub_review", "pub_approve", "pub_withdraw", "pub_library", "pub_read"}:
+            from apps.experimental_publication.views import workspace as publication
+
+            return _panel(publication(request), "cases")
         if action in TRANSCRIPT_ACTIONS:
             response = transcript_desk(request)
             if response.status_code == 200:

@@ -1,0 +1,25 @@
+{% extends "casework/base.html" %}
+{% block title %}نسخة نشر تجريبية مغلقة{% endblock %}
+{% block content %}
+<h2>نسخة تحريرية للنشر التجريبي المغلق</h2>
+<p>لا نشر إنتاجي. النسخة مستقلة عن أصل القضية. الاعتماد العلمي لا يمنح موافقة نشر؛ يلزم مخوّل مستقل ومراجعة صريحة لإخفاء البيانات الشخصية.</p>
+{% if saved %}<p role="status">حُفظ الإجراء على النسخة المحددة.</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="journey_cases"><button>العودة إلى القضايا</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_library"><input type="hidden" name="query" value=""><button>المكتبة التجريبية المغلقة</button></form>
+<h3>{{ selected.public_ref }}</h3>
+{% if selected.approved %}
+<details><summary>الجواب المعتمد الخاص — إصدار {{ selected.approved.revision }}</summary><p class="original">{{ selected.approved.text }}</p></details>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="pub_create"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="revision" value="{{ selected.revision }}"><input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}">
+<label for="publication-title">عنوان النسخة</label><input id="publication-title" name="title" maxlength="160" required>
+<label for="publication-category">تصنيف تجريبي (ليس التصنيف العام المعتمد)</label><input id="publication-category" name="category" maxlength="80" required>
+<label for="publication-body">النص التحريري المستقل بعد إخفاء التفاصيل الشخصية</label><textarea id="publication-body" name="body" maxlength="16000" required></textarea>
+<p>أدخل نسخة محررة من الجواب المعتمد. لا يُنسخ السؤال أو هويات السائل أو الملاحظات الداخلية. التصحيح ينشئ إصدار نشر جديدًا ويحتاج مراجعة وموافقة مستقلتين.</p><button>حفظ نسخة مرشحة جديدة</button></form>
+{% else %}<p>يلزم جواب حالي معتمد قبل إنشاء نسخة نشر.</p>{% endif %}
+{% for edition in selected.editions %}<article><h3>{{ edition.title }} — نسخة {{ edition.number }}</h3><p>{{ edition.category }} · {{ edition.state }}</p><p class="original">{{ edition.body }}</p><p>إصدار الجواب المصدر {{ edition.source_answer_revision }}، الوقائع {{ edition.evidence_version }}</p>
+{% include "experimental_publication/references.html" %}
+{% if edition.state == 'CANDIDATE' %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_review"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="edition_id" value="{{ edition.id }}"><label><input type="checkbox" name="confirm" value="yes" required>راجعت النص والعنوان والتصنيف والإحالات وأزلت البيانات الشخصية، وحافظت على معنى الجواب المعتمد.</label><button>تسجيل مراجعة التحرير والخصوصية</button></form>{% endif %}
+{% if edition.state == 'REVIEWED' %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_approve"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="edition_id" value="{{ edition.id }}"><label><input type="checkbox" name="confirm" value="yes" required>أوافق مستقلًا على هذه النسخة للمكتبة التجريبية المغلقة فقط.</label><button>موافقة نشر مستقلة</button></form>{% endif %}
+{% if edition.state != 'WITHDRAWN' %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_withdraw"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="edition_id" value="{{ edition.id }}"><label><input type="checkbox" name="confirm" value="yes" required>أؤكد سحب هذه النسخة ومنع عرضها.</label><button>سحب النسخة</button></form>{% endif %}
+</article>{% empty %}<p>لا نسخ نشر مرشحة بعد.</p>{% endfor %}
+{% endblock %}

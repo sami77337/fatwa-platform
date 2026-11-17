@@ -70,7 +70,12 @@ class RequesterWorkspaceTests(TransactionTestCase):
         page = self.client.get(URL)
         self.assertContains(page, case.public_ref)
         self.assertNotContains(page, token)
-        self.assertNotContains(page, case.source.original_question)
+        if page.context.get("requester_history"):
+            # The V7 campaign deliberately displays the capability owner's own
+            # question; the legacy standalone status screen remains minimal.
+            self.assertContains(page, case.source.original_question)
+        else:
+            self.assertNotContains(page, case.source.original_question)
         common = self.common(case)
         services.request_clarification(**common, text="تفصيل اصطناعي مطلوب؟",
                                        expected_revision=1, expected_evidence_version=1)
@@ -85,7 +90,11 @@ class RequesterWorkspaceTests(TransactionTestCase):
         page = self.client.get(URL)
         self.assertContains(page, 'id="followup-count">1<')
         self.assertContains(page, "قيد المراجعة")
-        self.assertNotContains(page, "تفصيل اصطناعي مطلوب؟")
+        self.assertIsNone(page.context["result"]["clarification"])
+        if page.context.get("requester_history"):
+            self.assertContains(page, "تفصيل اصطناعي مطلوب؟")
+        else:
+            self.assertNotContains(page, "تفصيل اصطناعي مطلوب؟")
         self.assertEqual(services.read_case(**common)["followups"][0]["text"], reply)
         self.assertEqual(case.source.original_question, fields["question"])
         # Receipt retry and refreshing the status do not create a second source/evidence.
