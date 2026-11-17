@@ -30,6 +30,7 @@ class RecoveryTests(unittest.TestCase):
     @classmethod
     def setup_records(cls):
         """Canonical service fixture shared without choosing a recovery format."""
+        from django.conf import settings
         from django.test import override_settings
 
         from apps.answer_media import services as answers
@@ -47,6 +48,10 @@ class RecoveryTests(unittest.TestCase):
         cls.root = Path(cls.temp.name)
         cls.storage = FileSystemStorage(cls.root / "source", synthetic_fixtures_only=True)
         cls.settings = override_settings(
+            # Django's UserSettingsHolder otherwise masks this with None. Keep
+            # the profile actually selected by the isolated process; do not
+            # manufacture compatibility or alter encryption flags here.
+            SETTINGS_MODULE=settings.SETTINGS_MODULE,
             FATWA_PRIVATE_MEDIA_STORAGE=cls.storage,
             FATWA_CASE_ATTACHMENTS_ENABLED=True,
             FATWA_ANSWER_MEDIA_ENABLED=True,

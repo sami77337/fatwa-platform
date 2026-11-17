@@ -125,3 +125,13 @@ execution on both majors: the worker was launched by file path, so its Python
 import path omitted the repository root (`No module named config`). The launcher
 now invokes that worker as `-m infra.dev.v12_verify`. No application assertion was
 reported as passed by that failed invocation; both matrix legs must run again.
+
+On `7f0a60c`, both PostgreSQL majors passed 173 functional/security tests (including
+all 14 independent review probes), 8 strict recovery tests and 16 encrypted V11
+regressions. The final legacy compatibility stage failed in fixture setup before
+executing tests: Django override_settings masks SETTINGS_MODULE with None, so the
+policy correctly rejected plaintext despite the process selecting the isolated
+compatibility module. The shared fixture and V10 browser test now preserve the
+module actually selected by their process when applying test overlays. Neither
+policy flags nor the production recovery gate were relaxed. Only compatibility
+and directly affected fixture checks need local repetition; CI rechecks the head.

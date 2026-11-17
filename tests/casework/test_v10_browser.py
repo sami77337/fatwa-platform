@@ -175,6 +175,9 @@ class BrowserHarness:
 @override_settings(
     **{
         **WEB_SETTINGS,
+        # Preserve the explicitly selected isolated compatibility module through
+        # Django's test overlay; the normal strict flags remain unchanged.
+        "SETTINGS_MODULE": os.environ.get("DJANGO_SETTINGS_MODULE"),
         "ROOT_URLCONF": "config.campaign_urls",
         "MIDDLEWARE": [
             "apps.library_preview.guard.PreviewCompositionGuard",
