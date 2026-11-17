@@ -6,6 +6,8 @@ on:
       - 'templates/team_workspace/**'
       - 'apps/casework/**'
       - 'apps/casework_web/**'
+      - 'apps/requester_access_review/**'
+      - 'templates/requester_access_review/**'
       - 'config/campaign_urls.py'
       - 'config/settings/campaign_review.py'
       - 'tests/casework/test_campaign*.py'
@@ -35,7 +37,7 @@ jobs:
     env:
       FATWA_PRODUCTION: '0'
       FATWA_WAVE7_SYNTHETIC_WRITES: '1'
-      DJANGO_SETTINGS_MODULE: config.settings.casework_test
+      DJANGO_SETTINGS_MODULE: config.settings.campaign_review
       PGHOST: 127.0.0.1
       PGPORT: '5432'
       PGUSER: wave7_synthetic
@@ -74,7 +76,7 @@ jobs:
       - name: Focused workspace and core contracts
         run: |
           set -euo pipefail
-          python manage.py test apps.team_workspace.tests tests.casework.test_campaign tests.casework.test_core tests.casework.test_adversarial --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/tests.log
+          python manage.py test apps.team_workspace.tests apps.requester_access_review.tests tests.casework.test_campaign tests.casework.test_campaign_access tests.casework.test_core tests.casework.test_adversarial --noinput --verbosity 2 2>&1 | tee .local/qa/team-workspace/tests.log
       - name: Real Chrome with browser sandbox
         if: matrix.postgres == '17'
         env:

@@ -2,6 +2,7 @@
 {% block title %}مساحة الشيخ والفريق — القضايا{% endblock %}
 {% block content %}
 <h2>مساحة الشيخ والفريق</h2>
+{% if access_review_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="access_queue"><button type="submit">طلبات مراجعة الوصول</button></form>{% endif %}
 <p>المكتب الدائم للشيخ المخوّل بالقضية. صلاحيات المؤلف والمراجع والمشغّل في مساحة التدريب باقية كما هي.</p>
 {% if message %}<p class="notice" role="status">{{ message }}</p>{% endif %}
 {% if attempted_text != None %}

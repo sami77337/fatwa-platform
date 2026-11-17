@@ -2,6 +2,10 @@
 
 `config.settings.campaign_review` is an explicit opt-in profile combining the
 private requester intake/status screens and the scoped Mufti team workspace.
+It also registers the optional `requester_access_review` app and its initial
+migration. Existing access is required to request review; the staff queue opens
+from the team screen and returns to the same team editor. Acknowledging a request
+does not revoke or replace its token. Closing requires prior trusted revocation.
 `config.campaign_urls` resolves the existing `/casework/`, `/casework/status/`,
 `/casework/staff/` and stylesheet paths to these implementations. Both legacy and
 new reverse names resolve to the same requester screens. Default/public settings
@@ -30,8 +34,8 @@ token. Self-service recovery and transcript-to-case binding remain unavailable.
 Focused checks (pinned requirements, disposable synthetic PostgreSQL):
 
 ```sh
-python manage.py test apps.team_workspace.tests tests.casework.test_campaign --settings=config.settings.casework_test --noinput
-FATWA_FASTBUILD_BROWSER=/usr/bin/chromium python manage.py test tests.casework.test_campaign_browser --settings=config.settings.casework_test --noinput
+python manage.py test apps.team_workspace.tests apps.requester_access_review.tests tests.casework.test_campaign tests.casework.test_campaign_access --settings=config.settings.campaign_review --noinput
+FATWA_FASTBUILD_BROWSER=/usr/bin/chromium python manage.py test tests.casework.test_campaign_browser --settings=config.settings.campaign_review --noinput
 ```
 
 The tests use one URL configuration for both requester and team, separate browser

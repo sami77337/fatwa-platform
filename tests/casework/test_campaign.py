@@ -7,8 +7,10 @@ from django.urls import resolve, reverse
 
 from apps.casework import services
 from apps.casework.delivery import prepare_case_delivery, requester_delivery_status
-from apps.casework_web import requester_intake, requester_workspace
+from apps.casework_web import requester_intake
+from apps.requester_access_review.views import requester
 from apps.team_workspace import views as team_views
+from apps.team_workspace.campaign import staff
 from tests.casework import test_http as http_contracts
 from tests.casework import test_requester_workspace as requester_contracts
 from tests.casework.test_http import hidden, post
@@ -26,9 +28,9 @@ class CampaignProfileTests(SimpleTestCase):
         expected = {
             "requester_intake": requester_intake.intake,
             "casework_intake": requester_intake.intake,
-            "requester_workspace": requester_workspace.workspace,
-            "casework_status": requester_workspace.workspace,
-            "casework_staff": team_views.workspace,
+            "requester_workspace": requester,
+            "casework_status": requester,
+            "casework_staff": staff,
             "casework_css": team_views.stylesheet,
         }
         for name, view in expected.items():

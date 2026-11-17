@@ -81,12 +81,27 @@ class CampaignBrowserTests(LiveServerTestCase):
                     )
                     self.assertNotIn(token, requester.content())
                     self.assertEqual(requester.locator("#workspace-token").input_value(), "")
+                    requester.locator("#review-reason").select_option("EXPOSED")
+                    click(requester, "حفظ طلب مراجعة الوصول")
+                    self.assertIn("طلب المراجعة محفوظ", requester.content())
                     directory.grant(public_ref)
 
                     staff.goto(self.live_server_url + "/casework/staff/login/")
                     staff.locator("#credential").fill(directory.credential)
                     click(staff, "دخول المكتب")
-                    click(staff, public_ref)
+                    click(staff, "طلبات مراجعة الوصول")
+                    self.assertNotIn(token, staff.content())
+                    click(staff, "بدء متابعة التحقق")
+                    click(staff, "طلبات مراجعة الوصول")
+                    self.assertIn("الفريق يتابع التحقق الموثوق", staff.content())
+                    self.assertEqual(
+                        staff.get_by_role(
+                            "button", name="إغلاق الطلب بعد إبطال الرمز السابق"
+                        ).count(),
+                        0,
+                    )
+                    click(staff, "فتح القضية والتحقق الموثوق")
+                    self.assertEqual(staff.locator("#queue-state").count(), 1)
                     staff.locator("#clarification-text").fill("وضّح هذا التفصيل الاصطناعي.")
                     click(staff, "طلب استيضاح")
                     requester.get_by_role("link", name="تحديث الحالة", exact=True).click()
