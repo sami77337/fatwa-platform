@@ -13,13 +13,26 @@
   {% if result.delivery_status %}
   <section id="requester-delivery-evidence" aria-labelledby="requester-delivery-heading">
     <h3 id="requester-delivery-heading">حالة تسليم الجواب</h3>
-    <p id="requester-delivery-status">{{ delivery_label }}</p>
+    <p id="requester-delivery-status">{% if composite_delivery %}مسار الإرجاع النصي القديم لا يدعم هذا الجواب المركب. حالة الأجزاء في المسار المركب موضحة أدناه.{% else %}{{ delivery_label }}{% endif %}</p>
     {% if result.delivery_verified %}
       <p id="requester-verified-parts">الأجزاء التي تحقق توقيع المزود على تسليمها: <bdi>{{ result.verified_parts }}</bdi> من <bdi>{{ result.expected_parts }}</bdi>.</p>
       <p>هذا إثبات لما أبلغ عنه مزود القناة، وليس إثباتًا لقراءة الجواب أو وصوله إلى جهاز المستفتي.</p>
-    {% else %}
+    {% elif not composite_delivery %}
       <p>لا يوجد حاليًا إثبات مكتمل وموثوق لتسليم جميع أجزاء الجواب. لا يُعد قبول المزود للرسالة تسليمًا.</p>
     {% endif %}
+  </section>
+  {% endif %}
+  {% if composite_delivery %}
+  <section id="requester-composite-delivery" aria-labelledby="composite-delivery-heading">
+    <h3 id="composite-delivery-heading">حالة تسليم أجزاء الجواب عبر المسار المركب</h3>
+    <p id="composite-delivery-status">{{ composite_delivery_label }}</p>
+    <p>أجزاء تحقق إثبات تسليمها الموقّع: <bdi>{{ composite_delivery.verified_parts }}</bdi> من <bdi>{{ composite_delivery.expected_parts }}</bdi>.</p>
+    {% if composite_delivery.accepted_parts %}<p>أجزاء قبلها المزود دون إثبات تسليم: {{ composite_delivery.accepted_parts }}.</p>{% endif %}
+    {% if composite_delivery.failed_parts %}<p>أجزاء تعذر تسليمها: {{ composite_delivery.failed_parts }}.</p>{% endif %}
+    {% if composite_delivery.unresolved_parts %}<p>أجزاء حالتها غير محسومة: {{ composite_delivery.unresolved_parts }}.</p>{% endif %}
+    {% if composite_delivery.delivery_verified %}<p id="composite-delivery-verified">تحققت الإيصالات الموقّعة لجميع أجزاء هذا الإصدار.</p>{% else %}<p>لم يكتمل إثبات التسليم الموقّع لجميع الأجزاء.</p>{% endif %}
+    {% if composite_delivery.human_action %}<p>تحتاج الحالة إلى متابعة بشرية؛ لا تعني إعادة إرسال تلقائية.</p>{% endif %}
+    <p>هذه نتيجة محاكاة قناة تجريبية مغلقة، وليست إرسالًا خارجيًا أو إثباتًا لقراءتك. الإتاحة داخل البوابة مستقلة عن هذا الإثبات.</p>
   </section>
   {% endif %}
   {% if private_answer %}

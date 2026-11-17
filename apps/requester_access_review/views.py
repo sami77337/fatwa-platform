@@ -32,6 +32,15 @@ DELIVERY_LABELS = {
     "PROVIDER_EVIDENCE_INCOMPLETE": "أبلغت القناة عن التسليم، لكن الإثبات الموقّع غير مكتمل",
     "PROVIDER_REPORTED_DELIVERY_VERIFIED": "تحققت إيصالات المزود الموقّعة لجميع أجزاء الجواب",
 }
+COMPOSITE_LABELS = {
+    "STAGED": "جُهزت أجزاء الجواب؛ لم يثبت تسليمها بعد",
+    "IN_PROGRESS": "التسليم قيد المتابعة؛ قبول المزود لا يثبت التسليم",
+    "PARTIALLY_DELIVERED": "أبلغ المزود عن تسليم بعض الأجزاء فقط",
+    "PARTIALLY_FAILED": "تسليم جزئي مع فشل أجزاء تحتاج متابعة بشرية",
+    "FAILED_REQUIRES_REVIEW": "تعذر التسليم ويحتاج متابعة بشرية",
+    "NEEDS_RECONCILIATION": "حالة أجزاء غير محسومة وتحتاج تحققًا بشريًا",
+    "DELIVERED": "أبلغ المزود عن تسليم الأجزاء؛ نتيجة التحقق الموقّع أدناه",
+}
 
 def _recovery_context(request):
     nonce = secrets.token_hex(16)
@@ -146,6 +155,10 @@ def requester(request):
             "requester_history": snapshot.get("requester_history", []),
             "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
             "private_media_availability": snapshot["private_media_availability"],
+            "composite_delivery": snapshot["composite_delivery"],
+            "composite_delivery_label": COMPOSITE_LABELS.get(
+                (snapshot["composite_delivery"] or {}).get("state"), "حالة التسليم المركب غير محسومة"
+            ),
             "delivery_label": DELIVERY_LABELS.get(
                 result.get("delivery_status"), "حالة التسليم غير محسومة"
             ),

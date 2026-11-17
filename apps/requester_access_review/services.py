@@ -6,11 +6,14 @@ Private core context managers are intentionally reused at the pinned V6 boundary
 from hashlib import sha256
 
 from django.apps import apps as django_apps
+from django.conf import settings
 from django.utils import timezone
 
 from apps.casework import delivery
 from apps.casework import services as cases
 from apps.delivery_queue.models import RequesterTrackingToken
+from apps.delivery_queue.services import QueueConflict
+from apps.delivery_queue.signed_provider_receipts import Ed25519ProviderEventVerifier
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 
 from .models import AccessReview
@@ -107,8 +110,66 @@ def requester_snapshot(
             "reviews": [_public(review) for review in reviews],
             "private_answer": private_answer,
             "private_media_availability": private_media,
+            "composite_delivery": _composite_delivery_locked(case, private_media),
             "requester_history": _requester_history(case, private_answer),
         }
+
+
+def _composite_delivery_locked(case, availability):
+    """Allowlisted signed multipart summary; never unlocks the legacy text path.
+
+    The caller holds the token-authorized case lock and owned queue transaction.
+    Explicit current portal availability is required before revealing this summary.
+    Reuse the composite service's fresh actor, origin, capabilities and exact-plan
+    checks; no part identifiers, source IDs or internal audit records cross here.
+    """
+    if (
+        availability["available"] is not True
+        or not django_apps.is_installed("apps.composite_delivery")
+        or getattr(settings, "FATWA_COMPOSITE_DELIVERY_ENABLED", False) is not True
+    ):
+        return None
+    verifier = getattr(settings, "FATWA_COMPOSITE_DELIVERY_PROVIDER_VERIFIER", None)
+    if not isinstance(verifier, Ed25519ProviderEventVerifier):
+        return None
+    from apps.casework_web.access import RequestDirectory
+    from apps.composite_delivery.services import composite_status
+
+    try:
+        decision = case.approved_answer.decision
+        directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
+        actor = cases._identity(directory, decision.subject_id, case)
+        if (directory.provider_id, actor.auth_epoch) != (
+            decision.provider_id, decision.auth_epoch
+        ):
+            return None
+        provider = RequestDirectory(
+            directory, actor, authenticated_provider_id=decision.provider_id
+        )
+        result = composite_status(
+            case_id=str(case.pk), subject_id=actor.subject_id, provider=provider,
+            verifier=verifier, synthetic_fixtures_only=True,
+        )
+        expected = result["expected_parts"]
+        if expected != availability["part_count"] or not 2 <= expected <= 8:
+            return None
+        parts = result["parts"]
+        if len(parts) != expected:
+            return None
+        return {
+            "state": result["state"],
+            "expected_parts": expected,
+            "verified_parts": result["verified_parts"],
+            "accepted_parts": sum(p["state"] == "SENT_UNCONFIRMED" for p in parts),
+            "failed_parts": sum(p["state"] == "FAILED_REQUIRES_REVIEW" for p in parts),
+            "unresolved_parts": sum(p["state"] == "UNKNOWN_REQUIRES_RECONCILIATION" for p in parts),
+            "delivery_verified": result["delivery_verified"] is True
+            and result["verified_parts"] == expected,
+            "read_confirmed": False,
+            "human_action": result["human_action"] is True,
+        }
+    except (cases.CaseConflict, QueueConflict, IdentityUnavailable):
+        return None
 
 
 def request_review(*, token, reason, expected_case_ref, synthetic_fixtures_only=False):
