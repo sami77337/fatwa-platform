@@ -14,6 +14,8 @@ INSTALLED_APPS = [
 ]
 FATWA_CASE_DELIVERY_APPROVAL_VERIFIER = None
 FATWA_CASE_DELIVERY_PROVIDER_VERIFIER = None
+# One-time recovery requires an independent, server-configured identity verifier.
+FATWA_CASEWORK_RECOVERY_AUTHORITY = None
 # Explicit synthetic-only policy opt-in; approvals alone never reveal private answers.
 FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED = False
 ROOT_URLCONF = "config.campaign_urls"
