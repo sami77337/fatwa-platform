@@ -86,6 +86,34 @@ def main():
                     page.wait_for_load_state("domcontentloaded")
                     assert page.get_by_text("تداخل بين مقطعين", exact=False).count() == 1
                     assert page.get_by_role("button", name="تنزيل الحزمة ZIP").count() == 0
+                    # Save unfinished work, then restore in a fresh browser context.
+                    page.locator("#start").fill("18")
+                    page.get_by_role("button", name="حفظ التعديل في المراجعة").click()
+                    page.wait_for_load_state("domcontentloaded")
+                    assert page.locator("#original-comparison").count() == 1
+                    with page.expect_download() as checkpoint_event:
+                        page.get_by_role("button", name="حفظ مراجعة للاستكمال لاحقًا").click()
+                    checkpoint_path = output / f"checkpoint-{width}.zip"
+                    checkpoint_event.value.save_as(checkpoint_path)
+                    context.close()
+                    context = browser.new_context(viewport={"width": width, "height": height})
+                    page = context.new_page()
+                    page.on("pageerror", lambda error: errors.append(str(error)))
+                    page.on(
+                        "request",
+                        lambda request: (
+                            external.append(request.url)
+                            if not request.url.startswith(origin + "/")
+                            else None
+                        ),
+                    )
+                    page.goto(origin + "/transcripts/")
+                    page.locator("#transcript").set_input_files(str(checkpoint_path))
+                    page.locator('[name="synthetic_only"]').check()
+                    page.get_by_role("button", name="استيراد ومعاينة").click()
+                    page.wait_for_load_state("domcontentloaded")
+                    assert page.locator("#original-comparison").count() == 1
+                    assert page.get_by_role("button", name="تنزيل الحزمة ZIP").count() == 0
                     page.locator("#segment").select_option("1")
                     page.get_by_role("button", name="عرض المقطع").click()
                     page.wait_for_load_state("domcontentloaded")
@@ -103,6 +131,7 @@ def main():
                         assert archive.read("original.json") == raw
                         reviewed = json.loads(archive.read("reviewed.json"))
                         assert reviewed["items"][0]["text"] == rows[0]["text"]
+                        assert reviewed["items"][0]["start_ms"] == 18
                         assert reviewed["items"][1]["start_ms"] == 1017
                         manifest = json.loads(archive.read("manifest.json"))
                         assert manifest["case_binding"] == "NOT_CONNECTED"
@@ -124,6 +153,7 @@ def main():
                 "browser": version,
                 "viewports": results,
                 "case_binding": "NOT_CONNECTED",
+                "checkpoint_resume": "PASS",
                 "deployment": "NOT_DEPLOYED",
             }
             (output / "browser-result.json").write_text(json.dumps(result, indent=2) + "\n")

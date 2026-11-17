@@ -5,13 +5,14 @@ import io
 import json
 from dataclasses import dataclass
 from hashlib import sha256
-from zipfile import ZIP_STORED, ZipFile, ZipInfo
+from zipfile import ZIP_STORED, BadZipFile, ZipFile, ZipInfo
 
 from apps import transcript_pipeline as pipeline
 from apps.fast8_segment_timeline.service import diagnose_file
 from apps.fast8_transcript_queue.services import build_transcript_queue
 
 ValidationError = pipeline.ValidationError
+MAX_BUNDLE_BYTES = 16_000_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,11 +84,9 @@ def revise(document, *, index, start_ms, end_ms, replacement_text=None):
     )
 
 
-def export_bundle(document):
-    """Deterministic ZIP; input bytes retained; no fatwa approval or case association."""
-    rows, report, queue, queue_error = review(document)
-    if not report["cues_allowed"] or queue is None or queue_error:
-        raise ValidationError("export: resolve_findings_first")
+def document_changes(document):
+    """Compare the exact original with current rows, retaining immutable identities."""
+    rows = _rows(document.current, document.current_suffix)
     original_rows = _rows(document.original, document.original_suffix)
     if len(original_rows) != len(rows):
         raise ValidationError("export: lineage_mismatch")
@@ -107,6 +106,15 @@ def export_bundle(document):
                     "changed_fields": fields,
                 }
             )
+    return changes
+
+
+def export_bundle(document):
+    """Deterministic ZIP; input bytes retained; no fatwa approval or case association."""
+    rows, report, queue, queue_error = review(document)
+    if not report["cues_allowed"] or queue is None or queue_error:
+        raise ValidationError("export: resolve_findings_first")
+    changes = document_changes(document)
     timeline = diagnose_file(
         document.current, document.current_suffix, synthetic_fixtures_only=True
     )
@@ -137,10 +145,128 @@ def export_bundle(document):
         ],
     }
     files["manifest.json"] = pipeline._encoded(manifest)
+    return _archive(files)
+
+
+def _archive(files):
     stream = io.BytesIO()
     with ZipFile(stream, "w", compression=ZIP_STORED) as archive:
         for name, raw in sorted(files.items()):
             info = ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             info.external_attr = 0o600 << 16
             archive.writestr(info, raw)
-    return stream.getvalue()
+    raw = stream.getvalue()
+    if len(raw) > MAX_BUNDLE_BYTES:
+        raise ValidationError("export: bundle_too_large")
+    return raw
+
+
+def checkpoint(document):
+    """Save a resumable work-in-progress, including unresolved timeline errors."""
+    changes = document_changes(document)
+    files = {
+        "original" + document.original_suffix: document.original,
+        "reviewed" + document.current_suffix: document.current,
+    }
+    manifest = {
+        "schema": "fatwa.transcript-workbench.checkpoint.v1",
+        "synthetic_only": True,
+        "revision": document.revision,
+        "manual_editing_performed": bool(changes),
+        "changes": changes,
+        "case_binding": "NOT_CONNECTED",
+        "approval_granted": False,
+        "publication_allowed": False,
+        "hashes_are_authentication": False,
+        "files": [
+            {"name": name, "bytes": len(raw), "sha256": sha256(raw).hexdigest()}
+            for name, raw in sorted(files.items())
+        ],
+    }
+    files["manifest.json"] = pipeline._encoded(manifest)
+    return _archive(files)
+
+
+def _read_archive(raw):
+    """Read only our bounded stored-member format, never extract anything to disk."""
+    if type(raw) is not bytes or not 1 <= len(raw) <= MAX_BUNDLE_BYTES:
+        raise ValidationError("bundle: invalid_size")
+    allowed = {
+        prefix + suffix
+        for prefix in ("original", "reviewed")
+        for suffix in (".json", ".csv", ".jsonl")
+    } | {"manifest.json", "queue.json", "prepared-questions.json", "timeline.json", "cues.json"}
+    try:
+        with ZipFile(io.BytesIO(raw)) as archive:
+            members = archive.infolist()
+            if (
+                len(members) not in (3, 7)
+                or len({item.filename for item in members}) != len(members)
+                or sum(item.file_size for item in members) > MAX_BUNDLE_BYTES
+            ):
+                raise ValidationError("bundle: invalid_members")
+            files = {}
+            for item in members:
+                limit = (
+                    pipeline.MAX_BYTES
+                    if item.filename.startswith(("original", "reviewed"))
+                    else MAX_BUNDLE_BYTES
+                )
+                if (
+                    item.filename not in allowed
+                    or item.compress_type != ZIP_STORED
+                    or item.flag_bits & 1
+                    or not 0 <= item.file_size <= limit
+                    or item.compress_size != item.file_size
+                    or (item.external_attr >> 16) & 0o170000 not in (0, 0o100000)
+                ):
+                    raise ValidationError("bundle: invalid_member")
+                with archive.open(item) as source:
+                    files[item.filename] = source.read(limit + 1)
+                if len(files[item.filename]) != item.file_size:
+                    raise ValidationError("bundle: invalid_member_size")
+            return files
+    except (BadZipFile, OSError, RuntimeError, ValueError, NotImplementedError) as exc:
+        raise ValidationError("bundle: invalid_archive") from exc
+
+
+def restore_bundle(raw, *, synthetic_fixtures_only=False):
+    """Resume an unsigned artifact after reconstructing every derived byte locally.
+
+    This checks internal consistency, not authorship or trusted case authority.
+    Neither manifests nor prepared reports are passed through as authoritative data.
+    """
+    if synthetic_fixtures_only is not True:
+        raise ValidationError("bundle: synthetic_ack_required")
+    files = _read_archive(raw)
+    try:
+        manifest = pipeline.parse_json(files["manifest.json"].decode("utf-8"))
+        if type(manifest) is not dict:
+            raise ValueError("manifest")
+        revision = manifest["revision"]
+        if type(revision) is not int or not 0 <= revision <= 100:
+            raise ValueError("revision")
+        originals = [name for name in files if name.startswith("original.")]
+        currents = [name for name in files if name.startswith("reviewed.")]
+        if len(originals) != 1 or len(currents) != 1:
+            raise ValueError("source_files")
+        original, current = originals[0], currents[0]
+        document = Document(
+            files[original],
+            original.removeprefix("original"),
+            files[current],
+            current.removeprefix("reviewed"),
+            revision,
+        )
+        schema = manifest["schema"]
+        if schema == "fatwa.transcript-workbench.checkpoint.v1":
+            rebuilt = checkpoint(document)
+        elif schema == "fatwa.transcript-workbench.bundle.v1":
+            rebuilt = export_bundle(document)
+        else:
+            raise ValueError("schema")
+        if files != _read_archive(rebuilt):
+            raise ValueError("content_mismatch")
+        return document
+    except (KeyError, TypeError, ValueError, UnicodeError, RecursionError) as exc:
+        raise ValidationError("bundle: inconsistent_or_unsupported") from exc
