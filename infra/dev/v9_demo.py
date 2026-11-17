@@ -251,6 +251,17 @@ def _smoke(receipt, output, source_raw, storage):
     )
 
 
+def _startup_notice(args):
+    """Presentation-only bootstrap hook; later closed demos describe their own mode."""
+    print("Composite plan export/import enabled; no sender, provider outcomes or automatic approval.")
+    print(
+        "Signed staging:",
+        "external PUBLIC-key verification enabled"
+        if args.approval_public_key
+        else "closed until both external public verification keys are supplied; export remains available",
+    )
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -337,15 +348,7 @@ def main(argv=None):
                 print(
                     "Knowledge review: demo-mufti proposes a cited REFERENCE; demo-publisher independently approves it."
                 )
-                print(
-                    "Composite plan export/import enabled; no sender, provider outcomes or automatic approval."
-                )
-                print(
-                    "Signed staging:",
-                    "external PUBLIC-key verification enabled"
-                    if args.approval_public_key
-                    else "closed until both external public verification keys are supplied; export remains available",
-                )
+                _startup_notice(args)
                 print("Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED.", flush=True)
                 return call_command(command, *command_args, **command_kwargs)
 
