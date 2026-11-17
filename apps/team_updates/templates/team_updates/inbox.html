@@ -1,0 +1,29 @@
+{% extends "casework/base.html" %}
+{% load tz %}
+{% block title %}صندوق التحديثات الداخلي{% endblock %}
+{% block content %}
+<h2>صندوق التحديثات الداخلي</h2>
+<p id="update-counts">غير مقروء: {{ unread }} · إجمالي التنبيهات المخوّلة: {{ total }}</p>
+<p class="notice">تعليم التنبيه كمقروء يخص هذا الصندوق فقط؛ لا يُثبت مراجعة الوقائع ولا يمنح اعتمادًا أو يغيّر حالة القضية. لا تُرسل إشعارات خارجية.</p>
+{% if message %}<p role="status">{{ message }}</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="updates_filter"><input type="hidden" name="page" value="1">
+<label for="state">العرض</label><select id="state" name="state"><option value="unread"{% if state == "unread" %} selected{% endif %}>غير المقروء</option><option value="all"{% if state == "all" %} selected{% endif %}>كل التنبيهات</option></select>
+<label for="kind">نوع التحديث</label><select id="kind" name="kind"><option value="all">كل الأنواع</option>{% for value,label in kinds %}<option value="{{ value }}"{% if kind == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<button type="submit">تصفية التنبيهات</button></form>
+<p>المطابق: {{ matches }} · الصفحة {{ page }} من {{ pages }}</p>
+{% for update in updates %}<article class="update" aria-labelledby="update-{{ forloop.counter }}">
+<h3 id="update-{{ forloop.counter }}">{{ update.label }}</h3><p><bdi>{{ update.case_ref }}</bdi></p>
+<p>وقت الحدث (UTC): <bdi>{{ update.occurred_at|utc|date:"Y-m-d H:i" }}</bdi></p>
+<p>إصدار الوقائع {{ update.evidence_version }}{% if update.answer_revision %} · إصدار الجواب {{ update.answer_revision }}{% endif %}</p>
+<p>{% if update.seen %}مقروء في صندوقك{% else %}غير مقروء في صندوقك{% endif %}{% if update.historical %} · حدث سابق؛ افتح القضية لمعرفة حالتها الحالية{% endif %}</p>
+<div class="actions">
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ update.case_ref }}"><button type="submit">فتح القضية</button></form>
+{% if not update.seen %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="updates_seen"><input type="hidden" name="case_ref" value="{{ update.case_ref }}"><input type="hidden" name="sequence" value="{{ update.sequence }}"><input type="hidden" name="proof" value="{{ update.proof }}"><button type="submit">تعليم التنبيه كمقروء</button></form>{% endif %}
+</div></article>{% empty %}<p id="empty-updates">لا توجد تنبيهات مطابقة ضمن صلاحيتك.</p>{% endfor %}
+<nav aria-label="صفحات التنبيهات" class="actions">
+{% if previous %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="updates_filter"><input type="hidden" name="state" value="{{ state }}"><input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="page" value="{{ previous }}"><button type="submit">السابق</button></form>{% endif %}
+{% if next %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="updates_filter"><input type="hidden" name="state" value="{{ state }}"><input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="page" value="{{ next }}"><button type="submit">التالي</button></form>{% endif %}
+</nav>
+<form method="post" action="/casework/staff/logout/">{% csrf_token %}<button type="submit">خروج</button></form>
+{% endblock %}
