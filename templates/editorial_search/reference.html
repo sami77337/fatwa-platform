@@ -1,0 +1,43 @@
+{% extends "editorial_search/base.html" %}
+{% block content %}
+<h2>بطاقة الإحالة {{ card.ordinal }} — <bdi>{{ card.case_key }}</bdi></h2>
+<nav aria-label="تنقل الإحالة">
+  <a href="{{ return_url }}">العودة إلى نتائج البحث نفسها</a> ·
+  <a href="{{ workbench_url }}">فتح سياق الإحالة في مساحة العمل</a>
+  {% if triage_url %} · <a href="{{ triage_url }}">فتح دليل التحقيق لهذه الإحالة</a>{% endif %}
+</nav>
+<article aria-labelledby="pointer-title">
+  <h3 id="pointer-title">المؤشر المحفوظ دون إعادة صياغة</h3>
+  {% if card.origin == 'revision' %}
+    <p>هوية إحالة مسلسلة من المراجعة {{ card.revision }}، وليست مقتطفًا من كتاب. لا تُستبدل بدليل مراجعة أحدث.</p>
+  {% elif card.revision %}<p>تشخيص اللقطة الثابتة للمراجعة {{ card.revision }}؛ لا يشمل المراجعات السابقة.</p>
+  {% else %}<p>تشخيص مؤشر الاستلام؛ لا يحمل هوية مراجعة.</p>{% endif %}
+  <pre dir="auto">{{ source_text }}</pre>
+  <p>SHA-256 للمؤشر المعروض (UTF-8): <bdi>{{ card.source_sha256 }}</bdi></p>
+  <details><summary>مصدر العينة</summary><p>{{ card.fixture_label }}</p><p>SHA-256 لحمولة الاستلام: <bdi>{{ card.payload_sha256 }}</bdi></p><p>بصمة الاستلام مستقلة عن بصمة المؤشر وعن نص المراجعة.</p></details>
+</article>
+<article aria-labelledby="catalog-evidence-title">
+  <h3 id="catalog-evidence-title">دليل المكتبة المرجعية</h3>
+  {% if card.diagnostic %}<p>نتيجة التشخيص المحفوظ: {{ card.diagnostic.label }}</p><p>{{ card.diagnostic.explanation }}</p>{% endif %}
+  {% if bridge %}
+    <p role="status">{{ bridge.recovery }}</p>
+    <p>سبب فحص الفهرس: <code>{{ bridge.reason }}</code></p>
+    {% if bridge.catalog_url %}
+      <h4>{{ bridge.evidence.work_title }}</h4>
+      <p>{{ bridge.evidence.heading_title }}</p>
+      <ol aria-label="مسار عنوان المصدر">{% for title in bridge.evidence.path %}<li>{{ title }}</li>{% endfor %}</ol>
+      <p>الجزء: {{ bridge.evidence.printed_part }} · الصفحة المطبوعة: {{ bridge.evidence.printed_page }}</p>
+      <dl>
+        <dt>نطاق المصدر ورقم الكتاب</dt><dd><bdi>{{ bridge.evidence.source_namespace }} / {{ bridge.evidence.source_book_id }}</bdi></dd>
+        <dt>الطبعة والصف</dt><dd><bdi>{{ bridge.evidence.edition_key }} / {{ bridge.evidence.edition_id }} / {{ bridge.evidence.source_row_id }}</bdi></dd>
+        <dt>SHA-256 للأرشيف</dt><dd><bdi>{{ bridge.evidence.source_archive_sha256 }}</bdi></dd>
+        <dt>SHA-256 للمدخل</dt><dd><bdi>{{ bridge.evidence.source_input_sha256 }}</bdi></dd>
+      </dl>
+      <a href="{{ bridge.catalog_url }}">فتح عنوان المكتبة المطابق في الطبعة نفسها</a>
+    {% else %}<p>لا يوجد رابط مكتبة متحقق لهذه الإحالة. راجع السبب ودليل التحقيق دون اختيار مصدر مشابه.</p>{% endif %}
+  {% else %}
+    <p role="status">لا يوجد دليل فهرس مثبت لهذه الإحالة التاريخية؛ لا يُستعار دليل التشخيص الحالي ولا يُستنتج مصدر من نص البحث.</p>
+  {% endif %}
+  <p>المتاح عنوان وموقع في فهرس فقط، وليس نص الكتاب أو فتوى أو إثباتًا لصحة الاستشهاد العلمية.</p>
+</article>
+{% endblock %}
