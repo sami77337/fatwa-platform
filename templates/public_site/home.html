@@ -44,6 +44,7 @@
       <button type="submit">ابحث في الفهرس</button>
     </form>
     <p>عدد عناوين المصدر: {{ heading_count }}. عدد الجذور: {{ roots.total }}.</p>
+    {% if reference %}{% include 'public_site/reference_preview.html' %}{% endif %}
     {% if searching %}
     <section aria-labelledby="results-title">
       <h2 id="results-title" tabindex="-1">نتائج البحث</h2>
@@ -55,8 +56,8 @@
       <p>عدد النتائج: {{ results.total }}.{% if results.items %} عرض النتائج {{ result_start }}–{{ result_end }}.{% endif %}</p>
       {% if results.items %}
       <ol start="{{ result_start }}">
-      {% for heading in results.items %}
-        <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a></li>
+      {% for heading in result_rows %}
+        <li><a href="{% url 'heading' heading.id %}?basic=1&amp;edition={{ edition_id }}">{{ heading.title }}</a> · <a href="{{ heading.reference_url }}" aria-label="معاينة إحالة: {{ heading.title }}">الإحالة والمسار</a></li>
       {% endfor %}
       </ol>
       {% elif results.total %}
