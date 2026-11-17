@@ -103,16 +103,21 @@ def stored_fields(storage, media):
 def live_references(backend, key=None):
     """Fresh committed reference lookup for GC; no owner row locks or cached counts.
 
-    Optional apps are skipped only when absent from the installed registry. Database
-    failures propagate, causing GC to fail closed rather than treating them as empty.
+    Every durable owner must be registered before any lookup: another profile may
+    omit an app while its committed rows still reference this same private store.
+    Missing owner schemas and database failures propagate so GC preserves originals.
     """
     if isinstance(backend, StoredOriginal) and key is None:
         backend, key = backend.backend, backend.key
-    for app_label, model_name in OWNERS.values():
-        if apps.is_installed("apps." + app_label):
-            model = apps.get_model(app_label, model_name)
-            if model.objects.filter(storage_backend=backend, storage_key=key).exists():
-                return True
+    if any(not apps.is_installed("apps." + label) for label, _ in OWNERS.values()):
+        raise cases.CaseConflict("media_owner_schema_unavailable")
+    try:
+        models = [apps.get_model(label, name) for label, name in OWNERS.values()]
+    except LookupError as exc:
+        raise cases.CaseConflict("media_owner_schema_unavailable") from exc
+    for model in models:
+        if model.objects.filter(storage_backend=backend, storage_key=key).exists():
+            return True
     return False
 
 
