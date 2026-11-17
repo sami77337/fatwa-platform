@@ -1,0 +1,19 @@
+{# Integration passes only services.staff_origins() results after scoped authorization. #}
+<section dir="rtl" aria-label="أصل رسائل القضية">
+  <h2>أصل رسائل القضية</h2>
+  {% for origin in source_origins %}
+    <article>
+      <h3>{{ origin.source }} · الدليل {{ origin.evidence_version }}</h3>
+      <dl>
+        <dt>السائل كما يظهر في المصدر</dt><dd>{{ origin.display_name|default:"غير متاح" }}</dd>
+        <dt>معرّف السائل في المصدر</dt><dd><bdi>{{ origin.sender }}</bdi></dd>
+        <dt>حساب المصدر</dt><dd><bdi>{{ origin.account }}</bdi></dd>
+        <dt>المحادثة / الرسالة / الموضوع</dt>
+        <dd><bdi>{{ origin.conversation }} / {{ origin.message_id }} / {{ origin.thread }}</bdi></dd>
+        <dt>الرد على</dt><dd><bdi>{{ origin.parent_id|default:"رسالة مستقلة" }}</bdi></dd>
+        <dt>بصمة الحدث الأصلي</dt><dd><code>{{ origin.sha256 }}</code></dd>
+      </dl>
+      <pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ origin.original_text }}</pre>
+    </article>
+  {% empty %}<p>لا توجد رسائل مصدر مسجلة بهذا المسار.</p>{% endfor %}
+</section>
