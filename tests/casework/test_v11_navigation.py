@@ -8,6 +8,7 @@ from tests.casework.test_http import post
 
 
 @override_settings(
+    FATWA_CASEWORK_WEB_ENABLED=True,
     FATWA_MUFTI_WORKSPACE_ENABLED=True,
     FATWA_RESEARCH_WORKSPACE_ENABLED=True,
     FATWA_RESEARCH_WORKSPACE_RIGHTS=SourceRightsAdapter(),
