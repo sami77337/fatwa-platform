@@ -46,10 +46,16 @@ def _rights_services():
 @contextmanager
 def _projection_expiry_guard():
     """Additional clock boundary; optional legacy profiles retain their own policy."""
-    rights = _rights_services()
-    if rights is None:
+    from apps.source_rights.enforcement import required
+
+    # Do not demand a source authority for a source-free answer. Actual source
+    # predicates still enforce the installed registry and authority themselves;
+    # this context only bounds successful checks, never grants access.
+    if not required() or not django_apps.is_installed("apps.source_rights"):
         yield
     else:
+        from apps.source_rights import services as rights
+
         with rights.projection_expiry_guard():
             yield
 

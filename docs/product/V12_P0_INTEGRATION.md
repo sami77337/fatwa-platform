@@ -230,3 +230,14 @@ matrix; no unrelated test suite is manually rerun for this repair. The first
 focused batch passed 42/42 on PG17.12 (23.443s) and PG18.7 (23.309s); the expanded
 initial nine regressions passed 9/9 on PG17 (9.350s). These preliminary results
 precede the final affected-head run and are not a closure verdict.
+
+Affected run on `f0d386e51f089f1a5658f67ae3765234fb9dd31f`: **131/132 passed,
+1 error on each major** (PG17 69.455s; PG18 69.013s). All 10 new regressions and
+14 independent probes passed. The error was a source-free answer unnecessarily
+requiring a source authority at the new guard's entry. The clock guard now only
+bounds successful source predicates; it does not provision or eagerly require an
+authority when no source is read. Actual source predicates still reject a missing
+registry/authority. The existing negative/positive assertion remains unchanged.
+An earlier invocation failed during test discovery (namespace package label,
+`module.__file__ is None`) on both majors before tests; explicit module labels
+corrected the invocation. No application pass is attributed to that invocation.
