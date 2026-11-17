@@ -229,28 +229,122 @@ def act(
         return _projection(edition, editorial=True)
 
 
+def _permitted(identity, provider, case, action):
+    """Presentation only; mutations still recheck the same explicit authority."""
+    try:
+        _authority(identity, provider, case, action)
+    except cases.CaseConflict:
+        return False
+    return True
+
+
+def editorial_case(*, edition_id, subject_id, provider, synthetic_fixtures_only=False):
+    """Resolve a library edition back to its desk without putting case data in library DTOs."""
+    _enabled()
+    cases._guard(synthetic_fixtures_only)
+    edition = PublicationEdition.objects.filter(pk=cases._uuid(edition_id)).first()
+    if edition is None:
+        raise cases.CaseConflict("publication_unavailable")
+    with cases._staff_case(edition.case_id, subject_id, provider, True) as (case, _):
+        _verify(edition)
+        return {"case_id": str(case.pk), "public_ref": case.public_ref}
+
+
 def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         current = None
         if case.approved_answer_id:
             answer, _ = _approved(case)
             current = {"text": answer.text, "revision": answer.revision}
-        latest_published = (
-            PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
+        rows = list(
+            PublicationEdition.objects.filter(case=case)
+            .select_related("answer", "decision")
+            .prefetch_related("actions")
             .order_by("-number")
-            .first()
         )
+        latest_number = rows[0].number if rows else 0
+        latest_published = next(
+            (e for e in rows if any(a.action == "APPROVE" for a in e.actions.all())), None
+        )
+        grants = {
+            action: _permitted(actor, provider, case, action) for action in ("APPROVE", "WITHDRAW")
+        }
         editions = []
-        for edition in PublicationEdition.objects.filter(case=case).order_by("-number"):
+        for edition in rows:
             entry = _projection(edition, editorial=True)
-            entry["can_correct"] = bool(
-                current
-                and latest_published
-                and edition.pk == latest_published.pk
-                and edition.answer_id == case.approved_answer_id
+            source_current = False
+            try:
+                answer, _ = _approved(case, edition)
+                source_current = edition.citations == _citation_snapshot(answer)
+            except cases.CaseConflict:
+                pass
+            actions = list(edition.actions.all())
+            reviewer = next((a for a in actions if a.action == "REVIEW"), None)
+            independent = (provider.provider_id, actor.subject_id) not in {
+                (edition.provider_id, edition.subject_id),
+                (edition.decision.provider_id, edition.decision.subject_id),
+                (reviewer.provider_id, reviewer.subject_id) if reviewer else (None, None),
+            }
+            latest = edition.number == latest_number
+            published = latest_published is not None and edition.pk == latest_published.pk
+            state = entry["state"]
+            entry.update(
+                can_correct=source_current and published,
+                can_review=source_current and latest and state == "CANDIDATE",
+                can_approve=(
+                    source_current
+                    and latest
+                    and state == "REVIEWED"
+                    and grants["APPROVE"]
+                    and independent
+                ),
+                can_withdraw=state != "WITHDRAWN" and grants["WITHDRAW"],
+                visible=source_current and published and state == "PUBLISHED",
+                created_at=edition.created_at,
+                history=[
+                    {
+                        "label": {
+                            "REVIEW": "مراجعة التحرير والخصوصية",
+                            "APPROVE": "موافقة النشر المستقلة",
+                            "WITHDRAW": "سحب النسخة",
+                        }[a.action],
+                        "created_at": a.created_at,
+                    }
+                    for a in sorted(actions, key=lambda a: (a.created_at, a.pk))
+                ],
             )
+            if state == "WITHDRAWN":
+                entry["status_label"] = "مسحوبة من المكتبة"
+                entry["next_step"] = "يبقى السجل محفوظًا؛ السحب لا يعيد نسخة أقدم إلى المكتبة."
+            elif not source_current:
+                entry["status_label"] = "متوقفة لتغيّر الجواب أو الوقائع أو المصدر"
+                entry["next_step"] = "راجع القضية واعتماد جوابها الحالي قبل إعداد نسخة جديدة."
+            elif state == "PUBLISHED":
+                entry["status_label"] = (
+                    "متاحة حاليًا في المكتبة المغلقة" if published else "استُبدلت بنسخة نشر أحدث"
+                )
+                entry["next_step"] = (
+                    "يمكن فتح النسخة الحالية أو إعداد تصحيح مستقل."
+                    if published
+                    else "هذه نسخة محفوظة للتاريخ ولا تظهر في البحث."
+                )
+            elif not latest:
+                entry["status_label"] = "مرشح سابق متوقف"
+                entry["next_step"] = "تابع أحدث نسخة مرشحة؛ لا يمكن اعتماد هذا المرشح القديم."
+            elif state == "CANDIDATE":
+                entry["status_label"] = "مرشحة — تحتاج مراجعة التحرير والخصوصية"
+                entry["next_step"] = "راجع النص والعنوان والتصنيف والإحالات ثم سجّل المراجعة."
+            else:
+                entry["status_label"] = "مراجعة — تنتظر موافقة نشر مستقلة"
+                entry["next_step"] = (
+                    "النسخة جاهزة لقرار النشر من هويتك المخوّلة."
+                    if entry["can_approve"]
+                    else "يلزم مخوّل نشر مستقل عن محرر النسخة ومراجعها ومعتمد الجواب؛ الصلاحية وحدها لا تلغي شرط الاستقلال."
+                )
             editions.append(entry)
+        if cases._identity(provider, subject_id, case).auth_epoch != actor.auth_epoch:
+            raise cases.CaseConflict("publication_identity_changed")
         return {
             "public_ref": case.public_ref,
             "case_id": str(case.pk),
@@ -258,6 +352,8 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             "evidence_version": case.evidence_version,
             "approved": current,
             "editions": editions,
+            "visible_edition": next((e for e in editions if e["visible"]), None),
+            "can_withdraw": grants["WITHDRAW"],
         }
 
 
