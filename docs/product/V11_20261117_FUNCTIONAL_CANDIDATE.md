@@ -114,6 +114,33 @@ production job, scheduler, automatic cutover or automatic maintenance resume.
 
 ## Evidence and limits
 
+Local integration on PostgreSQL 17.12: **113 distinct functional/security tests
+passed**, plus **16 encrypted recovery tests** and the manual startup smoke.
+The functional batch first passed 112/113; the new navigation fixture omitted
+its explicit web flag. Only that test was corrected and rerun successfully.
+System checks, migration drift and changed-Python Ruff checks passed.
+
+The final local connected Chromium 154 journey passed in 36.873 seconds with
+`sandbox=False` explicitly recorded. It exercised one case, four evidence
+versions, six answer revisions, the current two-part answer, an exact citation,
+source-review history, independent rights/publication/knowledge approvals and
+the existing two-part delivery queue. After encrypted restore, **56 HTTP
+requests** each proved the target database and private root, exact PNG/WAV bytes,
+native audio, current answer, signed simulation status and outsider/scope/rights
+revocation denials. There were no external requests or page errors; 22 screenshots
+cover RTL 320/1280. This is not a local sandboxed-browser or PG18 claim: those
+checks are assigned to the exact-head CI matrix.
+
+Browser attempt history is retained: an interrupted offscreen lazy-image wait;
+pilot 409 subsequently diagnosed as `pilot_identity_changed` caused by the test
+directory issuing a different expiry on each lookup; and a final queue-button
+timeout whose original GET status was not recorded, so its cause remains
+unproven. The fixture now uses a stable expiry, scrolls lazy media into view,
+asserts navigation status and waits for the restored request-budget window to
+expire naturally. No guard, counter or permission was weakened. A full journey
+passed before that final timing change; only the affected journey was repeated
+afterwards. The final wait preserved all four throttle rows without writing them.
+
 Lane receipts remain with their applications. Final integrated test results and
 the tested SHA belong in the campaign PR/CI artifact; lane results alone cannot
 establish that the assembled campaign works. Failed attempts remain historical
