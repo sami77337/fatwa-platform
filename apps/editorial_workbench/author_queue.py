@@ -11,6 +11,7 @@ from apps.reference.normalization import normalize_title
 
 from .author_access import draft_history_required
 from .reviewer_access import signed_in
+from .search_terms import case_search_matches
 from .services import build_cases
 from .source_review import CASE_KEY, KINDS
 from .views import _packet_exact, _source_journal_directory
@@ -142,7 +143,7 @@ def author_queue(request, key=None):
         if draft:
             search_fields.extend((draft.title, draft.body))
         search_fields.extend(turn.text for turn in snapshot.clarifications)
-        if needle and not any(needle in normalize_title(value) for value in search_fields):
+        if needle and not case_search_matches(needle, *search_fields):
             continue
         for facet in facets:
             counts[facet] += 1

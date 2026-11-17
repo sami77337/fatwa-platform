@@ -1,0 +1,22 @@
+{% extends "casework/base.html" %}
+{% block title %}مكتب الشيخ{% endblock %}
+{% block content %}
+<h2>القضايا المخوّلة</h2>
+<div class="actions">{% for case in cases %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ case.public_ref }}"><button type="submit">{{ case.public_ref }}</button></form>{% empty %}<p>لا توجد قضايا مخوّلة لهذه الهوية.</p>{% endfor %}</div>
+{% if selected %}
+<article><h2>القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2><h3>السؤال الأصلي كما وصل</h3><p class="original" id="original-question">{{ selected.original_question }}</p><p>إصدار الوقائع: {{ selected.evidence_version }}</p>
+{% for followup in selected.followups %}<h3>تعقيب {{ followup.version }}</h3><p class="original">{{ followup.text }}</p>{% endfor %}
+{% for clarification in selected.clarifications %}<h3>طلب استيضاح</h3><p class="original">{{ clarification }}</p>{% endfor %}
+</article>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="revision" value="{{ selected.revision }}"><input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}"><input type="hidden" name="action" value="draft"><label for="answer-text">مسودة جواب بشرية جديدة</label><textarea id="answer-text" name="text" required maxlength="16000"></textarea><button type="submit">حفظ مسودة الجواب</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="revision" value="{{ selected.revision }}"><input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}"><input type="hidden" name="action" value="clarify"><label for="clarification-text">الاستيضاح المطلوب من السائل</label><textarea id="clarification-text" name="text" required maxlength="16000"></textarea><button type="submit">طلب استيضاح</button></form>
+{% for answer in selected.answers %}<article><h3>إصدار الجواب {{ answer.revision }}</h3><p class="original">{{ answer.text }}</p><p>مبني على إصدار الوقائع {{ answer.evidence_version }}</p>
+{% if answer.id == selected.approved_answer_id %}<p>اعتماد بشري حالي لهذه النسخة.</p>{% else %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="revision" value="{{ selected.revision }}"><input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}"><input type="hidden" name="answer_id" value="{{ answer.id }}"><label for="note-{{ forloop.counter }}">ملاحظة القرار</label><textarea id="note-{{ forloop.counter }}" name="note" maxlength="16000"></textarea><div class="actions"><button type="submit" name="action" value="approve">اعتماد هذه النسخة</button><button type="submit" name="action" value="return">إعادة للمراجعة</button></div></form>{% endif %}</article>{% endfor %}
+<article><h3>إدارة وصول السائل</h3><p>يتطلب الاسترداد تحققًا موثوقًا من ارتباط السائل بالقضية.</p><div class="actions">
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit" name="action" value="revoke">إبطال رموز الوصول</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit" name="action" value="rotate">استرداد رمز جديد</button></form></div></article>
+{% endif %}
+{% if access %}<article id="access-result">{% if access.rotated %}<h3>رمز بديل بعد إبطال السابق</h3><code id="replacement-token">{{ access.token }}</code><p>الرمز يظهر مرة واحدة. لم يُرسل إلى قناة خارجية.</p>{% else %}<p>أُبطلت رموز الوصول الحالية.</p>{% endif %}</article>{% endif %}
+<form method="post" action="/casework/staff/logout/">{% csrf_token %}<button type="submit">خروج</button></form>
+{% endblock %}

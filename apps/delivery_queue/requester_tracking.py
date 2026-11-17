@@ -1,18 +1,21 @@
 """Scoped requester tracking for multiple synthetic cases, without private content."""
 from __future__ import annotations
 
-from datetime import timedelta
-from hashlib import sha256
 import re
 import secrets
+from datetime import timedelta
+from hashlib import sha256
 
 from django.db import connection, transaction
 from django.utils import timezone
 
 from . import services as queue
 from .models import (
-    ApprovalClaim, DeliveryIntent, RequesterTrackingCase,
-    RequesterTrackingEvent, RequesterTrackingToken,
+    ApprovalClaim,
+    DeliveryIntent,
+    RequesterTrackingCase,
+    RequesterTrackingEvent,
+    RequesterTrackingToken,
 )
 
 _TOKEN = re.compile(r"^rt_[A-Za-z0-9_-]{43}$")
@@ -97,6 +100,27 @@ def _lock_case_key(case_key):
         )
 
 
+def _require_standalone_tracking(case_key):
+    """A bound durable case must never use this legacy independent projection.
+
+    Check the database as well as the reserved namespace: the old review settings
+    may access a database migrated by casework without installing its Django app.
+    Do not import the canonical model or acquire its lock from this legacy path.
+    """
+    if case_key.startswith("case:"):
+        raise TrackingDenied("canonical_case_service_required")
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT to_regclass('casework_case')")
+        if cursor.fetchone()[0] is None:
+            return
+        cursor.execute(
+            "SELECT EXISTS (SELECT 1 FROM casework_case WHERE tracking_id = %s)",
+            [case_key],
+        )
+        if cursor.fetchone()[0]:
+            raise TrackingDenied("canonical_case_service_required")
+
+
 def _issue(case, expires_at):
     token = "rt_" + secrets.token_urlsafe(32)
     digest = sha256(token.encode("ascii")).hexdigest()
@@ -113,6 +137,7 @@ def provision_tracking_case(*, case_key, operator_id, authorize_operator, expire
     _guard_database()
     with transaction.atomic():
         _lock_case_key(case_key)
+        _require_standalone_tracking(case_key)
         _operator_allowed(operator_id, case_key, authorize_operator)
         if RequesterTrackingCase.objects.filter(pk=case_key).exists():
             raise TrackingDenied("tracking_case_already_registered")
@@ -134,6 +159,7 @@ def rotate_tracking_token(*, case_key, operator_id, authorize_operator, expires_
     _guard_database()
     with transaction.atomic():
         _lock_case_key(case_key)
+        _require_standalone_tracking(case_key)
         _operator_allowed(operator_id, case_key, authorize_operator)
         case = RequesterTrackingCase.objects.select_for_update().filter(pk=case_key).first()
         if case is None:
@@ -156,6 +182,7 @@ def advance_tracking_case(*, case_key, expected_revision, stage, actor_id, autho
     _guard_database()
     with transaction.atomic():
         _lock_case_key(case_key)
+        _require_standalone_tracking(case_key)
         _operator_allowed(actor_id, case_key, authorize_actor, stage=stage)
         case = RequesterTrackingCase.objects.select_for_update().filter(pk=case_key).first()
         if case is None:
@@ -195,9 +222,19 @@ def lookup_case_status(token):
             or grant.expires_at <= timezone.now()
         ):
             raise TrackingDenied(_GENERIC_TOKEN_DENIAL)
+        _require_standalone_tracking(grant.case_id)
         case = RequesterTrackingCase.objects.select_for_update().get(
             pk=grant.case_id,
         )
+        _require_standalone_tracking(case.case_key)
+        # Rotation uses this row lock. Re-read after waiting so a token revoked
+        # by the lock holder cannot authorize a stale status response.
+        grant = RequesterTrackingToken.objects.filter(token_sha256=token_hash).first()
+        if (
+            grant is None or grant.case_id != case.pk or grant.revoked_at is not None
+            or grant.expires_at <= timezone.now()
+        ):
+            raise TrackingDenied(_GENERIC_TOKEN_DENIAL)
         _verify_case_history(case)
         # Verify against the same locked audit-head snapshot as operator reports.
         queue._verify_locked_head(queue._locked_head())

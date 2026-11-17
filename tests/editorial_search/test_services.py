@@ -34,6 +34,34 @@ class SearchTests(SimpleTestCase):
         self.assertTrue(all(hit.case_key == "history" for hit in result.hits))
         self.assertEqual(self.search("منقح", source="question").total, 0)
 
+    def test_literal_results_precede_synonyms_and_source_bytes_are_preserved(self):
+        from apps.editorial_search.services import search_catalog
+
+        row = self.catalog.rows[0]
+        originals = ("بلا مقطع", "سؤال بدون مقطع", "بِدُون مقطع", "دون مقطع")
+        catalog = replace(self.catalog, rows=tuple(
+            replace(row, case=replace(row.case, key=f"alias-{i}", question=text))
+            for i, text in enumerate(originals)
+        ))
+        before = asdict(catalog)
+        hits = search_catalog(catalog, q="بدون مقطع", source="question").hits
+        self.assertEqual([hit.case_key for hit in hits], ["alias-2", "alias-1", "alias-0"])
+        self.assertEqual([hit.match_kind for hit in hits], ["exact", "words", "synonym"])
+        self.assertEqual(hits[-1].fields[0].text, originals[0])
+        self.assertEqual(asdict(catalog), before)
+
+    def test_synonym_does_not_match_other_word_prefixes_or_erase_literal_matches(self):
+        from apps.editorial_search.services import search_catalog
+
+        row = self.catalog.rows[0]
+        catalog = replace(self.catalog, rows=tuple(
+            replace(row, case=replace(row.case, key=f"boundary-{i}", question=text))
+            for i, text in enumerate(("بلاد", "بلاهة", "بدونما", "بلا"))
+        ))
+        hits = search_catalog(catalog, q="بدون", source="question").hits
+        self.assertEqual([hit.case_key for hit in hits], ["boundary-2", "boundary-3"])
+        self.assertEqual([hit.match_kind for hit in hits], ["words", "synonym"])
+
     def test_exact_question_precedes_partial_matches_without_losing_them(self):
         result = self.search("سُؤَالٌ اصطناعي", source="question")
         self.assertEqual(result.total, 12)

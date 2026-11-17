@@ -1,0 +1,178 @@
+name: V6 durable casework journey (synthetic)
+on:
+  pull_request:
+    paths:
+      - 'apps/casework/**'
+      - 'apps/casework_web/**'
+      - 'apps/delivery_queue/**'
+      - 'apps/mufti_review/identity.py'
+      - 'apps/intake_workflow/guards.py'
+      - 'config/settings/casework_*'
+      - 'templates/casework/**'
+      - 'tests/casework/**'
+      - 'tools/dev/casework_browser.py'
+      - 'tools/dev/casework_migration_check.py'
+      - '.github/workflows/v6-casework.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  casework-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['17', '18']
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: wave7_synthetic
+          POSTGRES_PASSWORD: synthetic-only
+          POSTGRES_DB: wave7_synthetic_v6casework
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wave7_synthetic -d wave7_synthetic_v6casework"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      FATWA_PRODUCTION: '0'
+      FATWA_WAVE7_SYNTHETIC_WRITES: '1'
+      DJANGO_SETTINGS_MODULE: config.settings.casework_test
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: wave7_synthetic
+      PGPASSWORD: synthetic-only
+      PGDATABASE: wave7_synthetic_v6casework
+      PGTESTDATABASE: test_wave7_synthetic_v6casework
+      PG_EXPECTED_MAJOR: ${{ matrix.postgres }}
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install pinned runtime
+        run: python -m pip install --no-deps -r requirements.txt
+      - name: Verify exact head and initialize owned empty database
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          mkdir -p .local/qa/v6-casework
+          python - <<'PY'
+          import os
+          import django
+          django.setup()
+          from django.db import connection
+          from apps.intake_workflow.guards import initialize_synthetic_database
+          with connection.cursor() as cursor:
+              cursor.execute("SELECT current_setting('server_version_num')::int / 10000")
+              assert cursor.fetchone()[0] == int(os.environ['PG_EXPECTED_MAJOR'])
+          initialize_synthetic_database(synthetic_fixtures_only=True)
+          PY
+      - name: Apply, roll back and reapply synthetic migrations
+        run: |
+          set -euo pipefail
+          {
+            python manage.py migrate --noinput
+            python manage.py makemigrations --check --dry-run
+            python manage.py migrate casework_web zero --noinput
+            python manage.py migrate casework zero --noinput
+            python - <<'PY'
+          import django
+          django.setup()
+          from django.db import connection
+          tables = connection.introspection.table_names()
+          assert not any(name.startswith('casework_') for name in tables)
+          PY
+            python manage.py migrate --noinput
+            python manage.py check
+          } 2>&1 | tee .local/qa/v6-casework/migrations.log
+      - name: Preserve populated cases while reversing and reapplying guards
+        run: |
+          set -euo pipefail
+          python tools/dev/casework_migration_check.py 2>&1 | tee .local/qa/v6-casework/populated-migrations.log
+      - name: Core, HTTP and independent adversarial tests
+        run: |
+          set -euo pipefail
+          python - <<'PY' 2>&1 | tee .local/qa/v6-casework/tests.log
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import django
+          django.setup()
+          from django.db import connection
+          from tests.wave7_foundation.runner import Wave7TestRunner
+          result = None
+          labels = [
+              'tests.casework.test_core',
+              'tests.casework.test_http',
+              'tests.casework.test_adversarial',
+              'tests.casework.test_tracking_bridge',
+          ]
+          def test_ids(suite):
+              for test in suite:
+                  if hasattr(test, 'id'):
+                      yield test.id()
+                  else:
+                      yield from test_ids(test)
+          class Runner(Wave7TestRunner):
+              def build_suite(self, *args, **kwargs):
+                  suite = super().build_suite(*args, **kwargs)
+                  ids = list(test_ids(suite))
+                  counts = {label: sum(item.startswith(label + '.') for item in ids)
+                            for label in labels}
+                  report.update(test_ids=sorted(ids), tests_by_label=counts,
+                                distinct_tests=len(set(ids)))
+                  if len(ids) != len(set(ids)):
+                      raise RuntimeError('duplicate_test_ids')
+                  if not all(counts.values()) or sum(counts.values()) != len(ids):
+                      raise RuntimeError('empty_or_unexpected_test_label')
+                  return suite
+              def run_suite(self, suite, **kwargs):
+                  global result
+                  result = super().run_suite(suite, **kwargs)
+                  return result
+          sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          assert sha == os.environ['EXPECTED_SHA']
+          with connection.cursor() as cursor:
+              cursor.execute("SELECT current_setting('server_version_num')::int / 10000")
+              major = cursor.fetchone()[0]
+          assert str(major) == os.environ['PG_EXPECTED_MAJOR']
+          report = {'tested_sha': sha, 'postgresql_major': major, 'status': 'ERROR',
+                    'deployment': 'NOT_DEPLOYED', 'acceptance': 'ACCEPTANCE_HOLD',
+                    'tests_run': 0}
+          try:
+              failures = Runner(verbosity=2, interactive=False).run_tests(labels)
+              report.update(tests_run=result.testsRun, failures=len(result.failures),
+                            errors=len(result.errors), skipped=len(result.skipped))
+              passed = (not failures and result.wasSuccessful()
+                        and result.testsRun == report['distinct_tests'] > 0
+                        and not result.skipped)
+              report['status'] = 'PASS' if passed else 'FAIL'
+          finally:
+              Path('.local/qa/v6-casework/tests-result.json').write_text(
+                  json.dumps(report, indent=2) + '\n', encoding='utf-8')
+              print('V6_CASEWORK_RESULT=' + json.dumps(report, sort_keys=True))
+          raise SystemExit(0 if report['status'] == 'PASS' else 1)
+          PY
+      - name: Chrome mobile and desktop journeys
+        if: matrix.postgres == '17'
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+        run: |
+          set -euo pipefail
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+          test -x "$FATWA_FASTBUILD_BROWSER"
+          python tools/dev/casework_browser.py 2>&1 | tee .local/qa/v6-casework/browser.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: v6-casework-pg${{ matrix.postgres }}
+          path: .local/qa/v6-casework
+          include-hidden-files: true
+          if-no-files-found: error

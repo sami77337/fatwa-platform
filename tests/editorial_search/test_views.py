@@ -70,6 +70,15 @@ class SearchViewTests(SimpleTestCase):
         question = self.get(data={"q": "منقح", "source": "question"})
         self.assertEqual(question.context["result"].total, 0)
 
+    def test_synonym_result_explains_match_and_displays_original_question(self):
+        response = self.get(data={"q": "بدون مقطع", "source": "question"})
+        self.assertEqual(response.status_code, 200)
+        row = response.context["rows"][0]
+        self.assertEqual(row["hit"].case_key, "intake-2")
+        self.assertEqual(row["hit"].match_kind, "synonym")
+        self.assertContains(response, "تطابق بتكافؤ بلا وبدون")
+        self.assertIn("بلا مقطع", row["hit"].fields[0].text)
+
     def test_reference_matches_keep_historical_occurrence_identity(self):
         response = self.get(data={"q": "SYN-REMOVE", "source": "reference"})
         self.assertEqual(response.status_code, 200)

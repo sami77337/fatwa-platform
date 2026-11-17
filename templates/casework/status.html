@@ -1,0 +1,8 @@
+{% extends "casework/base.html" %}
+{% block title %}متابعة سؤالي{% endblock %}
+{% block content %}
+<form method="post" action="/casework/status/">{% csrf_token %}<label for="tracking-token">رمز الوصول الخاص</label><input type="password" id="tracking-token" name="token" required maxlength="128" autocomplete="off"><button type="submit">استعلام عن الحالة</button></form>
+{% if result %}<article id="case-status"><h2>{{ status_label }}</h2><p>رقم المتابعة: <bdi>{{ result.public_ref }}</bdi></p><p class="notice">هذه حالة معالجة السؤال. لا يوجد هنا إثبات تسليم أو قراءة.</p>
+{% if result.clarification %}<h3>الاستيضاح المطلوب</h3><p class="original">{{ result.clarification }}</p>{% endif %}</article>
+<form method="post" action="/casework/followup/">{% csrf_token %}<input type="hidden" name="revision" value="{{ result.revision }}"><label for="followup-token">رمز الوصول لتأكيد التعقيب</label><input id="followup-token" name="token" type="password" required maxlength="128" autocomplete="off"><label for="followup-text">التعقيب أو التوضيح</label><textarea id="followup-text" name="text" required maxlength="16000"></textarea><button type="submit">إضافة التعقيب</button></form>{% endif %}
+{% endblock %}

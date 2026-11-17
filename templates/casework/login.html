@@ -1,0 +1,3 @@
+{% extends "casework/base.html" %}
+{% block title %}دخول مكتب الشيخ{% endblock %}
+{% block content %}<h2>دخول المكتب</h2><form method="post" action="/casework/staff/login/">{% csrf_token %}<label for="credential">رمز الهوية التجريبي الموثوق</label><input type="password" id="credential" name="credential" required maxlength="1024" autocomplete="off"><button type="submit">دخول المكتب</button></form>{% endblock %}
