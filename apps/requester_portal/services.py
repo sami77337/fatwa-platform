@@ -5,6 +5,7 @@ from django.conf import settings
 
 from apps.casework import delivery
 from apps.casework import services as cases
+from apps.platform_recovery.integration import mutation_service
 from apps.requester_access_review import services as access
 
 LABELS = {
@@ -44,6 +45,7 @@ def _delivery_state(status, summary):
     return {"state": state, "label": LABELS[state], "summary": summary, "read_confirmed": False}
 
 
+@mutation_service
 def snapshot(*, token, synthetic_fixtures_only=False):
     enabled()
     # Same case/queue lock order as V9. Nested existing service calls participate
@@ -167,3 +169,92 @@ def snapshot(*, token, synthetic_fixtures_only=False):
         ):
             raise cases.CaseConflict("portal_snapshot_changed")
         return result
+
+
+@mutation_service
+def submit_reply(*, token, text, expected_revision, attachment=None, synthetic_fixtures_only=False):
+    """Append a literal reply and optional file atomically using existing services.
+
+    A clarification reply first clears the clarification through add_followup;
+    upload then appends its separate immutable evidence. Both commit or neither
+    commits. External digest locks surround the outer transaction (V9 GC contract).
+    """
+    enabled()
+    cases._text(text)
+    cases.requester_status(token, synthetic_fixtures_only=synthetic_fixtures_only)
+    if attachment is None:
+        return cases.add_followup(
+            token=token,
+            text=text,
+            expected_revision=expected_revision,
+            synthetic_fixtures_only=synthetic_fixtures_only,
+        )
+    if type(attachment) is not dict or set(attachment) != {"raw", "filename", "media_type"}:
+        raise cases.CaseConflict("portal_attachment_invalid")
+    from apps.case_attachments import services as attachments
+    from apps.case_attachments.storage_bindings import binding_locks
+    from apps.private_media.storage import configured_storage
+    from apps.private_media.validation import MediaValidationError
+
+    attachments._enabled()
+    media = attachments._validate(**attachment)
+    try:
+        storage = configured_storage()
+        with (
+            binding_locks(storage, [media.sha256]),
+            delivery._token_case(token, synthetic_fixtures_only),
+        ):
+            reply = cases.add_followup(
+                token=token,
+                text=text,
+                expected_revision=expected_revision,
+                synthetic_fixtures_only=synthetic_fixtures_only,
+            )
+            attachments.upload(
+                token=token,
+                expected_revision=reply["revision"],
+                synthetic_fixtures_only=synthetic_fixtures_only,
+                **attachment,
+            )
+            return cases.requester_status(token, synthetic_fixtures_only=synthetic_fixtures_only)
+    except MediaValidationError as exc:
+        raise cases.CaseConflict("private_storage_unavailable") from exc
+
+
+def journey(result):
+    """Presentation-only next step and timeline from the existing safe projection."""
+    if result["clarification"]:
+        next_step = dict(
+            title="مطلوب توضيح منك",
+            text="أرسل ردك ويمكنك إرفاق ملف معه في الخطوة نفسها.",
+            anchor="followup",
+            action="الرد على الاستيضاح",
+        )
+    elif result["answer"] is not None:
+        next_step = dict(
+            title="جوابك متاح هنا",
+            text="يمكنك قراءة الجواب أو فتح أجزائه. حالة القناة مستقلة أدناه.",
+            anchor="answer",
+            action="قراءة الجواب وأجزائه",
+        )
+    else:
+        next_step = dict(
+            title="قضيتك لدى الفريق",
+            text="لا يلزم تكرار السؤال. يمكنك إضافة معلومات جديدة عند الحاجة.",
+            anchor="followup",
+            action="إضافة معلومات للقضية",
+        )
+    timeline = [dict(row) for row in result["history"]]
+    timeline.extend(
+        dict(
+            kind="attachment",
+            label="مرفق محفوظ ضمن القضية",
+            text=row["filename"],
+            created_at=row["created_at"],
+            evidence_version=row["evidence_version"],
+            attachment_id=row["id"],
+        )
+        for row in result["attachments"]
+    )
+    timeline.sort(key=lambda row: (row["evidence_version"], row["created_at"]))
+    return dict(next_step=next_step, timeline=timeline)

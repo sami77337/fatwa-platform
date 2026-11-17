@@ -2,5 +2,6 @@
 {% block title %}{{ edition.title }} | المكتبة التجريبية{% endblock %}
 {% block content %}<p>نسخة اصطناعية في مكتبة تجريبية مغلقة — لا نشر إنتاجي.</p>
 <article><h2>{{ edition.title }}</h2><p>{{ edition.category }} · نسخة {{ edition.number }}</p><p class="original">{{ edition.body }}</p>{% include "experimental_publication/references.html" %}</article>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="edition_id" value="{{ edition.id }}"><input type="hidden" name="library_query" value="{{ query }}"><input type="hidden" name="library_category" value="{{ category }}"><button>فتح سجل التحرير والتصحيح لهذه النسخة</button></form>
 {% if knowledge_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="knowledge_browse"><input type="hidden" name="publication_id" value="{{ edition.id }}"><input type="hidden" name="query" value=""><button>الدروس والمراجع المرتبطة</button></form>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_library"><input type="hidden" name="query" value="{{ query }}"><input type="hidden" name="category" value="{{ category }}"><button>العودة إلى المكتبة التجريبية</button></form>{% endblock %}

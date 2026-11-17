@@ -16,7 +16,7 @@ from apps.private_media.fixtures import synthetic_files
 
 from .test_support import PORTAL_SETTINGS, PortalFixture
 
-OUT = Path(".local/qa/v10-requester/browser")
+OUT = Path(".local/qa/v11-requester/browser")
 
 
 @override_settings(**PORTAL_SETTINGS)
@@ -121,7 +121,7 @@ class PortalBrowserTests(PortalFixture, LiveServerTestCase):
                         "buffer": png[2],
                     }
                 )
-                page.locator('[name="synthetic_only"]').check()
+                page.locator('form:has(#portal-attachment) [name="synthetic_only"]').check()
                 click("حفظ مرفق السؤال")
                 image = page.locator("#attachments img")
                 image.scroll_into_view_if_needed()
@@ -133,8 +133,19 @@ class PortalBrowserTests(PortalFixture, LiveServerTestCase):
                 refresh()
                 self.assertIn("وضح السؤال الاصطناعي", page.content())
                 page.locator("#portal-followup").fill("رد السائل الاصطناعي من الهاتف")
+                page.locator("#reply-attachment").set_input_files(
+                    {
+                        "name": "clarification.txt",
+                        "mimeType": "text/plain",
+                        "buffer": b"synthetic clarification attachment",
+                    }
+                )
+                page.locator('#portal-reply-form [name="synthetic_only"]').check()
                 click("إرسال التعقيب", keyboard=True)
+                self.assertIn("حُفظ ردك ومرفقه معًا", page.content())
                 self.assertIn("رد السائل الاصطناعي من الهاتف", page.content())
+                self.assertIn("clarification.txt", page.content())
+                self.assertEqual(page.locator('[data-history-kind="attachment"]').count(), 2)
                 work(cited_draft)
                 refresh()
                 self.assertEqual(
@@ -219,6 +230,7 @@ class PortalBrowserTests(PortalFixture, LiveServerTestCase):
                             "sandbox": sandbox,
                             "rtl_widths": [320, 1280],
                             "keyboard_submit": True,
+                            "atomic_clarification_with_file": True,
                             "image_dimensions": [16, 12],
                             "audio_duration": 0.1,
                             "signed_parts": "3/3",

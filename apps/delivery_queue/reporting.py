@@ -1,12 +1,17 @@
 """Bounded, scoped, read-only projections. Never return signed or lease material."""
+
 from django.db import transaction
 from django.utils import timezone
-from .models import ApprovalClaim, DeliveryIntent
+
+from apps.platform_recovery.integration import mutation_service
+
 from . import services as q
+from .models import ApprovalClaim, DeliveryIntent
 
 SCHEMA = 'fatwa.delivery-report.v1'
 
 
+@mutation_service
 def export_scoped_report(*, case_keys, limit=50, after=None):
     if (type(case_keys) is not frozenset or not 1 <= len(case_keys) <= 128
         or any(not q._ref(case) for case in case_keys)

@@ -1,21 +1,25 @@
 """Human review gate on exact journal requests. No signing or sending."""
-from datetime import datetime
-from hashlib import sha256
-from hmac import compare_digest
+
 import json
 import re
 import unicodedata
+from datetime import datetime
+from hashlib import sha256
+from hmac import compare_digest
 
 from django.db import connection, transaction
 from django.utils import timezone
-from apps.delivery_queue import services as queue
-from apps.delivery_queue import author_handoff as handoff
-from apps.delivery_queue.approval_adapter import commit_signed_approved_plan, reserve_signed_plan
+
 from apps.delivery_planner.trusted_identity import Ed25519ApprovalVerifier
+from apps.delivery_queue import author_handoff as handoff
+from apps.delivery_queue import services as queue
+from apps.delivery_queue.approval_adapter import commit_signed_approved_plan, reserve_signed_plan
 from apps.editorial_export.services import require_development
 from apps.fast9_case_source_join.answer_drafts import AUTHOR, CASE_KEY
-from .identity import resolve_identity, require_provider
-from .models import ReviewRequest, ReviewDecision
+from apps.platform_recovery.integration import mutation_service
+
+from .identity import require_provider, resolve_identity
+from .models import ReviewDecision, ReviewRequest
 
 ACTIONS = frozenset({'RETURN_FOR_CHANGES', 'DECLINED', 'READY_FOR_SIGNATURE'})
 HEX64 = re.compile(r'[a-f0-9]{64}')
@@ -55,6 +59,7 @@ def _projection(row, decision=None):
         'signed_approval': False}
 
 
+@mutation_service
 def submit_request(directory, *, case_key, max_chars, split, author_id,
                    expected_request_sha256=None, synthetic_fixtures_only=False):
     _context(case_key, synthetic_fixtures_only, author_id)
@@ -87,6 +92,7 @@ def _note(action, note):
         raise ReviewConflict('invalid_human_review_decision')
 
 
+@mutation_service
 def record_decision(*, directory, case_key, max_chars, split, request_sha256,
                     subject_id, provider, action, note, command_id, synthetic_fixtures_only=False):
     _context(case_key, synthetic_fixtures_only)
@@ -126,6 +132,7 @@ def record_decision(*, directory, case_key, max_chars, split, request_sha256,
         return _projection(row, decision)
 
 
+@mutation_service
 def review_history(*, case_key, author_id=AUTHOR, synthetic_fixtures_only=False):
     _context(case_key, synthetic_fixtures_only, author_id)
     queue._postgres_only()
@@ -160,6 +167,7 @@ def _ready_decision(package, provider, *, receipt=None):
     return decision
 
 
+@mutation_service
 def stage_reviewed_response(directory, *, case_key, max_chars, split, author_id,
                             response_json, provider, verifier, synthetic_fixtures_only=False):
     _context(case_key, synthetic_fixtures_only, author_id)
@@ -185,6 +193,7 @@ def stage_reviewed_response(directory, *, case_key, max_chars, split, author_id,
         'parts': [{'ordinal': row.ordinal, 'state': row.state} for row in rows]}
 
 
+@mutation_service
 def reserve_reviewed_request(directory, *, case_key, max_chars, split, request_sha256,
                              worker_id, verify_worker, provider, verifier, synthetic_fixtures_only=False):
     """Internal worker gate; still creates no network send or retry."""

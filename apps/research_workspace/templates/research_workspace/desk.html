@@ -1,0 +1,47 @@
+{% extends "casework/base.html" %}
+{% block title %}البحث والمصادر المرتبطة بالقضية{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/research-workspace.css">
+<h2>البحث والمصادر المرتبطة بالقضية</h2>
+<p>ابحث في المواد المصرح بها، وافتح أصلها ثم عد إلى موضع البحث. الفهرس ليس متن الكتاب، والتفريغ ليس جوابًا معتمدًا للقضية.</p>
+{% if error %}<p role="alert">{{ error }}</p><a href="/casework/staff/">العودة إلى مكتب القضية</a>{% endif %}
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+{% if result %}
+<p>القضية <bdi>{{ result.public_ref }}</bdi> · إصدار الوقائع {{ result.evidence_version }}</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
+{% if opened %}
+<section aria-label="المصدر المفتوح">
+{% if opened_kind == "REFERENCE" %}
+<h3>{{ opened.source.heading_title }}</h3><p><strong>عنوان فهرس موثق فقط؛ لا يوجد متن كتاب في هذه النتيجة.</strong></p>
+<dl><dt>الكتاب</dt><dd>{{ opened.source.work_title }}</dd><dt>الطبعة والناشر</dt><dd>{{ opened.source.edition_title }} · {{ opened.source.publisher }}</dd><dt>الجزء والصفحة</dt><dd>{{ opened.source.printed_part }} · {{ opened.source.printed_page }}</dd></dl>
+<ol>{% for title in opened.source.path %}<li>{{ title }}</li>{% endfor %}</ol>
+<details><summary>هوية المصدر المثبتة</summary><p>طبعة {{ opened.source.edition_id }} · صف {{ opened.source.source_row_id }} · <bdi>{{ opened.source.source_input_sha256 }}</bdi></p></details>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_add"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ selection }}"><label for="note">ملاحظة تحريرية بشرية للإحالة</label><textarea id="note" name="note" maxlength="2000"></textarea><label><input type="checkbox" name="confirm" value="yes" required>راجعت المصدر وأطلب إضافته إلى نسخة جديدة من الجواب المحفوظ، مع إلغاء الاعتماد السابق. النص غير المحفوظ في محرر آخر لا يُنقل تلقائيًا.</label><button>إضافة إحالة دقيقة للجواب المحفوظ</button></form>
+{% elif opened_kind == "TRANSCRIPT" %}
+<h3>نص التفريغ المحفوظ</h3><p>مصدر الدرس: <bdi>{{ opened.source_id }}</bdi> · الموضع {{ opened.question.start_ms }}–{{ opened.question.end_ms }} مللي ثانية.</p>
+<h4>السؤال الأصلي</h4><pre>{{ opened.question.text }}</pre>
+{% if opened.answer %}<h4>جواب المصدر المحفوظ</h4><p>نقل من المصدر، وليس اعتمادًا لجواب القضية.</p><pre>{{ opened.answer.text }}</pre>{% endif %}
+<p>بصمة المصدر: <bdi>{{ opened.source_sha256 }}</bdi></p><p>لا يتوافر ربط مثبت لملف تشغيل هذا الدرس هنا؛ لا يُنشأ رابط وسائط تخميني.</p>
+{% elif opened_kind == "KNOWLEDGE" %}
+<h3>{{ opened.title }}</h3><p>علاقة علمية معتمدة بشريًا ضمن المنشور التجريبي المصرح.</p>
+{% if opened.source %}<p>{{ opened.source.work_title }} · {{ opened.source.edition_title }} · جزء {{ opened.source.printed_part }} صفحة {{ opened.source.printed_page }}</p><p>مرجع فهرسي، وليس متن الكتاب.</p>{% endif %}
+{% if opened.material %}<p>مصدر <bdi>{{ opened.material.source_id }}</bdi> · {{ opened.material.start_ms }}–{{ opened.material.end_ms }} مللي ثانية.</p><pre>{{ opened.material.text }}</pre>{% endif %}
+{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_back"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ back_state }}"><button>العودة إلى نتائج البحث نفسها</button></form>
+</section>
+{% else %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_search"><input type="hidden" name="case_ref" value="{{ result.public_ref }}">
+<label for="query">عبارة البحث العربية</label><input id="query" name="query" value="{{ filters.query }}" maxlength="80">
+<label for="kind">نوع المادة</label><select id="kind" name="kind"><option value="all" {% if filters.kind == 'all' %}selected{% endif %}>المواد المصرح بها</option><option value="REFERENCE" {% if filters.kind == 'REFERENCE' %}selected{% endif %}>فهارس الكتب</option><option value="TRANSCRIPT" {% if filters.kind == 'TRANSCRIPT' %}selected{% endif %}>الدروس والتفريغات المرتبطة</option><option value="KNOWLEDGE" {% if filters.kind == 'KNOWLEDGE' %}selected{% endif %}>العلاقات المعتمدة</option><option value="MEDIA" {% if filters.kind == 'MEDIA' %}selected{% endif %}>وسائط القضية</option></select>
+<label for="edition">الطبعة الدقيقة للبحث في الفهرس</label><select id="edition" name="edition_id"><option value="">اختر طبعة مصرحًا بها</option>{% for edition in result.editions %}<option value="{{ edition.id }}" {% if filters.edition_id == edition.id %}selected{% endif %}>{{ edition.book }} — {{ edition.title }}</option>{% endfor %}</select>
+<label for="part">الجزء المطبوع</label><input id="part" name="printed_part" value="{{ filters.printed_part }}" maxlength="100"><label for="page">الصفحة المطبوعة</label><input id="page" name="printed_page" value="{{ filters.printed_page|default_if_none:'' }}" inputmode="numeric"><button>البحث في المصادر المصرح بها</button></form>
+{% if result.limited %}<p>النتائج محدودة؛ ضيّق العبارة أو المرشحات.</p>{% endif %}
+<section aria-label="نتائج البحث">{% for row in result.results %}<article data-resource-id="{{ row.resource.identifier }}"><h3>{{ row.title }}</h3><p>{{ row.label }}</p>
+{% if row.source %}<p>{{ row.source.edition_title }} · جزء {{ row.source.printed_part }} · صفحة {{ row.source.printed_page }}</p>{% endif %}
+{% if row.kind == "TRANSCRIPT" %}<p>الموضع {{ row.start_ms }}–{{ row.end_ms }} مللي ثانية.</p>{% endif %}
+{% if row.media_type %}<p><bdi>{{ row.media_type }}</bdi></p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ row.state }}">
+{% if row.kind == 'ATTACHMENT' or row.kind == 'ANSWER_MEDIA' %}<input type="hidden" name="action" value="research_file"><button>تنزيل الوسيط المصرح: {{ row.title }}</button>{% else %}<input type="hidden" name="action" value="research_view"><button>فتح المصدر: {{ row.title }}</button>{% endif %}
+</form></article>{% empty %}<p>لا توجد نتائج مطابقة ضمن الحقوق الحالية. اختيار الطبعة مطلوب لبحث الفهرس.</p>{% endfor %}</section>
+{% endif %}{% endif %}
+{% endblock %}

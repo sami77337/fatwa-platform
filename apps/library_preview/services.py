@@ -20,6 +20,7 @@ from apps.experimental_publication.models import PublicationEdition
 from apps.intake_workflow.guards import require_owned_database
 from apps.knowledge_links import services as knowledge
 from apps.knowledge_links.models import KnowledgeRevision
+from apps.platform_recovery.integration import mutation_service
 
 from .policy import PreviewPolicy
 
@@ -124,8 +125,10 @@ def _current(selected: PreviewPolicy, publication_id: str):
         _recheck(selected)
 
 
-def _permitted_source(selected: PreviewPolicy, item: dict) -> dict | None:
+def _permitted_source(selected: PreviewPolicy, item: dict, case) -> dict | None:
     source = item["source"]
+    if not citations._permits_source(case, item, "PREVIEW_METADATA"):
+        return None
     if not any(
         grant.edition_id == source["edition_id"]
         and grant.source_row_id == source["source_row_id"]
@@ -142,7 +145,7 @@ def _references(selected: PreviewPolicy, edition: PublicationEdition) -> list[di
     return [
         {"position": position, **source}
         for position, item in enumerate(edition.citations, 1)
-        if (source := _permitted_source(selected, item)) is not None
+        if (source := _permitted_source(selected, item, edition.case)) is not None
     ]
 
 
@@ -171,12 +174,14 @@ def _relationships(selected: PreviewPolicy, edition: PublicationEdition) -> dict
                 # that staff projection can resolve private transcript bundles.
                 heading = row.heading
                 source = citations._source(heading.edition_id, heading.source_row_id)
+                if not citations._permits_source(edition.case, source, "RELATE"):
+                    continue
                 if source not in edition.citations or row.snapshot != {
                     "kind": "REFERENCE",
                     **source,
                 }:
                     continue
-                display = _permitted_source(selected, source)
+                display = _permitted_source(selected, source, edition.case)
                 if display is not None:
                     position = edition.citations.index(source) + 1
                     references.append({"position": position, "number": row.number, **display})
@@ -185,7 +190,10 @@ def _relationships(selected: PreviewPolicy, edition: PublicationEdition) -> dict
         elif row.transcript_id:
             # A private relation may be indicated, but carries no identifier, text,
             # raw-evidence URL, timing, source name, or path to the staff API.
-            private_related = True
+            # Private transcript rights cannot authorize anonymous metadata.
+            # With rights enforced, even relationship existence remains private.
+            if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is not True:
+                private_related = True
     return {"references": references, "private_related": private_related}
 
 
@@ -241,6 +249,7 @@ def filters(*, query: str = "", category: str = "", material: str = "", page: in
     return {"query": query, "category": category, "material": material, "page": page}
 
 
+@mutation_service
 def browse(*, query: str = "", category: str = "", material: str = "", page: int = 1) -> dict:
     chosen = filters(query=query, category=category, material=material, page=page)
     selected = _start()
@@ -290,6 +299,7 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
     }
 
 
+@mutation_service
 def read(publication_id: str) -> dict:
     selected = _start()
     with _current(selected, publication_id) as edition:
@@ -298,6 +308,7 @@ def read(publication_id: str) -> dict:
         return result
 
 
+@mutation_service
 def read_reference(publication_id: str, position: int) -> dict:
     if type(position) is not int or not 1 <= position <= 12:
         raise PreviewUnavailable()
@@ -305,7 +316,7 @@ def read_reference(publication_id: str, position: int) -> dict:
     with _current(selected, publication_id) as edition:
         if position > len(edition.citations):
             raise PreviewUnavailable()
-        display = _permitted_source(selected, edition.citations[position - 1])
+        display = _permitted_source(selected, edition.citations[position - 1], edition.case)
         if display is None:
             raise PreviewUnavailable()
         return {

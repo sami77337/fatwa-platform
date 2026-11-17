@@ -19,7 +19,29 @@ from apps.mufti_review.identity import IdentityUnavailable
 
 from . import services
 
-ACTIONS = frozenset({"answer_media", "answer_media_save", "answer_media_release"})
+ACTIONS = frozenset(
+    {"answer_media", "answer_media_save", "answer_media_release", "answer_media_reorder"}
+)
+
+
+def _reorder(request):
+    required = {
+        "action",
+        "case_ref",
+        "revision",
+        "evidence_version",
+        "parts",
+        "csrfmiddlewaretoken",
+    }
+    if (
+        request.content_type != "application/x-www-form-urlencoded"
+        or set(request.POST) != required
+        or any(len(request.POST.getlist(key)) != 1 for key in required - {"parts"})
+        or not 1 <= len(request.POST.getlist("parts")) <= 7
+        or request.FILES
+    ):
+        raise InvalidForm("answer_media_reorder_invalid")
+    return request.POST
 
 
 def _staff(request):
@@ -65,7 +87,13 @@ def staff(request):
         required = {"action", "case_ref"}
         if action == "answer_media_release":
             required |= {"revision", "evidence_version", "manifest_sha256", "confirm"}
-        fields = _multipart(request) if action == "answer_media_save" else _form(request, required)
+        fields = (
+            _multipart(request)
+            if action == "answer_media_save"
+            else _reorder(request)
+            if action == "answer_media_reorder"
+            else _form(request, required)
+        )
         common = {
             "subject_id": identity.subject_id,
             "provider": provider,
@@ -104,6 +132,17 @@ def staff(request):
                 text=fields["text"],
                 files=files,
                 retained_part_ids=retained,
+                expected_revision=_integer(fields["revision"]),
+                expected_evidence_version=_integer(fields["evidence_version"]),
+            )
+        elif action == "answer_media_reorder":
+            current = services.staff_snapshot(**common)
+            parts = [part for part in fields.getlist("parts") if part]
+            services.save_multipart_answer(
+                **common,
+                text=current["current_text"],
+                files=[],
+                retained_part_ids=parts,
                 expected_revision=_integer(fields["revision"]),
                 expected_evidence_version=_integer(fields["evidence_version"]),
             )

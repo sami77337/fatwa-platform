@@ -11,20 +11,31 @@ from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.views import _provider
 from apps.team_workspace import presentation
 
+from .workflow import describe_work
+
 REFERENCE = re.compile(r"FT-[0-9]{4}-[A-F0-9]{20}")
 
 TABS = (
     ("overview", "case_workspace", "القضية والمراجعة", None),
     ("origins", "source_timeline", "أصل الأحداث وتسلسلها", "FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED"),
     ("attachments", "attachment_list", "مرفقات الوقائع", "FATWA_CASE_ATTACHMENTS_ENABLED"),
+    ("rights", "rights_desk", "حقوق المصادر ومراجعتها", "FATWA_SOURCE_RIGHTS_ENABLED"),
+    ("research", "research_open", "البحث في مصادر القضية", "FATWA_RESEARCH_WORKSPACE_ENABLED"),
     ("citations", "citations", "الإحالات العلمية", "FATWA_CASE_CITATIONS_ENABLED"),
     ("answer", "answer_media", "أجزاء الجواب والإتاحة", "FATWA_ANSWER_MEDIA_ENABLED"),
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
+    ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
     ("publication", "pub_open", "نسخة النشر المستقلة", "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED"),
 )
 
 
 def _active(action):
+    if action.startswith("research_"):
+        return "research"
+    if action.startswith("pilot_"):
+        return "pilot"
+    if action.startswith("rights_"):
+        return "rights"
     if action.startswith("source_"):
         return "origins"
     if action.startswith("attachment_"):
@@ -95,9 +106,36 @@ def _metadata(common, snapshot):
                 .values("sha256", "part_count")
                 .first()
             )
+        release = {
+            "recorded": False,
+            "enabled": getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True
+            and getattr(settings, "FATWA_ANSWER_MEDIA_PRIVATE_ENABLED", False) is True,
+        }
+        if manifest and case.approved_answer_id and snapshot["status"] == "ANSWERED":
+            from apps.answer_media.models import PrivateAnswerRelease
+
+            release["recorded"] = PrivateAnswerRelease.objects.filter(
+                manifest_id=case.approved_answer_id,
+                decision__answer_id=case.approved_answer_id,
+                decision__case=case,
+                decision__action="APPROVE",
+                decision__evidence_version=case.evidence_version,
+                evidence_version=case.evidence_version,
+                manifest_sha256=manifest["sha256"],
+            ).exists()
+        return_reason = ""
+        if snapshot["status"] == "RETURNED_FOR_CHANGES" and snapshot["latest_answer"]:
+            return_reason = (
+                case.decisions.filter(
+                    answer_id=snapshot["latest_answer"]["id"], action="RETURN_FOR_CHANGES"
+                )
+                .values_list("note", flat=True)
+                .first()
+                or ""
+            )
         # A provider revocation during metadata projection must invalidate the entire frame.
         cases._identity(common["provider"], common["subject_id"], case)
-        return attachments, manifest
+        return attachments, manifest, release, return_reason
 
 
 def case_workspace(request):
@@ -112,10 +150,20 @@ def case_workspace(request):
         or getattr(request, "_mufti_workspace_error", False) is True
         or request.path != "/casework/staff/"
         or request.method != "POST"
-        or "case_ref" not in request.POST
+        or (
+            "case_ref" not in request.POST
+            and not getattr(request, "publication_authorized_case_ref", None)
+        )
     ):
         return {}
     references = request.POST.getlist("case_ref")
+    resolved = getattr(request, "publication_authorized_case_ref", None)
+    # The native publication view sets this only after canonical desk authorization.
+    # It is never a browser field or a replacement for the fresh scope check below.
+    if not references and request.POST.get("action") == "pub_open" and resolved:
+        references = [resolved]
+    elif resolved and references != [resolved]:
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if len(references) != 1 or REFERENCE.fullmatch(references[0]) is None:
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if len(request.POST.getlist("action")) != 1:
@@ -141,7 +189,7 @@ def case_workspace(request):
         from apps.source_case_intake.services import staff_origins
 
         origins = staff_origins(**common)
-    attachments, manifest = _metadata(common, snapshot)
+    attachments, manifest, release, return_reason = _metadata(common, snapshot)
     # Check the live browser identity after all reads as well as at entry.
     current_staff(request, directory, case_key=references[0])
     active = _active(request.POST["action"])
@@ -173,5 +221,8 @@ def case_workspace(request):
             "private_status": "تُراجع الإتاحة الخاصة في لوحة أجزاء الجواب؛ الاعتماد وحده لا يتيح الملفات.",
             "delivery_status": "افتح لوحة التوصيل للتحقق من الخطة وإثبات كل جزء؛ هذه اللوحة لا تثبت التسليم أو القراءة.",
             "verification_checked": False,
+            "workflow": describe_work(
+                snapshot, manifest=manifest, release=release, return_reason=return_reason, tabs=tabs
+            ),
         }
     }

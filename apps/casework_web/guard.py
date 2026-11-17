@@ -15,6 +15,7 @@ from .models import ThrottleBucket
 
 BASE = "/casework/"
 ROUTES = {
+    "/research-workspace.css": ("GET", "HEAD"),
     BASE: ("GET", "HEAD", "POST"),
     BASE + "status/": ("GET", "HEAD", "POST"),
     BASE + "followup/": ("POST",),

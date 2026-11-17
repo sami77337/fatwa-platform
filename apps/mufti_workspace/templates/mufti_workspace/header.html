@@ -3,7 +3,8 @@
   <p><strong>{{ mufti_workspace.case.stage_label }}</strong> · {{ mufti_workspace.case.next_step }}</p>
   <p>نسخة السجل <strong id="mufti-case-revision">{{ mufti_workspace.case.revision }}</strong> · الوقائع <strong id="mufti-evidence-version">{{ mufti_workspace.case.evidence_version }}</strong> · الجواب <strong id="mufti-answer-revision">{{ mufti_workspace.answer_revision }}</strong></p>
   <p id="mufti-approval-state">{% if mufti_workspace.approved %}الاعتماد المسجل مطابق للوقائع الحالية.{% else %}لا يوجد اعتماد حالي لهذه الوقائع.{% endif %}</p>
+  {% include "mufti_workspace/next_actions.html" %}
   <nav class="mufti-case-nav" aria-label="أقسام القضية الحالية">
-    {% for tab in mufti_workspace.tabs %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="{{ tab.action }}"><input type="hidden" name="case_ref" value="{{ mufti_workspace.case.public_ref }}"><button type="submit"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }}</button></form>{% endfor %}
+    {% for tab in mufti_workspace.tabs %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="{{ tab.action }}"><input type="hidden" name="case_ref" value="{{ mufti_workspace.case.public_ref }}">{% if tab.action == 'rights_desk' %}<input type="hidden" name="query" value=""><input type="hidden" name="edition_id" value="">{% endif %}<button type="submit"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }}</button></form>{% endfor %}
   </nav>
 </section>

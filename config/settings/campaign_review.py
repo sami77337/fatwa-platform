@@ -20,6 +20,9 @@ INSTALLED_APPS = [
     "apps.library_preview",
     "apps.requester_portal",
     "apps.mufti_workspace",
+    "apps.source_rights",
+    "apps.research_workspace",
+    "apps.pilot_workbench",
 ]
 # Explicit, separate opt-ins for the closed synthetic V7 workflow.
 FATWA_CASE_ATTACHMENTS_ENABLED = False
@@ -29,6 +32,18 @@ FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = False
 FATWA_MEDIA_STORAGE_MIGRATION_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED = False
+FATWA_SOURCE_CASE_INTAKE_SIMULATOR_ENABLED = False
+FATWA_SOURCE_RIGHTS_ENABLED = False
+FATWA_SOURCE_RIGHTS_AUTHORITY = None
+# V11 explicitly requires current source grants; older isolated profiles retain
+# their historical contract until the complete V11 composition is selected.
+FATWA_SOURCE_RIGHTS_ENFORCED = False
+FATWA_RESEARCH_WORKSPACE_ENABLED = False
+FATWA_RESEARCH_WORKSPACE_RIGHTS = None
+FATWA_PILOT_WORKBENCH_ENABLED = False
+FATWA_PILOT_WORKBENCH = None
+FATWA_RECOVERY_MAINTENANCE_REQUIRED = False
+FATWA_RECOVERY_MAINTENANCE_ROOT = None
 FATWA_KNOWLEDGE_LINKS_ENABLED = False
 FATWA_KNOWLEDGE_LINKS_AUTHORITY = None
 FATWA_COMPOSITE_DELIVERY_ENABLED = False
@@ -56,17 +71,18 @@ TEMPLATES = deepcopy(TEMPLATES)  # noqa: F405
 TEMPLATES[0]["OPTIONS"]["context_processors"].append(
     "apps.requester_team_journey.context.connected_navigation"
 )
-TEMPLATES[0]["OPTIONS"]["context_processors"].append(
-    "apps.mufti_workspace.context.case_workspace"
-)
+TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.mufti_workspace.context.case_workspace")
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",
     Path(__file__).resolve().parents[2] / "apps/requester_team_journey/templates",
     *TEMPLATES[0]["DIRS"],
 ]
 MIDDLEWARE = [
-    "apps.library_preview.guard.PreviewCompositionGuard"
-    if item == "apps.casework_web.guard.CaseworkGuard"
-    else item
-    for item in MIDDLEWARE  # noqa: F405
+    "apps.platform_recovery.middleware.MaintenanceGuard",
+    *[
+        "apps.library_preview.guard.PreviewCompositionGuard"
+        if item == "apps.casework_web.guard.CaseworkGuard"
+        else item
+        for item in MIDDLEWARE  # noqa: F405
+    ],
 ]

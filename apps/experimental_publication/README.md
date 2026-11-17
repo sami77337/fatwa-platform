@@ -71,3 +71,37 @@ Human redaction and meaning review are explicit attestations, not automatic PII
 detection or AI approval. A production publisher authority, public audience,
 taxonomy and acceptance policy remain unresolved and disabled.
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED.
+
+## V11 editorial continuity
+
+The staff desk now distinguishes immutable approval history from current library
+availability. It labels outdated candidates, superseded publications, withdrawals
+and changed source/evidence explicitly. Review/approval/correction controls are
+shown only for the applicable edition; publication approval and withdrawal also
+use the existing trusted `PublicationAuthority`. Hidden controls never replace
+service checks. A short timestamped history stays with each edition. No authority,
+role, migration, public preview grant or publication record is created by reading
+these screens.
+
+The library detail can open the authorized editorial desk with existing `pub_open`
+and `edition_id` instead of `case_ref`; supplying both is rejected. The service
+resolves and reauthorizes the canonical case. All desk forms accept the optional
+pair `library_query` / `library_category`, which carries only bounded search
+context. The flow detail → desk → correction → review → independent approval →
+withdrawal → library preserves those filters. A withdrawn category remains shown
+as the user's selected filter even when there are no available editions. Search
+still queries only the existing published-only service projection.
+
+A rejected publication mutation returns an Arabic explanation and a freshly
+authorized desk. Failed candidate text is available in a separate, escaped,
+read-only copy buffer, never silently rebound to fresh case revisions. Identity
+or scope loss suppresses both the desk and that buffer. The shared frame may read
+`request.publication_authorized_case_ref`, set only after `services.desk` has
+successfully rechecked current identity/scope and before template rendering. This
+attribute is not copied from browser fields and is absent on a failed read.
+
+Focused V11 evidence: six new PostgreSQL 17.12 HTTP tests in `tests_ui.py`, the
+existing native-forms HTTP contract, and the two V9 library/correction tests passed
+(nine distinct tests; affected tests rerun only after changes). Ruff/format and
+`git diff --check` pass. Browser and final campaign integration are separate
+checks owned by the integration lane; no standalone browser pass is claimed here.

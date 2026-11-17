@@ -17,7 +17,8 @@ import secrets
 import stat
 import subprocess
 import tempfile
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 import psycopg
@@ -32,6 +33,8 @@ from apps.intake_workflow.guards import require_owned_database
 from apps.private_media.filesystem import BACKEND, FileSystemStorage
 from apps.private_media.storage import StoredOriginal, verify_original
 
+from .leases import Lease, execution
+
 FORMAT = "fatwa-platform-recovery-v1"
 OWNER_TABLES = ("case_attachments_caseattachment", "answer_media_answerpart")
 REQUIRED_TABLES = {
@@ -45,7 +48,10 @@ REQUIRED_TABLES = {
     "wave7_synthetic_ownership",
 }
 DIGEST = re.compile(r"[a-f0-9]{64}")
+MAX_CAPTURE_BYTES = 32 * 1024 * 1024
+_TARGET_LEASE = ContextVar("recovery_target_lease", default=())
 TARGET = re.compile(r"wave7_synthetic_restore_[a-f0-9]{24}")
+NONCE = re.compile(r"synthetic-recovery:[a-f0-9]{64}")
 
 
 class RecoveryError(RuntimeError):
@@ -158,7 +164,7 @@ class PostgresTools:
     def __init__(self, binaries):
         self.binaries = Path(binaries).resolve(strict=True)
 
-    def run(self, tool, database, *args):
+    def run(self, tool, database, *args, input_data=None):
         # Deliberately do not inherit libpq passwords, service files or options.
         env = {"PATH": os.environ.get("PATH", ""), "LANG": "C.UTF-8", "HOME": "/nonexistent"}
         p = parameters(database)
@@ -175,7 +181,9 @@ class PostgresTools:
             p["dbname"],
             *args,
         ]
-        result = subprocess.run(command, env=env, capture_output=True, timeout=120)
+        result = subprocess.run(
+            command, env=env, input=input_data, capture_output=True, timeout=120
+        )
         require(result.returncode == 0, tool + "_failed")
         return result.stdout
 
@@ -353,13 +361,26 @@ def checkpoint(stage):
     """Fault-injection seam used by the isolated integration tests; no runtime flag."""
 
 
-def snapshot(*, scratch, storage, pg_bin, synthetic_fixtures_only=False, offline=False):
+def snapshot(
+    *, scratch, storage, pg_bin, synthetic_fixtures_only=False, offline=False, _capture=None
+):
     """Returns a complete bundle path and separately retainable manifest digest."""
     owned = guard(synthetic_fixtures_only=synthetic_fixtures_only, offline=offline)
     require(isinstance(storage, FileSystemStorage), "filesystem_adapter_required")
     safe_directory(storage.root)
     parent = safe_directory(scratch)
-    bundle = Path(tempfile.mkdtemp(prefix="snapshot-", dir=parent))
+    bundle = Path(tempfile.mkdtemp(prefix="snapshot-", dir=parent)) if _capture is None else None
+    captured_size = 0
+
+    def emit(name, raw):
+        nonlocal captured_size
+        if _capture is None:
+            write_file(bundle / name, raw)
+        else:
+            captured_size += len(raw)
+            require(captured_size <= MAX_CAPTURE_BYTES, "encrypted_drill_size_limit")
+            _capture[name] = raw
+
     tools = PostgresTools(pg_bin)
     try:
         with connect() as db, db.transaction(), ExitStack() as locks:
@@ -383,15 +404,16 @@ def snapshot(*, scratch, storage, pg_bin, synthetic_fixtures_only=False, offline
             for key in sorted(assets):
                 locks.enter_context(storage.binding_lock(assets[key]["sha256"]))
             checkpoint("frozen")
-            (bundle / "objects").mkdir(mode=0o700)
+            if bundle is not None:
+                (bundle / "objects").mkdir(mode=0o700)
             for key, item in sorted(assets.items()):
-                write_file(bundle / "objects" / key, storage.get(original(item)))
+                emit("objects/" + key, storage.get(original(item)))
             schema = tools.schema(owned.database_name, snap)
             archive = tools.run(
                 "pg_dump", owned.database_name, "--format=custom", "--no-owner", "--snapshot", snap
             )
-            write_file(bundle / "database.dump", archive)
-            write_file(bundle / "schema.sql", schema)
+            emit("database.dump", archive)
+            emit("schema.sql", schema)
             require(baseline(db) == before, "source_changed_during_freeze")
             # Fail closed if external bytes changed during the database dump.
             for item in assets.values():
@@ -407,15 +429,17 @@ def snapshot(*, scratch, storage, pg_bin, synthetic_fixtures_only=False, offline
                 "postgres_major": db.info.server_version // 10000,
             }
             payload = canonical(manifest)
-            write_file(bundle / "manifest.json", payload)
-            sync_directory(bundle / "objects")
-            sync_directory(bundle)
+            emit("manifest.json", payload)
+            if bundle is not None:
+                sync_directory(bundle / "objects")
+                sync_directory(bundle)
             # Last file is the publication boundary: interrupted copies are not backups.
-            write_file(bundle / "COMPLETE", digest(payload).encode())
-            sync_directory(bundle)
-            sync_directory(parent)
+            emit("COMPLETE", digest(payload).encode())
+            if bundle is not None:
+                sync_directory(bundle)
+                sync_directory(parent)
             return {
-                "bundle": str(bundle),
+                "bundle": str(bundle) if bundle is not None else None,
                 "manifest_sha256": digest(payload),
                 "assets": len(assets),
                 "tables": len(before["tables"]),
@@ -425,16 +449,28 @@ def snapshot(*, scratch, storage, pg_bin, synthetic_fixtures_only=False, offline
         raise
 
 
-def verify_bundle(bundle, expected_manifest_sha256):
-    bundle = safe_directory(bundle)
+def verify_bundle(bundle, expected_manifest_sha256, *, _files=None):
+    if _files is None:
+        bundle = safe_directory(bundle)
+
+        def fetch(name):
+            return read_file(bundle / name)
+    else:
+        require(
+            type(_files) is dict
+            and all(type(k) is str and type(v) is bytes for k, v in _files.items()),
+            "invalid_memory_bundle",
+        )
+        require(sum(map(len, _files.values())) <= MAX_CAPTURE_BYTES, "encrypted_drill_size_limit")
+        fetch = _files.__getitem__
     require(
         isinstance(expected_manifest_sha256, str) and DIGEST.fullmatch(expected_manifest_sha256),
         "manifest_pin_required",
     )
-    payload = read_file(bundle / "manifest.json")
+    payload = fetch("manifest.json")
     require(
         digest(payload) == expected_manifest_sha256
-        and read_file(bundle / "COMPLETE") == expected_manifest_sha256.encode(),
+        and fetch("COMPLETE") == expected_manifest_sha256.encode(),
         "manifest_integrity_failed",
     )
     manifest = json.loads(payload)
@@ -443,14 +479,15 @@ def verify_bundle(bundle, expected_manifest_sha256):
         "unknown_bundle_format",
     )
     require(
-        digest(read_file(bundle / "database.dump")) == manifest["dump_sha256"],
+        digest(fetch("database.dump")) == manifest["dump_sha256"],
         "dump_integrity_failed",
     )
     require(
-        digest(read_file(bundle / "schema.sql")) == manifest["schema_sha256"],
+        digest(fetch("schema.sql")) == manifest["schema_sha256"],
         "schema_integrity_failed",
     )
-    safe_directory(bundle / "objects")
+    if _files is None:
+        safe_directory(bundle / "objects")
     keys = set()
     for item in manifest["references"]:
         require(
@@ -460,21 +497,69 @@ def verify_bundle(bundle, expected_manifest_sha256):
         if item["backend"] == BACKEND:
             require(item["key"] == item["sha256"] + ".blob", "manifest_reference_invalid")
             keys.add(item["key"])
-            verify_original(
-                read_file(bundle / "objects" / item["key"]), item["sha256"], item["size"]
-            )
+            verify_original(fetch("objects/" + item["key"]), item["sha256"], item["size"])
         else:
             require(item["backend"] == "inline-database-v1", "unknown_storage_reference")
-    require(set(os.listdir(bundle / "objects")) == keys, "asset_inventory_mismatch")
-    require(
-        set(os.listdir(bundle))
-        == {"objects", "database.dump", "schema.sql", "manifest.json", "COMPLETE"},
-        "bundle_inventory_mismatch",
-    )
+    if _files is None:
+        require(set(os.listdir(bundle / "objects")) == keys, "asset_inventory_mismatch")
+        require(
+            set(os.listdir(bundle))
+            == {"objects", "database.dump", "schema.sql", "manifest.json", "COMPLETE"},
+            "bundle_inventory_mismatch",
+        )
+    else:
+        require(
+            set(_files)
+            == {"database.dump", "schema.sql", "manifest.json", "COMPLETE"}
+            | {"objects/" + key for key in keys},
+            "bundle_inventory_mismatch",
+        )
     return manifest
 
 
+@contextmanager
+def target_operation(target):
+    """Cross-process exclusive ownership of one restore operation; never a stale PID test."""
+    import fcntl
+
+    target = safe_directory(target)
+    held = _TARGET_LEASE.get()
+    if any(lease.matches(target) for lease in held):
+        yield
+        return
+    fd = os.open(target / "operation.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        info = os.fstat(fd)
+        require(
+            stat.S_ISREG(info.st_mode)
+            and info.st_uid == os.getuid()
+            and info.st_nlink == 1
+            and stat.S_IMODE(info.st_mode) == 0o600,
+            "unsafe_operation_lock",
+        )
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RecoveryError("target_operation_busy") from None
+        lease = Lease(str(target), execution())
+        token = _TARGET_LEASE.set((*held, lease))
+        try:
+            yield
+        finally:
+            lease.active = False
+            _TARGET_LEASE.reset(token)
+    finally:
+        os.close(fd)
+
+
 def rollback(*, target, synthetic_fixtures_only=False, offline=False):
+    with target_operation(target):
+        return _rollback(
+            target=target, synthetic_fixtures_only=synthetic_fixtures_only, offline=offline
+        )
+
+
+def _rollback(*, target, synthetic_fixtures_only=False, offline=False):
     """Drop only this journal's new DB with matching OID+nonce; retain all target files.
 
     Can be repeated after a process crash. Never force-disconnect a live consumer.
@@ -488,6 +573,10 @@ def rollback(*, target, synthetic_fixtures_only=False, offline=False):
         and TARGET.fullmatch(state["database"])
         and state["state"] != "READY",
         "rollback_target_ineligible",
+    )
+    require(
+        type(state.get("nonce")) is str and NONCE.fullmatch(state["nonce"]),
+        "rollback_identity_mismatch",
     )
     with connect() as admin:
         identity = admin.execute(
@@ -510,6 +599,7 @@ def restore(
     pg_bin,
     synthetic_fixtures_only=False,
     offline=False,
+    _files=None,
 ):
     """Creates a random DB + private store, validates everything, then writes READY.
 
@@ -517,7 +607,7 @@ def restore(
     READY. No caller-chosen database names, existing roots or automatic activation.
     """
     guard(synthetic_fixtures_only=synthetic_fixtures_only, offline=offline)
-    manifest = verify_bundle(bundle, expected_manifest_sha256)
+    manifest = verify_bundle(bundle, expected_manifest_sha256, _files=_files)
     parent = safe_directory(scratch)
     tools = PostgresTools(pg_bin)
     target = Path(tempfile.mkdtemp(prefix="restore-", dir=parent))
@@ -529,6 +619,19 @@ def restore(
         "oid": None,
         "manifest_sha256": expected_manifest_sha256,
     }
+    with target_operation(target):
+        return _restore_target(
+            target=target,
+            state=state,
+            manifest=manifest,
+            tools=tools,
+            bundle=bundle,
+            expected_manifest_sha256=expected_manifest_sha256,
+            _files=_files,
+        )
+
+
+def _restore_target(*, target, state, manifest, tools, bundle, expected_manifest_sha256, _files):
     journal(target, state)
     created = False
     try:
@@ -544,6 +647,7 @@ def restore(
                 )
             )
             created = True
+            checkpoint("database_created_before_identity")
             state["oid"] = admin.execute(
                 "SELECT oid FROM pg_database WHERE datname=%s", [state["database"]]
             ).fetchone()[0]
@@ -552,15 +656,27 @@ def restore(
                     sql.Identifier(state["database"]), sql.Literal(state["nonce"])
                 )
             )
+        checkpoint("database_identity_before_journal")
         state["state"] = "RESTORING"
         journal(target, state)
         checkpoint("database_created")
-        store = FileSystemStorage(target / "private", synthetic_fixtures_only=True)
-        for item in manifest["references"]:
-            if item["backend"] == BACKEND:
-                store.restore(original(item), read_file(Path(bundle) / "objects" / item["key"]))
+        from .integration import offline_restore_files
+
+        with offline_restore_files(target=target, state=state):
+            store = FileSystemStorage(target / "private", synthetic_fixtures_only=True)
+            for item in manifest["references"]:
+                if item["backend"] == BACKEND:
+                    store.restore(
+                        original(item),
+                        (
+                            _files["objects/" + item["key"]]
+                            if _files is not None
+                            else read_file(Path(bundle) / "objects" / item["key"])
+                        ),
+                    )
         checkpoint("assets_restored")
-        archive = str(Path(bundle) / "database.dump")
+        archive_args = [] if _files is not None else [str(Path(bundle) / "database.dump")]
+        archive_input = _files["database.dump"] if _files is not None else None
         for section in ("pre-data", "data"):
             tools.run(
                 "pg_restore",
@@ -569,7 +685,8 @@ def restore(
                 "--single-transaction",
                 "--no-owner",
                 "--section=" + section,
-                archive,
+                *archive_args,
+                input_data=archive_input,
             )
             checkpoint(section + "_restored")
         with connect(state["database"]) as db:
@@ -593,7 +710,8 @@ def restore(
             "--single-transaction",
             "--no-owner",
             "--section=post-data",
-            archive,
+            *archive_args,
+            input_data=archive_input,
         )
         checkpoint("schema_restored")
         with connect(state["database"]) as db:
@@ -625,7 +743,7 @@ def restore(
                     store.get(original(item))
         checkpoint("verified")
         # Detect damage to the pinned backup during restoration too.
-        verify_bundle(bundle, expected_manifest_sha256)
+        verify_bundle(bundle, expected_manifest_sha256, _files=_files)
         # Keep a durable non-READY identity before attempting the completion
         # publication. If its replacement succeeds but directory fsync fails,
         # disk-full must not strand a misleading READY journal or authorize a

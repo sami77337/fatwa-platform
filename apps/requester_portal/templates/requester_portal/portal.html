@@ -3,7 +3,12 @@
 {% block content %}
 <h2>بوابة السائل الخاصة</h2>
 {% if message %}<p role="status">{{ message }}</p>{% endif %}
-{% if not result %}
+{% if unavailable %}
+<section aria-label="تعذر تحديث القضية"><h3>تعذر تحديث قضيتك الآن</h3>
+<p>لا نعرض نسخة قديمة من الجواب أو المرفقات. أعد المحاولة لاحقًا؛ لم نطلب منك رمزًا جديدًا بسبب هذا العطل.</p>
+<a href="/casework/status/">إعادة تحميل قضيتي</a>
+<p>إذا استمرت المشكلة، اطلب متابعة الفريق. لا تعِد إرسال ردك قبل التحقق من ظهوره في السجل.</p></section>
+{% elif not result %}
 <form method="post" action="/casework/status/">{% csrf_token %}
 <input type="hidden" name="action" value="unlock">
 <label for="portal-token">رمز الوصول الخاص</label>
@@ -12,7 +17,9 @@
 </form>
 <p>عند فقد الرمز، اطلب من الفريق استعادة موثوقة للهوية. لا يمنح الاسم أو رقم القضية وصولًا.</p>
 {% else %}
+<aside class="notice" aria-label="الخطوة التالية"><h3>{{ next_step.title }}</h3><p>{{ next_step.text }}</p><a href="#{{ next_step.anchor }}">{{ next_step.action }}</a></aside>
 <p>القضية <bdi>{{ result.public_ref }}</bdi> · إصدار الوقائع {{ result.evidence_version }}</p>
+<p><a href="/casework/status/">تحديث حالة قضيتي</a></p>
 <nav aria-label="أقسام قضيتك">
 <a href="#conversation">السؤال والتعقيبات</a><a href="#attachments">مرفقاتي</a>
 <a href="#answer">الجواب والإحالات</a><a href="#delivery">حالة التسليم</a><a href="#followup">إضافة تعقيب</a>
@@ -51,11 +58,12 @@
 </section>
 <section id="conversation" aria-labelledby="conversation-heading"><h3 id="conversation-heading">السؤال والتعقيبات والاستيضاحات</h3>
 {% if result.clarification %}<aside class="notice" aria-label="استيضاح ينتظر ردك"><h4>استيضاح ينتظر ردك</h4><p class="original">{{ result.clarification }}</p><a href="#followup">الرد على الاستيضاح</a></aside>{% endif %}
-{% for entry in result.history %}<article><h4>{{ entry.label }}</h4><p><time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at }}</time> · الوقائع {{ entry.evidence_version }}</p><p class="original">{{ entry.text }}</p></article>{% endfor %}
+{% for entry in timeline %}<article data-history-kind="{{ entry.kind }}"><h4>{{ entry.label }}</h4><p><time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at }}</time></p><p class="original">{{ entry.text }}</p>
+{% if entry.attachment_id %}<a href="#attachment-{{ entry.attachment_id }}">الانتقال إلى المرفق المحفوظ</a>{% endif %}</article>{% endfor %}
 </section>
 <section id="attachments" aria-labelledby="attachments-heading"><h3 id="attachments-heading">مرفقات السؤال</h3>
 {% if result.attachments_enabled %}
-{% for attachment in result.attachments %}<article><h4><bdi>{{ attachment.filename }}</bdi></h4><p>الوقائع {{ attachment.evidence_version }} · {{ attachment.size }} بايت</p>
+{% for attachment in result.attachments %}<article id="attachment-{{ attachment.id }}"><h4><bdi>{{ attachment.filename }}</bdi></h4><p>الوقائع {{ attachment.evidence_version }} · {{ attachment.size }} بايت</p>
 {% if attachment.kind == 'audio' %}<audio controls preload="none" aria-label="مرفق صوتي {{ attachment.filename }}" src="/casework/status/attachments/{{ attachment.id }}/"></audio>
 {% elif attachment.kind == 'image' %}<img loading="lazy" src="/casework/status/attachments/{{ attachment.id }}/" alt="مرفق السؤال {{ attachment.filename }}">
 {% else %}<details><summary>معاينة المرفق {{ forloop.counter }}</summary><iframe loading="lazy" title="مرفق السؤال {{ attachment.filename }}" src="/casework/status/attachments/{{ attachment.id }}/"></iframe></details>{% endif %}
@@ -67,12 +75,15 @@
 <label for="portal-attachment">مرفق اصطناعي للسؤال</label><input id="portal-attachment" type="file" name="attachment" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav" required>
 <p>الحد 192000 بايت، وللنص 65536 بايت؛ تطبق حدود النوع والتحليل القائمة. لا ادعاء بفحص فيروسات.</p>
 <label><input type="checkbox" name="synthetic_only" value="yes" required>ملف اصطناعي مخصص لهذه التجربة</label><button>حفظ مرفق السؤال</button>
-</form>{% else %}<p>أجب عن الاستيضاح أولًا قبل إضافة مرفق.</p>{% endif %}
+</form>{% else %}<p>يمكنك إرفاق الملف مع ردك على الاستيضاح في النموذج أدناه.</p>{% endif %}
 {% else %}<p>خدمة المرفقات غير متاحة في هذا الإعداد.</p>{% endif %}
 </section>
 <section id="followup" aria-labelledby="followup-heading"><h3 id="followup-heading">إضافة تعقيب أو رد على الاستيضاح</h3>
-<form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="followup"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="form_proof" value="{{ form_proof }}">
+<form id="portal-reply-form" method="post" action="/casework/status/" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="reply"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="form_proof" value="{{ form_proof }}">
 <label for="portal-followup">نص التعقيب</label><textarea id="portal-followup" name="text" maxlength="16000" required>{{ text }}</textarea>
+{% if result.attachments_enabled %}<label for="reply-attachment">ملف مع الرد (اختياري)</label><input id="reply-attachment" type="file" name="reply_attachment" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav">
+<p>يُحفظ الرد والملف معًا؛ عند فشل أحدهما لا يُحفظ الآخر. الحد 192000 بايت، وللنص 65536 بايت.</p>
+<label><input type="checkbox" name="synthetic_only" value="yes">إن أرفقت ملفًا، أؤكد أنه اصطناعي لهذه التجربة</label>{% endif %}
 <p>يُحفظ النص ضمن قضيتك ويعيد الجواب للمراجعة. لا تُعرض الأجوبة السابقة بعد تغير الوقائع.</p><button>إرسال التعقيب</button></form>
 </section>
 <details><summary>حماية رمز الوصول</summary><p>إذا انكشف الرمز، اطلب مراجعة الفريق. إغلاق هذا المتصفح لا يبطل الرمز لدى الآخرين.</p>

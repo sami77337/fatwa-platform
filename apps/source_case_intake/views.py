@@ -1,6 +1,7 @@
 """Native forms on the existing staff URL, using its CSRF-bound MUFTI session."""
 
 import json
+import secrets
 from hashlib import sha256
 from hmac import compare_digest
 
@@ -30,6 +31,7 @@ from .adapters import IntakeError
 ACTIONS = frozenset(
     {
         "source_inbox",
+        "source_return",
         "source_filter",
         "source_open",
         "source_raw",
@@ -38,13 +40,55 @@ ACTIONS = frozenset(
         "source_timeline",
         "source_attach",
         "source_resume",
+        "source_note",
+        "source_simulate",
     }
 )
 SALT = "fatwa.source-desk.form.v1"
+FILTER_COOKIE = "fatwa_source_filters"
+
+
+def _listing(request, common, filters=None, **context):
+    if filters is None:
+        try:
+            saved = signing.loads(
+                request.get_signed_cookie(FILTER_COOKIE, default="", salt=SALT),
+                salt=SALT + ".filters",
+                max_age=900,
+            )
+            if (
+                saved["subject"] != common["subject_id"]
+                or saved["provider"] != common["provider"].provider_id
+            ):
+                raise ValueError
+            filters = saved["filters"]
+        except (signing.BadSignature, ValueError, KeyError, TypeError):
+            filters = {}
+    result = desk_data.inbox(**common, **filters)
+    response = _page(request, inbox=result, **context)
+    value = signing.dumps(
+        {
+            "subject": common["subject_id"],
+            "provider": common["provider"].provider_id,
+            "filters": filters,
+        },
+        salt=SALT + ".filters",
+    )
+    response.set_signed_cookie(
+        FILTER_COOKIE,
+        value,
+        salt=SALT,
+        max_age=900,
+        httponly=True,
+        samesite="Strict",
+        path="/casework/staff/",
+        secure=False,
+    )
+    return response
 
 
 def _page(request, *, status=200, **context):
-    request._mufti_workspace_error = status >= 400
+    request._mufti_workspace_error = status >= 400 or context.get("unbound_source", False)
     get_token(request)
     return private(render(request, "source_case_intake/desk.html", context, status=status))
 
@@ -60,6 +104,8 @@ def _proof(request, common, selected):
             str(t["id"]): [t["revision"], t["evidence_version"]] for t in selected["candidates"]
         },
         "case_versions": None,
+        "notes_version": receipt["notes_version"],
+        "operation_nonce": secrets.token_hex(16),
     }
     if receipt["case_id"]:
         case = cases.read_case(case_id=receipt["case_id"], **common)
@@ -85,6 +131,8 @@ def _verify(request, common, fields):
         selected = desk_data.detail(receipt_id=fields["receipt_id"], **common)
         if selected["receipt"]["sha256"] != value["sha256"]:
             raise ValueError
+        if fields.get("case_ref") and fields["case_ref"] != selected["receipt"]["public_ref"]:
+            raise ValueError
         return value, selected
     except (signing.BadSignature, ValueError, KeyError, TypeError) as exc:
         raise InvalidForm("source_form_expired_or_changed") from exc
@@ -93,7 +141,17 @@ def _verify(request, common, fields):
 def _detail_page(request, common, receipt_id, notice=""):
     selected = desk_data.detail(receipt_id=receipt_id, **common)
     selected["proof"] = _proof(request, common, selected)
-    return _page(request, selected=selected, notice=notice)
+    selected["can_simulate"] = (
+        getattr(settings, "FATWA_SOURCE_CASE_INTAKE_SIMULATOR_ENABLED", False) is True
+        and selected["receipt"]["case_id"] is not None
+        and services.REVIEW_SCOPE in common["provider"].resolve(common["subject_id"]).case_keys
+    )
+    return _page(
+        request,
+        selected=selected,
+        notice=notice,
+        unbound_source=selected["receipt"]["case_id"] is None,
+    )
 
 
 @sensitive_post_parameters("token", "note", "proof")
@@ -109,23 +167,42 @@ def desk(request):
         )
         common = dict(subject_id=actor.subject_id, provider=provider, synthetic_fixtures_only=True)
         if request.method in ("GET", "HEAD"):
-            return _page(request, inbox=desk_data.inbox(**common))
+            return _listing(request, common)
         action = request.POST.get("action")
         if request.method != "POST" or action not in ACTIONS:
             raise InvalidForm("source_action_invalid")
         required = {"action"}
         if action == "source_filter":
             required |= {"source", "state", "page"}
+            if "query" in request.POST:
+                required.add("query")
         elif action == "source_timeline":
             required |= {"case_ref"}
         elif action in {"source_open", "source_raw", "source_raw_view"}:
             required |= {"receipt_id"}
         elif action == "source_resume":
             required |= {"receipt_id", "proof", "confirm"}
+        elif action == "source_note":
+            required |= {"receipt_id", "proof", "confirm", "kind", "note"}
+        elif action == "source_simulate":
+            required |= {"receipt_id", "proof", "confirm", "scenario"}
         elif action == "source_resolve":
             required |= {"receipt_id", "proof", "decision", "note", "case_id", "token", "confirm"}
         elif action == "source_attach":
             required |= {"receipt_id", "proof", "source_file_id", "token", "confirm"}
+        if (
+            action
+            in {
+                "source_open",
+                "source_raw",
+                "source_raw_view",
+                "source_note",
+                "source_attach",
+                "source_simulate",
+            }
+            and "case_ref" in request.POST
+        ):
+            required.add("case_ref")
         if action == "source_attach":
             if (
                 request.content_type != "multipart/form-data"
@@ -140,19 +217,39 @@ def desk(request):
             fields = _form(request, required)
             if request.FILES:
                 raise InvalidForm("unexpected_files")
-        if action in {"source_inbox", "source_filter"}:
-            return _page(
-                request,
-                inbox=desk_data.inbox(
-                    **common,
-                    source=fields.get("source", "all"),
-                    state=fields.get("state", "all"),
-                    page=_integer(fields.get("page", "1")),
-                ),
+        if action in {"source_inbox", "source_filter", "source_return"}:
+            filters = (
+                None
+                if action == "source_return"
+                else {}
+                if action == "source_inbox"
+                else dict(
+                    source=fields["source"],
+                    state=fields["state"],
+                    page=_integer(fields["page"]),
+                    query=fields.get("query", ""),
+                )
             )
+            return _listing(request, common, filters)
         if action == "source_open":
+            if (
+                fields.get("case_ref")
+                and desk_data.detail(receipt_id=fields["receipt_id"], **common)["receipt"][
+                    "public_ref"
+                ]
+                != fields["case_ref"]
+            ):
+                raise InvalidForm("source_case_context_mismatch")
             return _detail_page(request, common, fields["receipt_id"])
         if action in {"source_raw", "source_raw_view"}:
+            if (
+                fields.get("case_ref")
+                and desk_data.detail(receipt_id=fields["receipt_id"], **common)["receipt"][
+                    "public_ref"
+                ]
+                != fields["case_ref"]
+            ):
+                raise InvalidForm("source_case_context_mismatch")
             raw = services.staff_raw(receipt_id=fields["receipt_id"], **common)
             if action == "source_raw_view":
                 try:
@@ -170,6 +267,7 @@ def desk(request):
                         "sha256": sha256(raw).hexdigest(),
                         "size": len(raw),
                         "receipt_id": fields["receipt_id"],
+                        "public_ref": fields.get("case_ref", ""),
                     },
                 )
             response = HttpResponse(raw, content_type="application/octet-stream")
@@ -188,11 +286,41 @@ def desk(request):
         saved, selected = _verify(request, common, fields)
         if fields["confirm"] != "yes":
             raise InvalidForm("human_confirmation_required")
+        if action == "source_note":
+            desk_data.record_note(
+                **common,
+                receipt_id=fields["receipt_id"],
+                kind=fields["kind"],
+                text=fields["note"],
+                request_key=saved["operation_nonce"],
+                expected_sequence=saved["notes_version"],
+            )
+            return _detail_page(
+                request,
+                common,
+                fields["receipt_id"],
+                "حُفظت ملاحظة المتابعة دون تغيير الأصل أو الوقائع.",
+            )
+        if action == "source_simulate":
+            from .desk_simulator import simulate
+
+            result = simulate(
+                **common,
+                receipt_id=fields["receipt_id"],
+                scenario=fields["scenario"],
+                nonce=saved["operation_nonce"],
+            )
+            return _detail_page(
+                request,
+                common,
+                result["receipt_id"],
+                "حُفظ الحدث الاصطناعي المحلي؛ لم يحدث اتصال بمزود.",
+            )
         if action == "source_resume":
             desk_data.resume(**common, receipt_id=fields["receipt_id"])
-            return _page(
+            return _listing(
                 request,
-                inbox=desk_data.inbox(**common),
+                common,
                 notice="استؤنفت معالجة الحدث المحفوظ. يبقى الربط الملتبس للمراجعة البشرية.",
             )
         if action == "source_resolve":
@@ -216,12 +344,13 @@ def desk(request):
                 receipt_id=fields["receipt_id"],
                 action=fields["decision"],
                 note=fields["note"],
+                expected_notes_version=saved["notes_version"],
                 **params,
             )
             # A new case grants no staff scope. Never expose its requester capability.
-            return _page(
+            return _listing(
                 request,
-                inbox=desk_data.inbox(**common),
+                common,
                 resolved=result["public_ref"],
                 notice="حُفظ قرار الربط البشري. فتح القضية يتطلب نطاقها المستقل؛ لم يُرسل شيء.",
             )

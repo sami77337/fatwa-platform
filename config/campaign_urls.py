@@ -6,9 +6,11 @@ from apps.answer_media import views as answer_media
 from apps.case_attachments import views as case_attachments
 from apps.casework_web import requester_intake
 from apps.requester_team_journey.views import requester, staff
+from apps.research_workspace.views import styles as research_styles
 from apps.team_workspace.urls import urlpatterns as team_patterns
 
 urlpatterns = [
+    path("research-workspace.css", research_styles, name="research_styles"),
     path("library-preview/", include("apps.library_preview.routes")),
     path(
         "casework/status/attachments/<uuid:attachment_id>/",

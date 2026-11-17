@@ -9,6 +9,8 @@ from hashlib import sha256
 from django.db import connection, transaction
 from django.utils import timezone
 
+from apps.platform_recovery.integration import mutation_service
+
 from . import services as queue
 from .models import (
     ApprovalClaim,
@@ -130,6 +132,7 @@ def _issue(case, expires_at):
     return token
 
 
+@mutation_service
 def provision_tracking_case(*, case_key, operator_id, authorize_operator, expires_at):
     """Authorized local provisioning. Token is returned exactly once, never sent."""
     if not queue._ref(case_key) or not _expiry_valid(expires_at):
@@ -152,6 +155,7 @@ def provision_tracking_case(*, case_key, operator_id, authorize_operator, expire
         return _issue(case, expires_at)
 
 
+@mutation_service
 def rotate_tracking_token(*, case_key, operator_id, authorize_operator, expires_at):
     """Revoke old tracking access and generate one new random capability."""
     if not queue._ref(case_key) or not _expiry_valid(expires_at):
@@ -171,6 +175,7 @@ def rotate_tracking_token(*, case_key, operator_id, authorize_operator, expires_
         return _issue(case, expires_at)
 
 
+@mutation_service
 def advance_tracking_case(*, case_key, expected_revision, stage, actor_id, authorize_actor):
     """Versioned operational notes only; cannot claim approval/publication."""
     if (
@@ -203,6 +208,7 @@ def advance_tracking_case(*, case_key, expected_revision, stage, actor_id, autho
         return {"status":stage, "revision":case.revision}
 
 
+@mutation_service
 def lookup_case_status(token):
     """Private coarse status for exactly one case; never reveals case keys.
 

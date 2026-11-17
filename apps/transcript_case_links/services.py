@@ -6,6 +6,7 @@ from hashlib import sha256
 from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
 from apps.fast8_transcript_queue.workbench.services import restore_bundle, review
+from apps.platform_recovery.integration import mutation_service
 
 from .models import TranscriptLink, TranscriptUpload
 
@@ -39,6 +40,7 @@ def _summary(case, upload, entries):
     }
 
 
+@mutation_service
 def preview(*, case_id, subject_id, provider, bundle, synthetic_fixtures_only=False):
     entries = _entries(bundle)
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
@@ -81,6 +83,7 @@ def _upload(case, actor, provider, upload_id):
     return upload
 
 
+@mutation_service
 def attach(*, case_id, subject_id, provider, upload_id, external_id, synthetic_fixtures_only=False):
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         upload = _upload(case, actor, provider, upload_id)
@@ -144,6 +147,7 @@ def _check_link(link, entry):
         raise cases.CaseConflict("transcript_binding_inconsistent")
 
 
+@mutation_service
 def read_links(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         result = []

@@ -48,6 +48,24 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.research_workspace"):
+            from apps.research_workspace.views import ACTIONS as RESEARCH_ACTIONS
+            from apps.research_workspace.views import workspace as research_workspace
+
+            if action in RESEARCH_ACTIONS:
+                return _panel(research_workspace(request), "cases")
+        if django_apps.is_installed("apps.pilot_workbench"):
+            from apps.pilot_workbench.views import ACTIONS as PILOT_ACTIONS
+            from apps.pilot_workbench.views import desk as pilot_desk
+
+            if action in PILOT_ACTIONS:
+                return _panel(pilot_desk(request), "cases")
+        if django_apps.is_installed("apps.source_rights"):
+            from apps.source_rights.views import ACTIONS as RIGHTS_ACTIONS
+            from apps.source_rights.views import workspace as rights_workspace
+
+            if action in RIGHTS_ACTIONS:
+                return _panel(rights_workspace(request), "cases")
         if django_apps.is_installed("apps.source_case_intake"):
             from apps.source_case_intake.views import ACTIONS as SOURCE_ACTIONS
             from apps.source_case_intake.views import desk as source_desk
@@ -66,7 +84,7 @@ def staff(request):
 
             if action in COMPOSITE_ACTIONS:
                 return _panel(composite(request), "cases")
-        if action in {"answer_media", "answer_media_save", "answer_media_release"}:
+        if action in {"answer_media", "answer_media_save", "answer_media_release", "answer_media_reorder"}:
             from apps.answer_media.views import staff as answer_media
 
             return _panel(answer_media(request), "cases")

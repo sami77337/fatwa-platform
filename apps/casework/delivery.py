@@ -19,6 +19,7 @@ from apps.delivery_queue.signed_provider_receipts import (
     audit_provider_reported_delivery,
     record_signed_provider_event,
 )
+from apps.platform_recovery.integration import mutation_service
 
 from . import services as cases
 from .models import CaseDelivery
@@ -64,6 +65,7 @@ def _current(case):
         or answer.revision != case.answer_revision
     ):
         raise cases.CaseConflict("current_mufti_approval_required")
+    cases._answer_citations(answer)
     # Pin exact immutable identities as well as content. An identical answer
     # approved for different facts or by a later decision is a different scope.
     evidence = CurrentEvidence(
@@ -154,6 +156,7 @@ def _evidence_reader(case, decision, provider, subject_id):
     return current
 
 
+@mutation_service
 def prepare_case_delivery(
     *,
     case_id,
@@ -185,6 +188,7 @@ def prepare_case_delivery(
         }
 
 
+@mutation_service
 def stage_case_delivery(
     *,
     case_id,
@@ -258,6 +262,7 @@ def _bound(case):
     return decision, binding, prepared
 
 
+@mutation_service
 def reserve_case_delivery(
     *,
     case_id,
@@ -288,6 +293,7 @@ def reserve_case_delivery(
         return lease
 
 
+@mutation_service
 def resolve_case_delivery_text(
     *,
     case_id,
@@ -316,6 +322,7 @@ def resolve_case_delivery_text(
         return segment
 
 
+@mutation_service
 def record_case_provider_event(
     *,
     case_id,
@@ -350,6 +357,7 @@ def _requester_delivery_locked(case, verifier):
     if case.stage != "ANSWERED":
         result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
         return result
+    cases._answer_citations(case.approved_answer)
     manifest = cases._answer_manifest(case.approved_answer)
     if manifest and manifest["requires_human_delivery"]:
         result["delivery_status"] = "UNSUPPORTED_MEDIA_REQUIRES_HUMAN_ACTION"
@@ -377,6 +385,7 @@ def _requester_delivery_locked(case, verifier):
     return result
 
 
+@mutation_service
 def requester_delivery_status(token, *, verifier=None, synthetic_fixtures_only=False):
     """Private read-only projection; the trusted verifier is server supplied.
 

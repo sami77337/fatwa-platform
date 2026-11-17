@@ -63,3 +63,29 @@ class AttachmentBinding(models.Model):
                 fields=["receipt", "source_file_id"], name="sci_attachment_once"
             ),
         ]
+
+
+class SourceReviewNote(models.Model):
+    """Human operational annotations, never a replacement for source text/evidence."""
+
+    receipt = models.ForeignKey(
+        SourceReceipt, on_delete=models.PROTECT, related_name="review_notes"
+    )
+    sequence = models.PositiveIntegerField()
+    request_key = models.CharField(max_length=64)
+    kind = models.CharField(max_length=8, choices=[(v, v) for v in ("NOTE", "HOLD", "REOPEN")])
+    text = models.TextField()
+    subject_id = models.CharField(max_length=128)
+    provider_id = models.CharField(max_length=128)
+    auth_epoch = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["receipt", "sequence"], name="sci_note_sequence"),
+            models.UniqueConstraint(fields=["receipt", "request_key"], name="sci_note_request"),
+            models.CheckConstraint(condition=models.Q(sequence__gte=1), name="sci_note_positive"),
+            models.CheckConstraint(
+                condition=models.Q(kind__in=["NOTE", "HOLD", "REOPEN"]), name="sci_note_kind"
+            ),
+        ]

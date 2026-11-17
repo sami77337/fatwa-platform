@@ -74,3 +74,39 @@ is a separate campaign test; no browser pass is inferred from these HTTP checks.
 
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED. No production deployment, external
 send, real data, AI ruling or inferred U03 acceptance.
+
+## V11 actionable current-case workflow
+
+`workflow.describe_work` adds a next-step card, procedural review blockers and a
+four-stage record summary to the existing frame. It derives missing answer,
+pending clarification, outdated evidence and required revision from the canonical
+snapshot. The current return reason is read from the existing decision; the
+changes panel shows only evidence versions newer than the latest answer's basis.
+There is no completion percentage or inference that viewing a fact means reviewing it.
+
+The primary button navigates to the existing case/editor/review or media/delivery
+panel with the same case reference. It never submits approval, release or sending.
+Optional tools are offered only when their existing tab flag is on. An approval
+still requires the native review form and its current revision/evidence checks.
+
+A matching `PrivateAnswerRelease` is read as metadata under the canonical case
+lock, matching current answer, decision, evidence and manifest digest. Its state
+is `RECORDED_NOT_VERIFIED`, never an assertion of current access, rights, delivery
+or reading. Closed private-release settings remain visibly closed. A newer answer
+cannot inherit the old release. Text-only availability retains its existing path
+and is explicitly not checked by this summary. No original media bytes, parsers,
+source rights validators or delivery verifiers run in the frame.
+
+There is no new route, flag, model or shared-template hook. The existing header
+includes `next_actions.html`; selectors are `#mufti-next-actions`,
+`#mufti-next-action`, `#mufti-review-blockers`, `#mufti-evidence-changes` and
+`#mufti-return-reason`. Research/rights lanes may extend the existing `TABS`
+registration and reviewed navigation once their contracts are integrated; this
+slice invents no research action, citation requirement or rights grant.
+
+Focused V11 verification: six added PostgreSQL/native HTTP cases plus the ten
+existing workspace cases (16 passed on PostgreSQL17.12). The release test covers
+separate approval/release, disabling availability, and a new revision that leaves
+the old release only in history. The evidence test distinguishes previously
+reviewed basis from subsequent facts without mutating either. Browser evidence is
+owned by campaign integration and is not inferred from these results.

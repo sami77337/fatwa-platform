@@ -1,6 +1,7 @@
 """Read-only, scoped projections; no shadow case state or permission grants."""
 
 from apps.casework import services
+from apps.platform_recovery.integration import mutation_service
 
 FILTERS = {
     "all": "كل القضايا",
@@ -56,6 +57,7 @@ def describe(snapshot):
     }
 
 
+@mutation_service
 def read_workspace_case(*, include_answer_manifest=True, **common):
     # The public read omits decision notes. Reuse its exact locked identity and
     # integrity boundary for this additional projection; never query by a naked ref.

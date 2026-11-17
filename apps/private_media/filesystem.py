@@ -19,6 +19,8 @@ from pathlib import Path
 
 from django.conf import settings
 
+from apps.platform_recovery.integration import storage_scope
+
 from .storage import PrivateStorage, StoredOriginal, verify_original
 from .validation import MAX_BYTES, MediaValidationError, ValidatedMedia
 
@@ -98,6 +100,10 @@ def _install_no_replace(directory, source, target, *, target_directory=None):
 
 class FileSystemStorage(PrivateStorage):
     def __init__(self, root, *, synthetic_fixtures_only=False):
+        with storage_scope(root):
+            self._initialize(root, synthetic_fixtures_only=synthetic_fixtures_only)
+
+    def _initialize(self, root, *, synthetic_fixtures_only=False):
         if synthetic_fixtures_only is not True or os.environ.get("FATWA_PRODUCTION") != "0":
             _fail("private_storage_synthetic_only")
         path = Path(root)
@@ -264,6 +270,10 @@ class FileSystemStorage(PrivateStorage):
                 pass
 
     def put(self, media: ValidatedMedia) -> StoredOriginal:
+        with storage_scope(self.root):
+            return self._put(media)
+
+    def _put(self, media: ValidatedMedia) -> StoredOriginal:
         if (
             not isinstance(media, ValidatedMedia)
             or type(media.size) is not int
@@ -298,6 +308,10 @@ class FileSystemStorage(PrivateStorage):
             return self._read(directory, original)
 
     def restore(self, original, backup_bytes, *, recover_corrupt=False):
+        with storage_scope(self.root):
+            return self._restore(original, backup_bytes, recover_corrupt=recover_corrupt)
+
+    def _restore(self, original, backup_bytes, *, recover_corrupt=False):
         """Restore exact missing bytes; explicit corruption recovery preserves the damaged file."""
         self._reference(original)
         verify_original(backup_bytes, original.sha256, original.size)
@@ -326,6 +340,10 @@ class FileSystemStorage(PrivateStorage):
             return {"restored": True, "quarantined": False}
 
     def collect_orphans(self, is_referenced, *, grace_seconds=86400, dry_run=True):
+        with storage_scope(self.root, operation="GC"):
+            return self._collect_orphans(is_referenced, grace_seconds=grace_seconds, dry_run=dry_run)
+
+    def _collect_orphans(self, is_referenced, *, grace_seconds=86400, dry_run=True):
         """Only valid old unreferenced originals are eligible; defaults are read-only.
 
         Callback must query all owner models afresh without locks, returning a

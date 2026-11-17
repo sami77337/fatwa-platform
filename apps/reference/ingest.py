@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from django.db import connection, transaction
 
+from apps.platform_recovery.integration import mutation_scope
+
 from .models import ReferenceEdition, ReferenceHeading, ReferenceWork
 from .normalization import normalize_title
 from .records import CatalogSpec, HeadingRecord, InvalidCatalog, PreparedCatalog, prepare_catalog
@@ -91,7 +93,7 @@ def ingest_catalog(
                 _assert_same(prepared, edition)
         return IngestResult(True, edition is not None, prepared.checksum, len(prepared.records),
                             edition.pk if edition else None)
-    with transaction.atomic():
+    with mutation_scope(), transaction.atomic():
         work, _ = ReferenceWork.objects.get_or_create(**work_key, defaults=_work_fields(spec))
         # Serializes even competing edition imports for the same source work.
         work = ReferenceWork.objects.select_for_update().get(pk=work.pk)

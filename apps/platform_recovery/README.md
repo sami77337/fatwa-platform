@@ -1,3 +1,15 @@
+# V11 recovery entry point
+
+V11 adds durable maintenance admission, authenticated encrypted backups, and
+nonce-verified quarantine inspection/reconciliation. Read [V11_CONTRACT.md](V11_CONTRACT.md)
+for the integration/API/CLI contract and [V11_EVIDENCE.md](V11_EVIDENCE.md) for validation.
+The `snapshot`, `verify`, and `restore` CLI commands now use encrypted V11 bundles.
+The original V10 Python API remains compatible; its plaintext CLI is explicitly
+named `legacy-snapshot`, `legacy-verify`, and `legacy-restore`.
+
+The following section is the preserved V10 operating contract, not a claim that
+legacy plaintext backups provide V11 encryption or maintenance enforcement.
+
 # V10 platform recovery — synthetic offline drill
 
 Base: PR #228, `12840d54c263e63b214ce72eff1d8b4f93f9900e` (GitHub head verified
@@ -107,14 +119,14 @@ All output and source private roots must be owned 0700 paths under `/tmp`.
 The CLI never receives a DB URL, password, archive SQL, target DB name or token.
 
 ```sh
-python -m apps.platform_recovery snapshot --offline-synthetic \
+python -m apps.platform_recovery legacy-snapshot --offline-synthetic \
   --scratch /tmp/OWNED_DRILL --private-root /tmp/OWNED_SOURCE \
   --pg-bin /path/to/postgresql/bin
 
-python -m apps.platform_recovery verify --offline-synthetic \
+python -m apps.platform_recovery legacy-verify --offline-synthetic \
   --bundle /tmp/OWNED_DRILL/snapshot-ID --manifest-sha256 RETAINED_DIGEST
 
-python -m apps.platform_recovery restore --offline-synthetic \
+python -m apps.platform_recovery legacy-restore --offline-synthetic \
   --scratch /tmp/OWNED_DRILL --pg-bin /path/to/postgresql/bin \
   --bundle /tmp/OWNED_DRILL/snapshot-ID --manifest-sha256 RETAINED_DIGEST
 

@@ -17,6 +17,7 @@ from apps.case_attachments.storage_bindings import (
 )
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
+from apps.platform_recovery.integration import mutation_service
 from apps.private_media.storage import configured_storage
 from apps.private_media.validation import TYPES, MediaValidationError, validate
 
@@ -153,6 +154,7 @@ def _verified(manifest):
     return rows
 
 
+@mutation_service
 def save_multipart_answer(
     *,
     case_id,
@@ -303,10 +305,12 @@ def _current(case, manifest):
         or decision.evidence_version != case.evidence_version
     ):
         raise cases.CaseConflict("current_multipart_approval_required")
+    cases._answer_citations(answer)
     _verified(manifest)
     return decision
 
 
+@mutation_service
 def release_private(
     *,
     case_id,
@@ -473,6 +477,7 @@ def clone_parts_for_new_answer(previous, answer):
     return manifest_for_locked_answer(answer)
 
 
+@mutation_service
 def staff_snapshot(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
@@ -512,6 +517,7 @@ def _requester_manifest(case):
     return manifest
 
 
+@mutation_service
 def requester_snapshot(*, token, synthetic_fixtures_only=False):
     _release_enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
@@ -524,6 +530,7 @@ def requester_snapshot(*, token, synthetic_fixtures_only=False):
         }
 
 
+@mutation_service
 def requester_read(*, token, part_id, synthetic_fixtures_only=False):
     _release_enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
@@ -536,6 +543,7 @@ def requester_read(*, token, part_id, synthetic_fixtures_only=False):
         return {**_fields(row), "raw": raw_for_part(row)}
 
 
+@mutation_service
 def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
     row = (
@@ -548,6 +556,7 @@ def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
     with cases._staff_case(
         row.manifest.answer.case_id, subject_id, provider, synthetic_fixtures_only
     ):
+        cases._answer_citations(row.manifest.answer)
         _verified(row.manifest)
         if row.ordinal == 1:
             raise cases.CaseConflict("answer_part_unavailable")

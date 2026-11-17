@@ -24,6 +24,7 @@ from apps.delivery_queue.signed_provider_receipts import (
     record_signed_provider_event,
     verify_stored_provider_evidence,
 )
+from apps.platform_recovery.integration import mutation_service
 
 from .models import CompositeDelivery
 
@@ -76,6 +77,8 @@ def _profile_hash(profile):
 
 
 def _prepare(case, subject_id, provider):
+    # The canonical current-answer check includes current CITE rights. Every
+    # bound plan, export and outcome reuses this path under the same case lock.
     decision, answer, base = legacy._current(case)
     legacy._approver(decision, cases._identity(provider, subject_id, case), provider)
     manifest = media.manifest_for_locked_answer(answer)
@@ -162,6 +165,7 @@ def _reader(case, subject_id, provider, prepared):
     return read
 
 
+@mutation_service
 def prepare_composite_delivery(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     """Read-only full plan; unsupported parts remain visible for human action."""
     _enabled()
@@ -182,6 +186,7 @@ def prepare_composite_delivery(*, case_id, subject_id, provider, synthetic_fixtu
         }
 
 
+@mutation_service
 def stage_composite_delivery(
     *, case_id, subject_id, provider, receipt, verify_receipt, synthetic_fixtures_only=False
 ):
@@ -239,6 +244,7 @@ def _bound(case, subject_id, provider):
     return binding, prepared
 
 
+@mutation_service
 def reserve_composite_part(
     *,
     case_id,
@@ -264,6 +270,7 @@ def reserve_composite_part(
         return lease
 
 
+@mutation_service
 def resolve_composite_part(
     *, case_id, subject_id, provider, lease, verify_receipt, synthetic_fixtures_only=False
 ):
@@ -308,6 +315,7 @@ def resolve_composite_part(
         return {**part, "raw": raw, "envelope_sha256": intent.payload_sha256}
 
 
+@mutation_service
 def record_composite_event(
     *, case_id, subject_id, provider, lease, event, verifier, synthetic_fixtures_only=False
 ):
@@ -321,6 +329,7 @@ def record_composite_event(
         return result
 
 
+@mutation_service
 def composite_status(*, case_id, subject_id, provider, verifier, synthetic_fixtures_only=False):
     """Staff projection: queue state and cryptographic delivery proof are separate."""
     _enabled()
@@ -376,6 +385,7 @@ def composite_status(*, case_id, subject_id, provider, verifier, synthetic_fixtu
         }
 
 
+@mutation_service
 def reconcile_composite_timeouts(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     """Explicit local reconciliation: quarantine elapsed leases, never resend."""
     _enabled()
