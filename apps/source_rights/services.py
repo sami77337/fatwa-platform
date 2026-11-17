@@ -412,11 +412,16 @@ def correct_citation(
             rows = citations._citation_snapshots_for_locked_answer(answer)
             if str(citation_id) not in {row["id"] for row in rows}:
                 raise cases.CaseConflict("case_citation_unavailable")
-            selections = []
-            for row in rows:
+            selections, corrections = [], []
+            for ordinal, row in enumerate(rows, 1):
                 if row["id"] == str(citation_id):
                     source, _ = _require_reference(case, target_id, "CITE")
-                    editorial_note = note
+                    # The reason can quote the previous restricted source. Keep it
+                    # in canonical correction history, not the new source's note.
+                    editorial_note = ""
+                    corrections.append(
+                        {"ordinal": ordinal, "previous_id": row["id"], "reason": note}
+                    )
                 else:
                     source = {key: row[key] for key in ("source", "source_sha256")}
                     if not permits_reference_for_locked_case(
@@ -438,6 +443,7 @@ def correct_citation(
             **common,
             text=text,
             selections=selections,
+            corrections=corrections,
             expected_revision=expected_revision,
             expected_evidence_version=expected_evidence_version,
         )
