@@ -1,4 +1,121 @@
-# V12 P0 independent security review — OPEN
+# V12 P0 independent security review — BLOCKED on 37c58a4
+
+## Current integrated-head re-review (2026-11-17)
+
+**Verdict: BLOCKED, not PASS**, on exact integration commit
+`37c58a4a420a961b1adf486d52c42672cc70c8eb` (Draft PR #231).
+The original single-publication expiry regression is repaired, but a focused
+two-publication regression reproduces stale source metadata/count disclosure on
+both PostgreSQL 17.12 and 18.7. P0 is not closed; P1/P2 remain blocked. No acceptance,
+gate change, production authorization or revised engineering estimate is implied.
+
+Both `refs/heads/codex/20261117-v12-integration` and `refs/pull/231/head` were
+checked with `git ls-remote` and matched this SHA. Testing used a clean detached
+worktree at that exact commit. This follow-up changes **this report only** on
+`codex/20261117-v12-security-review`; no implementation, tests, configuration or
+GitHub setting was modified. Earlier findings and failed evidence below remain
+historical evidence and are not presented as current failures without rechecking.
+
+### Verified fixes and focused execution
+
+Read the integrated P0 evidence, strict settings, exact-head CI workflow, and
+affected implementation. `_current` now rechecks source eligibility after yield;
+`browse` appends the individual projection only after that context exits.
+Both clone helpers and GET `_budget` require admission before reading/copying or
+writing. The installed management execution boundary guards supported commands
+and rejects unsupported strict administration. `campaign_strict` enables
+maintenance, source rights and required encryption, and disables V10 compatibility.
+The legacy recovery exception remains confined to its explicitly separate test
+profile. These repairs do not grant protection from privileged SQL or arbitrary
+Python/ORM entry outside the supported application boundary.
+
+Independently checked [CI run 44199692350](https://github.com/sami77337/fatwa-platform/actions/runs/44199692350)
+and its association with the exact commit: jobs `134450282075` (17) and
+`134450283328` (18), including the exact-head verification step, completed
+successfully. The workflow explicitly checks out and asserts the PR head SHA.
+The 14 committed review tests in this head match this review branch unchanged.
+CI success and its reported broader counts are distinct from the following local
+execution; this follow-up did not rerun the full suite or browser journeys.
+
+| Independent checks on exact 37c58a4 | PG17.12 | PG18.7 |
+| --- | --- | --- |
+| Six focused committed tests: single-item post-projection expiry; both clone admission hooks; GET without outer middleware; flush before destructive SQL; plaintext downgrade denial; real encrypted snapshot positive control | 6 PASS (0.861s) | 6 PASS (0.762s) |
+| Additional two-item catalog expiry probe, reproduced below | 1 FAIL (0.680s) | 1 FAIL (0.603s) |
+
+The six-test run used `infra/dev/with_casework_postgres.py`, fresh owned clusters,
+`config.settings.campaign_review`, and explicit method labels from
+`test_rights`, `test_maintenance`, plus the two `test_recovery` methods. The tests
+enable the relevant strict boundary explicitly; the review bootstrap profile is
+not represented as a serving profile. Local logs are
+`/tmp/v12-final-independent-pg{17,18}.log` and
+`/tmp/v12-batch-expiry-pg{17,18}.log`. Portable failure excerpts and the complete
+temporary probe are included below because `/tmp` files are not delivered artifacts.
+
+### SEC12-03 follow-up: earlier result expires during later projection
+
+Affected location: `apps/library_preview/services.py`, `browse`, lines 271-315
+at the reviewed SHA. The result collection retains an already appended item when
+its rights expire during a later item's projection. The final `_recheck(selected)`
+checks only PreviewPolicy, not current rights for all collected results. Case locks
+serialize explicit revocation but do not stop clock expiry.
+
+Reproduction uses two independently approved synthetic publications from distinct
+cases, both explicitly permitted by the 30-minute preview policy. Publication A
+has a cited source with one-minute READ/CITE/RELATE/PREVIEW_METADATA rights;
+publication B has no citations. Positive control returns two results before expiry.
+The clock advances monotonically by two minutes only while projecting B. After
+`browse` returns, A's detail is correctly denied and B's detail still succeeds,
+confirming that the source grant expired while preview authorization remained
+valid. Nevertheless, the captured catalog response still contains A's title,
+category and exact source metadata, including work/heading/edition/publisher/page,
+and reports total 2 rather than 1. The response does not contain A's body; this
+finding specifically proves metadata, category and count disclosure.
+
+Both majors fail the same assertion after those positive/negative controls:
+
+```text
+test_prior_item_expiry_during_later_projection ... FAIL
+AssertionError: 2 != 1
+categories: ['Second synthetic category', 'تصنيف تجريبي']
+total: 2
+stale references: work_title='مرجع اصطناعي للاختبار',
+  heading_title='فَرْعٌ تَجْرِيبِيّ', edition_title='طبعة اختبار',
+  publisher='ناشر اصطناعي', printed_page=2
+PG17.12: Ran 1 test in 0.680s — FAILED (failures=1)
+PG18.7:  Ran 1 test in 0.603s — FAILED (failures=1)
+```
+
+Required integration action: revalidate the entire collected response's source
+eligibility at the final catalog boundary, and remove denied results before
+deriving categories, filters, pagination and totals (or fail the response closed).
+Retain exact source/version/use predicates, case locks and independent preview
+policy. Review the analogous multi-result staff library aggregation as well; it
+also has per-item checks, but this follow-up has not dynamically proved a separate
+staff-library failure. Add the two-item regression to integration coverage and
+rerun affected checks on both majors at the new head before seeking P0 closure.
+No implementation repair was attempted outside this lane's ownership.
+
+### Executable temporary probe
+
+Save the Python block at the end of this report as `/tmp/v12_batch_probe.py`.
+Run from a checkout of the reviewed commit, with the repository root on PYTHONPATH.
+The probe reuses only canonical synthetic fixture setup and contains independent
+assertions. It was kept temporary to honor the report-only follow-up instruction.
+
+```sh
+# Set these to your isolated interpreter and matching PostgreSQL installation.
+PYTHON=/workspace/fatwa-platform/.venv/bin/python
+PG_BIN=/tmp/v9-pg/usr/lib/postgresql/17/bin
+PG_MAJOR=17
+PYTHONPATH="/tmp:$PWD" V12_PG_BIN="$PG_BIN" "$PYTHON" \
+  infra/dev/with_casework_postgres.py --pg-bin "$PG_BIN" --major "$PG_MAJOR" \
+  --settings config.settings.campaign_review -- "$PYTHON" manage.py test \
+  v12_batch_probe.BatchExpiryProbe.test_prior_item_expiry_during_later_projection \
+  --verbosity 2
+# The second run used PG_MAJOR=18 and PG_BIN=/tmp/v12-pg18-built/bin.
+```
+
+## Historical review record (preserved)
 
 Scope: `tests/v12_security_review/**` and this report only. No implementation,
 shared configuration, CI, GitHub protection setting, source data or other lane changed.
@@ -7,7 +124,8 @@ Branch: `codex/20261117-v12-security-review`; V11 branch/history preserved.
 AGENTS.md and the V11 functional scope/decisions, recovery contract and rights
 boundary tests were read. Repository `.agents/skills` is absent.
 
-**This is not P0 closure. The integrated V12 head has not been tested.**
+**Historical checkpoint: at the initial review, the integrated V12 head had not
+been tested. The current exact-head verdict is recorded above.**
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED.
 Owner reference79% ±8 is unchanged and is not acceptance. No P1 work.
 
@@ -205,3 +323,73 @@ Main protection was not modified. No supported branch-protection read connector
 is available in this session; no assertion is made about its actual settings.
 Recommended owner review: required exact-head status checks, review requirements,
 restricted bypass/force push and deletion. This report does not authorize changes.
+
+## Temporary two-publication regression source
+
+```python
+from datetime import timedelta
+from unittest.mock import patch
+
+from django.test import override_settings
+from django.utils import timezone
+
+from apps.casework import services as cases
+from apps.experimental_publication import services as publications
+from apps.experimental_publication.models import PublicationEdition
+from apps.experimental_publication.tests import Authority, Directory
+from apps.library_preview import services as preview
+from apps.library_preview.policy import PreviewPolicy, PublicationGrant
+from apps.source_rights import services as rights
+from tests.v12_security_review.test_rights import RightsP0Tests
+
+
+class BatchExpiryProbe(RightsP0Tests):
+    def test_prior_item_expiry_during_later_projection(self):
+        receipt = cases.intake_case(
+            original_question="Synthetic second question",
+            source_event_id="batch-expiry-2", requester_id="synthetic-second",
+            idempotency_key="batch-expiry-2", synthetic_fixtures_only=True,
+        )
+        common = dict(case_id=receipt["case_id"], subject_id="editor",
+                      provider=Directory([receipt["public_ref"]]), synthetic_fixtures_only=True)
+        answer = cases.save_answer(**common, expected_revision=1,
+                                   expected_evidence_version=1, text="Synthetic second answer")
+        cases.record_decision(**common, answer_id=answer["answers"][-1]["id"],
+                              expected_revision=2, expected_evidence_version=1,
+                              action="APPROVE", note="synthetic")
+        with override_settings(FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY=Authority(receipt["public_ref"])):
+            second = publications.create_edition(
+                **common, expected_revision=3, expected_evidence_version=1,
+                title="Synthetic second publication", category="Second synthetic category",
+                body="Synthetic second editorial body")
+            publications.act(**common, edition_id=second["id"], action="REVIEW", reviewed=True)
+            publications.act(**{**common, "subject_id": "publisher"},
+                             edition_id=second["id"], action="APPROVE")
+        row = PublicationEdition.objects.get(pk=second["id"])
+        policy = PreviewPolicy(
+            (*self.policy.publications, PublicationGrant(str(row.pk), row.content_sha256)),
+            self.policy.references, self.policy.valid_until, True)
+        clock = [timezone.now()]
+        future = clock[0] + timedelta(minutes=2)
+        original = preview._projection
+
+        def delayed(selected, edition):
+            result = original(selected, edition)
+            if str(edition.pk) == str(row.pk):
+                clock[0] = future
+            return result
+
+        with override_settings(FATWA_LIBRARY_PREVIEW_POLICY=policy):
+            self.assertEqual(preview.browse()["total"], 2)
+            with (patch.object(rights.timezone, "now", side_effect=lambda: clock[0]),
+                  patch.object(preview, "_projection", side_effect=delayed)):
+                result = preview.browse()
+                # The earlier grant is actually denied now, while preview policy
+                # and the independently approved second publication remain valid.
+                with self.assertRaises(preview.PreviewUnavailable):
+                    preview.read(self.edition["id"])
+                self.assertEqual(preview.read(str(row.pk))["id"], str(row.pk))
+                self.assertEqual(result["total"], 1, result)
+                self.assertEqual([item["id"] for item in result["items"]], [str(row.pk)])
+                self.assertEqual(result["categories"], [row.category])
+```
