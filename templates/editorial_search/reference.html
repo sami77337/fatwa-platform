@@ -4,6 +4,8 @@
 <nav aria-label="تنقل الإحالة">
   <a href="{{ return_url }}">العودة إلى نتائج البحث نفسها</a> ·
   <a href="{{ workbench_url }}">فتح سياق الإحالة في مساحة العمل</a>
+  · <a href="{{ case_search_url }}">البحث داخل سجل الإحالة</a>
+  {% if revision_search_url %} · <a href="{{ revision_search_url }}">البحث داخل مراجعة الإحالة</a>{% endif %}
   {% if triage_url %} · <a href="{{ triage_url }}">فتح دليل التحقيق لهذه الإحالة</a>{% endif %}
 </nav>
 <article aria-labelledby="pointer-title">

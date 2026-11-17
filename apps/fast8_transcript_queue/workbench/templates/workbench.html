@@ -6,15 +6,19 @@
 <p>تُحفظ المراجعة مؤقتًا في الصفحة لمدة ٣٠ دقيقة. نزّل الحزمة للاحتفاظ بالنتيجة قبل إغلاقها. لم تُربط بقضية محفوظة بعد.</p></header>
 <main id="main">
 {% if error %}<p role="alert" class="error">{{ error }}</p>{% endif %}
-<section aria-labelledby="import-title"><h2 id="import-title">استيراد تفريغ</h2>
+<section aria-labelledby="import-title"><h2 id="import-title">استيراد تفريغ أو استعادة مراجعة</h2>
 <p><a href="/transcripts/example/">تنزيل ملف اصطناعي للتجربة</a> — JSON أو CSV أو JSONL، حتى مليون بايت و١٠٠٠ مقطع.</p>
 <form method="post" enctype="multipart/form-data" action="/transcripts/">{% csrf_token %}
-<label for="transcript">ملف التفريغ</label><input id="transcript" name="transcript" type="file" accept=".json,.csv,.jsonl" required>
+<p>لاستكمال مراجعة سابقة، ارفع حزمة ZIP التي نزّلتها من هنا (حتى ١٦ مليون بايت). سيبقى أصلها محفوظًا مع تعديلاتك. تُفحص سلامة الحزمة؛ هذا لا يثبت هوية مؤلفها أو اعتماد محتواها.</p>
+<label for="transcript">ملف التفريغ أو حزمة المراجعة</label><input id="transcript" name="transcript" type="file" accept=".json,.csv,.jsonl,.zip" required>
 <label><input type="checkbox" name="synthetic_only" value="yes" required>أؤكد أن المحتوى مختلق للتجربة ولا يتضمن بيانات أشخاص حقيقيين.</label>
 <button type="submit">استيراد ومعاينة</button></form></section>
 {% if state %}
 <section aria-labelledby="review-title"><h2 id="review-title">المقاطع والمراجعة</h2>
 <p>المقاطع: {{ rows|length }} · تعديلات محفوظة في الصفحة: {{ revision }}</p>
+<p>المقاطع المختلفة عن الأصل: {{ changed_count }}</p>
+<form method="post" action="/transcripts/review/">{% csrf_token %}<input type="hidden" name="state" value="{{ state }}"><input type="hidden" name="action" value="checkpoint"><button type="submit">حفظ مراجعة للاستكمال لاحقًا</button></form>
+<p>يمكن حفظ العمل غير المكتمل حتى مع أخطاء التوقيت. ملف الاستكمال لا يتضمن أسئلة جاهزة أو اعتمادًا، ويمكن رفعه بعد إغلاق المتصفح أو إعادة تشغيل الخادم.</p>
 <details><summary>بصمات الملف الأصلي والنسخة المراجعة</summary><p>الأصل: <code>{{ original_sha }}</code></p><p>النسخة المراجعة: <code>{{ current_sha }}</code></p></details>
 {% if timeline.findings %}<h3>ملاحظات الأزمنة والربط</h3><ul>{% for finding in timeline.findings %}<li class="finding">{{ finding.severity_label }}: {{ finding.label }}{% if finding.row %} · المقطع {{ finding.row }}{% endif %}{% if finding.related_row %} · مرتبط بالمقطع {{ finding.related_row }}{% endif %}{% if finding.start_ms != None %} · {{ finding.start_ms }}–{{ finding.end_ms }} مللي ثانية{% endif %}</li>{% endfor %}</ul>
 <p>التداخل يمنع التصدير. الفجوات تنبيه للمراجعة؛ لا تُستنتج منها نصوص أو أسئلة مفقودة.</p>{% endif %}
@@ -24,6 +28,10 @@
 <article><h3>{{ selected.segment_id }} — {% if selected.kind == 'question' %}سؤال{% else %}جواب من المصدر، غير معتمد{% endif %}</h3>
 <p>المصدر: <bdi>{{ selected.source_id }}</bdi> · الزوج: <bdi>{{ selected.pair_id }}</bdi></p>
 <pre>{{ selected.text }}</pre><p>وصف المنشأ: {{ selected.provenance }}</p>
+{% if selected_changed %}<details id="original-comparison" open><summary>مقارنة المقطع بالأصل المحفوظ</summary>
+<h4>النص الأصلي</h4><pre>{{ selected_original.text }}</pre><p>التوقيت الأصلي: <bdi>{{ selected_original.start_ms }}–{{ selected_original.end_ms }}</bdi> مللي ثانية</p>
+<h4>النص الحالي</h4><pre>{{ selected.text }}</pre><p>التوقيت الحالي: <bdi>{{ selected.start_ms }}–{{ selected.end_ms }}</bdi> مللي ثانية</p></details>
+{% else %}<p>هذا المقطع مطابق للأصل المحفوظ.</p>{% endif %}
 <form method="post" action="/transcripts/review/">{% csrf_token %}<input type="hidden" name="state" value="{{ state }}"><input type="hidden" name="action" value="revise"><input type="hidden" name="index" value="{{ index }}">
 <label for="start">البداية بالمللي ثانية</label><input id="start" type="number" name="start_ms" value="{{ selected.start_ms }}" min="0" max="86399999" step="1" required>
 <label for="end">النهاية بالمللي ثانية</label><input id="end" type="number" name="end_ms" value="{{ selected.end_ms }}" min="1" max="86400000" step="1" required>
@@ -36,5 +44,5 @@
 <form method="post" action="/transcripts/review/">{% csrf_token %}<input type="hidden" name="state" value="{{ state }}"><input type="hidden" name="action" value="export"><button type="submit">تنزيل الحزمة ZIP</button></form>
 {% else %}<p class="error">التصدير متوقف حتى معالجة أخطاء المقاطع والربط.</p>{% endif %}
 <p>تشمل الحزمة الملف الأصلي حرفيًا، النسخة المراجعة، الأسئلة المجهزة، تقرير الطابور، الأزمنة، وبيان الملفات وبصماتها. البصمات لفحص تطابق الملفات وليست توقيع اعتماد.</p>
-<p>استورد ملف reviewed من الحزمة لاحقًا لمتابعة العمل؛ يصبح الملف المستورد أصل المراجعة الجديدة. ربط هذه المخرجات بالقضية الدائمة خطوة تكامل لاحقة.</p></section>
+<p>ارفع الحزمة ZIP كاملة لمتابعة العمل مع الاحتفاظ بالأصل وتعديلاتك؛ استيراد reviewed وحده يبدأ مراجعة جديدة. ربط هذه المخرجات بالقضية الدائمة خطوة تكامل لاحقة.</p></section>
 {% endif %}</main></body></html>
