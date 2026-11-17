@@ -59,7 +59,9 @@ is invented. There are no per-lane PRs.
   The old website-only text adapter refuses imported non-website origins.
 - **Requester/library:** the requester sees a media link only after a current
   explicit private release; revocation, new facts or new revisions close it.
-  This never unlocks the older signed-text path. The closed experimental library
+  A separate allowlisted summary reports signed composite acceptance, partial failure
+  and complete delivery while never claiming reading or unlocking the older signed-text
+  path. It closes on authority, evidence or capability changes. The closed experimental library
   searches approved editions only, filters Arabic categories, preserves search
   context, opens reviewed knowledge relations, and creates a correction candidate
   from an approved edition without editing its original or inheriting approval.
@@ -82,7 +84,7 @@ rows, two citations and two final answer parts, one private release, two existin
 queue intents, one independently published edition and two approved knowledge
 links. Publication, private availability and delivery bind the same approved
 answer. Two actual filesystem objects hold the question attachment and answer
-audio. CI artifacts retain result JSON and 16 screenshots.
+audio. CI artifacts retain result JSON and 18 screenshots, including requester delivery distinct from text access.
 
 Additional coordinator tests cover source attachment replay on external storage,
 canonical MIME aliases, incorrect requester, missing owner/source schemas,
@@ -102,6 +104,14 @@ legacy source-channel downgrade and MIME-alias replay defects. Final aggregate
 and remote CI receipts are recorded in the campaign PR, not inferred from these
 earlier component passes.
 
+The first combined local run at `5dd2c6e` passed system/migration checks and
+156/162 tests; six later source-integration tests errored because an old attachment
+rollback test restored only its own app after removing dependent intake tables.
+Attachment and answer rollback cleanup now restores the installed migration graph.
+The affected rerun passed **9/9** (three migration checks followed by all six
+integration checks). Unaffected passing local tests were not repeated. The
+post-fix full matrix runs automatically on the final PR head in CI.
+
 ## Limits and V1 assessment
 
 WhatsApp/Facebook/Instagram adapters are held pending verified payload/signature
@@ -114,8 +124,10 @@ text, a general taxonomy or fabricated quotations. Knowledge links only use
 existing authorized records. Experimental publication remains closed, text-only,
 independently reviewed and reversible; media is never made public.
 
-Engineering estimate starts at the owner's **62% ±7**. The final estimate should
-credit demonstrated connected capabilities in origin, storage, research,
+Engineering estimate starts at the owner's **62% ±7**. The provisional post-V9 estimate is **about 69% ±8 percentage points**, a
+**+7 point** change from 62%, with low-to-moderate confidence in the overall
+percentage (higher confidence in the individually demonstrated functions). This
+credits demonstrated connected capabilities in origin, storage, research,
 knowledge and multipart delivery, while retaining uncertainty for source rights,
 unresolved permissions, real identity/connectors, operational recovery/capacity,
 broader Arabic search evaluation and owner acceptance. It is not an official

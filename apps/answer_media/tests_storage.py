@@ -387,8 +387,10 @@ class StorageBindingTests(TransactionTestCase):
             call_command("migrate", "answer_media", "0003", verbosity=0)
         self.assertEqual(services.raw_for_part(row), audio_fixture()["raw"])
         self.convert(row, InlineDatabaseStorage())
-        call_command("migrate", "answer_media", "0003", verbosity=0)
-        call_command("migrate", "answer_media", "0004", verbosity=0)
+        try:
+            call_command("migrate", "answer_media", "0003", verbosity=0)
+        finally:
+            call_command("migrate", interactive=False, verbosity=0)
         row.refresh_from_db()
         self.assertEqual(row.storage_key, row.sha256)
         self.assertEqual(services.raw_for_part(row), audio_fixture()["raw"])
