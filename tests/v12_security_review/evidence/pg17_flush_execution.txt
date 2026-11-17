@@ -1,0 +1,29 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_flush_rejected_before_executing_destructive_sql (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_flush_rejected_before_executing_destructive_sql) ... FAIL
+
+======================================================================
+FAIL: test_flush_rejected_before_executing_destructive_sql (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_flush_rejected_before_executing_destructive_sql)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 146, in test_flush_rejected_before_executing_destructive_sql
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        reached, [], "P0: stock flush reached destructive SQL execution boundary while FROZEN"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['execute_sql_flush'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'execute_sql_flush'
+
+- ['execute_sql_flush']
++ [] : P0: stock flush reached destructive SQL execution boundary while FROZEN
+
+----------------------------------------------------------------------
+Ran 1 test in 0.081s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).

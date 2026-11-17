@@ -1,0 +1,18 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_expiry_between_validation_and_projection_cannot_return_publication (tests.v12_security_review.test_rights.RightsP0Tests.test_expiry_between_validation_and_projection_cannot_return_publication) ... FAIL
+
+======================================================================
+FAIL: test_expiry_between_validation_and_projection_cannot_return_publication (tests.v12_security_review.test_rights.RightsP0Tests.test_expiry_between_validation_and_projection_cannot_return_publication)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_rights.py", line 98, in test_expiry_between_validation_and_projection_cannot_return_publication
+    with self.assertRaises(preview.PreviewUnavailable):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: PreviewUnavailable not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.337s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).

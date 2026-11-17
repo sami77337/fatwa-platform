@@ -1,0 +1,91 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_failing_on_commit_callback_holds_lease_until_exception_then_releases (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_failing_on_commit_callback_holds_lease_until_exception_then_releases) ... ok
+test_flush_rejected_before_generating_destructive_sql (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_flush_rejected_before_generating_destructive_sql) ... FAIL
+test_get_and_head_throttle_cannot_write_or_disclose_control_when_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_get_and_head_throttle_cannot_write_or_disclose_control_when_frozen) ... ok
+test_loaddata_cannot_insert_fixture_row_while_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_loaddata_cannot_insert_fixture_row_while_frozen) ... FAIL
+test_outer_atomic_cannot_schedule_callback_beyond_admission (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_outer_atomic_cannot_schedule_callback_beyond_admission) ... ok
+test_shell_command_cannot_execute_writer_while_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_shell_command_cannot_execute_writer_while_frozen) ... FAIL
+test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign (tests.v12_security_review.test_recovery.RecoveryP0Tests.test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign) ... FAIL
+test_expiry_between_validation_and_projection_cannot_return_publication (tests.v12_security_review.test_rights.RightsP0Tests.test_expiry_between_validation_and_projection_cannot_return_publication) ... FAIL
+test_revocation_closes_http_body_source_metadata_and_search_counts (tests.v12_security_review.test_rights.RightsP0Tests.test_revocation_closes_http_body_source_metadata_and_search_counts) ... ok
+test_source_grant_never_substitutes_independent_preview_policy (tests.v12_security_review.test_rights.RightsP0Tests.test_source_grant_never_substitutes_independent_preview_policy) ... ok
+
+======================================================================
+FAIL: test_flush_rejected_before_generating_destructive_sql (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_flush_rejected_before_generating_destructive_sql)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 146, in test_flush_rejected_before_generating_destructive_sql
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        reached, [], "P0: stock flush reached destructive SQL planning while FROZEN"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['sql_flush'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'sql_flush'
+
+- ['sql_flush']
++ [] : P0: stock flush reached destructive SQL planning while FROZEN
+
+======================================================================
+FAIL: test_loaddata_cannot_insert_fixture_row_while_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_loaddata_cannot_insert_fixture_row_while_frozen)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 170, in test_loaddata_cannot_insert_fixture_row_while_frozen
+    self.assertFalse(
+    ~~~~~~~~~~~~~~~~^
+        ThrottleBucket.objects.filter(pk="v12-loader").exists(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "P0: loaddata committed a row while FROZEN",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: True is not false : P0: loaddata committed a row while FROZEN
+
+======================================================================
+FAIL: test_shell_command_cannot_execute_writer_while_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_shell_command_cannot_execute_writer_while_frozen)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 188, in test_shell_command_cannot_execute_writer_while_frozen
+    self.assertFalse(marker.exists(), "P0: administrative shell executed while FROZEN")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : P0: administrative shell executed while FROZEN
+
+======================================================================
+FAIL: test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign (tests.v12_security_review.test_recovery.RecoveryP0Tests.test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_recovery.py", line 49, in test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign
+    self.assertEqual(
+    ~~~~~~~~~~~~~~~~^
+        found, [], "P0: direct legacy API published plaintext backup artifacts"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: Lists differ: ['manifest.json', 'schema.sql', 'database.dump'] != []
+
+First list contains 3 additional elements.
+First extra element 0:
+'manifest.json'
+
+- ['manifest.json', 'schema.sql', 'database.dump']
++ [] : P0: direct legacy API published plaintext backup artifacts
+
+======================================================================
+FAIL: test_expiry_between_validation_and_projection_cannot_return_publication (tests.v12_security_review.test_rights.RightsP0Tests.test_expiry_between_validation_and_projection_cannot_return_publication)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_rights.py", line 91, in test_expiry_between_validation_and_projection_cannot_return_publication
+    with self.assertRaises(preview.PreviewUnavailable):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: PreviewUnavailable not raised
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.815s
+
+FAILED (failures=5)
+Found 10 test(s).
+System check identified no issues (0 silenced).
