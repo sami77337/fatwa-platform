@@ -1,5 +1,47 @@
 # Unified Arabic editorial search (FAST4)
 
+## Case and exact revision search scope (2026-11-17, second slice)
+
+Base: reference cards commit `705b3abfb2c2568f36610a4ac293b81c25ddc355`.
+Branch: `codex/20261117-search-case-revision-scope`.
+
+The existing search now accepts optional `case_key` and `revision` filters.
+Users can choose a case in the search form, then choose from that case's actual
+stored revision numbers. Result and reference-card links offer case-scoped
+search; historical reference cards also offer their exact revision scope.
+Pagination and card return links preserve the scope. Clearing the scope keeps
+the existing query/source/batch filters and resets pagination to page one.
+
+Scope is applied before relevance ranking, the 200-result cap and pagination.
+Revision scope includes only that revision's saved draft, reference occurrences
+and technical status. It never substitutes intake diagnostics, including the
+diagnostic explicitly labelled with the current history revision. Case and batch
+must agree; unknown/ambiguous cases, absent gapped revisions, malformed numeric
+IDs and revision-without-case requests fail closed. Empty searches still return
+no results. Return-query revision state cannot override the reference card's
+path identity. No matcher, scholarly content, resolver, schema or root URL change.
+
+Example: `/dev/editorial-search?q=SYN&source=reference&case_key=history&revision=9`.
+The synthetic fixture offers revisions 1, 2, 4, 7, 9 and 11; revision 3 is not
+silently mapped to a neighboring revision. Duplicate pointers retain individual
+ordinals across result pages and card navigation.
+
+Validation: 64 focused search tests passed on Python 3.13.16 / Django 5.2.18,
+including 13 new scope tests and the 2 real PostgreSQL 17 reference-card tests.
+New fixtures are in-memory copies of the existing synthetic queue (including
+205 case keys and 12 repeated pointers for cap/pagination boundaries); the
+database tests reuse `search-reference-card-synthetic-v1`. Ruff lint/format,
+Django system check and whitespace checks passed. No browser acceptance or
+owner-source acceptance is claimed. Run:
+
+```sh
+python manage.py test tests.editorial_search.test_scope tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_reference_cards tests.editorial_search.test_reference_cards_db tests.editorial_search.test_query_terms tests.editorial_search.test_relevance --settings=config.settings.test --noinput
+```
+
+Use disposable synthetic PostgreSQL settings as documented below. This slice
+changes only search code/templates/tests and can be reverted independently of
+reference cards. NOT_DEPLOYED; existing gates remain unchanged.
+
 ## Search result reference cards (2026-11-17)
 
 Base: `e000cdc22c1a0dfd1e0e38eb8fd7cfbfc392487e`, the checked head of

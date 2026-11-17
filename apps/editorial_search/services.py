@@ -65,7 +65,14 @@ class SearchPage:
     truncated: bool
 
 
-def validate_query(q: str, source: str, batch: str, page: int) -> None:
+def validate_query(
+    q: str,
+    source: str,
+    batch: str,
+    page: int,
+    case_key: str = "",
+    revision: int | None = None,
+) -> None:
     """Validate before loading fixtures; batch membership is checked afterwards."""
     if (
         not isinstance(q, str)
@@ -76,6 +83,13 @@ def validate_query(q: str, source: str, batch: str, page: int) -> None:
         or any(not (char.isascii() and (char.isalnum() or char == "-")) for char in batch)
         or type(page) is not int
         or not 1 <= page <= MAX_RESULTS // PAGE_SIZE
+        or not isinstance(case_key, str)
+        or len(case_key) > 100
+        or any(not (char.isascii() and (char.isalnum() or char in "-_")) for char in case_key)
+        or (
+            revision is not None
+            and (not case_key or type(revision) is not int or not 1 <= revision <= 2**31 - 1)
+        )
     ):
         raise ValueError("invalid_search_query")
     q.encode("utf-8", errors="strict")
@@ -219,11 +233,22 @@ def search_catalog(
     source: str = "",
     batch: str = "",
     page: int = 1,
+    case_key: str = "",
+    revision: int | None = None,
 ) -> SearchPage:
     """Exact normalized fields first, then stable AND matches; no persistent index."""
-    validate_query(q, source, batch, page)
+    validate_query(q, source, batch, page, case_key, revision)
     if batch and batch not in {item.batch_id for item in catalog.batches}:
         raise ValueError("unknown_batch")
+    if case_key:
+        rows = [row for row in catalog.rows if row.case.key == case_key]
+        if len(rows) != 1 or (batch and rows[0].batch_id != batch):
+            raise ValueError("unknown_case_in_scope")
+        if (
+            revision is not None
+            and sum(entry.revision.number == revision for entry in rows[0].history) != 1
+        ):
+            raise ValueError("unknown_revision_in_scope")
     literal_query = normalize_title(q)
     normalized_query = normalize_editorial_search(q)
     terms = normalized_query.split()
@@ -234,6 +259,14 @@ def search_catalog(
         if not terms:
             return
         for position, document in enumerate(_documents(catalog, batch)):
+            if case_key and document.case_key != case_key:
+                continue
+            # A diagnostic labelled with the current revision is not a snapshot
+            # reference from that revision. Do not substitute it into this scope.
+            if revision is not None and (
+                document.revision != revision or document.anchor != "snapshot"
+            ):
+                continue
             if source and document.source != source:
                 continue
             literal_fields = tuple(normalize_title(field.text) for field in document.fields)
