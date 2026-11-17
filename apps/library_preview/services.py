@@ -1,0 +1,316 @@
+"""Read-only anonymous projections over explicitly granted synthetic publications.
+
+No service identity, staff cookie or capability is created for an anonymous reader.
+The expiring preview policy authorizes exact redacted publication/source snapshots;
+canonical services validate their current approval and bindings under the case lock.
+"""
+
+import os
+from contextlib import contextmanager
+
+from django.conf import settings
+from django.db import transaction
+
+from apps.case_citations import services as citations
+from apps.casework import services as cases
+from apps.casework.models import Case
+from apps.editorial_search.query_terms import normalize_editorial_search
+from apps.experimental_publication import services as publication
+from apps.experimental_publication.models import PublicationEdition
+from apps.intake_workflow.guards import require_owned_database
+from apps.knowledge_links import services as knowledge
+from apps.knowledge_links.models import KnowledgeRevision
+
+from .policy import PreviewPolicy
+
+PAGE_SIZE = 12
+SOURCE_FIELDS = (
+    "work_title",
+    "heading_title",
+    "edition_title",
+    "edition_key",
+    "publisher",
+    "printed_part",
+    "printed_page",
+    "path",
+)
+
+
+class PreviewUnavailable(Exception):
+    """Uniform denial: never include a private identifier or reason in HTTP output."""
+
+
+class InvalidFilter(ValueError):
+    pass
+
+
+def policy() -> PreviewPolicy:
+    if (
+        os.environ.get("FATWA_PRODUCTION") != "0"
+        or getattr(settings, "FATWA_LIBRARY_PREVIEW_ENABLED", False) is not True
+        or getattr(settings, "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED", False) is not True
+        or getattr(settings, "FATWA_CASE_CITATIONS_ENABLED", False) is not True
+        or getattr(settings, "FATWA_KNOWLEDGE_LINKS_ENABLED", False) is not True
+    ):
+        raise PreviewUnavailable()
+    selected = getattr(settings, "FATWA_LIBRARY_PREVIEW_POLICY", None)
+    if type(selected) is not PreviewPolicy:
+        raise PreviewUnavailable()
+    try:
+        selected.validate()
+    except (ValueError, TypeError, AttributeError):
+        raise PreviewUnavailable() from None
+    return selected
+
+
+def _recheck(selected: PreviewPolicy) -> None:
+    if policy() is not selected:
+        raise PreviewUnavailable()
+
+
+def _start() -> PreviewPolicy:
+    selected = policy()
+    require_owned_database(synthetic_fixtures_only=True)
+    return selected
+
+
+def _independent(edition: PublicationEdition) -> bool:
+    actions = {a.action: a for a in edition.actions.all()}
+    if "APPROVE" not in actions or "REVIEW" not in actions:
+        return False
+    approver, reviewer = actions["APPROVE"], actions["REVIEW"]
+    return (approver.provider_id, approver.subject_id) not in {
+        (edition.provider_id, edition.subject_id),
+        (reviewer.provider_id, reviewer.subject_id),
+        (edition.decision.provider_id, edition.decision.subject_id),
+    }
+
+
+def _grant(selected: PreviewPolicy, publication_id: str):
+    return next((g for g in selected.publications if g.publication_id == str(publication_id)), None)
+
+
+@contextmanager
+def _current(selected: PreviewPolicy, publication_id: str):
+    grant = _grant(selected, publication_id)
+    if grant is None:
+        raise PreviewUnavailable()
+    edition = PublicationEdition.objects.filter(pk=grant.publication_id).first()
+    if edition is None:
+        raise PreviewUnavailable()
+    with transaction.atomic():
+        case = Case.objects.select_for_update().get(pk=edition.case_id)
+        try:
+            cases._verify(case)
+            publication._approved(case, edition)
+            publication._verify(edition)
+            latest = (
+                PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
+                .order_by("-number")
+                .first()
+            )
+            if (
+                edition.content_sha256 != grant.content_sha256
+                or latest is None
+                or latest.pk != edition.pk
+                or not _independent(edition)
+                or edition.actions.filter(action="WITHDRAW").exists()
+                or edition.citations != publication._citation_snapshot(edition.answer)
+            ):
+                raise PreviewUnavailable()
+        except cases.CaseConflict:
+            raise PreviewUnavailable() from None
+        yield edition
+        _recheck(selected)
+
+
+def _permitted_source(selected: PreviewPolicy, item: dict) -> dict | None:
+    source = item["source"]
+    if not any(
+        grant.edition_id == source["edition_id"]
+        and grant.source_row_id == source["source_row_id"]
+        and grant.source_sha256 == item["source_sha256"]
+        for grant in selected.references
+    ):
+        return None
+    # Validation above checks the complete current citation. Only explicitly
+    # allowed display metadata crosses this boundary; no editorial notes/IDs/hashes.
+    return {key: source[key] for key in SOURCE_FIELDS}
+
+
+def _references(selected: PreviewPolicy, edition: PublicationEdition) -> list[dict]:
+    return [
+        {"position": position, **source}
+        for position, item in enumerate(edition.citations, 1)
+        if (source := _permitted_source(selected, item)) is not None
+    ]
+
+
+def _relationships(selected: PreviewPolicy, edition: PublicationEdition) -> dict:
+    references, private_related, seen = [], False, set()
+    for row in (
+        KnowledgeRevision.objects.filter(publication=edition)
+        .prefetch_related("actions")
+        .order_by("series", "-number")
+    ):
+        if row.series in seen:
+            continue
+        seen.add(row.series)
+        actions = {a.action: a for a in row.actions.all()}
+        if "APPROVE" not in actions or "WITHDRAW" in actions:
+            continue
+        approved = actions["APPROVE"]
+        if (approved.provider_id, approved.subject_id) == (
+            row.provider_id,
+            row.subject_id,
+        ) or row.snapshot_sha256 != knowledge._digest(row.snapshot):
+            continue
+        if row.heading_id:
+            try:
+                # Locked, exact-reference-only adapter. Do not call knowledge.browse:
+                # that staff projection can resolve private transcript bundles.
+                heading = row.heading
+                source = citations._source(heading.edition_id, heading.source_row_id)
+                if source not in edition.citations or row.snapshot != {
+                    "kind": "REFERENCE",
+                    **source,
+                }:
+                    continue
+                display = _permitted_source(selected, source)
+                if display is not None:
+                    position = edition.citations.index(source) + 1
+                    references.append({"position": position, "number": row.number, **display})
+            except cases.CaseConflict:
+                continue
+        elif row.transcript_id:
+            # A private relation may be indicated, but carries no identifier, text,
+            # raw-evidence URL, timing, source name, or path to the staff API.
+            private_related = True
+    return {"references": references, "private_related": private_related}
+
+
+def _projection(selected: PreviewPolicy, edition: PublicationEdition) -> dict:
+    return {
+        "id": str(edition.pk),
+        "number": edition.number,
+        "title": edition.title,
+        "category": edition.category,
+        "body": edition.body,
+        "references": _references(selected, edition),
+        "relations": _relationships(selected, edition),
+    }
+
+
+def _history(selected: PreviewPolicy, edition: PublicationEdition) -> list[dict]:
+    rows = []
+    # Only versions explicitly included in the preview policy and independently
+    # approved. No candidate existence, title, body, case lineage or actor is shown.
+    for old in PublicationEdition.objects.filter(
+        case_id=edition.case_id, pk__in=[g.publication_id for g in selected.publications]
+    ).order_by("-number"):
+        grant = _grant(selected, str(old.pk))
+        if not _independent(old) or old.content_sha256 != grant.content_sha256:
+            continue
+        try:
+            publication._verify(old)
+        except cases.CaseConflict:
+            continue
+        withdrawn = old.actions.filter(action="WITHDRAW").exists()
+        rows.append(
+            {
+                "number": old.number,
+                "state": "WITHDRAWN"
+                if withdrawn
+                else ("CURRENT" if old.pk == edition.pk else "SUPERSEDED"),
+                "published_at": old.actions.get(action="APPROVE").created_at,
+            }
+        )
+    return rows
+
+
+def filters(*, query: str = "", category: str = "", material: str = "", page: int = 1) -> dict:
+    for value in (query, category):
+        if (
+            type(value) is not str
+            or len(value) > 80
+            or any(ord(c) < 32 or ord(c) == 127 for c in value)
+        ):
+            raise InvalidFilter()
+    if material not in {"", "reference"} or type(page) is not int or not 1 <= page <= 100:
+        raise InvalidFilter()
+    return {"query": query, "category": category, "material": material, "page": page}
+
+
+def browse(*, query: str = "", category: str = "", material: str = "", page: int = 1) -> dict:
+    chosen = filters(query=query, category=category, material=material, page=page)
+    selected = _start()
+    available = []
+    # Hold every selected case in a deterministic order until the catalog snapshot
+    # is collected, so a concurrent withdrawal cannot leave an earlier row visible
+    # while a later grant is being processed. No global/private-case scan.
+    with transaction.atomic():
+        case_ids = PublicationEdition.objects.filter(
+            pk__in=[g.publication_id for g in selected.publications]
+        ).values_list("case_id", flat=True)
+        list(Case.objects.filter(pk__in=case_ids).order_by("pk").select_for_update())
+        for grant in selected.publications:
+            try:
+                with _current(selected, grant.publication_id) as edition:
+                    available.append(_projection(selected, edition))
+            except PreviewUnavailable:
+                continue
+        _recheck(selected)
+    available.sort(key=lambda row: (normalize_editorial_search(row["title"]), row["id"]))
+    categories = sorted({row["category"] for row in available}, key=normalize_editorial_search)
+    needle = normalize_editorial_search(query)
+    category_key = normalize_editorial_search(category)
+    matched = []
+    for row in available:
+        source_text = " ".join(
+            str(source[key]) for source in row["references"] for key in SOURCE_FIELDS
+        )
+        haystack = normalize_editorial_search(
+            " ".join((row["title"], row["category"], row["body"], source_text))
+        )
+        if (
+            (not needle or needle in haystack)
+            and (not category_key or normalize_editorial_search(row["category"]) == category_key)
+            and (material != "reference" or row["references"])
+        ):
+            # Listing does not duplicate the publication body.
+            matched.append({key: value for key, value in row.items() if key != "body"})
+    start = (page - 1) * PAGE_SIZE
+    return {
+        "items": matched[start : start + PAGE_SIZE],
+        "categories": categories,
+        "total": len(matched),
+        "has_previous": page > 1,
+        "has_next": start + PAGE_SIZE < len(matched),
+        "filters": chosen,
+    }
+
+
+def read(publication_id: str) -> dict:
+    selected = _start()
+    with _current(selected, publication_id) as edition:
+        result = _projection(selected, edition)
+        result["history"] = _history(selected, edition)
+        return result
+
+
+def read_reference(publication_id: str, position: int) -> dict:
+    if type(position) is not int or not 1 <= position <= 12:
+        raise PreviewUnavailable()
+    selected = _start()
+    with _current(selected, publication_id) as edition:
+        if position > len(edition.citations):
+            raise PreviewUnavailable()
+        display = _permitted_source(selected, edition.citations[position - 1])
+        if display is None:
+            raise PreviewUnavailable()
+        return {
+            "publication_id": str(edition.pk),
+            "publication_title": edition.title,
+            "position": position,
+            "source": display,
+        }

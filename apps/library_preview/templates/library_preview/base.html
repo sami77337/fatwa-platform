@@ -1,0 +1,4 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}المكتبة التجريبية{% endblock %}</title><link rel="stylesheet" href="{% url 'library_preview:style' %}"></head>
+<body><a class="skip" href="#content">انتقل إلى المحتوى</a><header><a href="{% url 'library_preview:index' %}">المكتبة المعرفية</a><p class="notice">معاينة تطوير محلية — مواد اصطناعية فقط — ليست نشرًا عامًا أو قبولًا رسميًا</p></header>
+<main id="content" tabindex="-1">{% block content %}{% endblock %}</main><footer>تعرض المعاينة النسخ المصرح بها حاليًا فقط. الاعتماد لا يمنح حقوق إتاحة جميع المصادر.</footer></body></html>
