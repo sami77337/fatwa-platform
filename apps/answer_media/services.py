@@ -315,7 +315,15 @@ def release_private(
         if manifest is None or manifest.sha256 != manifest_sha256:
             raise cases.CaseConflict("current_multipart_approval_required")
         decision = _current(case, manifest)
+        release_provider_id = provider.provider_id
         validate_for_approval(manifest.answer)
+        current_actor = cases._identity(provider, subject_id, case)
+        if (current_actor.subject_id, current_actor.auth_epoch, provider.provider_id) != (
+            actor.subject_id,
+            actor.auth_epoch,
+            release_provider_id,
+        ):
+            raise cases.CaseConflict("case_identity_changed")
         if (decision.subject_id, decision.provider_id, decision.auth_epoch) != (
             actor.subject_id,
             provider.provider_id,

@@ -42,8 +42,10 @@ def _digest(text):
 
 def _answer_manifest(answer):
     """Validate an optional multipart revision under the caller's case lock."""
-    if answer is None or not django_apps.is_installed("apps.answer_media"):
+    if answer is None:
         return None
+    if not django_apps.is_installed("apps.answer_media"):
+        raise CaseConflict("answer_media_schema_unavailable")
     from apps.answer_media.services import manifest_for_locked_answer
 
     return manifest_for_locked_answer(answer)
@@ -495,7 +497,19 @@ def record_decision(
             raise CaseConflict("answer_already_decided")
         # The human decision covers every immutable part of this exact revision,
         # even if the optional editing UI is disabled after a draft was created.
+        approval_provider_id = provider.provider_id
         _answer_manifest(answer)
+        if action == "APPROVE":
+            from apps.answer_media.services import validate_for_approval
+
+            validate_for_approval(answer)
+        current_identity = _identity(provider, subject_id, case)
+        if (current_identity.subject_id, current_identity.auth_epoch, provider.provider_id) != (
+            identity.subject_id,
+            identity.auth_epoch,
+            approval_provider_id,
+        ):
+            raise CaseConflict("case_identity_changed")
         decision = CaseDecision.objects.create(
             case=case,
             answer=answer,

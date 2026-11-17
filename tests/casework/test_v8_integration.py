@@ -1,6 +1,7 @@
 """V8 cross-editor and media-delivery boundaries on one canonical synthetic case."""
 
 from dataclasses import replace
+from unittest.mock import patch
 
 from django.test import Client, TransactionTestCase, override_settings
 
@@ -197,6 +198,7 @@ class V8IntegrationTests(CaseDeliveryFixture, TransactionTestCase):
         url = f"/casework/status/answer-media/{part.pk}/"
         client = Client(enforce_csrf_checks=True, REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1")
         self.assertEqual(client.get(url).status_code, 404)
+
         page = client.get("/casework/status/")
         self.assertEqual(
             post(
@@ -215,3 +217,89 @@ class V8IntegrationTests(CaseDeliveryFixture, TransactionTestCase):
         self.assertEqual(client.post(url).status_code, 405)
         cases.revoke_access(**self.staff(), requester_id="requester-a")
         self.assertEqual(client.get(url).status_code, 404)
+
+    def test_legacy_casework_profile_keeps_durable_media_and_unknown_profile_denies(self):
+        from config.settings import casework_review, casework_test
+
+        self.assertIn("apps.answer_media", casework_test.INSTALLED_APPS)
+        self.assertIn("apps.answer_media", casework_review.INSTALLED_APPS)
+        self.cited()
+        self.compound()
+        self.approve_release()
+        with override_settings(
+            FATWA_ANSWER_MEDIA_ENABLED=False, FATWA_ANSWER_MEDIA_PRIVATE_ENABLED=False
+        ):
+            with self.assertRaisesRegex(cases.CaseConflict, "unsupported_media"):
+                delivery.prepare_case_delivery(**self.staff())
+        with patch("apps.casework.services.django_apps.is_installed", return_value=False):
+            with self.assertRaisesRegex(cases.CaseConflict, "answer_media_schema_unavailable"):
+                delivery.prepare_case_delivery(**self.staff())
+
+    def test_canonical_approval_runs_content_validation_before_any_decision(self):
+        self.cited()
+        self.compound()
+        current = cases.read_case(**self.staff())
+        with patch(
+            "apps.answer_media.services.validate_for_approval",
+            side_effect=cases.CaseConflict("answer_media_content_invalid"),
+        ):
+            with self.assertRaisesRegex(cases.CaseConflict, "answer_media_content_invalid"):
+                cases.record_decision(
+                    **self.staff(),
+                    action="APPROVE",
+                    answer_id=current["answers"][-1]["id"],
+                    expected_revision=current["revision"],
+                    expected_evidence_version=current["evidence_version"],
+                )
+        after = cases.read_case(**self.staff())
+        self.assertEqual(after["revision"], current["revision"])
+        self.assertIsNone(after["approved_answer_id"])
+        self.assertFalse(PrivateAnswerRelease.objects.exists())
+        self.approve_release()
+
+    def test_revocation_during_parsing_denies_approval_and_release_atomically(self):
+        self.cited()
+        self.compound()
+        current = cases.read_case(**self.staff())
+        parser = answers.validate_for_approval
+
+        def revoke_after_parse(answer):
+            result = parser(answer)
+            self.directory.epoch = "revoked-during-parse"
+            return result
+
+        with patch(
+            "apps.answer_media.services.validate_for_approval", side_effect=revoke_after_parse
+        ):
+            with self.assertRaisesRegex(cases.CaseConflict, "case_identity_changed"):
+                cases.record_decision(
+                    **self.staff(),
+                    action="APPROVE",
+                    answer_id=current["answers"][-1]["id"],
+                    expected_revision=current["revision"],
+                    expected_evidence_version=current["evidence_version"],
+                )
+        self.directory.epoch = "epoch-1"
+        after = cases.read_case(**self.staff())
+        self.assertEqual(after["revision"], current["revision"])
+        self.assertIsNone(after["approved_answer_id"])
+        approved = cases.record_decision(
+            **self.staff(),
+            action="APPROVE",
+            answer_id=current["answers"][-1]["id"],
+            expected_revision=current["revision"],
+            expected_evidence_version=current["evidence_version"],
+        )
+        manifest = AnswerManifest.objects.get(answer_id=approved["approved_answer_id"])
+        with patch(
+            "apps.answer_media.services.validate_for_approval", side_effect=revoke_after_parse
+        ):
+            with self.assertRaisesRegex(cases.CaseConflict, "case_identity_changed"):
+                answers.release_private(
+                    **self.staff(),
+                    confirmed=True,
+                    manifest_sha256=manifest.sha256,
+                    expected_revision=approved["revision"],
+                    expected_evidence_version=approved["evidence_version"],
+                )
+        self.assertFalse(PrivateAnswerRelease.objects.exists())
