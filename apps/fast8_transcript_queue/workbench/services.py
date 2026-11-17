@@ -84,6 +84,58 @@ def revise(document, *, index, start_ms, end_ms, replacement_text=None):
     )
 
 
+def pairing_options(document, index):
+    """Offer unambiguous same-source questions; do not infer a semantic match."""
+    rows = _rows(document.current, document.current_suffix)
+    if type(index) is not int or not 0 <= index < len(rows):
+        raise ValidationError("pairing: invalid_segment")
+    answer = rows[index]
+    if answer["kind"] != "answer":
+        return []
+    options = []
+    for number, question in enumerate(rows):
+        if question["kind"] != "question" or question["source_id"] != answer["source_id"]:
+            continue
+        members = [
+            row
+            for row in rows
+            if row["source_id"] == question["source_id"] and row["pair_id"] == question["pair_id"]
+        ]
+        if sum(row["kind"] == "question" for row in members) != 1:
+            continue
+        occupied = any(row["kind"] == "answer" and row is not answer for row in members)
+        options.append(
+            {
+                "index": number,
+                "question": question,
+                "occupied": occupied,
+                "current": question["pair_id"] == answer["pair_id"],
+                "timing_compatible": answer["start_ms"] >= question["end_ms"],
+            }
+        )
+    return options
+
+
+def relink_answer(document, *, index, question_index):
+    """Human-selected pair only. Preserve source, segment, role, text and timestamps."""
+    if type(question_index) is not int or document.revision >= 100:
+        raise ValidationError("pairing: invalid_target_or_revision")
+    option = next(
+        (item for item in pairing_options(document, index) if item["index"] == question_index), None
+    )
+    if option is None or option["occupied"]:
+        raise ValidationError("pairing: unavailable_question")
+    if option["current"]:
+        return document
+    rows = _rows(document.current, document.current_suffix)
+    rows[index]["pair_id"] = option["question"]["pair_id"]
+    current = pipeline._encoded({"schema": pipeline.SCHEMA, "items": rows})
+    _rows(current, ".json")
+    return Document(
+        document.original, document.original_suffix, current, ".json", document.revision + 1
+    )
+
+
 def document_changes(document):
     """Compare the exact original with current rows, retaining immutable identities."""
     rows = _rows(document.current, document.current_suffix)
@@ -92,11 +144,14 @@ def document_changes(document):
         raise ValidationError("export: lineage_mismatch")
     changes = []
     for number, (before, after) in enumerate(zip(original_rows, rows, strict=True), 1):
-        if any(
-            before[key] != after[key] for key in pipeline.FIELDS - {"text", "start_ms", "end_ms"}
-        ):
+        mutable = {"text", "start_ms", "end_ms"}
+        if before["kind"] == "answer":
+            mutable.add("pair_id")
+        if any(before[key] != after[key] for key in pipeline.FIELDS - mutable):
             raise ValidationError("export: lineage_mismatch")
-        fields = [key for key in ("text", "start_ms", "end_ms") if before[key] != after[key]]
+        fields = [
+            key for key in ("text", "start_ms", "end_ms", "pair_id") if before[key] != after[key]
+        ]
         if fields:
             changes.append(
                 {
@@ -106,7 +161,15 @@ def document_changes(document):
                     "changed_fields": fields,
                 }
             )
+            if "pair_id" in fields:
+                changes[-1]["original_pair_id"] = before["pair_id"]
+                changes[-1]["reviewed_pair_id"] = after["pair_id"]
     return changes
+
+
+def _schema(kind, changes):
+    version = 2 if any("pair_id" in change["changed_fields"] for change in changes) else 1
+    return f"fatwa.transcript-workbench.{kind}.v{version}"
 
 
 def export_bundle(document):
@@ -127,7 +190,7 @@ def export_bundle(document):
         "cues.json": timeline.cue_json_bytes(),
     }
     manifest = {
-        "schema": "fatwa.transcript-workbench.bundle.v1",
+        "schema": _schema("bundle", changes),
         "synthetic_only": True,
         "revision": document.revision,
         "manual_editing_performed": bool(changes),
@@ -169,7 +232,7 @@ def checkpoint(document):
         "reviewed" + document.current_suffix: document.current,
     }
     manifest = {
-        "schema": "fatwa.transcript-workbench.checkpoint.v1",
+        "schema": _schema("checkpoint", changes),
         "synthetic_only": True,
         "revision": document.revision,
         "manual_editing_performed": bool(changes),
@@ -259,9 +322,15 @@ def restore_bundle(raw, *, synthetic_fixtures_only=False):
             revision,
         )
         schema = manifest["schema"]
-        if schema == "fatwa.transcript-workbench.checkpoint.v1":
+        if schema in {
+            "fatwa.transcript-workbench.checkpoint.v1",
+            "fatwa.transcript-workbench.checkpoint.v2",
+        }:
             rebuilt = checkpoint(document)
-        elif schema == "fatwa.transcript-workbench.bundle.v1":
+        elif schema in {
+            "fatwa.transcript-workbench.bundle.v1",
+            "fatwa.transcript-workbench.bundle.v2",
+        }:
             rebuilt = export_bundle(document)
         else:
             raise ValueError("schema")
