@@ -8,7 +8,7 @@ from django.urls import resolve, reverse
 from apps.casework import services
 from apps.casework.delivery import prepare_case_delivery, requester_delivery_status
 from apps.casework_web import requester_intake
-from apps.requester_access_review.views import requester
+from apps.requester_team_journey.views import requester
 from apps.team_workspace import views as team_views
 from apps.team_workspace.campaign import staff
 from tests.casework import test_http as http_contracts
@@ -20,7 +20,20 @@ class CampaignProfileTests(SimpleTestCase):
     def test_explicit_profile_preserves_closed_identity_recovery_and_guard(self):
         from config.settings import campaign_review, casework_review
 
-        self.assertEqual(campaign_review.MIDDLEWARE, casework_review.MIDDLEWARE)
+        expected_middleware = [
+            "apps.library_preview.guard.PreviewCompositionGuard"
+            if item == "apps.casework_web.guard.CaseworkGuard"
+            else item
+            for item in casework_review.MIDDLEWARE
+        ]
+        self.assertEqual(campaign_review.MIDDLEWARE, expected_middleware)
+        from apps.casework_web.guard import CaseworkGuard
+        from apps.library_preview.guard import PreviewCompositionGuard
+
+        self.assertIsInstance(PreviewCompositionGuard(lambda request: None).casework, CaseworkGuard)
+        self.assertFalse(campaign_review.FATWA_LIBRARY_PREVIEW_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_LIBRARY_PREVIEW_POLICY)
+        self.assertFalse(campaign_review.FATWA_REQUESTER_PORTAL_ENABLED)
         self.assertIsNone(campaign_review.FATWA_CASEWORK_IDENTITY_PROVIDER)
         self.assertIsNone(campaign_review.FATWA_CASEWORK_RECOVERY_RESOLVER)
         self.assertEqual(campaign_review.ROOT_URLCONF, "config.campaign_urls")

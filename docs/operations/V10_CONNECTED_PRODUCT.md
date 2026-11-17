@@ -50,6 +50,12 @@ demo and recovery failure review. Shared routing and configuration had one write
   A fresh process verifies exact bytes, IDs, relations and permission denials.
   Browser on the restored target is **NOT_RUN**; service verification is explicit.
 - The affected V9 browser journey passed after updating its delivery UI selectors.
+- Initial remote compatibility runs exposed two old profile assertions for the
+  previous requester handler and middleware name. They now check the explicit
+  V10 wrapper, original private guard delegation and closed feature defaults.
+  Both assertions plus four composition/privacy tests passed locally (6/6).
+  The first V10 workflow also had a YAML scalar parse error; corrected before
+  its PG17/18 matrix could run. These historical failures remain in the PR receipt.
 - Demo smoke and full offline backup/restore passed: 51 tables and one external
   original. No approvals, signatures or provider outcomes are seeded by the demo.
 - Final-head CI runs `infra/dev/v10_verify.py`: 67 focused tests, 22 recovery tests,
