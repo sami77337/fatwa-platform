@@ -14,6 +14,8 @@ INSTALLED_APPS = [
 ]
 FATWA_CASE_DELIVERY_APPROVAL_VERIFIER = None
 FATWA_CASE_DELIVERY_PROVIDER_VERIFIER = None
+# Explicit synthetic-only policy opt-in; approvals alone never reveal private answers.
+FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED = False
 ROOT_URLCONF = "config.campaign_urls"
 FILE_UPLOAD_HANDLERS = ["django.core.files.uploadhandler.MemoryFileUploadHandler"]
 FILE_UPLOAD_MAX_MEMORY_SIZE = 262144
