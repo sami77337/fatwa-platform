@@ -43,9 +43,16 @@ def _page(request, provider, identity, *, common=None, selected_filter="all", qu
         subject_id=identity.subject_id, provider=provider, synthetic_fixtures_only=True,
     )
     selected = read_workspace_case(**common) if common else None
+    source_origins = None
+    if common and getattr(settings, "FATWA_SOURCE_CASE_INTAKE_ENABLED", False) is True:
+        from apps.source_case_intake.services import staff_origins
+
+        source_origins = staff_origins(**common)
     get_token(request)
     return private(render(request, "team_workspace/workspace.html", {
         **queue(rows, selected_filter, query), "selected": selected,
+        "source_origins": source_origins,
+        "composite_delivery_enabled": getattr(settings, "FATWA_COMPOSITE_DELIVERY_ENABLED", False) is True,
         "message": message, "attempted_text": attempted_text, "access": access,
         "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
         "answer_media_enabled": getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True,

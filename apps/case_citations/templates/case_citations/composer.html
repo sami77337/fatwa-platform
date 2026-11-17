@@ -11,19 +11,44 @@
 <form id="citation-composer" method="post" action="/casework/staff/">
 {% csrf_token %}<input type="hidden" name="action" value="citation_compose"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="workspace" value="{{ workspace }}">
 <label for="answer">نص الجواب البشري غير المحفوظ</label><textarea id="answer" name="text" maxlength="16000">{{ text }}</textarea>
+{% if opened %}<section aria-label="المصدر المفتوح"><h3>معاينة المصدر الموثق</h3>
+<p class="original">{{ opened.source.heading_title }}</p><p>{{ opened.source.work_title }} — {{ opened.source.edition_title }} — {{ opened.source.publisher }}</p>
+<p>الجزء {{ opened.source.printed_part }} · الصفحة {{ opened.source.printed_page }} · الموضع {{ opened.source.source_row_id }}</p><p>{{ opened.source.path|join:" / " }}</p>
+<p>العنوان الأصلي من الفهرس فقط؛ متن الكتاب غير متاح هنا. لا اقتباس أو توثيق حكم آلي.</p><p class="original">{{ opened.source_sha256 }}</p>
+<button name="command" value="return">العودة إلى البحث والمسودة</button></section>{% endif %}
+{% if history %}<section aria-label="تاريخ الإحالات"><h3>تاريخ الإحالات والتصحيحات</h3>
+{% for version in history.revisions %}<article><h4>إصدار الجواب {{ version.revision }} · الوقائع {{ version.evidence_version }}</h4><p>{{ version.created_at|date:"c" }} · المحرر {{ version.subject_id }}</p>
+{% for item in version.citations %}<p>{{ item.ordinal }}. {{ item.source.heading_title }} — {{ item.source.edition_title }} — جزء {{ item.source.printed_part }} صفحة {{ item.source.printed_page }}</p><p class="original">{{ item.editorial_note }}</p>
+{% if item.correction %}<p>تصحيح إحالة الإصدار {{ item.correction.previous_revision }}: {{ item.correction.previous_source.heading_title }}، الصفحة {{ item.correction.previous_source.printed_page }}</p><p>سبب التصحيح البشري: {{ item.correction.reason }}</p>{% endif %}
+{% if item.current_source_available %}<button name="command" value="open:{{ item.source.edition_id }}:{{ item.source.source_row_id }}">فتح مصدر الإحالة التاريخية {{ version.revision }} / {{ item.ordinal }}</button>{% else %}<p>لقطة تاريخية؛ المصدر الحالي غير متاح للتحقق أو الاختيار.</p>{% endif %}
+{% empty %}<p>لا إحالات في هذا الإصدار.</p>{% endfor %}</article>{% empty %}<p>لا إصدارات محفوظة.</p>{% endfor %}
+{% if history.next_before %}<button name="command" value="history:{{ history.next_before }}">إصدارات أقدم</button>{% endif %}<button name="command" value="return">العودة إلى البحث والمسودة</button></section>{% endif %}
+<button name="command" value="history:latest">عرض تاريخ الإحالات مع حفظ المسودة</button>
 <fieldset><legend>بحث مرجع موجود واختيار موضعه</legend>
 <label for="edition">الكتاب والطبعة</label><select id="edition" name="edition_id"><option value="">اختر طبعة محددة</option>{% for edition in sources.editions %}<option value="{{ edition.id }}"{% if edition.id == edition_id %} selected{% endif %}>{{ edition.book }} — {{ edition.title }} ({{ edition.edition_key }})</option>{% endfor %}</select>
 <label for="query">كلمات العنوان</label><input id="query" name="query" maxlength="100" value="{{ query }}">
 <label for="part">الجزء كما هو في المصدر (اختياري)</label><input id="part" name="part" maxlength="100" value="{{ part }}">
 <label for="page">الصفحة المطبوعة (اختياري)</label><input id="page" name="page" type="number" min="1" max="999999999" value="{{ page|default_if_none:'' }}">
 <button name="command" value="search">البحث مع الاحتفاظ بالمسودة</button>
+<button name="command" value="suggest">اقتراح مصادر موجودة للمراجعة</button>
 <p>يمكن البحث بالجزء والصفحة دون كلمات. يعرض البحث حتى 20 موضعًا؛ ضيّق البحث عند الحاجة. اختيار موضع يعني صفه المحدد داخل الطبعة، ولا ينشئ مصدرًا جديدًا.</p>
-<label for="note">تعليق تحريري بشري للمصدر المراد إضافته أو تحديثه</label><textarea id="note" name="editorial_note" maxlength="2000">{{ editorial_note }}</textarea>
-{% for item in sources.results %}<article><h3>{{ item.source.heading_title }}</h3><p>{{ item.source.work_title }} · {{ item.source.edition_title }} · الجزء {{ item.source.printed_part }} · الصفحة {{ item.source.printed_page }} · الموضع {{ item.source.source_row_id }}</p><p>{{ item.source.path|join:" / " }}</p><button name="command" value="add:{{ item.source.edition_id }}:{{ item.source.source_row_id }}"{% if capacity %} disabled{% endif %}>إضافة الموضع {{ item.source.source_row_id }} إلى القائمة</button></article>{% empty %}<p>لا توجد نتائج معروضة؛ اختر طبعة وأدخل كلمات أو موضعًا مطبوعًا.</p>{% endfor %}
+{% if correcting %}<p role="status">تصحيح إحالة محفوظة: اكتب سبب التصحيح في الحقل التالي ثم اختر «استبدال بالإحالة المصححة» من النتائج. يبقى التعليق السابق مستقلًا ويمكن تحديثه لاحقًا.</p><button name="command" value="cancel_correction">إلغاء اختيار التصحيح</button>{% endif %}
+<label for="note">تعليق تحريري بشري، أو سبب التصحيح عند استبدال إحالة</label><textarea id="note" name="editorial_note" maxlength="2000">{{ editorial_note }}</textarea>
+{% if suggestions %}<section aria-label="اقتراحات للمراجعة"><h3>اقتراحات غير معتمدة</h3><p>مطابقة كلمات عنوان موجود فقط؛ لا درجة ثقة علمية ولا حكم. لم تدخل أي إحالة إلى الجواب.</p>
+{% for item in suggestions %}<article><h4>{{ item.source.heading_title }}</h4><p>{{ item.source.edition_title }} · الجزء {{ item.source.printed_part }} · الصفحة {{ item.source.printed_page }}</p>
+<button name="command" value="open:{{ item.source.edition_id }}:{{ item.source.source_row_id }}">معاينة الاقتراح {{ item.source.source_row_id }}</button>
+<button name="command" value="accept:{{ item.source.edition_id }}:{{ item.source.source_row_id }}"{% if capacity %} disabled{% endif %}>اختيار الاقتراح {{ item.source.source_row_id }} بعد مراجعتي</button></article>{% endfor %}</section>{% endif %}
+{% for item in sources.results %}<article><h3>{{ item.source.heading_title }}</h3><p>{{ item.source.work_title }} · {{ item.source.edition_title }} · الجزء {{ item.source.printed_part }} · الصفحة {{ item.source.printed_page }} · الموضع {{ item.source.source_row_id }}</p><p>{{ item.source.path|join:" / " }}</p><button name="command" value="open:{{ item.source.edition_id }}:{{ item.source.source_row_id }}">فتح المصدر {{ item.source.source_row_id }} والعودة</button>
+{% if correcting %}<button name="command" value="replace:{{ item.source.edition_id }}:{{ item.source.source_row_id }}">استبدال بالإحالة المصححة {{ item.source.source_row_id }}</button>{% endif %}
+<button name="command" value="add:{{ item.source.edition_id }}:{{ item.source.source_row_id }}"{% if capacity %} disabled{% endif %}>إضافة الموضع {{ item.source.source_row_id }} إلى القائمة</button></article>{% empty %}<p>لا توجد نتائج معروضة؛ اختر طبعة وأدخل كلمات أو موضعًا مطبوعًا.</p>{% endfor %}
 </fieldset>
 <section><h3>القائمة الكاملة التي سيحملها الإصدار الجديد ({{ chosen|length }}/12)</h3><p>تظهر هنا إحالات أحدث إصدار عند فتح المحرر. يمكنك حذفها أو تعديل تعليقاتها قبل تأكيد القائمة الجديدة؛ تبقى الإصدارات السابقة محفوظة.</p>
 {% for item in chosen %}<article><h4>{{ forloop.counter }}. {{ item.source.heading_title }}</h4><p>العنوان الأصلي: <span class="original">{{ item.source.heading_title }}</span></p><p>{{ item.source.work_title }} — {{ item.source.edition_title }} — {{ item.source.publisher }}</p><p>الجزء {{ item.source.printed_part }} · الصفحة {{ item.source.printed_page }} · الموضع {{ item.source.source_row_id }}</p><p>{{ item.source.path|join:" / " }}</p><p>تعليق تحريري بشري مستقل:</p><p class="original">{{ item.editorial_note }}</p>
 <details><summary>هوية المصدر وإصداره المحفوظ</summary><p class="original">{{ item.source.source_namespace }} / {{ item.source.source_book_id }} / {{ item.source.edition_key }}</p><p class="original">بصمة المدخل {{ item.source.source_input_sha256 }}</p><p class="original">بصمة الأرشيف {{ item.source.source_archive_sha256 }}</p><p class="original">بصمة اللقطة {{ item.source_sha256 }}</p></details>
+{% if item.correction_reason %}<p>تصحيح غير محفوظ، سببه: {{ item.correction_reason }}</p>{% endif %}
+<button name="command" value="open:{{ item.source.edition_id }}:{{ item.source.source_row_id }}">معاينة الإحالة {{ forloop.counter }} والعودة</button>
+{% if item.citation_id %}<button name="command" value="correct:{{ item.index }}">تصحيح مصدر الإحالة {{ forloop.counter }}</button>{% endif %}
+<button name="command" value="up:{{ item.index }}"{% if forloop.first %} disabled{% endif %}>تقديم الإحالة {{ forloop.counter }}</button><button name="command" value="down:{{ item.index }}"{% if forloop.last %} disabled{% endif %}>تأخير الإحالة {{ forloop.counter }}</button>
 <button name="command" value="note:{{ item.index }}">تحديث تعليق الإحالة {{ forloop.counter }} من حقل التعليق</button><button name="command" value="remove:{{ item.index }}">حذف الإحالة {{ forloop.counter }} من القائمة الجديدة</button></article>{% empty %}<p>أضف موضعًا واحدًا على الأقل قبل الحفظ.</p>{% endfor %}
 </section>
 <label><input type="checkbox" name="confirm" value="yes">راجعت القائمة الكاملة وصلتها بالجواب وأؤكد حفظها مع إصدار جديد وإبطال أي اعتماد سابق.</label>

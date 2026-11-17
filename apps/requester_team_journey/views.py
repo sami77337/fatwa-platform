@@ -1,5 +1,6 @@
 """Dispatch to existing authenticated views; the panel cookie grants no authority."""
 
+from django.apps import apps as django_apps
 from django.core.exceptions import SuspiciousOperation
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_protect
@@ -46,6 +47,18 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.knowledge_links"):
+            from apps.knowledge_links.views import ACTIONS as KNOWLEDGE_ACTIONS
+            from apps.knowledge_links.views import workspace as knowledge
+
+            if action in KNOWLEDGE_ACTIONS:
+                return _panel(knowledge(request), "cases")
+        if django_apps.is_installed("apps.composite_delivery"):
+            from .composite import ACTIONS as COMPOSITE_ACTIONS
+            from .composite import desk as composite
+
+            if action in COMPOSITE_ACTIONS:
+                return _panel(composite(request), "cases")
         if action in {"answer_media", "answer_media_save", "answer_media_release"}:
             from apps.answer_media.views import staff as answer_media
 
@@ -58,7 +71,7 @@ def staff(request):
             from apps.case_citations.views import desk as citations
 
             return _panel(citations(request), "cases")
-        if action in {"pub_open", "pub_create", "pub_review", "pub_approve", "pub_withdraw", "pub_library", "pub_read"}:
+        if action in {"pub_open", "pub_correct", "pub_create", "pub_review", "pub_approve", "pub_withdraw", "pub_library", "pub_read"}:
             from apps.experimental_publication.views import workspace as publication
 
             return _panel(publication(request), "cases")

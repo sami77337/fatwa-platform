@@ -1,5 +1,6 @@
 """Explicit POST actions composed into the existing guarded staff URL."""
 
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
 from django.middleware.csrf import get_token
@@ -18,6 +19,7 @@ from . import services
 
 ACTIONS = {
     "pub_open",
+    "pub_correct",
     "pub_create",
     "pub_review",
     "pub_approve",
@@ -41,10 +43,18 @@ def workspace(request):
         )
         action = request.POST.get("action")
         required = {"action", "query"} if action == "pub_library" else {"action", "case_ref"}
+        if action == "pub_library" and "category" in request.POST:
+            required.add("category")
         if action == "pub_read":
             required = {"action", "edition_id"}
+            if "query" in request.POST or "category" in request.POST:
+                required |= {"query", "category"}
+        if action == "pub_correct":
+            required.add("edition_id")
         if action == "pub_create":
             required |= {"revision", "evidence_version", "title", "category", "body"}
+            if "source_edition_id" in request.POST:
+                required.add("source_edition_id")
         elif action in {"pub_review", "pub_approve", "pub_withdraw"}:
             required |= {"edition_id", "confirm"}
         fields = _form(request, required)
@@ -62,12 +72,21 @@ def workspace(request):
                     request,
                     "experimental_publication/library.html",
                     {
-                        "publications": services.library(**common, query=fields["query"]),
+                        "publications": services.library(
+                            **common, query=fields["query"], category=fields.get("category", "")
+                        ),
+                        "categories": sorted(
+                            {row["category"] for row in services.library(**common)}
+                        ),
                         "query": fields["query"],
+                        "category": fields.get("category", ""),
                     },
                 )
             )
         if action == "pub_read":
+            for key in ("query", "category"):
+                if len(fields.get(key, "")) > 80:
+                    raise InvalidForm("publication_form_invalid")
             edition = next(
                 (row for row in services.library(**common) if row["id"] == fields["edition_id"]),
                 None,
@@ -75,14 +94,26 @@ def workspace(request):
             if edition is None:
                 return denied("publication_unavailable", 404)
             return private(
-                render(request, "experimental_publication/detail.html", {"edition": edition})
+                render(
+                    request,
+                    "experimental_publication/detail.html",
+                    {
+                        "edition": edition,
+                        "knowledge_enabled": getattr(settings, "FATWA_KNOWLEDGE_LINKS_ENABLED", False) is True,
+                        "query": fields.get("query", ""),
+                        "category": fields.get("category", ""),
+                    },
+                )
             )
         scoped = cases.list_cases(**common)
         selected = next((row for row in scoped if row["public_ref"] == fields["case_ref"]), None)
         if selected is None:
             return denied("publication_unavailable", 404)
         common["case_id"] = selected["case_id"]
-        if action == "pub_create":
+        correction = None
+        if action == "pub_correct":
+            correction = services.correction_draft(**common, edition_id=fields["edition_id"])
+        elif action == "pub_create":
             services.create_edition(
                 **common,
                 expected_revision=_integer(fields["revision"]),
@@ -90,6 +121,7 @@ def workspace(request):
                 title=fields["title"],
                 category=fields["category"],
                 body=fields["body"],
+                source_edition_id=fields.get("source_edition_id"),
             )
         elif action != "pub_open":
             if fields["confirm"] != "yes":
@@ -110,7 +142,8 @@ def workspace(request):
                 "experimental_publication/desk.html",
                 {
                     "selected": services.desk(**common),
-                    "saved": action != "pub_open",
+                    "saved": action not in {"pub_open", "pub_correct"},
+                    "correction": correction,
                 },
             )
         )

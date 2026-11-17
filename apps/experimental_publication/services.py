@@ -131,6 +131,7 @@ def create_edition(
     title,
     category,
     body,
+    source_edition_id=None,
     synthetic_fixtures_only=False,
 ):
     _enabled()
@@ -147,6 +148,8 @@ def create_edition(
         expected_evidence_version=expected_evidence_version,
     ) as (case, identity):
         answer, decision = _approved(case)
+        if source_edition_id is not None:
+            _correction_source(case, source_edition_id)
         number = PublicationEdition.objects.filter(case=case).count() + 1
         if number > 64:
             raise cases.CaseConflict("publication_capacity")
@@ -233,25 +236,68 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
         if case.approved_answer_id:
             answer, _ = _approved(case)
             current = {"text": answer.text, "revision": answer.revision}
+        latest_published = (
+            PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
+            .order_by("-number")
+            .first()
+        )
+        editions = []
+        for edition in PublicationEdition.objects.filter(case=case).order_by("-number"):
+            entry = _projection(edition, editorial=True)
+            entry["can_correct"] = bool(
+                current
+                and latest_published
+                and edition.pk == latest_published.pk
+                and edition.answer_id == case.approved_answer_id
+            )
+            editions.append(entry)
         return {
             "public_ref": case.public_ref,
             "case_id": str(case.pk),
             "revision": case.revision,
             "evidence_version": case.evidence_version,
             "approved": current,
-            "editions": [
-                _projection(e, editorial=True)
-                for e in PublicationEdition.objects.filter(case=case).order_by("-number")
-            ],
+            "editions": editions,
         }
 
 
-def library(*, subject_id, provider, query="", synthetic_fixtures_only=False):
+def _correction_source(case, edition_id):
+    source = (
+        PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
+        .order_by("-number")
+        .first()
+    )
+    if source is None or str(source.pk) != str(edition_id):
+        raise cases.CaseConflict("publication_correction_source_changed")
+    _approved(case, source)
+    _verify(source)
+    if source.citations != _citation_snapshot(source.answer):
+        raise cases.CaseConflict("publication_correction_source_changed")
+    return source
+
+
+def correction_draft(*, case_id, edition_id, subject_id, provider, synthetic_fixtures_only=False):
+    """Prefill a new editorial candidate from an immutable current published edition."""
+    _enabled()
+    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+        source = _correction_source(case, edition_id)
+        return {
+            "source_edition_id": str(source.pk),
+            "source_number": source.number,
+            "title": source.title,
+            "category": source.category,
+            "body": source.body,
+        }
+
+
+def library(*, subject_id, provider, query="", category="", synthetic_fixtures_only=False):
     _enabled()
     cases._text(query, optional=True)
-    if len(query) > 80:
+    cases._text(category, optional=True)
+    if len(query) > 80 or len(category) > 80:
         raise cases.CaseConflict("publication_query_too_long")
     query = normalize_editorial_search(query)
+    category = normalize_editorial_search(category)
     scoped = cases.list_cases(
         subject_id=subject_id, provider=provider, synthetic_fixtures_only=synthetic_fixtures_only
     )
@@ -278,6 +324,8 @@ def library(*, subject_id, provider, query="", synthetic_fixtures_only=False):
             haystack = normalize_editorial_search(
                 " ".join((public["title"], public["category"], public["body"]))
             )
-            if not query or query in haystack:
+            if (not query or query in haystack) and (
+                not category or normalize_editorial_search(public["category"]) == category
+            ):
                 output.append(public)
     return output

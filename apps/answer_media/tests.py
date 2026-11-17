@@ -287,8 +287,10 @@ class AnswerMediaTests(TransactionTestCase):
     def test_populated_guard_migration_reverse_reapply_preserves_originals(self):
         self.save()
         original = list(AnswerPart.objects.values_list("sha256", "original"))
-        call_command("migrate", "answer_media", "0001", verbosity=0)
-        call_command("migrate", "answer_media", "0003", verbosity=0)
+        try:
+            call_command("migrate", "answer_media", "0001", verbosity=0)
+        finally:
+            call_command("migrate", interactive=False, verbosity=0)
         self.assertEqual(list(AnswerPart.objects.values_list("sha256", "original")), original)
         with self.assertRaises(IntegrityError), transaction.atomic():
             AnswerPart.objects.update(source="REPLACEMENT")

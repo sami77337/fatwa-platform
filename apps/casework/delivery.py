@@ -105,6 +105,11 @@ def _prepare(case, *, max_chars, split):
     if type(max_chars) is not int or not 1 <= max_chars <= 6000 or type(split) is not bool:
         raise cases.CaseConflict("invalid_case_delivery_options")
     decision, answer, evidence = _current(case)
+    origin = cases._delivery_origin_for_locked_case(case)
+    if origin["channel"].lower() != "website":
+        # This existing adapter has only a website capability contract. Imported
+        # sources must use the source-aware composite plan or remain held.
+        raise cases.CaseConflict("source_channel_requires_human_delivery")
     manifest = cases._answer_manifest(answer)
     if manifest and manifest["requires_human_delivery"]:
         # This adapter can represent text only. Never silently omit approved

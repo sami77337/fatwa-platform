@@ -193,7 +193,9 @@ class AttachmentTests(TransactionTestCase):
             self.assertEqual(bytes(old_model.objects.get(pk=result["id"]).original), RAW)
         finally:
             executor = MigrationExecutor(connection)
-            executor.migrate([("case_attachments", "0003_remove_caseattachment_ca_size_and_more")])
+            # Reversing this app also removes dependent source-intake schemas.
+            # Restore the complete installed graph before the next test.
+            executor.migrate(executor.loader.graph.leaf_nodes())
         with self.assertRaises(IntegrityError), transaction.atomic():
             CaseAttachment.objects.filter(pk=result["id"]).update(filename="changed.txt")
         self.assertEqual(

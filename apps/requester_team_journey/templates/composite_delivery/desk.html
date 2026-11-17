@@ -1,0 +1,18 @@
+{% extends "casework/base.html" %}
+{% block title %}تجهيز توصيل الجواب المركب{% endblock %}
+{% block content %}
+<h2>تجهيز توصيل الجواب المركب</h2><p>خطة تجريبية محلية لكل الأجزاء؛ لا إرسال خارجي ولا إثبات قراءة. موافقة الإتاحة الخاصة منفصلة عن الإذن الموقّع لتجهيز التوصيل.</p>
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>العودة إلى القضية</button></form>
+<p>{{ selected.public_ref }} · إصدار الجواب {{ prepared.evidence.answer_revision }}</p>
+<p>مصدر الإرجاع المثبت: {{ prepared.origin_channel }} · بصمة الخطة <bdi class="exact">{{ prepared.plan_sha256 }}</bdi></p>
+<ol>{% for part in prepared.parts %}<li>{{ part.kind }} — {{ part.filename|default:"نص الجواب" }} — {{ part.size }} بايت</li>{% endfor %}</ol>
+{% if prepared.plan.status == 'REQUIRES_HUMAN_DECISION' %}<p role="status">قدرة القناة لا تغطي كل الأجزاء. يلزم قرار بشري؛ لن يُحذف جزء أو يُستبدل برابط عام.</p><ul>{% for step in prepared.plan.steps %}<li>{{ step.ordinal }}: {{ step.reason }}</li>{% endfor %}</ul>{% endif %}
+{% if status %}{% include "composite_delivery/status.html" %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_reconcile"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="plan_sha256" value="{{ prepared.plan_sha256 }}"><label><input type="checkbox" name="confirm" value="yes" required>أطلب مراجعة الحجوزات المنتهية فقط، دون إعادة إرسال.</label><button>مطابقة المحاولات غير المحسومة</button></form>
+{% else %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_export"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تنزيل طلب تجهيز الأجزاء</button></form>
+{% if prepared.plan.status != 'REQUIRES_HUMAN_DECISION' %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_stage"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><label for="composite-response">إيصال الإذن الموقّع من جهة التحقق التجريبية</label><textarea id="composite-response" name="response_json" maxlength="16000" required></textarea><label><input type="checkbox" name="confirm" value="yes" required>راجعت خطة جميع الأجزاء وأؤكد تسجيل الإذن الموقّع الحالي فقط.</label><button>تسجيل خطة الأجزاء الموقّعة</button></form>{% endif %}
+{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تحديث خطة التوصيل</button></form>
+{% endblock %}

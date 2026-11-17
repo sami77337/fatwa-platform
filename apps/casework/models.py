@@ -201,3 +201,36 @@ class CaseDelivery(models.Model):
                 condition=Q(max_chars__gte=1, max_chars__lte=6000), name="cw_delivery_text_limit"
             ),
         ]
+
+
+class CaseMediaStorageTransition(models.Model):
+    """Append-only physical storage conversion, independent of substantive case events."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    case = models.ForeignKey(Case, on_delete=models.PROTECT)
+    owner_kind = models.CharField(max_length=16)
+    owner_id = models.UUIDField()
+    from_backend = models.CharField(max_length=32)
+    from_key = models.CharField(max_length=69)
+    to_backend = models.CharField(max_length=32)
+    to_key = models.CharField(max_length=69)
+    sha256 = models.CharField(max_length=64)
+    size = models.PositiveIntegerField()
+    subject_id = models.CharField(max_length=128)
+    provider_id = models.CharField(max_length=128)
+    auth_epoch = models.CharField(max_length=64)
+    transaction_id = models.BigIntegerField(default=0, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(owner_kind__in=("ATTACHMENT", "ANSWER_PART")), name="cw_media_owner"
+            ),
+            models.CheckConstraint(
+                condition=Q(size__gte=1, size__lte=192000), name="cw_media_size"
+            ),
+            models.CheckConstraint(
+                condition=Q(sha256__regex=r"^[a-f0-9]{64}$"), name="cw_media_digest"
+            ),
+        ]

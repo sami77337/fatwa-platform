@@ -17,7 +17,7 @@ from apps.reference_links.bridge import SourceIdentity
 from apps.reference_links.django_adapter import DjangoCatalog
 from apps.reference_links.resolution import Outcome, resolve
 
-from .models import AnswerCitation
+from .models import AnswerCitation, CitationCorrection
 
 MAX_CITATIONS = 12
 
@@ -145,6 +145,7 @@ def save_cited_answer(
     expected_revision,
     expected_evidence_version,
     synthetic_fixtures_only=False,
+    corrections=(),
 ):
     _enabled()
     cases._text(text)
@@ -181,6 +182,24 @@ def save_cited_answer(
             seen.add(key)
             heading = ReferenceHeading.objects.get(edition_id=key[0], source_row_id=key[1])
             checked.append((heading, source, item["editorial_note"]))
+        correction_map = {}
+        if type(corrections) not in (list, tuple) or len(corrections) > MAX_CITATIONS:
+            raise cases.CaseConflict("invalid_citation_corrections")
+        for change in corrections:
+            if type(change) is not dict or set(change) != {"ordinal", "previous_id", "reason"}:
+                raise cases.CaseConflict("invalid_citation_correction")
+            ordinal = change["ordinal"]
+            if type(ordinal) is not int or not 1 <= ordinal <= len(checked):
+                raise cases.CaseConflict("invalid_citation_correction")
+            cases._text(change["reason"])
+            if len(change["reason"]) > 2000 or ordinal in correction_map:
+                raise cases.CaseConflict("invalid_citation_correction")
+            old = AnswerCitation.objects.filter(
+                pk=cases._uuid(change["previous_id"]), answer=previous
+            ).first()
+            if old is None or old.pk in {row.pk for row, _ in correction_map.values()}:
+                raise cases.CaseConflict("citation_correction_lineage_mismatch")
+            correction_map[ordinal] = (old, change["reason"])
         # Same canonical history transition as casework.save_answer, within the
         # existing case lock so the answer and its source snapshots commit together.
         case.answer_revision += 1
@@ -197,9 +216,12 @@ def save_cited_answer(
         case.stage, case.approved_answer = "UNDER_REVIEW", None
         cases._event(case, "SAVE_ANSWER", actor.subject_id, answer=answer)
         for ordinal, (heading, source, note) in enumerate(checked, 1):
-            AnswerCitation.objects.create(
+            citation = AnswerCitation.objects.create(
                 answer=answer, heading=heading, ordinal=ordinal, editorial_note=note, **source
             )
+            if ordinal in correction_map:
+                old, reason = correction_map[ordinal]
+                CitationCorrection.objects.create(citation=citation, previous=old, reason=reason)
         if previous is not None and django_apps.is_installed("apps.answer_media"):
             from apps.answer_media.services import clone_parts_for_new_answer
 
@@ -273,3 +295,80 @@ def read_citations(*, case_id, subject_id, provider, answer_id=None, synthetic_f
                 raise cases.CaseConflict("case_answer_unavailable")
             return []
         return citations_for_locked_answer(answer)
+
+
+def suggest_sources(**kwargs):
+    """Deterministic catalog candidates only; no generated text or scholarly score.
+
+    The caller supplies a short human search phrase. This cannot write an answer,
+    approve one, or claim that a heading establishes the answer's reasoning.
+    """
+    query = kwargs.get("query", "")
+    found = search_sources(**kwargs)  # Authority checked even for empty searches.
+    if len(normalize_title(query).strip()) < 2:
+        return []
+    return [
+        dict(
+            row, status="PROPOSED_REQUIRES_HUMAN_REVIEW", method="EXISTING_NORMALIZED_HEADING_MATCH"
+        )
+        for row in found["results"][:5]
+    ]
+
+
+def read_citation_history(
+    *, case_id, subject_id, provider, before_revision=None, synthetic_fixtures_only=False
+):
+    """Read immutable snapshots, including superseded entries, under current scope.
+
+    A historical snapshot is never passed off as current catalog evidence. It
+    remains readable when the current source cannot be resolved, but not selectable.
+    """
+    _enabled()
+    if before_revision is not None and (type(before_revision) is not int or before_revision < 1):
+        raise cases.CaseConflict("invalid_citation_history_cursor")
+    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+        answers = case.answers.order_by("-revision")
+        if before_revision is not None:
+            answers = answers.filter(revision__lt=before_revision)
+        page = list(answers[:21])
+        history = []
+        for answer in page[:20]:
+            rows = []
+            for row in answer.citations.select_related("correction__previous__answer"):
+                if row.source_sha256 != _digest(row.source):
+                    raise cases.CaseConflict("citation_snapshot_inconsistent")
+                try:
+                    current = _source(row.source["edition_id"], row.source["source_row_id"])
+                    available = current["source_sha256"] == row.source_sha256
+                except cases.CaseConflict:
+                    available = False
+                correction = getattr(row, "correction", None)
+                rows.append(
+                    dict(
+                        id=str(row.pk),
+                        ordinal=row.ordinal,
+                        source=row.source,
+                        source_sha256=row.source_sha256,
+                        editorial_note=row.editorial_note,
+                        current_source_available=available,
+                        correction=None
+                        if correction is None
+                        else dict(
+                            reason=correction.reason,
+                            previous_id=str(correction.previous_id),
+                            previous_revision=correction.previous.answer.revision,
+                            previous_source=correction.previous.source,
+                        ),
+                    )
+                )
+            history.append(
+                dict(
+                    answer_id=str(answer.pk),
+                    revision=answer.revision,
+                    evidence_version=answer.evidence_version,
+                    created_at=answer.created_at,
+                    subject_id=answer.subject_id,
+                    citations=rows,
+                )
+            )
+        return dict(revisions=history, next_before=page[19].revision if len(page) > 20 else None)

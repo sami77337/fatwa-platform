@@ -22,10 +22,11 @@ limits (192000 bytes/file, text65536). No malware scanner is claimed.
 
 `AnswerManifest` pins ordered part UUIDs, kind, MIME, original bytes' SHA-256/size,
 filename and parser metadata. `AnswerPart` stores originals privately as immutable
-PostgreSQL bytes (the bounded synthetic inline adapter); no static/public URL or
+PostgreSQL bytes by default, or validated immutable private filesystem bindings
+when the synthetic adapter is explicitly configured; no static/public URL or
 object-storage credential is introduced. Canonical answer identity supplies the
 author/provider/epoch, answer version, facts version, decision and timestamps.
-Database guards reject update/delete, late append, wrong canonical version, altered
+Database guards reject semantic update/delete, late append, wrong canonical version, altered
 original hash/size and incomplete manifests. A separate metadata guard also rejects
 unsupported MIME/kind/filename combinations, missing validation markers, excess
 fields and out-of-bounds parser metadata. `validate_for_approval(answer)` re-runs
@@ -95,7 +96,31 @@ The isolated HTTP test admits only its exact fixture GET paths into the existing
 the parent campaign supplies and tests the general exact-UUID policy and browser flow.
 
 Required human text, one newly uploaded file per native save, eight-part limit,
-bounded inline storage, complete-response audio playback and lack of a delivery media
+bounded synthetic storage, complete-response audio playback and lack of a delivery media
 adapter are explicit development limits. No organizer policy, production permission,
 AI authorship, external send or accepted fatwa is inferred. Gate B NOT_PASSED,
 C/D/E HOLD, Phase01 BLOCKED; NOT_DEPLOYED.
+
+
+## Durable synthetic bindings (V9)
+
+Non-text parts use the configured private adapter. The human TEXT part always stays
+inline. `raw_for_part(row)` resolves and verifies exact bytes for already-authorized
+internal callers; every preview, approval parser, retained part and cross-editor copy
+uses this contract. Copying an externally stored part creates a new part UUID with
+the same verified immutable pointer, never an inline fallback. The old committed
+owner protects that pointer while the new reference is committed.
+
+Physical conversions use `apps.case_attachments.storage_bindings.migrate_original`
+and the append-only `CaseMediaStorageTransition` audit; see that app's README for
+the explicit closed operator service. Storage backend/key are excluded from the
+scholarly manifest hash, so moving identical bytes leaves version, evidence, decision,
+private release and hash unchanged. Database guards permit only a same-transaction
+audited physical conversion. Text parts cannot be converted. Missing or corrupt
+external originals close previews, approval and reverse conversion.
+
+Migration 0004 preserves existing inline data and backfills its digest key. Reversing
+that schema migration requires all external owners to be explicitly converted back
+to inline first; no external pointer or original is silently discarded.
+`private_availability_for_locked_case(case)` returns only current available/answer
+revision/part-count metadata after the normal release and authority checks.

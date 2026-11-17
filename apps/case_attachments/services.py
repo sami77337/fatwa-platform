@@ -6,11 +6,12 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
-from apps.private_media.storage import StoredOriginal, configured_storage, verify_original
+from apps.private_media.storage import configured_storage
 from apps.private_media.validation import MAX_BYTES as MAX_BYTES
 from apps.private_media.validation import MediaValidationError, validate
 
 from .models import CaseAttachment
+from .storage_bindings import binding_locks, raw_for_owner, stored_fields
 
 MAX_ATTACHMENTS = 32
 
@@ -30,21 +31,18 @@ def _validate(raw, filename, media_type):
 def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fixtures_only=False):
     _enabled()
     media = _validate(raw, filename, media_type)
-    with cases._token_case(token, synthetic_fixtures_only) as case:
+    storage = configured_storage()
+    with (
+        binding_locks(storage, [media.sha256]),
+        cases._token_case(token, synthetic_fixtures_only) as case,
+    ):
         cases._versions(case, expected_revision)
         if case.stage == "NEEDS_CLARIFICATION":
             raise cases.CaseConflict("requester_clarification_still_required")
         if CaseAttachment.objects.filter(case=case).count() >= MAX_ATTACHMENTS:
             raise cases.CaseConflict("attachment_capacity")
         attachment_id = uuid.uuid4()
-        try:
-            original = configured_storage().put(media)
-        except MediaValidationError as exc:
-            raise cases.CaseConflict("private_storage_unavailable") from exc
-        # Current relational schema preserves inline bytes and hash checks. An external
-        # adapter requires an explicitly reviewed pointer migration, never silent fallback.
-        if original.backend != "inline-database-v1" or original.inline != raw:
-            raise cases.CaseConflict("private_storage_backend_not_integrated")
+        pointer = stored_fields(storage, media)
         digest = media.sha256
         text = f"مرفق السائل: {filename}\nSHA256: {digest}\nالحجم: {len(raw)} بايت"
         case.evidence_version += 1
@@ -62,7 +60,7 @@ def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fix
             case=case,
             evidence=evidence,
             event=case.events.get(sequence=case.revision),
-            original=raw,
+            **pointer,
             sha256=digest,
             size=len(raw),
             filename=filename,
@@ -90,14 +88,7 @@ def _metadata(row):
 
 
 def _check(row):
-    raw = bytes(row.original)
-    try:
-        verify_original(raw, row.sha256, row.size)
-        configured_storage().get(
-            StoredOriginal("inline-database-v1", row.sha256, row.sha256, row.size, raw)
-        )
-    except MediaValidationError as exc:
-        raise cases.CaseConflict("attachment_integrity_failed") from exc
+    raw = raw_for_owner(row)
     if (
         len(raw) != row.size
         or row.evidence.case_id != row.case_id

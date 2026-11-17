@@ -51,6 +51,52 @@ def _answer_manifest(answer):
     return manifest_for_locked_answer(answer)
 
 
+def _delivery_origin_for_locked_case(case):
+    """Read durable inbound origin even when its intake UI is disabled.
+
+    Legacy CaseSource uses WEBSITE for the reused intake mechanism. Source-backed
+    cases must resolve their immutable receipt; they may never silently downgrade
+    to website channel capabilities when a composition is missing that schema.
+    """
+    source = case.source
+    if not source.source_event_id.startswith("source:"):
+        values = [str(case.pk), case.requester_id, source.channel, source.source_event_id]
+        return {"channel": source.channel, "identity_sha256": _digest(json.dumps(values))}
+    if not django_apps.is_installed("apps.source_case_intake"):
+        raise CaseConflict("source_origin_schema_unavailable")
+    from apps.source_case_intake.models import EvidenceBinding
+
+    binding = (
+        EvidenceBinding.objects.select_related("receipt", "evidence")
+        .filter(case=case, evidence__version=1, action="CREATED")
+        .first()
+    )
+    if binding is None:
+        raise CaseConflict("source_origin_unavailable")
+    row = binding.receipt
+    if (
+        source.source_event_id != "source:" + str(row.pk)
+        or row.requester_key != case.requester_id
+        or row.original_text != binding.evidence.text
+        or row.original_text != source.original_question
+        or row.sha256 != sha256(bytes(row.raw)).hexdigest()
+        or row.source not in {"website", "telegram", "youtube"}
+    ):
+        raise CaseConflict("source_origin_inconsistent")
+    values = [
+        str(row.pk),
+        row.sha256,
+        row.source,
+        row.account,
+        row.conversation,
+        row.thread,
+        row.sender,
+        row.message_id,
+        str(case.pk),
+    ]
+    return {"channel": row.source, "identity_sha256": _digest(json.dumps(values))}
+
+
 def _guard(ack):
     if ack is not True:
         raise CaseConflict("synthetic_ack_required")
