@@ -105,6 +105,11 @@ def _prepare(case, *, max_chars, split):
     if type(max_chars) is not int or not 1 <= max_chars <= 6000 or type(split) is not bool:
         raise cases.CaseConflict("invalid_case_delivery_options")
     decision, answer, evidence = _current(case)
+    manifest = cases._answer_manifest(answer)
+    if manifest and manifest["requires_human_delivery"]:
+        # This adapter can represent text only. Never silently omit approved
+        # files/audio or pretend the old provider receipt covers those bytes.
+        raise cases.CaseConflict("unsupported_media_requires_human_action")
     prepared = adapter.prepare_text_return(
         title="",
         body=answer.text,
@@ -339,6 +344,10 @@ def _requester_delivery_locked(case, verifier):
     result = {**cases._public(case), "delivery_status": "NOT_STAGED"}
     if case.stage != "ANSWERED":
         result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
+        return result
+    manifest = cases._answer_manifest(case.approved_answer)
+    if manifest and manifest["requires_human_delivery"]:
+        result["delivery_status"] = "UNSUPPORTED_MEDIA_REQUIRES_HUMAN_ACTION"
         return result
     if not CaseDelivery.objects.filter(decision__answer_id=case.approved_answer_id).exists():
         return result

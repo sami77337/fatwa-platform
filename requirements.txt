@@ -10,3 +10,6 @@ typing_extensions==4.16.0
 cryptography==50.0.2
 cffi==2.1.1
 pycparser==3.12
+Pillow==13.0.0
+pypdf==7.1.0
+mutagen==1.48.1

@@ -16,7 +16,14 @@ from apps.mufti_review.identity import IdentityUnavailable, validate_identity
 
 from . import services
 
-ACTIONS = {"citations", "citation_search", "citation_select", "citation_save", "citation_source"}
+ACTIONS = {
+    "citations",
+    "citation_compose",
+    "citation_search",
+    "citation_select",
+    "citation_save",
+    "citation_source",
+}
 
 
 @sensitive_post_parameters("text", "editorial_note")
@@ -31,7 +38,11 @@ def desk(request):
         if request.method != "POST" or action not in ACTIONS:
             raise InvalidForm("citation_action_invalid")
         required = {"action", "case_ref"}
-        if action == "citation_search":
+        if action == "citation_compose":
+            from .composer import FIELDS
+
+            required = FIELDS | ({"confirm"} if "confirm" in request.POST else set())
+        elif action == "citation_search":
             required |= {"query", "edition_id"}
         elif action in {"citation_select", "citation_source"}:
             required |= {"edition_id", "source_row_id"}
@@ -62,6 +73,12 @@ def desk(request):
             provider=provider,
             synthetic_fixtures_only=True,
         )
+        if action in {"citations", "citation_compose"}:
+            from . import composer
+
+            if action == "citations":
+                return composer.start(request, common, actor, provider)
+            return composer.compose(request, common, selected, actor, provider)
         source, message = None, ""
         if action == "citation_save":
             if fields["confirm"] != "yes":

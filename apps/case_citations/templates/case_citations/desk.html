@@ -2,6 +2,7 @@
 {% block title %}إحالات الجواب{% endblock %}
 {% block content %}
 <h2>تحرير جواب بإحالة موثقة إلى الفهرس</h2>
+<p>تُحفظ ملفات الجواب المرتبطة مع الإصدار الجديد عند توفر محرر الملفات. يلزم اعتماد مفتي جديد ولا تنتقل موافقة الإتاحة الخاصة.</p>
 <p>تجربة مغلقة ببيانات اصطناعية. الفهرس يحتوي عناوين ومواضع كتاب 622، وليس نص الكتاب الكامل أو تخريجًا محققًا. مطابقة المصدر تقنية؛ الملاءمة العلمية يراجعها المفتي البشري.</p>
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>العودة إلى القضية</button></form>
 <h3>{{ selected.public_ref }}</h3><p>إصدار الوقائع {{ selected.evidence_version }} · مراجعة القضية {{ selected.revision }}</p>

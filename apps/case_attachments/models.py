@@ -15,6 +15,8 @@ class CaseAttachment(models.Model):
     sha256 = models.CharField(max_length=64)
     size = models.PositiveIntegerField()
     media_type = models.CharField(max_length=40, default="text/plain")
+    kind = models.CharField(max_length=8, default="text")
+    validation_metadata = models.JSONField(default=dict)
     filename = models.CharField(max_length=100)
     source = models.CharField(max_length=24, default="REQUESTER_UPLOAD")
     subject_id = models.CharField(max_length=128)
@@ -22,8 +24,22 @@ class CaseAttachment(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=Q(size__gte=1, size__lte=65536), name="ca_size"),
-            models.CheckConstraint(condition=Q(media_type="text/plain"), name="ca_type"),
+            models.CheckConstraint(condition=Q(size__gte=1, size__lte=192000), name="ca_size"),
+            models.CheckConstraint(
+                condition=Q(
+                    media_type__in=(
+                        "text/plain",
+                        "application/pdf",
+                        "image/jpeg",
+                        "image/png",
+                        "image/webp",
+                        "audio/mpeg",
+                        "audio/mp4",
+                        "audio/wav",
+                    )
+                ),
+                name="ca_type",
+            ),
             models.CheckConstraint(condition=Q(source="REQUESTER_UPLOAD"), name="ca_source"),
             models.CheckConstraint(condition=Q(sha256__regex=r"^[a-f0-9]{64}$"), name="ca_digest"),
         ]

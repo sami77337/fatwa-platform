@@ -1,19 +1,18 @@
 """Bounded attachment intake using the existing case locks and capability authority."""
 
-import re
 import uuid
-from hashlib import sha256
 
 from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
+from apps.private_media.storage import StoredOriginal, configured_storage, verify_original
+from apps.private_media.validation import MAX_BYTES as MAX_BYTES
+from apps.private_media.validation import MediaValidationError, validate
 
 from .models import CaseAttachment
 
-MAX_BYTES = 65536
 MAX_ATTACHMENTS = 32
-_FILENAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_. -]{0,95}\.txt", re.ASCII)
 
 
 def _enabled():
@@ -22,24 +21,15 @@ def _enabled():
 
 
 def _validate(raw, filename, media_type):
-    if type(raw) is not bytes or not 1 <= len(raw) <= MAX_BYTES:
-        raise cases.CaseConflict("attachment_size_invalid")
-    if type(filename) is not str or _FILENAME.fullmatch(filename) is None:
-        raise cases.CaseConflict("attachment_filename_invalid")
-    if media_type != "text/plain":
-        raise cases.CaseConflict("attachment_type_invalid")
     try:
-        text = raw.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise cases.CaseConflict("attachment_encoding_invalid") from exc
-    if not text.strip() or any((ord(c) < 32 and c not in "\r\n\t") or ord(c) == 127 for c in text):
-        raise cases.CaseConflict("attachment_text_invalid")
-    return text
+        return validate(raw, filename, media_type)
+    except MediaValidationError as exc:
+        raise cases.CaseConflict(str(exc)) from exc
 
 
 def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fixtures_only=False):
     _enabled()
-    _validate(raw, filename, media_type)
+    media = _validate(raw, filename, media_type)
     with cases._token_case(token, synthetic_fixtures_only) as case:
         cases._versions(case, expected_revision)
         if case.stage == "NEEDS_CLARIFICATION":
@@ -47,7 +37,15 @@ def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fix
         if CaseAttachment.objects.filter(case=case).count() >= MAX_ATTACHMENTS:
             raise cases.CaseConflict("attachment_capacity")
         attachment_id = uuid.uuid4()
-        digest = sha256(raw).hexdigest()
+        try:
+            original = configured_storage().put(media)
+        except MediaValidationError as exc:
+            raise cases.CaseConflict("private_storage_unavailable") from exc
+        # Current relational schema preserves inline bytes and hash checks. An external
+        # adapter requires an explicitly reviewed pointer migration, never silent fallback.
+        if original.backend != "inline-database-v1" or original.inline != raw:
+            raise cases.CaseConflict("private_storage_backend_not_integrated")
+        digest = media.sha256
         text = f"مرفق السائل: {filename}\nSHA256: {digest}\nالحجم: {len(raw)} بايت"
         case.evidence_version += 1
         evidence = CaseEvidence.objects.create(
@@ -68,7 +66,9 @@ def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fix
             sha256=digest,
             size=len(raw),
             filename=filename,
-            media_type=media_type,
+            media_type=media.media_type,
+            kind=media.kind,
+            validation_metadata=media.metadata,
             subject_id=case.requester_id,
         )
         return _metadata(row)
@@ -81,6 +81,8 @@ def _metadata(row):
         "sha256": row.sha256,
         "size": row.size,
         "media_type": row.media_type,
+        "kind": row.kind,
+        "validation_metadata": row.validation_metadata,
         "source": row.source,
         "created_at": row.created_at,
         "evidence_version": row.evidence.version,
@@ -89,10 +91,15 @@ def _metadata(row):
 
 def _check(row):
     raw = bytes(row.original)
-    _validate(raw, row.filename, row.media_type)
+    try:
+        verify_original(raw, row.sha256, row.size)
+        configured_storage().get(
+            StoredOriginal("inline-database-v1", row.sha256, row.sha256, row.size, raw)
+        )
+    except MediaValidationError as exc:
+        raise cases.CaseConflict("attachment_integrity_failed") from exc
     if (
         len(raw) != row.size
-        or sha256(raw).hexdigest() != row.sha256
         or row.evidence.case_id != row.case_id
         or row.event.case_id != row.case_id
         or row.evidence.kind != "FOLLOWUP"

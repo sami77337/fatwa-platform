@@ -23,6 +23,10 @@ ROUTES = {
     BASE + "staff/logout/": ("POST",),
     BASE + "casework.css": ("GET", "HEAD"),
 }
+PRIVATE_MEDIA_ROUTE = re.compile(
+    r"/casework/(?:staff|status)/(?:attachments|answer-media)/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+)
 LIMITS = {"read": 150, "intake": 10, "login": 10, "requester": 30, "staff": 60}
 
 
@@ -39,10 +43,11 @@ def private(response, *, head=False):
     response["X-Content-Type-Options"] = "nosniff"
     response["Referrer-Policy"] = "same-origin"
     response["X-Robots-Tag"] = "noindex, nofollow, noarchive"
-    response["Content-Security-Policy"] = (
+    response.setdefault("Content-Security-Policy", (
         "default-src 'none'; style-src 'self'; form-action 'self'; "
+        "img-src 'self'; media-src 'self'; frame-src 'self'; "
         "base-uri 'none'; frame-ancestors 'none'"
-    )
+    ))
     if head:
         response.content = b""
     return response
@@ -102,11 +107,14 @@ class CaseworkGuard:
         # get_host() runs. Literal loopback hosts also close DNS-rebinding access.
         if re.fullmatch(r"(?:127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", host) is None:
             return denied("casework_host_invalid", 400)
-        if request.path not in ROUTES:
+        methods = ROUTES.get(request.path)
+        if methods is None and PRIVATE_MEDIA_ROUTE.fullmatch(request.path):
+            methods = ("GET", "HEAD")
+        if methods is None:
             return denied("casework_not_found", 404)
-        if request.method not in ROUTES[request.path]:
+        if request.method not in methods:
             response = denied("casework_method_not_supported", 405)
-            response["Allow"] = ", ".join(ROUTES[request.path])
+            response["Allow"] = ", ".join(methods)
             return response
         if request.META.get("QUERY_STRING"):
             return denied("casework_query_not_supported", 400)

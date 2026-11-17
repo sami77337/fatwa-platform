@@ -187,10 +187,13 @@ class AttachmentTests(TransactionTestCase):
         executor = MigrationExecutor(connection)
         try:
             executor.migrate([("case_attachments", "0001_initial")])
-            self.assertEqual(bytes(CaseAttachment.objects.get(pk=result["id"]).original), RAW)
+            old_model = executor.loader.project_state(
+                [("case_attachments", "0001_initial")]
+            ).apps.get_model("case_attachments", "CaseAttachment")
+            self.assertEqual(bytes(old_model.objects.get(pk=result["id"]).original), RAW)
         finally:
             executor = MigrationExecutor(connection)
-            executor.migrate([("case_attachments", "0002_immutable_guard")])
+            executor.migrate([("case_attachments", "0003_remove_caseattachment_ca_size_and_more")])
         with self.assertRaises(IntegrityError), transaction.atomic():
             CaseAttachment.objects.filter(pk=result["id"]).update(filename="changed.txt")
         self.assertEqual(

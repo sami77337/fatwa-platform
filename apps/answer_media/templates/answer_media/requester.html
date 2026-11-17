@@ -1,0 +1,6 @@
+{% extends "casework/base.html" %}
+{% block title %}الجواب الخاص متعدد الأجزاء{% endblock %}
+{% block content %}<h2>الجواب المعتمد المتاح لك تجريبيًا</h2><p>{{ public_ref }} · إصدار الجواب {{ package.answer_revision }} · الوقائع {{ package.evidence_version }}</p>
+<p class="notice">أذن المفتي بإتاحة هذه النسخة المعتمدة في بوابتك الخاصة. هذا ليس إثبات تسليم من مزود القناة، ولا دليلًا على القراءة أو الاستماع.</p>
+{% include "answer_media/parts.html" with is_staff=False %}
+<a href="/casework/status/">العودة إلى متابعة سؤالي</a>{% endblock %}

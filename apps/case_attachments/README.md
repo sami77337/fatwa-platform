@@ -1,7 +1,7 @@
 # Private synthetic case attachments
 
-Requester uploads a small fabricated UTF-8 `.txt` file from the existing private
-case session. The original bytes, SHA-256, byte count, validated text media type,
+Requester uploads a small fabricated text, PDF, JPEG, PNG, WebP, MP3, M4A or
+WAV file from the existing private case session. The original bytes, SHA-256, byte count, validated text media type,
 safe filename, source, requester identity and timestamp are stored in PostgreSQL.
 There is no static/media URL or filesystem path. Scoped MUFTI users see the same
 attachment from the same case; another requester or case cannot preview/download it.
@@ -32,10 +32,26 @@ action `attachment_list` and the already-authorized `case_ref`. Service interfac
 `upload`, `requester_list/read`, `staff_list/read`. Metadata includes `evidence_version`;
 binary bytes are returned only by authorized reads.
 
-Allowed: UTF-8 plain text, 1–65536 bytes, Latin safe filename ending `.txt`, 32 files
-per case. Empty text, invalid UTF-8, binary controls, wrong media type/filename,
-oversized files, duplicate fields, extra files and stale proofs are rejected.
-Files never create or approve an answer.
+Allowed: UTF-8 plain text up to 65536 bytes; PDF, JPEG, PNG, WebP, MP3, M4A and WAV
+up to 192000 bytes; Latin safe filenames; 32 files per case. Empty/binary text,
+wrong MIME/extension/content, invalid/truncated containers, oversized images,
+animated WebP, active/encrypted PDF, excessive pages/duration, duplicate fields,
+extra files and stale proofs are rejected. Files never create/approve an answer.
+
+Validation is shared with answer media through `apps.private_media.validation`;
+attachments and answer parts remain distinct domain records. Parser metadata is
+stored immutably. Preview uses authorized GET on
+`/casework/status/attachments/<uuid>/` or `/casework/staff/attachments/<uuid>/`.
+These paths require parent URL/guard registration. Every fetch checks current
+capability/staff scope; UUID alone grants nothing. No token appears in URLs.
+Images/audio use native browser controls; PDF uses a sandboxed iframe and a
+scriptless sandboxed media response. Existing POST download preserves original
+bytes. No public/static path is created.
+
+Migration 0003 keeps existing text originals and adds media fields/constraints.
+Populated text rollback/reapply is tested. Once non-text files exist, rolling back
+to text-only constraints must be blocked by PostgreSQL, preserving originals;
+there is no automatic deletion or downgrade of accepted media.
 
 ## Verification
 
@@ -55,8 +71,8 @@ rollback and PostgreSQL immutability.
 ## Deliberate limits
 
 Private BinaryField storage is a bounded synthetic prototype. Decision D-031's
-separate original Object Storage is NOT_IMPLEMENTED. Production storage, scanning,
-PDF/image/audio/video, real personal data, identity policy and deployment remain
+separate original Object Storage is NOT_IMPLEMENTED. Production storage, malware scanning,
+video, real personal data, identity policy and deployment remain
 out of scope. No full attachment/U03 acceptance. Organizer permissions stay closed.
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED.
 NOT_DEPLOYED / GATES_HOLD / ACCEPTANCE_HOLD.

@@ -44,6 +44,8 @@
 </section>{% endif %}
 {% if attachments_enabled %}<form method="post" action="/casework/status/">{% csrf_token %}
 <input type="hidden" name="action" value="attachments"><button type="submit">مرفقات سؤالي</button></form>{% endif %}
+{% if answer_media_enabled %}<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="answer_media"><button type="submit">أجزاء الجواب المتاحة خصوصيًا</button></form>{% endif %}
 <form method="post" action="/casework/status/">
   {% csrf_token %}<input type="hidden" name="action" value="followup">
   <input type="hidden" name="revision" value="{{ result.revision }}">

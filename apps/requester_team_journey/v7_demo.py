@@ -6,7 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 
 
-def main():
+def main(*, multipart=False):
     if os.environ.get("FATWA_PRODUCTION") != "0":
         raise RuntimeError("synthetic profile required")
     os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings.campaign_review"
@@ -39,11 +39,13 @@ def main():
         source_archive_sha256="a" * 64,
         source_input_sha256="b" * 64,
         input_name="synthetic-v7-demo",
-        expected_rows=1,
-        expected_roots=1,
+        expected_rows=2 if multipart else 1,
+        expected_roots=2 if multipart else 1,
         expected_max_depth=1,
     )
     rows = (HeadingRecord("v7-demo-1", 1, None, 1, 1, 1, 1, "1", 1, "باب تجريبي"),)
+    if multipart:
+        rows += (HeadingRecord("v8-demo-2", 2, None, 2, 2, 1, 2, "2", 2, "باب تجريبي ثان"),)
     preview = ingest_catalog(spec, rows)
     ingest_catalog(spec, rows, dry_run=False, expected_checksum=preview.checksum)
     key = secrets.token_hex(16)
@@ -93,21 +95,36 @@ def main():
     settings.FATWA_CASE_CITATIONS_ENABLED = True
     settings.FATWA_EXPERIMENTAL_PUBLICATION_ENABLED = True
     settings.FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY = Authority()
+    if multipart:
+        settings.FATWA_ANSWER_MEDIA_ENABLED = True
+        settings.FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = True
+        from apps.private_media.fixtures import synthetic_files
+
+        output = Path(".local/qa/v8/samples")
+        output.mkdir(parents=True, exist_ok=True)
+        for filename, _, raw in synthetic_files():
+            (output / filename).write_bytes(raw)
+        print("Synthetic image/PDF/audio/text samples:", output)
     sample = Path(".local/qa/v7/sample.txt")
     sample.parent.mkdir(parents=True, exist_ok=True)
     sample.write_text("وقائع اصطناعية إضافية لاستخدام تجربة V7 فقط.\n")
     print("Synthetic only; expires after 45 minutes; server binds loopback only.")
-    print("Requester: http://127.0.0.1:8017/casework/status/")
+    port = 8018 if multipart else 8017
+    print(f"Requester: http://127.0.0.1:{port}/casework/status/")
     print("One-case requester capability:", receipt["token"])
     print("Case:", receipt["public_ref"])
-    print("Staff login: http://127.0.0.1:8017/casework/staff/login/")
+    print(f"Staff login: http://127.0.0.1:{port}/casework/staff/login/")
     for subject, credential in credentials.items():
         print(subject, "temporary credential:", credential)
     print("Synthetic upload:", sample)
     print(
         "No delivery signer or recovery authority configured. Browser test covers signed delivery."
     )
-    call_command("runserver", "127.0.0.1:8017", use_reloader=False)
+    if multipart:
+        print(
+            "Multipart private availability requires separate explicit human release; no provider delivery."
+        )
+    call_command("runserver", f"127.0.0.1:{port}", use_reloader=False)
 
 
 if __name__ == "__main__":
