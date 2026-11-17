@@ -138,8 +138,14 @@ class BrowserHarness:
         return self.submit(page, page.get_by_role("button", name=label, exact=True))
 
     def action(self, page, name):
-        form = page.locator(f'form:has([name="action"][value="{name}"])').first
-        return self.submit(page, form.locator('button[type="submit"],button:not([type])').first)
+        selector = f'form:has([name="action"][value="{name}"])'
+        # Supporting tools can repeat an action inside a closed details element.
+        # Navigate through the persistent current-case tabs when they offer it.
+        tabs = page.locator(".mufti-case-nav").locator(selector)
+        form = tabs.first if tabs.count() else page.locator(selector).first
+        button = form.get_by_role("button").first
+        self.assertTrue(button.is_visible(), f"{name} navigation button must be visible")
+        return self.submit(page, button)
 
     def assert_case_header(self, page, public_ref):
         self.assertEqual(page.locator("#mufti-case-reference").inner_text(), public_ref)
