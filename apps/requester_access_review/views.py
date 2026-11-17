@@ -41,6 +41,9 @@ def requester(request):
         snapshot = services.requester_snapshot(
             token,
             verifier=getattr(settings, "FATWA_CASE_DELIVERY_PROVIDER_VERIFIER", None),
+            show_approved_answer=getattr(
+                settings, "FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED", False
+            ) is True,
             synthetic_fixtures_only=True,
         )
         result = snapshot["case"]
@@ -62,6 +65,7 @@ def requester(request):
                 request, token, f"followup:{result['public_ref']}:{result['revision']}"),
             "review_proof": workspace._binding(request, token, "access-review:" + result["public_ref"]),
             "access_reviews": snapshot["reviews"],
+            "private_answer": snapshot["private_answer"],
             "delivery_label": DELIVERY_LABELS.get(
                 result.get("delivery_status"), "حالة التسليم غير محسومة"
             ),
