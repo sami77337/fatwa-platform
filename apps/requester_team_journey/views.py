@@ -13,6 +13,8 @@ from apps.mufti_review.identity import IdentityUnavailable
 from apps.requester_access_review.views import staff as access_review
 from apps.team_updates.views import inbox as updates_inbox
 from apps.team_workspace.views import workspace as team_workspace
+from apps.transcript_case_links.views import ACTIONS as TRANSCRIPT_ACTIONS
+from apps.transcript_case_links.views import staff as transcript_desk
 
 PANEL_COOKIE = "fatwa_team_panel"
 STAFF = "/casework/staff/"
@@ -44,6 +46,11 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if action in TRANSCRIPT_ACTIONS:
+            response = transcript_desk(request)
+            if response.status_code == 200:
+                _panel(response, "cases")
+            return response
         if action in {"journey_cases", "journey_delivery"}:
             _form(request, {"action"})
             current_staff(request, _provider())

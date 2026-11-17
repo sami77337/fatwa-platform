@@ -55,21 +55,15 @@ same transaction; the previously saved preview remains available as provenance.
 
 ## Integration contract
 
-All changes are inside `apps/transcript_case_links/`. No shared casework models,
-services, guard, campaign dispatcher, URLs or templates were edited.
-
-The runnable additive profile **`apps.transcript_case_links.settings`** inherits
-the exact shared campaign profile, adds this app, prepends its staff-template
-overlay, and selects its small URL dispatcher. The dispatcher handles only
-`transcripts`, `transcript_open`, `transcript_preview`, `transcript_attach` and
-`transcript_example`; every other request delegates to the existing campaign
-staff view. Everything stays on `/casework/staff/` with the unchanged guard,
-request budgets, login cookie path and no-store/noindex/CSP/CSRF protections.
-
-The integration owner can use this additive profile directly, or register its
-app/migrations/template overlay and these explicit actions in the shared campaign
-composition. Do not overwrite shared handlers or bypass the original guard. The
-feature is **not automatically enabled in the unchanged campaign/default profile**.
+The canonical profile **`config.settings.campaign_review`** registers the app,
+migrations and template overlay. `apps.transcript_case_links.settings` and its
+URL module are compatibility aliases of this shared composition. Its existing
+staff dispatcher handles the five explicit transcript actions, preserving the
+protected team editor and all access-review, inbox and delivery actions.
+Everything stays on `/casework/staff/` with the unchanged guard, request budgets,
+login cookie path and no-store/noindex/CSP/CSRF protections. Successful transcript
+actions reset the display preference to cases, so a previous delivery panel does
+not intercept the next case-editor action. Default/public settings are unchanged.
 
 Migrations depend on `casework.0004_case_delivery_guards`. `0001` adds only two
 new tables; `0002` adds reversible guards. Reversing/reapplying `0002` retains
@@ -115,7 +109,12 @@ python infra/dev/with_casework_postgres.py --pg-bin /path/to/postgresql/17/bin \
   python manage.py test apps.transcript_case_links.browser_tests --noinput --verbosity=2
 ```
 
-Browser check needs optional Playwright and `/usr/bin/chromium`. Local evidence:
+Browser check needs optional Playwright and `/usr/bin/chromium`, or a browser
+selected by `FATWA_FASTBUILD_BROWSER`. Chromium sandbox is enabled by default;
+restricted local containers may explicitly set `FATWA_TEST_BROWSER_NO_SANDBOX=1`.
+The dedicated workflow uses sandboxed Chrome and the canonical profile.
+
+Original slice evidence before canonical integration:
 PostgreSQL **17.11**, Python **3.13.16**, Django **5.2.18**; ten focused integration/
 HTTP tests passed, including explicit selection from a multi-question v2 bundle,
 duplicate concurrency, authority isolation, stale

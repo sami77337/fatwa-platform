@@ -17,7 +17,6 @@ from apps.casework_web.views import InvalidForm, _form, _provider
 from apps.fast8_transcript_queue.workbench.services import export_bundle, open_document
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable, validate_identity
-from apps.requester_team_journey.views import staff as campaign_staff
 
 from . import services
 
@@ -64,6 +63,8 @@ def _page(request, provider, identity, *, selected=None, preview=None, message="
 @csrf_protect
 def staff(request):
     if request.method != "POST" or request.POST.get("action") not in ACTIONS:
+        from apps.requester_team_journey.views import staff as campaign_staff
+
         return campaign_staff(request)
     try:
         provider = _provider()

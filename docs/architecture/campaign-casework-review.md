@@ -47,7 +47,18 @@ case scope and auth epoch are rechecked on each action.
 Staff login and requester close rotate the shared CSRF secret. In a browser used
 for both roles, this invalidates the other role's browser-bound cookie; explicitly
 reopen/re-authenticate. Closing a requester browser does not revoke its access
-token. Self-service recovery and transcript-to-case binding remain unavailable.
+token. Self-service recovery remains unavailable.
+
+The same canonical staff dispatcher now accepts reviewed transcript bundles for
+an explicitly selected, authorized case. The `transcript_case_links` app stores
+immutable source bytes and links; its settings/URL names alias this composition.
+Confirming a source question adds its exact text as supplemental evidence,
+invalidates previous approval and delivery basis, and preserves WEBSITE intake.
+Source answers remain unapproved source evidence, never authored answers. Staff
+import cannot satisfy a pending requester clarification. Preview versions,
+identity epochs, case scope, CSRF and append-only database guards are enforced.
+The unchanged 256 KiB request guard contains the 192,000-byte ZIP upload limit.
+See `apps/transcript_case_links/README.md` for the synthetic-only source contract.
 
 Focused checks (pinned requirements, disposable synthetic PostgreSQL):
 

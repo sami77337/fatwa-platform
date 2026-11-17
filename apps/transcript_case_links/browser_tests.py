@@ -1,6 +1,7 @@
 """Real Chromium: scoped staff uploads, confirms, reopens durable transcript evidence."""
 
 import json
+import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -29,7 +30,9 @@ class BindingBrowserTests(LiveServerTestCase):
         with override_settings(FATWA_CASEWORK_IDENTITY_PROVIDER=directory):
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(
-                    executable_path="/usr/bin/chromium", headless=True, args=["--no-sandbox"]
+                    executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER", "/usr/bin/chromium"),
+                    headless=True,
+                    chromium_sandbox=os.environ.get("FATWA_TEST_BROWSER_NO_SANDBOX") != "1",
                 )
                 try:
                     for receipt, width, height in ((mobile, 320, 780), (desktop, 1280, 900)):

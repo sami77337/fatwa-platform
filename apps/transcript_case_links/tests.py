@@ -269,6 +269,29 @@ class BindingTests(TransactionTestCase):
 
 @override_settings(FATWA_CASEWORK_WEB_ENABLED=True)
 class BindingHTTPTests(TransactionTestCase):
+    def test_transcript_navigation_returns_from_delivery_to_guarded_case_editor(self):
+        page = self.login()
+        self.assertEqual(
+            post(self.client, "/casework/staff/", {"action": "journey_delivery"}, page).status_code,
+            303,
+        )
+        page = self.client.get("/casework/staff/")
+        page = post(
+            self.client,
+            "/casework/staff/",
+            {"action": "transcript_open", "case_ref": self.receipt["public_ref"]},
+            page,
+        )
+        self.assertContains(page, "ربط سؤال من تفريغ")
+        page = post(
+            self.client,
+            "/casework/staff/",
+            {"action": "open", "case_ref": self.receipt["public_ref"]},
+            page,
+        )
+        self.assertContains(page, 'id="answer-text"')
+        self.assertNotContains(page, 'id="prepare-form"')
+
     def setUp(self):
         self.client = Client(
             enforce_csrf_checks=True, REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1"
