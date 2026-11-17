@@ -7,7 +7,7 @@ from hashlib import sha256
 
 from django.utils import timezone
 
-from apps.casework import services as cases
+from apps.casework import delivery, services as cases
 from apps.delivery_queue.models import RequesterTrackingToken
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 
@@ -32,13 +32,19 @@ def _verify_binding(review, case):
         raise cases.CaseConflict("access_review_resolution_invalid")
 
 
-def requester_snapshot(token, *, synthetic_fixtures_only=False):
-    with cases._token_case(token, synthetic_fixtures_only) as case:
+def requester_snapshot(token, *, verifier=None, synthetic_fixtures_only=False):
+    """Read access reviews and signed delivery state under one scoped snapshot.
+
+    The verifier can only come from trusted server settings, never requester input.
+    Missing trust configuration intentionally yields an unverified status.
+    """
+    with delivery._token_case(token, synthetic_fixtures_only) as case:
+        result = delivery._requester_delivery_locked(case, verifier)
         reviews = list(AccessReview.objects.filter(case=case).select_related("grant")
                        .order_by("-created_at")[:10])
         for review in reviews:
             _verify_binding(review, case)
-        return {"case": cases._public(case), "reviews": [_public(review) for review in reviews]}
+        return {"case": result, "reviews": [_public(review) for review in reviews]}
 
 
 def request_review(*, token, reason, expected_case_ref, synthetic_fixtures_only=False):
