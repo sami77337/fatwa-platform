@@ -10,6 +10,7 @@ from django.db import DatabaseError, connection, transaction
 from django.http import JsonResponse
 
 from apps.intake_workflow.guards import SyntheticWriteDenied, require_owned_database
+from apps.platform_recovery.integration import MaintenanceUnavailable, require_admission
 
 from .models import ThrottleBucket
 
@@ -59,6 +60,9 @@ def denied(code, status):
 
 
 def _budget(request):
+    # Even GET consumes a durable budget. A strict composition missing the outer
+    # maintenance middleware must fail before opening this native transaction.
+    require_admission()
     group = "read"
     if request.method == "POST":
         if request.path == BASE:
@@ -130,6 +134,6 @@ class CaseworkGuard:
                 response = denied("casework_rate_limited", 429)
                 response["Retry-After"] = "60"
                 return response
-        except (DatabaseError, SyntheticWriteDenied):
+        except (DatabaseError, SyntheticWriteDenied, MaintenanceUnavailable):
             return denied("casework_store_unavailable", 503)
         return private(self.get_response(request), head=request.method == "HEAD")
