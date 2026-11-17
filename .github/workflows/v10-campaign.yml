@@ -83,7 +83,8 @@ jobs:
           printf '/usr/lib/postgresql/%s/bin\n' "$PG_EXPECTED_MAJOR" >> "$GITHUB_PATH"
       - name: Install browser driver on the browser matrix leg
         if: matrix.postgres == '17'
-        run: python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+        run: |
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
       - name: Verify connected product and full recovery in fresh owned clusters
         env:
           FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
