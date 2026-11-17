@@ -119,3 +119,9 @@ No host packages, production settings or GitHub protections were changed. The
 PGDG index returned HTTP403 and apt had no package candidates; locally extracted
 build tools and the verified Debian source were used instead. These preparation
 failures are not test passes.
+
+The first complete verifier invocation on `43c9c4c` failed before Django test
+execution on both majors: the worker was launched by file path, so its Python
+import path omitted the repository root (`No module named config`). The launcher
+now invokes that worker as `-m infra.dev.v12_verify`. No application assertion was
+reported as passed by that failed invocation; both matrix legs must run again.

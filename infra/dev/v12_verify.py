@@ -60,7 +60,7 @@ def main():
     ordinary = "config.settings.campaign_review"
     stages = (
         ("functional-security", ordinary,
-         ["infra/dev/v12_verify.py", "--pg-bin", pg_bin, "--major", args.major,
+         ["-m", "infra.dev.v12_verify", "--pg-bin", pg_bin, "--major", args.major,
           "--functional-worker"]),
         ("strict-recovery", ordinary,
          ["-m", "apps.platform_recovery.v12_recovery_tests", "--pg-bin", pg_bin]),
