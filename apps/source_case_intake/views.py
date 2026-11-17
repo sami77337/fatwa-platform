@@ -44,6 +44,7 @@ SALT = "fatwa.source-desk.form.v1"
 
 
 def _page(request, *, status=200, **context):
+    request._mufti_workspace_error = status >= 400
     get_token(request)
     return private(render(request, "source_case_intake/desk.html", context, status=status))
 

@@ -32,6 +32,9 @@ ACTIONS = {
 
 
 def _page(request, *, code=200, **context):
+    # A denial page carries no case data. Do not re-enter the scoped frame's
+    # failing identity lookup while rendering the original denial.
+    request._mufti_workspace_error = code >= 400
     get_token(request)
     return private(render(request, "composite_delivery/control.html", context, status=code))
 

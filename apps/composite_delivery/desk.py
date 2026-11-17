@@ -306,6 +306,11 @@ def apply_desk_action(
 ):
     """Optimistic case/plan check and action occur under the same case/queue locks."""
     services._enabled()
+    if action in {"composite_stage", "composite_reconcile"} and not isinstance(
+        getattr(settings, "FATWA_COMPOSITE_DELIVERY_PROVIDER_VERIFIER", None),
+        Ed25519ProviderEventVerifier,
+    ):
+        raise cases.CaseConflict("composite_provider_verifier_unavailable")
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         cases._versions(case, revision, evidence_version)
         prepared = services._prepare(case, subject_id, provider)

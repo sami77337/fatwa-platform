@@ -15,6 +15,7 @@ REFERENCE = re.compile(r"FT-[0-9]{4}-[A-F0-9]{20}")
 
 TABS = (
     ("overview", "case_workspace", "القضية والمراجعة", None),
+    ("origins", "source_timeline", "أصل الأحداث وتسلسلها", "FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED"),
     ("attachments", "attachment_list", "مرفقات الوقائع", "FATWA_CASE_ATTACHMENTS_ENABLED"),
     ("citations", "citations", "الإحالات العلمية", "FATWA_CASE_CITATIONS_ENABLED"),
     ("answer", "answer_media", "أجزاء الجواب والإتاحة", "FATWA_ANSWER_MEDIA_ENABLED"),
@@ -24,6 +25,8 @@ TABS = (
 
 
 def _active(action):
+    if action.startswith("source_"):
+        return "origins"
     if action.startswith("attachment_"):
         return "attachments"
     if action.startswith("citation"):
@@ -106,6 +109,7 @@ def case_workspace(request):
     """
     if (
         getattr(settings, "FATWA_MUFTI_WORKSPACE_ENABLED", False) is not True
+        or getattr(request, "_mufti_workspace_error", False) is True
         or request.path != "/casework/staff/"
         or request.method != "POST"
         or "case_ref" not in request.POST

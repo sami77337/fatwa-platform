@@ -18,6 +18,8 @@ INSTALLED_APPS = [
     "apps.knowledge_links",
     "apps.composite_delivery",
     "apps.library_preview",
+    "apps.requester_portal",
+    "apps.mufti_workspace",
 ]
 # Explicit, separate opt-ins for the closed synthetic V7 workflow.
 FATWA_CASE_ATTACHMENTS_ENABLED = False
@@ -26,12 +28,14 @@ FATWA_ANSWER_MEDIA_ENABLED = False
 FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = False
 FATWA_MEDIA_STORAGE_MIGRATION_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_ENABLED = False
+FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED = False
 FATWA_KNOWLEDGE_LINKS_ENABLED = False
 FATWA_KNOWLEDGE_LINKS_AUTHORITY = None
 FATWA_COMPOSITE_DELIVERY_ENABLED = False
 FATWA_COMPOSITE_DELIVERY_CAPABILITIES = None
 FATWA_COMPOSITE_DELIVERY_PROVIDER_VERIFIER = None
 FATWA_MUFTI_WORKSPACE_ENABLED = False
+FATWA_REQUESTER_PORTAL_ENABLED = False
 FATWA_LIBRARY_PREVIEW_ENABLED = False
 FATWA_LIBRARY_PREVIEW_POLICY = None
 FATWA_EXPERIMENTAL_PUBLICATION_ENABLED = False
@@ -51,6 +55,9 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 1
 TEMPLATES = deepcopy(TEMPLATES)  # noqa: F405
 TEMPLATES[0]["OPTIONS"]["context_processors"].append(
     "apps.requester_team_journey.context.connected_navigation"
+)
+TEMPLATES[0]["OPTIONS"]["context_processors"].append(
+    "apps.mufti_workspace.context.case_workspace"
 )
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",

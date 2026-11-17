@@ -191,6 +191,12 @@ class OriginStorageDeliveryTests(CaseDeliveryFixture, TransactionTestCase):
         page = post(client, "/casework/staff/", base, page)
         self.assertEqual(page.status_code, 200, page.content)
         prepared = composite.prepare_composite_delivery(**self.staff(self.source))
+        current = cases.read_case(**self.staff(self.source))
+        base.update(
+            revision=str(current["revision"]),
+            evidence_version=str(current["evidence_version"]),
+            plan_sha256=prepared["plan_sha256"],
+        )
         signed = json.dumps(
             {
                 "request_sha256": prepared["plan_sha256"],
