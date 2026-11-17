@@ -1,0 +1,27 @@
+{% extends "casework/base.html" %}
+{% block title %}محاكاة التوصيل المحلية — اصطناعي فقط{% endblock %}
+{% block content %}
+<h2>محاكاة التوصيل المحلية — بيانات اصطناعية فقط</h2>
+<p>هذه تجربة محلية بلا إرسال خارجي. إذن الإرجاع مستقل عن اعتماد الجواب الشرعي، وتقارير المحاكي ليست قراءة أو استماعًا ولا دليل وصول عبر قناة حقيقية.</p>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+{% if desk %}
+<p><bdi>{{ desk.public_ref }}</bdi> · السجل {{ desk.revision }} · الوقائع {{ desk.evidence_version }}</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="case_workspace"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>العودة إلى القضية واعتماد الجواب البشري</button></form>
+{% if desk.blocked %}<p role="status">{{ desk.blocked }}</p>{% else %}
+<p>إصدار الجواب {{ desk.answer_revision }} · أصل الإرجاع {{ desk.origin.label }} · بصمة الخطة <bdi class="exact">{{ desk.plan_sha256 }}</bdi></p>
+<p>{{ desk.permission }}</p>
+{% if desk.requires_human %}<p>تحتاج الخطة أو نتائجها إلى مراجعة بشرية. لا يُحذف جزء غير مدعوم ولا يُحوّل إلى رابط عام.</p>{% endif %}
+{% if not desk.staged and desk.plan_status == 'PLANNED_NOT_SENT' %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "pilot_workbench/pins.html" %}<input type="hidden" name="action" value="pilot_authorize"><label><input type="checkbox" name="confirm" value="yes" required>راجعت خطة جميع الأجزاء، وأطلب إذن إرجاع اصطناعيًا منفصلًا لهذه النسخة فقط. هذا لا يعتمد جوابًا شرعيًا ولا يرسل شيئًا.</label><button>تأكيد إذن الإرجاع التجريبي</button></form>
+{% endif %}
+{% if desk.status %}<p>تقارير محاكية موقّعة: {{ desk.status.verified_parts }} من {{ desk.status.expected_parts }} أجزاء. لا يوجد إثبات قراءة.</p>{% endif %}
+<ol>{% for part in desk.parts %}<li><h3>{{ part.kind_label }} — {{ part.filename|default:"نص الجواب" }}</h3><p>{{ part.size }} بايت · <bdi class="exact">{{ part.sha256 }}</bdi></p><p>{{ part.state_label }}</p><p>{{ part.capability_reason }}</p>
+{% if part.pilot_memory_missing %}<p>ذاكرة العامل لهذه المحاولة غير متاحة؛ لن تُنشأ محاولة بديلة. استخدم مكتب التوصيل لمراجعة الحالة.</p>{% endif %}
+{% if part.pilot_outcomes %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "pilot_workbench/pins.html" %}<input type="hidden" name="action" value="pilot_report"><input type="hidden" name="part_id" value="{{ part.id }}"><input type="hidden" name="expected_state" value="{{ part.state }}"><label>نتيجة محلية لهذا الجزء<select name="outcome" required>{% for outcome in part.pilot_outcomes %}<option value="{{ outcome }}">{% if outcome == 'ACCEPTED' %}قبول المحاكي فقط — غير مؤكد{% elif outcome == 'DELIVERED' %}المحاكي يبلغ التسليم{% else %}المحاكي يبلغ الفشل — مراجعة بشرية{% endif %}</option>{% endfor %}</select></label><label><input type="checkbox" name="confirm" value="yes" required>أختار هذا التقرير الاصطناعي للجزء الحالي؛ لا إرسال خارجي ولا إعادة محاولة.</label><button>تسجيل تقرير المحاكي لهذا الجزء</button></form>{% endif %}
+</li>{% endfor %}</ol>
+{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pilot_open"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>تحديث المحاكاة المحلية</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_open"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>فتح مكتب التوصيل ومراجعة المحاولات</button></form>
+{% endif %}
+{% endblock %}
