@@ -16,6 +16,7 @@ from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
+from apps.platform_recovery.integration import mutation_service
 from apps.private_media.storage import configured_storage
 
 from .adapters import IntakeError, SourceContext, digest, project
@@ -50,6 +51,7 @@ def _message_key(source, account, conversation, message_id):
     return digest(source, account, conversation, message_id)
 
 
+@mutation_service
 def capture(*, raw: bytes, context: SourceContext, synthetic_fixtures_only=False) -> SourceReceipt:
     """Persist immutable raw bytes, including invalid input and changed retries."""
     if connection.in_atomic_block:
@@ -158,6 +160,7 @@ def _followup(row, case_id, token, audit=None):
     return _result(row)
 
 
+@mutation_service
 def process(*, receipt_id, token=None, synthetic_fixtures_only=False):
     """Apply once, or preserve a review ticket; safe to retry after process failure."""
     _guard(synthetic_fixtures_only)
@@ -198,6 +201,7 @@ def process(*, receipt_id, token=None, synthetic_fixtures_only=False):
         return _followup(row, parent.case_id, token)
 
 
+@mutation_service
 def ingest(*, raw, context, token=None, synthetic_fixtures_only=False):
     """Trusted offline entry point. No webhook signature verification is implied."""
     if connection.in_atomic_block:
@@ -213,6 +217,7 @@ def _reviewer(provider, subject_id):
         raise IntakeError("source_review_access_denied") from exc
 
 
+@mutation_service
 def review_queue(*, subject_id, provider, synthetic_fixtures_only=False):
     _guard(synthetic_fixtures_only)
     _reviewer(provider, subject_id)
@@ -222,6 +227,7 @@ def review_queue(*, subject_id, provider, synthetic_fixtures_only=False):
     return [{**_result(row), **_origin(row)} for row in rows]
 
 
+@mutation_service
 def resolve_review(
     *,
     receipt_id,
@@ -295,6 +301,7 @@ def resolve_review(
         return result
 
 
+@mutation_service
 def attach_fixture(
     *,
     receipt_id,
@@ -382,6 +389,7 @@ def _origin(row):
     }
 
 
+@mutation_service
 def staff_origins(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     """Authorized desk projection; source IDs are text, never trusted HTML/URLs."""
     _guard(synthetic_fixtures_only)
@@ -401,6 +409,7 @@ def staff_origins(*, case_id, subject_id, provider, synthetic_fixtures_only=Fals
         ]
 
 
+@mutation_service
 def staff_raw(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False):
     _guard(synthetic_fixtures_only)
     row = _receipt(receipt_id)

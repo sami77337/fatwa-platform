@@ -1,20 +1,25 @@
 """Signed MUFTI decisions to the owned PostgreSQL queue; no sender or keys."""
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from hashlib import sha256
 from hmac import compare_digest
-import json
 
 from django.db import transaction
 from django.utils import timezone
+
 from apps.delivery_planner.approval import CurrentEvidence, require_return_approval
 from apps.delivery_planner.planner import Authority, Capabilities, Choice, Plan, Step, plan_delivery
 from apps.delivery_planner.segmentation import TextSegment, parts_for_delivery
 from apps.delivery_planner.trusted_identity import (
-    SignedApprovalReceipt, Ed25519ApprovalVerifier, canonical_plan_sha256,
+    Ed25519ApprovalVerifier,
+    SignedApprovalReceipt,
+    canonical_plan_sha256,
 )
+from apps.platform_recovery.integration import mutation_service
+
 from . import services as q
 from .models import ApprovalClaim, DeliveryIntent, SignedDeliveryContext
 
@@ -100,6 +105,7 @@ def _verify_current_claim(claim, verify_receipt, read_current_evidence):
     return plan
 
 
+@mutation_service
 def commit_signed_approved_plan(*, receipt, evidence, plan, verify_receipt, read_current_evidence=None):
     """Reverify after acquiring commit locks; preserve the existing fixture API.
 
@@ -133,6 +139,7 @@ def commit_signed_approved_plan(*, receipt, evidence, plan, verify_receipt, read
         verify_approval=verify_after_lock, signed_context=context)
 
 
+@mutation_service
 def reserve_signed_plan(*, plan_fingerprint, worker_id, verify_worker, verify_receipt,
                         read_current_evidence, lease_seconds=60):
     """Authorize this worker for this plan, then recheck signed current evidence."""
@@ -167,6 +174,7 @@ class PreparedTextReturn:
     segments: tuple[TextSegment, ...]
 
 
+@mutation_service
 def prepare_text_return(*, title, body, evidence, source_peer_key, capabilities,
                         explicit_human_choice=False):
     """Pure preview: keep the body exact and bind title+body to human evidence.
@@ -197,6 +205,7 @@ def prepare_text_return(*, title, body, evidence, source_peer_key, capabilities,
                               explicit_human_choice, plan, segments)
 
 
+@mutation_service
 def resolve_reserved_text(*, lease, prepared, verify_receipt, read_current_evidence):
     """Read-only final readiness check, not a network dispatch or send permit."""
     if (not isinstance(lease, q.WorkerLease) or not q._hex(lease.intent_key)

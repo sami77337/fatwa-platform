@@ -21,6 +21,7 @@ from apps.intake_workflow.guards import (
     require_synthetic_write,
     validate_write_configuration,
 )
+from apps.platform_recovery.integration import mutation_context, mutation_service, require_admission
 
 from .models import (
     ApprovalClaim,
@@ -95,6 +96,7 @@ def _event_ref(prefix, value):
 
 
 def _postgres_only():
+    require_admission()
     # The existing guard checks explicit development flags before opening SQL,
     # then verifies the actual DB identity, ownership and synthetic schema.
     if connection.vendor != "postgresql":
@@ -114,6 +116,7 @@ def _postgres_only():
         raise QueueConflict("synthetic_database_not_authorized") from exc
 
 
+@mutation_context
 @contextmanager
 def synthetic_queue_atomic():
     """Compose case + queue writes after the sole ownership guard, never bypass it.
@@ -181,6 +184,7 @@ def _verify_locked_head(head, *, check_states=True):
     return head.sequence, head.digest
 
 
+@mutation_service
 def verify_audit_chain():
     _postgres_only()
     with transaction.atomic():
@@ -230,6 +234,7 @@ def _validate_manifest(claim, rows):
         raise QueueConflict("plan_manifest_integrity_mismatch")
 
 
+@mutation_service
 def commit_approved_plan(*, receipt_id, nonce, approval_fingerprint, plan_fingerprint,
                          case_key, answer_revision, provider, expires_at, parts,
                          verify_approval, signed_context=None):
@@ -311,6 +316,7 @@ def commit_approved_plan(*, receipt_id, nonce, approval_fingerprint, plan_finger
         return tuple(rows)
 
 
+@mutation_service
 def claim_next(*, provider, worker_id, lease_seconds=60, plan_fingerprint=None, verify_claim=None):
     """Claim a single row; signed plans additionally require post-lock verification."""
     _postgres_only()
@@ -353,6 +359,7 @@ def _authenticate_attempt(intent, lease):
         raise QueueConflict("worker_lease_mismatch")
 
 
+@mutation_service
 def record_receipt(*, lease, receipt_reference, provider_message_id, reported, verify_provider_receipt,
                    signed_evidence=None):
     """Exact signed-event replay is idempotent, but still authenticates its attempt."""
@@ -430,6 +437,7 @@ def record_receipt(*, lease, receipt_reference, provider_message_id, reported, v
         return intent
 
 
+@mutation_service
 def quarantine_expired_leases(*, now=None, limit=100, plan_fingerprint=None):
     """Quarantine uncertainty without retry; optionally restrict to one exact plan."""
     _postgres_only()
@@ -474,6 +482,7 @@ def _summary_from_rows(claim, rows):
         uncertain, counts["STAGED"], counts["LEASED"], complete, state, accepted)
 
 
+@mutation_service
 def summarize_plan(plan_fingerprint):
     _postgres_only()
     if not _hex(plan_fingerprint):

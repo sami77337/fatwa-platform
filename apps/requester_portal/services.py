@@ -5,6 +5,7 @@ from django.conf import settings
 
 from apps.casework import delivery
 from apps.casework import services as cases
+from apps.platform_recovery.integration import mutation_service
 from apps.requester_access_review import services as access
 
 LABELS = {
@@ -44,6 +45,7 @@ def _delivery_state(status, summary):
     return {"state": state, "label": LABELS[state], "summary": summary, "read_confirmed": False}
 
 
+@mutation_service
 def snapshot(*, token, synthetic_fixtures_only=False):
     enabled()
     # Same case/queue lock order as V9. Nested existing service calls participate
@@ -169,6 +171,7 @@ def snapshot(*, token, synthetic_fixtures_only=False):
         return result
 
 
+@mutation_service
 def submit_reply(*, token, text, expected_revision, attachment=None, synthetic_fixtures_only=False):
     """Append a literal reply and optional file atomically using existing services.
 

@@ -3,6 +3,7 @@
 No function here issues, rotates, revokes, delivers, or restores a capability.
 Private core context managers are intentionally reused at the pinned V6 boundary.
 """
+
 from hashlib import sha256
 
 from django.apps import apps as django_apps
@@ -15,6 +16,7 @@ from apps.delivery_queue.models import RequesterTrackingToken
 from apps.delivery_queue.services import QueueConflict
 from apps.delivery_queue.signed_provider_receipts import Ed25519ProviderEventVerifier
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
+from apps.platform_recovery.integration import mutation_service
 
 from .models import AccessReview
 
@@ -76,6 +78,7 @@ def _requester_history(case, private_answer):
     return history
 
 
+@mutation_service
 def requester_snapshot(
     token, *, verifier=None, show_approved_answer=False, synthetic_fixtures_only=False
 ):
@@ -172,6 +175,7 @@ def _composite_delivery_locked(case, availability):
         return None
 
 
+@mutation_service
 def request_review(*, token, reason, expected_case_ref, synthetic_fixtures_only=False):
     if type(reason) is not str or reason not in REASONS:
         raise cases.CaseConflict("access_review_reason_invalid")
@@ -187,6 +191,7 @@ def request_review(*, token, reason, expected_case_ref, synthetic_fixtures_only=
         return {**_public(review), "created": created}
 
 
+@mutation_service
 def staff_queue(*, subject_id, provider, synthetic_fixtures_only=False):
     cases._guard(synthetic_fixtures_only)
     try:
@@ -212,6 +217,7 @@ def staff_queue(*, subject_id, provider, synthetic_fixtures_only=False):
     return rows
 
 
+@mutation_service
 def advance_review(*, review_id, subject_id, provider, expected_revision, action,
                    synthetic_fixtures_only=False):
     cases._guard(synthetic_fixtures_only)

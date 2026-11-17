@@ -4,12 +4,13 @@ The browser's public reference and opaque credential never select the requester.
 A server-configured, externally verified identity assertion must bind both the
 requester and the exact case. No credential issuer or private key exists here.
 """
+
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from hashlib import sha256
 from hmac import compare_digest
-import re
 
 from django.db import transaction
 from django.utils import timezone
@@ -17,6 +18,7 @@ from django.utils import timezone
 from apps.casework import services as cases
 from apps.casework.models import Case
 from apps.delivery_queue.models import RequesterTrackingToken
+from apps.platform_recovery.integration import mutation_service
 
 from .models import UsedRecoveryAssertion
 
@@ -88,6 +90,7 @@ def _valid(attestation, authority, case, now):
     )
 
 
+@mutation_service
 def recover_lost_access(
     *, public_ref, credential, authority, synthetic_fixtures_only=False
 ):

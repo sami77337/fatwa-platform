@@ -2,7 +2,7 @@
 
 from django.http import JsonResponse
 
-from .integration import MaintenanceUnavailable, mutation_scope
+from .integration import MaintenanceUnavailable, mutation_scope, required
 
 
 def unavailable():
@@ -26,7 +26,7 @@ class MaintenanceGuard:
             with mutation_scope():
                 response = self.get_response(request)
                 # No synchronous admission lease can be lent to a later iterator.
-                if response.streaming:
+                if required() and response.streaming:
                     response.close()
                     return unavailable()
                 return response

@@ -1,11 +1,14 @@
 """Sole Wave7 write/ownership guard. No caller-supplied scope or connection config."""
-from contextlib import contextmanager
-from dataclasses import dataclass
 import os
 import re
+from contextlib import contextmanager
+from dataclasses import dataclass
 
 from django.conf import settings
 from django.db import DatabaseError, connections, transaction
+
+from apps.platform_recovery.integration import mutation_context, mutation_service, require_admission
+
 from .contracts import CONTRACT_VERSION, DATABASE_ROLE, SOURCE_CONFIG_ID, SYNTHETIC_SCOPE
 
 OWNERSHIP_TABLE = 'wave7_synthetic_ownership'
@@ -113,6 +116,7 @@ def require_owned_database(*, synthetic_fixtures_only: bool = False,
 
 def require_synthetic_write(*, synthetic_fixtures_only: bool = False,
                             using: str = 'default') -> WriteContext:
+    require_admission()
     context = require_owned_database(synthetic_fixtures_only=synthetic_fixtures_only, using=using)
     with connections[using].cursor() as cursor:
         cursor.execute("SELECT count(*) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid "
@@ -130,6 +134,7 @@ def require_synthetic_write(*, synthetic_fixtures_only: bool = False,
     return context
 
 
+@mutation_service
 def initialize_synthetic_database(*, synthetic_fixtures_only: bool = False,
                                   using: str = 'default') -> WriteContext:
     """Explicit empty-DB claim; existing owned data is checked and never reset."""
@@ -191,6 +196,7 @@ def initialize_synthetic_database(*, synthetic_fixtures_only: bool = False,
                 cursor.execute('SELECT pg_advisory_unlock(73907, 1705)')
 
 
+@mutation_context
 @contextmanager
 def synthetic_atomic(*, synthetic_fixtures_only: bool = False, using: str = 'default'):
     """Canonical E1/E2/E3 unit of work: sole guard BEFORE transaction.atomic()."""
@@ -204,4 +210,5 @@ def synthetic_atomic(*, synthetic_fixtures_only: bool = False, using: str = 'def
 
 def require_owned_migration(sender, using, **kwargs):
     """Registered only when the separate Wave7 dev/test app is installed."""
+    require_admission()
     require_owned_database(synthetic_fixtures_only=True, using=using)

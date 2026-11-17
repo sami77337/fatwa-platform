@@ -8,6 +8,7 @@ from apps.casework import services as cases
 from apps.casework.models import Case
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import resolve_identity
+from apps.platform_recovery.integration import mutation_service
 
 from . import services as intake
 from .adapters import IntakeError
@@ -60,6 +61,7 @@ def _summary(row):
     }
 
 
+@mutation_service
 def inbox(
     *,
     subject_id,
@@ -146,6 +148,7 @@ def inbox(
     }
 
 
+@mutation_service
 def detail(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, candidates=True):
     _actor(subject_id, provider, synthetic_fixtures_only)
     with synthetic_queue_atomic():
@@ -214,6 +217,7 @@ def detail(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, c
         }
 
 
+@mutation_service
 def timeline(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     """Canonical evidence order, retaining origin and file associations without copying facts."""
     _actor(subject_id, provider, synthetic_fixtures_only)
@@ -257,6 +261,7 @@ def timeline(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             }
 
 
+@mutation_service
 def record_note(
     *,
     receipt_id,
@@ -328,6 +333,7 @@ def record_note(
         return sequence
 
 
+@mutation_service
 def resume(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False):
     """Resume the existing deterministic pipeline after a failed apply, never override review."""
     _actor(subject_id, provider, synthetic_fixtures_only)

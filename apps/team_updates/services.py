@@ -1,6 +1,7 @@
 """Project existing immutable events; persist only the user's explicit seen marker."""
 
 from apps.casework import services as casework
+from apps.platform_recovery.integration import mutation_service
 
 from .models import SeenUpdate
 
@@ -12,6 +13,7 @@ KINDS = {
 }
 
 
+@mutation_service
 def read_inbox(*, subject_id, provider, synthetic_fixtures_only=False):
     rows = casework.list_cases(subject_id=subject_id, provider=provider,
                                synthetic_fixtures_only=synthetic_fixtures_only)
@@ -37,6 +39,7 @@ def read_inbox(*, subject_id, provider, synthetic_fixtures_only=False):
                   reverse=True)
 
 
+@mutation_service
 def mark_seen(*, case_id, sequence, subject_id, provider, synthetic_fixtures_only=False):
     if type(sequence) is not int or not 1 <= sequence <= casework.MAX_HISTORY:
         raise casework.CaseConflict("invalid_update_sequence")

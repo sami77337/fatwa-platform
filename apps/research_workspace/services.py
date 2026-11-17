@@ -19,6 +19,7 @@ from apps.experimental_publication import services as publication
 from apps.experimental_publication.models import PublicationEdition
 from apps.knowledge_links import services as knowledge
 from apps.knowledge_links.models import KnowledgeRevision
+from apps.platform_recovery.integration import mutation_service
 from apps.reference.models import ReferenceEdition
 from apps.reference_links.resolution import Heading
 from apps.reference_triage.services import ReferenceTriage
@@ -232,6 +233,7 @@ def _knowledge(case, actor, provider, identifier, action):
     return resource, result
 
 
+@mutation_service
 def search(
     *,
     case_id,
@@ -433,6 +435,7 @@ def search(
         }
 
 
+@mutation_service
 def open_resource(*, case_id, subject_id, provider, resource, synthetic_fixtures_only=False):
     _enabled()
     if not isinstance(resource, Resource):
@@ -493,6 +496,7 @@ def open_resource(*, case_id, subject_id, provider, resource, synthetic_fixtures
         return result
 
 
+@mutation_service
 def add_citation(
     *,
     case_id,

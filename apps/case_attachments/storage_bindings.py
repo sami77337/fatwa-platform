@@ -9,6 +9,7 @@ from django.db import connection
 
 from apps.casework import services as cases
 from apps.casework.models import CaseMediaStorageTransition
+from apps.platform_recovery.integration import mutation_context, mutation_service
 from apps.private_media.storage import (
     InlineDatabaseStorage,
     PrivateStorage,
@@ -59,6 +60,7 @@ def copied_pointer(row):
     return pointer_fields(reference(row))
 
 
+@mutation_context
 @contextmanager
 def binding_locks(storage, digests):
     """Hold external references through outer commit; only explicitly held locks nest.
@@ -121,6 +123,7 @@ def live_references(backend, key=None):
     return False
 
 
+@mutation_service
 def migrate_original(
     *,
     owner_kind,

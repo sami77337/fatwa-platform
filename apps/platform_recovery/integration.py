@@ -28,7 +28,7 @@ class MaintenanceUnavailable(RuntimeError):
 @dataclass
 class Admission:
     lease: Lease
-    database_name: str
+    database_target: tuple
     private_root: str
 
 
@@ -38,16 +38,23 @@ def required():
 
 def _configured_root():
     value = getattr(settings, "FATWA_RECOVERY_MAINTENANCE_ROOT", None)
-    if not value:
+    if not isinstance(value, (str, Path)) or not str(value):
         raise MaintenanceUnavailable("maintenance_unconfigured")
     return Path(value)
+
+
+def _database_target():
+    return tuple(
+        str(connection.settings_dict.get(key, ""))
+        for key in ("ENGINE", "HOST", "PORT", "NAME", "USER")
+    )
 
 
 def _current():
     admission = _ADMISSION.get()
     if admission is None or not admission.lease.matches(_configured_root()):
         return None
-    if str(connection.settings_dict["NAME"]) != admission.database_name:
+    if _database_target() != admission.database_target:
         raise MaintenanceUnavailable("maintenance_database_changed")
     return admission
 
@@ -88,7 +95,7 @@ def mutation_scope(*, operation="WRITE", storage_root=None):
             state = json.loads(read_file(root / "journal.json"))
             admission = Admission(
                 Lease(str(root), execution()),
-                str(connection.settings_dict["NAME"]),
+                _database_target(),
                 state["private_root"],
             )
             _storage_match(admission, storage_root)

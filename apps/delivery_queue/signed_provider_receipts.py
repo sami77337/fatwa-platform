@@ -2,17 +2,19 @@
 from __future__ import annotations
 
 import base64
+import json
+import re
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from hmac import compare_digest
-import json
-import re
 from typing import Callable, Mapping
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from django.db import DatabaseError
+
+from apps.platform_recovery.integration import mutation_service
 
 from . import services as queue
 from .models import DeliveryAttempt, DeliveryIntent, ProviderSignatureEvidence
@@ -194,6 +196,7 @@ def _event_matches_intent(event, lease, intent, attempt):
     return issued is not None and issued >= attempt.created_at - _SKEW
 
 
+@mutation_service
 def record_signed_provider_event(*, lease, event, verifier):
     """Reconcile one independently signed event; no dispatch or automatic retry.
 
@@ -308,6 +311,7 @@ class ProviderEvidenceAudit:
     status: str
 
 
+@mutation_service
 def audit_provider_reported_delivery(*, plan_fingerprint, verifier) -> ProviderEvidenceAudit:
     """Conservative, read-only per-plan check within one locked audit snapshot.
 
@@ -318,6 +322,7 @@ def audit_provider_reported_delivery(*, plan_fingerprint, verifier) -> ProviderE
         raise queue.QueueConflict("invalid_provider_evidence_audit_request")
     queue._postgres_only()
     from django.db import transaction
+
     from .models import ApprovalClaim
 
     with transaction.atomic():

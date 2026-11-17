@@ -5,6 +5,8 @@ import re
 
 from django.conf import settings
 
+from apps.platform_recovery.integration import mutation_service
+
 from . import desk_services, services, simulators
 from .adapters import IntakeError, SourceContext, digest
 
@@ -16,6 +18,7 @@ SCENARIOS = {
 }
 
 
+@mutation_service
 def simulate(*, receipt_id, scenario, nonce, subject_id, provider, synthetic_fixtures_only=False):
     if getattr(settings, "FATWA_SOURCE_CASE_INTAKE_SIMULATOR_ENABLED", False) is not True:
         raise IntakeError("source_simulator_disabled")

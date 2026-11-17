@@ -660,17 +660,20 @@ def _restore_target(*, target, state, manifest, tools, bundle, expected_manifest
         state["state"] = "RESTORING"
         journal(target, state)
         checkpoint("database_created")
-        store = FileSystemStorage(target / "private", synthetic_fixtures_only=True)
-        for item in manifest["references"]:
-            if item["backend"] == BACKEND:
-                store.restore(
-                    original(item),
-                    (
-                        _files["objects/" + item["key"]]
-                        if _files is not None
-                        else read_file(Path(bundle) / "objects" / item["key"])
-                    ),
-                )
+        from .integration import offline_restore_files
+
+        with offline_restore_files(target=target, state=state):
+            store = FileSystemStorage(target / "private", synthetic_fixtures_only=True)
+            for item in manifest["references"]:
+                if item["backend"] == BACKEND:
+                    store.restore(
+                        original(item),
+                        (
+                            _files["objects/" + item["key"]]
+                            if _files is not None
+                            else read_file(Path(bundle) / "objects" / item["key"])
+                        ),
+                    )
         checkpoint("assets_restored")
         archive_args = [] if _files is not None else [str(Path(bundle) / "database.dump")]
         archive_input = _files["database.dump"] if _files is not None else None

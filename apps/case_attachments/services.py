@@ -6,6 +6,7 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
+from apps.platform_recovery.integration import mutation_service
 from apps.private_media.storage import configured_storage
 from apps.private_media.validation import MAX_BYTES as MAX_BYTES
 from apps.private_media.validation import MediaValidationError, validate
@@ -28,6 +29,7 @@ def _validate(raw, filename, media_type):
         raise cases.CaseConflict(str(exc)) from exc
 
 
+@mutation_service
 def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fixtures_only=False):
     _enabled()
     media = _validate(raw, filename, media_type)
@@ -127,24 +129,28 @@ def _read(case, attachment_id):
     return {**_metadata(row), "raw": _check(row)}
 
 
+@mutation_service
 def requester_list(*, token, synthetic_fixtures_only=False):
     _enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
         return _list(case)
 
 
+@mutation_service
 def requester_read(*, token, attachment_id, synthetic_fixtures_only=False):
     _enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
         return _read(case, attachment_id)
 
 
+@mutation_service
 def staff_list(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         return _list(case)
 
 
+@mutation_service
 def staff_read(*, case_id, subject_id, provider, attachment_id, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
