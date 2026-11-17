@@ -11,6 +11,8 @@ from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.views import _provider
 from apps.team_workspace import presentation
 
+from .workflow import describe_work
+
 REFERENCE = re.compile(r"FT-[0-9]{4}-[A-F0-9]{20}")
 
 TABS = (
@@ -95,9 +97,36 @@ def _metadata(common, snapshot):
                 .values("sha256", "part_count")
                 .first()
             )
+        release = {
+            "recorded": False,
+            "enabled": getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True
+            and getattr(settings, "FATWA_ANSWER_MEDIA_PRIVATE_ENABLED", False) is True,
+        }
+        if manifest and case.approved_answer_id and snapshot["status"] == "ANSWERED":
+            from apps.answer_media.models import PrivateAnswerRelease
+
+            release["recorded"] = PrivateAnswerRelease.objects.filter(
+                manifest_id=case.approved_answer_id,
+                decision__answer_id=case.approved_answer_id,
+                decision__case=case,
+                decision__action="APPROVE",
+                decision__evidence_version=case.evidence_version,
+                evidence_version=case.evidence_version,
+                manifest_sha256=manifest["sha256"],
+            ).exists()
+        return_reason = ""
+        if snapshot["status"] == "RETURNED_FOR_CHANGES" and snapshot["latest_answer"]:
+            return_reason = (
+                case.decisions.filter(
+                    answer_id=snapshot["latest_answer"]["id"], action="RETURN_FOR_CHANGES"
+                )
+                .values_list("note", flat=True)
+                .first()
+                or ""
+            )
         # A provider revocation during metadata projection must invalidate the entire frame.
         cases._identity(common["provider"], common["subject_id"], case)
-        return attachments, manifest
+        return attachments, manifest, release, return_reason
 
 
 def case_workspace(request):
@@ -141,7 +170,7 @@ def case_workspace(request):
         from apps.source_case_intake.services import staff_origins
 
         origins = staff_origins(**common)
-    attachments, manifest = _metadata(common, snapshot)
+    attachments, manifest, release, return_reason = _metadata(common, snapshot)
     # Check the live browser identity after all reads as well as at entry.
     current_staff(request, directory, case_key=references[0])
     active = _active(request.POST["action"])
@@ -173,5 +202,8 @@ def case_workspace(request):
             "private_status": "تُراجع الإتاحة الخاصة في لوحة أجزاء الجواب؛ الاعتماد وحده لا يتيح الملفات.",
             "delivery_status": "افتح لوحة التوصيل للتحقق من الخطة وإثبات كل جزء؛ هذه اللوحة لا تثبت التسليم أو القراءة.",
             "verification_checked": False,
+            "workflow": describe_work(
+                snapshot, manifest=manifest, release=release, return_reason=return_reason, tabs=tabs
+            ),
         }
     }
