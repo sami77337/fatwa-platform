@@ -69,11 +69,11 @@ The flush trap was moved from SQL planning to the actual pre-execution boundary
 so legitimate read-only planning cannot cause a false positive. Later evidence
 must name the exact tested source head and these final test versions.
 
-## Final baseline evidence matrix
+## Initial baseline evidence matrix
 
-All production code under review remained the exact PR230 base above. No repair
-branch was published at the last remote-ref check (only this review branch existed
-under `codex/20261117-v12*`); no V12 integrated head is available to certify.
+At the initial evidence checkpoint, production code under review was the exact
+PR230 base above and no repair branch had yet been published. The subsequent
+published-head follow-up below supersedes that availability observation.
 Across focused runs there are **11 distinct contracts per PostgreSQL major:
 6 PASS,5 FAIL**. Unaffected suites were not rerun. The failures are open findings,
 not suppressed or relabeled as success.
@@ -108,6 +108,87 @@ package/configuration changes. PG17 used the existing17.12 binary extraction.
 
 Ruff check/format and `git diff --check` pass for this lane. No migrations,
 production switches, real data/messages/keys or GitHub settings were changed.
+
+## Published-head independent follow-up — P0 still OPEN
+
+Read the recovery contract/evidence, maintenance contract/inventory and rights
+P0 contract at the exact heads below. Used detached temporary worktrees, copied
+only this lane's tests, and did not merge/edit implementation code in this branch.
+The candidate worktrees are not the final unified campaign checkout.
+
+| Actual source head | Independent affected checks per major | Result |
+| --- | --- | --- |
+| Integration `95e8091ef9f9a8a8da9ad41a4f7febd4c70677c1` | Six original maintenance contracts, plus omitted-outer-middleware GET check | **7 PASS** onPG17/18 across focused runs |
+| Recovery `a067bb58cb8068d5ec8689069668e4cbddc641be` | Legacy plaintext denial + real encrypted positive control | **2 PASS** onPG17/18 |
+| Maintenance `9b5fafffbbf937444cc5df81f1130a98bf26f502` | Callback exception, outer atomic rejection, stranded transaction/hook cleanup | **3 PASS** onPG17/18; final cleanup probe rerun separately |
+| Rights `ca86c0dc89534ff4a8ff06665a25a8bf98440de3` | Revoked HTTP/body/metadata/count closure; policy separation; mid-response expiry | **2 PASS / 1 FAIL** onPG17/18 |
+
+Durable files: `evidence/integration_pg{17,18}.txt`,
+`evidence/recovery_pg{17,18}.txt`, `evidence/rights_pg{17,18}.txt`,
+`evidence/missing_middleware_{base,integration}_pg{17,18}.txt`,
+`evidence/stranded_transaction_{base,maintenance}_pg{17,18}.txt`.
+All paths relative to `tests/v12_security_review`.
+
+Additional independent regressions:
+
+- **SEC12-04:** a leaked atomic/native transaction survives both normal and
+  exceptional scope exit on the base. The corrected maintenance head closes the
+  raw connection with acknowledged rollback and discards queued callbacks before
+  releasing admission. The test records connection closure and callback count
+  **before its own safety cleanup**, then verifies no row was committed. Both
+  baseline subcases fail; both repaired subcases pass on17/18. The initial draft
+  probe incorrectly used Django on_commit with manual autocommit-off (unsupported);
+  that produced fixture errors on the base. It was replaced by a legitimately
+  registered callback in an abandoned atomic; only corrected results are counted.
+- **SEC12-05:** with strict mode on but outer middleware omitted, the base GET
+  returns200 and reaches its throttle writer. The integration head's
+  `_budget.require_admission()` rejects with503 before that write. FAIL→PASS17/18.
+- **SEC12-06:** `clone_parts_for_new_answer` and `clone_citations_for_new_answer`
+  still lack their required internal admission check on the base/current95e8091
+  integration tree. The added boundary test traps their first source-read call,
+  with consistent lineage-shaped arguments and a real FROZEN control; it does not
+  perform arbitrary DB writes or claim an internet-accessible endpoint. Both
+  helper probes fail on17/18 (`evidence/clone_boundary_base_pg{17,18}.txt`).
+  These are the mandatory integrator hooks already identified in the maintenance
+  lane inventory. Insert `require_admission()` before helper queries/copies and
+  retain normal admitted canonical flows; no change to those files was made here.
+
+There are now **14 distinct regression methods** in this lane. Against the old
+base, across targeted runs, **6 PASS / 8 FAIL on each major**; two methods contain
+multiple separately reported subcases. This is not a combined-head run.
+
+### Remaining blocking expiry finding (SEC12-03)
+
+On the delivered rights head, `library_preview.services._current` invokes
+`publication._require_publication_sources(...)` before `yield`, but only
+`_recheck(selected)` after it. An exact source grant can therefore expire while
+projection/history is built, with still-valid case/preview authority, and the
+already assembled publication/body/source metadata escapes. The monotonic-clock
+regression still fails on both majors (1.077s/1.053s for the three-test rights runs).
+Recheck the exact current source eligibility at the return boundary, converting
+failure to `PreviewUnavailable`; cover browse and reference/detail projections
+without exposing stale items, counts or metadata. This lane cannot edit that code.
+A passing explicit revocation-before-request test does not close this finding.
+
+### Shared compatibility assertions for the integrator
+
+The two historical `tests/casework/test_v11_rights_boundaries.py` expectations
+must follow the new policy, not relax it:
+
+- `test_preview_metadata_is_independent_and_filtered_before_search_counts`:
+  READ+CITE+RELATE without PREVIEW_METADATA now hides the **entire** edition;
+  expect total0/detail unavailable until all required publication uses exist.
+- `test_relationship_read_and_relate_are_independent_and_current`: give the valid
+  publication READ+CITE+PREVIEW_METADATA throughout the RELATE-only scenario.
+  Losing READ makes the publication itself unavailable (not merely an empty link
+  list). Losing RELATE alone must still hide the relationship while retaining an
+  otherwise eligible publication. Preserve independent review and current pins.
+
+No shared assertion was changed by this lane. The integrated head must contain
+all three implementation branches, administrative/clone/GET connections, explicit
+strict rights/encryption settings, the new migration, and the expiry repair before
+claiming P0 closure or startingP1. Current independent green results on separate
+heads are necessary evidence, not that integrated verdict.
 
 ## Integration handoff
 

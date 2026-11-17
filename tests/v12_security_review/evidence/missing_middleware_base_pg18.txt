@@ -1,0 +1,18 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_missing_outer_middleware_cannot_turn_get_into_unadmitted_writer (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_missing_outer_middleware_cannot_turn_get_into_unadmitted_writer) ... FAIL
+
+======================================================================
+FAIL: test_missing_outer_middleware_cannot_turn_get_into_unadmitted_writer (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_missing_outer_middleware_cannot_turn_get_into_unadmitted_writer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 81, in test_missing_outer_middleware_cannot_turn_get_into_unadmitted_writer
+    self.assertEqual(response.status_code, 503)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 503
+
+----------------------------------------------------------------------
+Ran 1 test in 0.075s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).

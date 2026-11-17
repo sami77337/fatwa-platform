@@ -1,0 +1,10 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_encrypted_snapshot_positive_control_publishes_ciphertext_only (tests.v12_security_review.test_recovery.RecoveryP0Tests.test_encrypted_snapshot_positive_control_publishes_ciphertext_only) ... ok
+test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign (tests.v12_security_review.test_recovery.RecoveryP0Tests.test_public_legacy_snapshot_cannot_write_plaintext_in_closed_campaign) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.367s
+
+OK
+Found 2 test(s).
+System check identified no issues (0 silenced).

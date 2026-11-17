@@ -5,12 +5,15 @@ import json
 import tempfile
 import threading
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.core.management import call_command
 from django.db import connection, connections, transaction
 from django.test import Client, TransactionTestCase, override_settings
 
+from apps.answer_media import services as answer_media
+from apps.case_citations import services as citations
 from apps.casework_web.models import ThrottleBucket
 from apps.platform_recovery import maintenance
 from apps.platform_recovery.integration import MaintenanceUnavailable, mutation_scope
@@ -70,6 +73,17 @@ class MaintenanceP0Tests(TransactionTestCase):
                     self.assertNotIn(secret, response.content.decode())
             self.assertEqual(list(ThrottleBucket.objects.order_by("pk").values()), before)
 
+    def test_missing_outer_middleware_cannot_turn_get_into_unadmitted_writer(self):
+        # The strict flag stays on. Omitting only the outer HTTP middleware must
+        # not let the lower GET throttle transaction bypass maintenance.
+        self.freeze()
+        with override_settings(**WEB_SETTINGS):
+            client = Client(REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1")
+            before = list(ThrottleBucket.objects.order_by("pk").values())
+            response = client.get("/casework/")
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(list(ThrottleBucket.objects.order_by("pk").values()), before)
+
     def test_failing_on_commit_callback_holds_lease_until_exception_then_releases(self):
         entered, release = threading.Event(), threading.Event()
         observed = []
@@ -120,6 +134,72 @@ class MaintenanceP0Tests(TransactionTestCase):
                 transaction.on_commit(lambda: called.append(True))
         self.assertEqual(called, [])
         self.freeze()
+
+    def test_stranded_transaction_and_callback_abort_before_lease_release(self):
+        for fail_inside in (False, True):
+            with self.subTest(exceptional_exit=fail_inside):
+                callbacks = []
+                raw = None
+                abandoned = None
+                try:
+                    try:
+                        with mutation_scope():
+                            abandoned = transaction.atomic()
+                            abandoned.__enter__()
+                            raw = connection.connection
+                            ThrottleBucket.objects.create(key="v12-leak", window=1, requests=1)
+                            transaction.on_commit(lambda: callbacks.append("must not execute"))
+                            if fail_inside:
+                                raise ValueError("synthetic writer fault")
+                    except (ValueError, RuntimeError):
+                        pass
+                    closed_before_probe_cleanup = bool(raw and raw.closed)
+                    pending_before_probe_cleanup = len(connection.run_on_commit)
+                finally:
+                    # Never leave a failed baseline probe's native transaction in
+                    # the test process. This cleanup is not counted as protection.
+                    if abandoned is not None:
+                        abandoned.__exit__(ValueError, ValueError("probe cleanup"), None)
+                    connection.close()
+                    connection.ensure_connection()
+                self.assertTrue(
+                    closed_before_probe_cleanup,
+                    "P0: admission released while its PostgreSQL transaction was live",
+                )
+                self.assertEqual(pending_before_probe_cleanup, 0)
+                self.assertEqual(callbacks, [])
+                self.assertFalse(ThrottleBucket.objects.filter(pk="v12-leak").exists())
+        self.freeze()
+
+    def test_clone_helpers_require_admission_before_any_source_read(self):
+        self.freeze()
+        previous = SimpleNamespace(case_id="synthetic-same-case", pk="previous", revision=1)
+        answer = SimpleNamespace(case_id=previous.case_id, pk="new", revision=2)
+
+        class ReachedSourceRead(RuntimeError):
+            pass
+
+        for function, owner, attribute in (
+            (
+                answer_media.clone_parts_for_new_answer,
+                answer_media.AnswerManifest.objects,
+                "filter",
+            ),
+            (citations.clone_citations_for_new_answer, citations, "citations_for_locked_answer"),
+        ):
+            with self.subTest(helper=function.__name__):
+                reached = []
+
+                def trap(*args, **kwargs):
+                    reached.append(True)
+                    raise ReachedSourceRead("probe stops before reading source rows")
+
+                with patch.object(owner, attribute, side_effect=trap):
+                    try:
+                        function(previous, answer)
+                    except (ReachedSourceRead, MaintenanceUnavailable):
+                        pass
+                self.assertEqual(reached, [], "P0: internal clone read reached without admission")
 
     def test_flush_rejected_before_executing_destructive_sql(self):
         self.freeze()
