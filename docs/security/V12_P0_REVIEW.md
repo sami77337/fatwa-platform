@@ -88,7 +88,8 @@ not suppressed or relabeled as success.
 | PG18 encrypted positive control |1 PASS,0.295s | `evidence/pg18_ciphertext_control.txt` |
 
 Evidence paths abbreviated `evidence/` are relative to `tests/v12_security_review`.
-All are captured real executions, containing synthetic fixture information only.
+All are captured real executions, containing synthetic fixture information only;
+trailing whitespace from unittest subtest status lines is normalized for git checks.
 The new positive-control test initially expected a nonexistent `verified` boolean;
 the existing API returns `state=VERIFIED`. Both initial runs errored at that test
 assertion after successful capture/verification, then passed after correcting it.
