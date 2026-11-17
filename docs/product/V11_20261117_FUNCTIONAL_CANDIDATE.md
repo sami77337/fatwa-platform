@@ -141,6 +141,20 @@ expire naturally. No guard, counter or permission was weakened. A full journey
 passed before that final timing change; only the affected journey was repeated
 afterwards. The final wait preserved all four throttle rows without writing them.
 
+The first CI head `3c67307619d2b3b473548c0b32a4ee0e68872940` passed the V11
+PG17/18 matrix (113 functional + 16 recovery tests on each, sandboxed Chrome on
+PG17). Four compatibility workflows failed and remain historical evidence:
+three shared one outdated exact middleware-list expectation, corrected to require
+the new outer maintenance guard and closed defaults; the V10 browser selected the
+first citation form inside a closed supporting-tools `details` instead of the
+visible case navigation. The latter was reproduced locally and diagnosed from
+the actual DOM, then its navigation selector was corrected without changing the
+product or skipping keyboard/status checks. The profile test also joins the V11
+matrix. See the PR for final-head CI results; the initial failures are not flakes
+or reclassified successes. A focused profile-test attempt outside the owned
+runtime was correctly blocked with `WRITES_DISABLED`; it passed through the owned
+PostgreSQL helper.
+
 Lane receipts remain with their applications. Final integrated test results and
 the tested SHA belong in the campaign PR/CI artifact; lane results alone cannot
 establish that the assembled campaign works. Failed attempts remain historical

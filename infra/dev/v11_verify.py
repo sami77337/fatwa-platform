@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 LABELS = (
+    "tests.casework.test_campaign.CampaignProfileTests",
     "apps.mufti_workspace.workflow_tests",
     "apps.requester_portal.workflow_tests",
     "apps.source_case_intake.v11_tests",

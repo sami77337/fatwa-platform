@@ -21,10 +21,13 @@ class CampaignProfileTests(SimpleTestCase):
         from config.settings import campaign_review, casework_review
 
         expected_middleware = [
-            "apps.library_preview.guard.PreviewCompositionGuard"
-            if item == "apps.casework_web.guard.CaseworkGuard"
-            else item
-            for item in casework_review.MIDDLEWARE
+            "apps.platform_recovery.middleware.MaintenanceGuard",
+            *[
+                "apps.library_preview.guard.PreviewCompositionGuard"
+                if item == "apps.casework_web.guard.CaseworkGuard"
+                else item
+                for item in casework_review.MIDDLEWARE
+            ],
         ]
         self.assertEqual(campaign_review.MIDDLEWARE, expected_middleware)
         from apps.casework_web.guard import CaseworkGuard
@@ -33,6 +36,15 @@ class CampaignProfileTests(SimpleTestCase):
         self.assertIsInstance(PreviewCompositionGuard(lambda request: None).casework, CaseworkGuard)
         self.assertFalse(campaign_review.FATWA_LIBRARY_PREVIEW_ENABLED)
         self.assertIsNone(campaign_review.FATWA_LIBRARY_PREVIEW_POLICY)
+        self.assertFalse(campaign_review.FATWA_RECOVERY_MAINTENANCE_REQUIRED)
+        self.assertIsNone(campaign_review.FATWA_RECOVERY_MAINTENANCE_ROOT)
+        self.assertFalse(campaign_review.FATWA_SOURCE_RIGHTS_ENABLED)
+        self.assertFalse(campaign_review.FATWA_SOURCE_RIGHTS_ENFORCED)
+        self.assertIsNone(campaign_review.FATWA_SOURCE_RIGHTS_AUTHORITY)
+        self.assertFalse(campaign_review.FATWA_RESEARCH_WORKSPACE_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_RESEARCH_WORKSPACE_RIGHTS)
+        self.assertFalse(campaign_review.FATWA_PILOT_WORKBENCH_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_PILOT_WORKBENCH)
         self.assertFalse(campaign_review.FATWA_REQUESTER_PORTAL_ENABLED)
         self.assertIsNone(campaign_review.FATWA_CASEWORK_IDENTITY_PROVIDER)
         self.assertIsNone(campaign_review.FATWA_CASEWORK_RECOVERY_RESOLVER)
