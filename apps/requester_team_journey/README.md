@@ -1,6 +1,8 @@
 Integration note: `apps.requester_team_journey.settings` now aliases
 `config.settings.campaign_review`; both names use `config.campaign_urls`,
-the same dispatcher, migrations, guards and template overlays. The older
+the same dispatcher, migrations, guards and template overlays, including the
+case-scoped internal update inbox. The panel cookie may also contain `updates`;
+it remains an unauthoritative preference. The older
 integration adapter reexports this dispatcher. There is one implementation.
 
 # Combined requester / team journey — local synthetic profile

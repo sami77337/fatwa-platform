@@ -11,6 +11,14 @@ does not revoke or replace its token. Closing requires prior trusted revocation.
 new reverse names resolve to the same requester screens. Default/public settings
 and `config/urls.py` are unchanged.
 
+`apps.requester_team_journey.settings` is a compatibility name for the same
+canonical settings and URL composition. The shared dispatcher supports cases,
+access reviews and the internal updates inbox. Its short-lived panel cookie
+contains only a display preference; every destination rechecks staff authority.
+The `team_updates` app/migration records an immutable explicit seen marker per
+provider, subject and event. Opening a case never marks its updates seen, and a
+seen marker never approves evidence, a ruling, delivery or requester reading.
+
 The profile inherits `casework_review` gates, loopback/Host guard, request budgets,
 CSRF and ownership checks. Web enablement remains explicit; the identity provider
 and trusted recovery resolver remain `None`. Configure reviewed synthetic server

@@ -1,5 +1,6 @@
 {% extends "requester_access_review/staff.html" %}
 {% block content %}
+{% include "team_updates_navigation.html" %}
 <nav aria-label="لوحات الفريق"><form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="journey_cases"><button type="submit">العودة إلى مساحة القضايا</button></form></nav>
 {{ block.super }}
 {% endblock %}

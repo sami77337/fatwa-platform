@@ -8,6 +8,7 @@ from .casework_review import *  # noqa: F403
 INSTALLED_APPS = [
     *INSTALLED_APPS,  # noqa: F405
     "apps.requester_access_review.apps.RequesterAccessReviewConfig",
+    "apps.team_updates.apps.TeamUpdatesConfig",
 ]
 ROOT_URLCONF = "config.campaign_urls"
 

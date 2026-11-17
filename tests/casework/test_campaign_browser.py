@@ -9,6 +9,7 @@ from django.db import close_old_connections, connections
 from django.test import LiveServerTestCase, override_settings
 
 from apps.casework.models import Case
+from apps.team_updates.models import SeenUpdate
 from tests.casework.test_http import Directory
 from tests.casework.test_requester_workspace import WORKSPACE_SETTINGS
 
@@ -121,6 +122,21 @@ class CampaignBrowserTests(LiveServerTestCase):
                         self.sync(lambda: Case.objects.get(public_ref=public_ref).evidence.count()),
                         2,
                     )
+
+                    click(staff, "صندوق التحديثات")
+                    self.assertEqual(staff.locator("article.update").count(), 2)
+                    self.assertNotIn("تعقيب اصطناعي من مساحة المتابعة.", staff.content())
+                    self.assertEqual(self.sync(lambda: SeenUpdate.objects.count()), 0)
+                    with staff.expect_navigation(wait_until="networkidle"):
+                        staff.get_by_role("button", name="تعليم التنبيه كمقروء").first.click()
+                    self.assertEqual(self.sync(lambda: SeenUpdate.objects.count()), 1)
+                    for width in (320, 1280):
+                        staff.set_viewport_size({"width": width, "height": 900})
+                        self.assertLessEqual(
+                            staff.evaluate("document.documentElement.scrollWidth"), width
+                        )
+                    click(staff, "فتح القضية")
+                    self.assertEqual(self.sync(lambda: SeenUpdate.objects.count()), 1)
 
                     self.assertEqual(staff.locator("#queue-state").count(), 1)
                     staff.locator("#answer-text").fill("PRIVATE SYNTHETIC FIRST ANSWER")
