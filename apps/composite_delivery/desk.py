@@ -23,6 +23,7 @@ from apps.delivery_queue.signed_provider_receipts import (
     Ed25519ProviderEventVerifier,
     SignedProviderEvent,
 )
+from apps.platform_recovery.integration import mutation_service
 
 from . import services
 from .models import CompositeDelivery
@@ -226,6 +227,7 @@ def _read_locked(case, subject_id, provider):
     }
 
 
+@mutation_service
 def read_delivery_desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     services._enabled()
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
@@ -291,6 +293,7 @@ def decode_provider_bundle(raw):
         raise cases.CaseConflict("invalid_provider_bundle") from exc
 
 
+@mutation_service
 def apply_desk_action(
     *,
     case_id,

@@ -13,6 +13,7 @@ from datetime import timedelta
 from hashlib import sha256
 
 from django.apps import apps as django_apps
+from django.conf import settings
 from django.db import connection, transaction
 from django.utils import timezone
 
@@ -23,6 +24,7 @@ from apps.delivery_queue.models import (
     RequesterTrackingToken,
 )
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
+from apps.platform_recovery.integration import mutation_service
 
 from .models import AnswerRevision, Case, CaseDecision, CaseEvent, CaseEvidence, CaseSource
 
@@ -49,6 +51,26 @@ def _answer_manifest(answer):
     from apps.answer_media.services import manifest_for_locked_answer
 
     return manifest_for_locked_answer(answer)
+
+
+def _answer_citations(answer):
+    """Recheck current citation rights under the caller's canonical case lock.
+
+    Citation-free compositions keep their existing behavior. Actual citations
+    retain source integrity checks and, when enabled, require current CITE rights.
+    This never substitutes for identity, current facts or human approval.
+    """
+    if answer is None:
+        return []
+    if not django_apps.is_installed("apps.case_citations"):
+        # A restored database may still contain citations even when its app was
+        # omitted from a composition. Enforcement cannot infer their absence.
+        if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is True:
+            raise CaseConflict("citation_schema_unavailable")
+        return []
+    from apps.case_citations.services import citations_for_locked_answer
+
+    return citations_for_locked_answer(answer)
 
 
 def _delivery_origin_for_locked_case(case):
@@ -331,6 +353,7 @@ def _staff(case):
     return result
 
 
+@mutation_service
 def intake_case(
     *,
     original_question,
@@ -420,11 +443,13 @@ def _staff_case(
         yield case, identity
 
 
+@mutation_service
 def read_case(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     with _staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         return _staff(case)
 
 
+@mutation_service
 def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
     _guard(synthetic_fixtures_only)
     try:
@@ -445,6 +470,7 @@ def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
     ]
 
 
+@mutation_service
 def save_answer(
     *,
     case_id,
@@ -481,6 +507,7 @@ def save_answer(
         return _staff(case)
 
 
+@mutation_service
 def request_clarification(
     *,
     case_id,
@@ -506,6 +533,7 @@ def request_clarification(
         return _staff(case)
 
 
+@mutation_service
 def record_decision(
     *,
     case_id,
@@ -548,6 +576,7 @@ def record_decision(
         if action == "APPROVE":
             from apps.answer_media.services import validate_for_approval
 
+            _answer_citations(answer)
             validate_for_approval(answer)
         current_identity = _identity(provider, subject_id, case)
         if (current_identity.subject_id, current_identity.auth_epoch, provider.provider_id) != (
@@ -597,11 +626,13 @@ def _token_case(token, ack):
         yield case
 
 
+@mutation_service
 def requester_status(token, *, synthetic_fixtures_only=False):
     with _token_case(token, synthetic_fixtures_only) as case:
         return _public(case)
 
 
+@mutation_service
 def add_followup(*, token, text, expected_revision, synthetic_fixtures_only=False):
     _text(text)
     with _token_case(token, synthetic_fixtures_only) as case:
@@ -632,6 +663,7 @@ def _access(*, case_id, subject_id, provider, requester_id, rotate, synthetic_fi
         return {**_public(case), "token": token}
 
 
+@mutation_service
 def rotate_access(*, case_id, subject_id, provider, requester_id, synthetic_fixtures_only=False):
     return _access(
         case_id=case_id,
@@ -643,6 +675,7 @@ def rotate_access(*, case_id, subject_id, provider, requester_id, synthetic_fixt
     )
 
 
+@mutation_service
 def revoke_access(*, case_id, subject_id, provider, requester_id, synthetic_fixtures_only=False):
     return _access(
         case_id=case_id,
