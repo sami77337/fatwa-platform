@@ -14,6 +14,19 @@
 <label><input type="checkbox" name="synthetic_only" value="yes" required>هذه مواد اصطناعية؛ أؤكد ترتيب الأجزاء وأعلم أن الحفظ يبطل اعتماد النسخة السابقة.</label>
 <p>نص الجواب هو الجزء الأول، ثم الملفات المحتفظ بها بترتيبها، ثم الملف الجديد. الحد ثمانية أجزاء. كل حفظ ينشئ إصدارًا جديدًا يحتاج اعتمادًا بشريًا. لا يُدّعى وجود فحص برمجيات خبيثة.</p><button>حفظ إصدار متعدد الأجزاء</button></form>
 {% else %}<p>أكمل رد السائل على الاستيضاح قبل تحرير الجواب.</p>{% endif %}
+{% if selected.latest_package and selected.status != 'NEEDS_CLARIFICATION' %}
+<details id="answer-part-order"><summary>ترتيب الملفات أو استبعاد ملف من النسخة الجديدة</summary>
+<p>يبقى نص الجواب أولًا. اختر الملفات المحتفظ بها حسب ترتيبها الجديد، أو «استبعاد هذا الموضع». تُحفظ الأصول والنسخة السابقة؛ هذا الإجراء ينشئ جوابًا جديدًا يحتاج اعتمادًا وإتاحة مستقلين.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="answer_media_reorder"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="revision" value="{{ selected.revision }}"><input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}">
+{% for slot in selected.latest_package.parts %}{% if slot.kind != 'TEXT' %}
+<label for="part-order-{{ slot.ordinal }}">موضع الملف {{ slot.ordinal }}</label>
+<select id="part-order-{{ slot.ordinal }}" name="parts"><option value="">استبعاد هذا الموضع</option>
+{% for part in selected.latest_package.parts %}{% if part.kind != 'TEXT' %}<option value="{{ part.id }}"{% if part.id == slot.id %} selected{% endif %}>{{ part.filename }} — الجزء الحالي {{ part.ordinal }}</option>{% endif %}{% endfor %}</select>
+{% endif %}{% endfor %}
+<p>لا تختَر الملف نفسه مرتين. يجب الاحتفاظ بملف واحد على الأقل؛ الحفظ يلغي اعتماد وإتاحة الجواب السابق.</p>
+<button>حفظ ترتيب الأجزاء في نسخة جديدة</button></form></details>
+{% endif %}
 {% for package in selected.packages %}<article><h3>إصدار الجواب {{ package.answer_revision }} — {% if package.approved %}معتمد حاليًا{% else %}غير معتمد حاليًا{% endif %}</h3><p>إصدار الوقائع {{ package.evidence_version }}</p>
 {% include "answer_media/parts.html" with is_staff=True %}
 <p class="notice">النقل الحالي لا يدعم هذه الأجزاء. يلزم إجراء بشري منفصل؛ لا إرسال تلقائي ولا إثبات تسليم أو قراءة.</p>

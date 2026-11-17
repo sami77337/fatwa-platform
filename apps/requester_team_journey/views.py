@@ -66,7 +66,7 @@ def staff(request):
 
             if action in COMPOSITE_ACTIONS:
                 return _panel(composite(request), "cases")
-        if action in {"answer_media", "answer_media_save", "answer_media_release"}:
+        if action in {"answer_media", "answer_media_save", "answer_media_release", "answer_media_reorder"}:
             from apps.answer_media.views import staff as answer_media
 
             return _panel(answer_media(request), "cases")
