@@ -241,3 +241,14 @@ registry/authority. The existing negative/positive assertion remains unchanged.
 An earlier invocation failed during test discovery (namespace package label,
 `module.__file__ is None`) on both majors before tests; explicit module labels
 corrected the invocation. No application pass is attributed to that invocation.
+
+Focused correction verification on `f33bcdc1b1b9c22416e85a360792c4d142c7c713`:
+**29/29 PASS on PG17.12 (26.506s) and 29/29 PASS on PG18.7 (26.472s)**. Labels:
+`tests.casework.test_v12_catalog_expiry`,
+`tests.casework.test_v11_rights_boundaries`, `apps.source_rights.test_strict`.
+The 10 new regressions are included. Other successful affected checks were not
+repeated manually after the source-free guard correction. Ruff and diff whitespace
+checks passed. This evidence-only follow-up leaves tested product code unchanged;
+the existing CI workflow runs the complete 183-test functional/security set on
+its exact pushed head plus its separate recovery suites. Independent final-head
+re-review is still required: **P0 OPEN/BLOCKED; P1/P2 NOT STARTED**.
