@@ -9,6 +9,7 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.editorial_search.query_terms import normalize_editorial_search
+from apps.platform_recovery.integration import mutation_service
 
 from .authority import PublicationAuthority
 from .models import PublicationAction, PublicationEdition
@@ -93,8 +94,13 @@ def _citation_snapshot(answer):
     ]
 
 
-def _projection(edition, *, editorial=False):
+def _projection(edition, *, editorial=False, rights_usage="READ"):
     _verify(edition)
+    from apps.case_citations.services import _permits_source
+
+    visible_citations = [
+        item for item in edition.citations if _permits_source(edition.case, item, rights_usage)
+    ]
     actions = set(edition.actions.values_list("action", flat=True))
     result = {
         "id": str(edition.pk),
@@ -102,7 +108,7 @@ def _projection(edition, *, editorial=False):
         "title": edition.title,
         "category": edition.category,
         "body": edition.body,
-        "citations": edition.citations,
+        "citations": visible_citations,
         "state": "WITHDRAWN"
         if "WITHDRAW" in actions
         else (
@@ -121,6 +127,7 @@ def _projection(edition, *, editorial=False):
     return result
 
 
+@mutation_service
 def create_edition(
     *,
     case_id,
@@ -172,6 +179,7 @@ def create_edition(
         return _projection(edition, editorial=True)
 
 
+@mutation_service
 def act(
     *,
     case_id,
@@ -238,6 +246,7 @@ def _permitted(identity, provider, case, action):
     return True
 
 
+@mutation_service
 def editorial_case(*, edition_id, subject_id, provider, synthetic_fixtures_only=False):
     """Resolve a library edition back to its desk without putting case data in library DTOs."""
     _enabled()
@@ -250,6 +259,7 @@ def editorial_case(*, edition_id, subject_id, provider, synthetic_fixtures_only=
         return {"case_id": str(case.pk), "public_ref": case.public_ref}
 
 
+@mutation_service
 def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
@@ -372,6 +382,7 @@ def _correction_source(case, edition_id):
     return source
 
 
+@mutation_service
 def correction_draft(*, case_id, edition_id, subject_id, provider, synthetic_fixtures_only=False):
     """Prefill a new editorial candidate from an immutable current published edition."""
     _enabled()
@@ -386,6 +397,7 @@ def correction_draft(*, case_id, edition_id, subject_id, provider, synthetic_fix
         }
 
 
+@mutation_service
 def library(*, subject_id, provider, query="", category="", synthetic_fixtures_only=False):
     _enabled()
     cases._text(query, optional=True)
@@ -416,7 +428,7 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
                     continue
             except cases.CaseConflict:
                 continue
-            public = _projection(edition)
+            public = _projection(edition, rights_usage="PREVIEW_METADATA")
             haystack = normalize_editorial_search(
                 " ".join((public["title"], public["category"], public["body"]))
             )

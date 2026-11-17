@@ -20,6 +20,7 @@ from apps.casework import services as cases
 from apps.experimental_publication.models import PublicationEdition
 from apps.knowledge_links import services as knowledge
 from apps.knowledge_links.models import KnowledgeRevision
+from apps.platform_recovery.integration import mutation_service
 from apps.reference.models import ReferenceHeading
 from apps.transcript_case_links import services as transcripts
 from apps.transcript_case_links.models import TranscriptLink
@@ -173,6 +174,7 @@ def _state(revision):
     return "ALLOWED" if revision.uses else "RESTRICTED"
 
 
+@mutation_service
 def register(*, case_id, subject_id, provider, kind, target_id, synthetic_fixtures_only=False):
     with _serial(case_id, synthetic_fixtures_only):
         with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (
@@ -216,6 +218,7 @@ def register(*, case_id, subject_id, provider, kind, target_id, synthetic_fixtur
             }
 
 
+@mutation_service
 def propose(
     *,
     case_id,
@@ -271,6 +274,7 @@ def propose(
             return {"id": str(revision.pk), "number": revision.number, "state": _state(revision)}
 
 
+@mutation_service
 def review(
     *,
     case_id,
@@ -369,6 +373,7 @@ def _require_relation(case, kind, target_id):
         raise cases.CaseConflict("source_rights_material_kind_invalid")
 
 
+@mutation_service
 def correct_citation(
     *,
     case_id,
@@ -404,7 +409,7 @@ def correct_citation(
             answer = case.answers.order_by("-revision").first()
             if answer is None:
                 raise cases.CaseConflict("case_answer_unavailable")
-            rows = citations.citations_for_locked_answer(answer)
+            rows = citations._citation_snapshots_for_locked_answer(answer)
             if str(citation_id) not in {row["id"] for row in rows}:
                 raise cases.CaseConflict("case_citation_unavailable")
             selections = []
@@ -438,6 +443,7 @@ def correct_citation(
         )
 
 
+@mutation_service
 def propose_relation(
     *,
     case_id,
@@ -474,6 +480,7 @@ def propose_relation(
         )
 
 
+@mutation_service
 def act_on_relation(
     *,
     case_id,
@@ -516,6 +523,7 @@ def act_on_relation(
         )
 
 
+@mutation_service
 def desk(
     *, case_id, subject_id, provider, query="", edition_id=None, synthetic_fixtures_only=False
 ):
@@ -527,12 +535,14 @@ def desk(
         synthetic_fixtures_only=synthetic_fixtures_only,
     )
     # Public services run outside the workspace transaction, preserving guards.
-    found = citations.search_sources(**common, query=query, edition_id=edition_id)
+    found = citations._search_sources_for_rights_review(
+        **common, query=query, edition_id=edition_id
+    )
     transcript_rows = transcripts.read_links(**common)
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         _permit(actor, provider, case, "VIEW")
         answer = case.answers.order_by("-revision").first()
-        cited = citations.citations_for_locked_answer(answer) if answer else []
+        cited = citations._citation_snapshots_for_locked_answer(answer) if answer else []
         heading_ids = {
             ReferenceHeading.objects.get(
                 edition_id=item["source"]["edition_id"],

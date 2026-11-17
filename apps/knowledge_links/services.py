@@ -11,6 +11,7 @@ from apps.casework import services as cases
 from apps.editorial_search.query_terms import normalize_editorial_search
 from apps.experimental_publication import services as publications
 from apps.experimental_publication.models import PublicationEdition
+from apps.platform_recovery.integration import mutation_service
 from apps.reference.models import ReferenceHeading
 from apps.transcript_case_links import services as transcripts
 from apps.transcript_case_links.models import TranscriptLink
@@ -122,6 +123,33 @@ def _transcripts_locked(edition):
     return result
 
 
+def _permits_material(case, *, source=None, transcript_id=None, usage):
+    if source is not None:
+        return citations._permits_source(case, source, usage)
+    try:
+        rights = citations._rights_services()
+        return (
+            rights is None
+            or rights.permits_transcript_for_locked_case(
+                case=case, transcript_id=transcript_id, usage=usage
+            )
+            is True
+        )
+    except cases.CaseConflict:
+        return False
+
+
+def _row_permitted(case, row, usage):
+    return _permits_material(
+        case,
+        source={key: row.snapshot[key] for key in ("source", "source_sha256")}
+        if row.heading_id
+        else None,
+        transcript_id=row.transcript_id,
+        usage=usage,
+    )
+
+
 def _target(edition, kind, target_id, subject_id, provider):
     if kind == "REFERENCE":
         if type(target_id) is not int or not 1 <= target_id <= 2**63 - 1:
@@ -131,6 +159,7 @@ def _target(edition, kind, target_id, subject_id, provider):
             raise cases.CaseConflict("knowledge_target_unavailable")
         citations._enabled()
         source = citations._source(heading.edition_id, heading.source_row_id)
+        citations._require_source(edition.case, source, "RELATE")
         if source not in edition.citations:
             raise cases.CaseConflict("knowledge_publication_citation_required")
         return {"kind": kind, **source}, heading, None
@@ -140,6 +169,8 @@ def _target(edition, kind, target_id, subject_id, provider):
         ).first()
         if link is None or link.evidence.version > edition.evidence_version:
             raise cases.CaseConflict("knowledge_target_unavailable")
+        if not _permits_material(edition.case, transcript_id=link.pk, usage="RELATE"):
+            raise cases.CaseConflict("current_source_rights_required")
         rows = _transcripts_locked(edition)
         row = next((row for row in rows if row["id"] == str(link.pk)), None)
         if row is None:
@@ -191,6 +222,7 @@ def _state(row):
     )
 
 
+@mutation_service
 def propose(
     *,
     publication_id,
@@ -242,6 +274,7 @@ def propose(
         return {"id": str(row.pk), "number": row.number, "state": "PROPOSED"}
 
 
+@mutation_service
 def act(
     *,
     publication_id,
@@ -301,6 +334,7 @@ def _public(row):
     return data
 
 
+@mutation_service
 def browse(*, publication_id, subject_id, provider, query="", synthetic_fixtures_only=False):
     cases._text(query, optional=True)
     if len(query) > 80:
@@ -309,7 +343,7 @@ def browse(*, publication_id, subject_id, provider, query="", synthetic_fixtures
     with _edition(publication_id, subject_id, provider, synthetic_fixtures_only) as (
         edition,
         public,
-        _,
+        case,
         _actor,
     ):
         results = []
@@ -323,6 +357,8 @@ def browse(*, publication_id, subject_id, provider, query="", synthetic_fixtures
                 continue
             try:
                 _verified(row, edition, subject_id, provider)
+                if not _row_permitted(case, row, "READ"):
+                    continue
             except cases.CaseConflict:
                 continue
             result = _public(row)
@@ -373,6 +409,8 @@ def _open_material(
         if _state(row) not in ({"PROPOSED", "APPROVED"} if preview else {"APPROVED"}):
             raise cases.CaseConflict("knowledge_approved_relation_required")
         kind = _verified(row, edition, subject_id, provider)
+        if not _row_permitted(case, row, "READ"):
+            raise cases.CaseConflict("current_source_rights_required")
         result = _public(row)
         result["state"] = _state(row)
         if kind == "TRANSCRIPT":
@@ -389,15 +427,20 @@ def _open_material(
         return result
 
 
+@mutation_service
 def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False):
     with _edition(publication_id, subject_id, provider, synthetic_fixtures_only) as (
         edition,
         public,
-        _,
+        case,
         _actor,
     ):
         candidates = []
         for item in edition.citations:
+            if not all(
+                citations._permits_source(case, item, usage) for usage in ("READ", "RELATE")
+            ):
+                continue
             source = item["source"]
             heading = ReferenceHeading.objects.get(
                 edition_id=source["edition_id"], source_row_id=source["source_row_id"]
@@ -410,7 +453,10 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False)
                 }
             )
         for row in _transcripts_locked(edition):
-            if row["version"] <= edition.evidence_version:
+            if row["version"] <= edition.evidence_version and all(
+                _permits_material(case, transcript_id=row["id"], usage=usage)
+                for usage in ("READ", "RELATE")
+            ):
                 candidates.append(
                     {
                         "kind": "TRANSCRIPT",
@@ -437,6 +483,7 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False)
         return {"publication": public, "candidates": candidates, "history": history}
 
 
+@mutation_service
 def open_material(
     *, publication_id, revision_id, subject_id, provider, synthetic_fixtures_only=False
 ):
@@ -449,6 +496,7 @@ def open_material(
     )
 
 
+@mutation_service
 def preview_material(
     *, publication_id, revision_id, subject_id, provider, synthetic_fixtures_only=False
 ):
@@ -463,6 +511,7 @@ def preview_material(
     )
 
 
+@mutation_service
 def history(*, publication_id, subject_id, provider, synthetic_fixtures_only=False):
     """Private audit stays readable after publication withdrawal/correction."""
     _enabled()
@@ -486,7 +535,8 @@ def history(*, publication_id, subject_id, provider, synthetic_fixtures_only=Fal
                     "number": row.number,
                     "state": _state(row),
                     "reason": row.reason,
-                    "snapshot": row.snapshot,
+                    "snapshot": row.snapshot if _row_permitted(case, row, "READ") else None,
+                    "rights_restricted": not _row_permitted(case, row, "READ"),
                     "subject_id": row.subject_id,
                     "provider_id": row.provider_id,
                     "auth_epoch": row.auth_epoch,

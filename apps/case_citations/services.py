@@ -9,6 +9,7 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
+from apps.platform_recovery.integration import mutation_service
 from apps.reference import services as catalog
 from apps.reference.models import ReferenceEdition, ReferenceHeading
 from apps.reference.normalization import normalize_title
@@ -25,6 +26,57 @@ MAX_CITATIONS = 12
 def _enabled():
     if getattr(settings, "FATWA_CASE_CITATIONS_ENABLED", False) is not True:
         raise cases.CaseConflict("case_citations_disabled")
+
+
+def _rights_services():
+    """Additional rights only; caller already owns the canonical case lock."""
+    if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is not True:
+        return None
+    if not django_apps.is_installed("apps.source_rights"):
+        raise cases.CaseConflict("current_source_rights_required")
+    from apps.source_rights import services as rights
+
+    rights._enabled()
+    return rights
+
+
+def _permits_source(case, source, usage):
+    try:
+        rights = _rights_services()
+        return (
+            rights is None
+            or rights.permits_reference_for_locked_case(case=case, source=source, usage=usage)
+            is True
+        )
+    except cases.CaseConflict:
+        return False
+
+
+def _require_source(case, source, usage):
+    if not _permits_source(case, source, usage):
+        raise cases.CaseConflict("current_source_rights_required")
+
+
+def _readable_sources(case):
+    rights = _rights_services()
+    if rights is None:
+        return None
+    from apps.source_rights.models import SourceVersion
+
+    allowed = {}
+    for version in (
+        SourceVersion.objects.filter(sourceregistration__case=case, heading__isnull=False)
+        .select_related("heading")
+        .distinct()
+    ):
+        heading = version.heading
+        try:
+            source = _source(heading.edition_id, heading.source_row_id)
+            if _permits_source(case, source, "READ"):
+                allowed.setdefault(heading.edition_id, set()).add(heading.source_row_id)
+        except cases.CaseConflict:
+            continue
+    return allowed
 
 
 def _digest(value):
@@ -50,6 +102,7 @@ def _source(edition_id, source_row_id):
     return {"source": source, "source_sha256": _digest(source)}
 
 
+@mutation_service
 def search_sources(
     *,
     case_id,
@@ -60,6 +113,34 @@ def search_sources(
     printed_part="",
     printed_page=None,
     synthetic_fixtures_only=False,
+):
+    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+        return _search_sources_for_locked_case(
+            case,
+            query=query,
+            edition_id=edition_id,
+            printed_part=printed_part,
+            printed_page=printed_page,
+            enforce_rights=True,
+        )
+
+
+@mutation_service
+def _search_sources_for_rights_review(
+    *, case_id, subject_id, provider, query="", edition_id=None, synthetic_fixtures_only=False
+):
+    """Private metadata bootstrap, authorized independently by the rights authority."""
+    from apps.source_rights import services as rights
+
+    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
+        rights._permit(actor, provider, case, "VIEW")
+        result = _search_sources_for_locked_case(case, query=query, edition_id=edition_id)
+        rights._identity(case, actor, provider)
+        return result
+
+
+def _search_sources_for_locked_case(
+    case, *, query="", edition_id=None, printed_part="", printed_page=None, enforce_rights=False
 ):
     _enabled()
     if type(query) is not str or len(query) > 100:
@@ -74,67 +155,72 @@ def search_sources(
         )
     ):
         raise cases.CaseConflict("invalid_citation_location")
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only):
-        editions = list(
-            ReferenceEdition.objects.filter(work__source_book_id="622")
-            .select_related("work")
-            .order_by("pk")[:100]
-        )
-        available = [
-            {
-                "id": e.pk,
-                "book": e.work.title_original,
-                "title": e.title,
-                "edition_key": e.edition_key,
-            }
-            for e in editions
-        ]
-        if edition_id is None:
-            return {"editions": available, "results": []}
-        if type(edition_id) is not int or edition_id not in {e.pk for e in editions}:
-            raise cases.CaseConflict("existing_edition_required")
-        edition = next(e for e in editions if e.pk == edition_id)
+    readable = _readable_sources(case) if enforce_rights else None
+    edition_rows = ReferenceEdition.objects.filter(work__source_book_id="622")
+    if readable is not None:
+        edition_rows = edition_rows.filter(pk__in=readable)
+    editions = list(edition_rows.select_related("work").order_by("pk")[:100])
+    available = [
+        {
+            "id": e.pk,
+            "book": e.work.title_original,
+            "title": e.title,
+            "edition_key": e.edition_key,
+        }
+        for e in editions
+    ]
+    if edition_id is None:
+        return {"editions": available, "results": []}
+    if type(edition_id) is not int or edition_id not in {e.pk for e in editions}:
+        raise cases.CaseConflict("existing_edition_required")
+    edition = next(e for e in editions if e.pk == edition_id)
+    try:
+        validate_search(query, "normalized")
+        if readable is not None or printed_part or printed_page is not None:
+            headings = ReferenceHeading.objects.filter(edition=edition)
+            if readable is not None:
+                headings = headings.filter(source_row_id__in=readable.get(edition.pk, ()))
+            if printed_part:
+                headings = headings.filter(source_part=printed_part)
+            if printed_page is not None:
+                headings = headings.filter(source_page_number=printed_page)
+            normalized = normalize_title(query)
+            if query.strip() and not normalized.strip():
+                headings = headings.none()
+            for token in dict.fromkeys(normalized.split()):
+                headings = headings.filter(title_normalized__contains=token)
+            ids = list(
+                headings.order_by("source_order", "source_row_id").values_list(
+                    "source_row_id", flat=True
+                )[:20]
+            )
+        else:
+            found = catalog.search(edition, query, "normalized", Page(20, 0))
+            ids = [item["id"] for item in found.items]
+    except InvalidQuery as exc:
+        raise cases.CaseConflict("invalid_citation_query") from exc
+    results = []
+    for source_row_id in ids:
         try:
-            validate_search(query, "normalized")
-            if printed_part or printed_page is not None:
-                headings = ReferenceHeading.objects.filter(edition=edition)
-                if printed_part:
-                    headings = headings.filter(source_part=printed_part)
-                if printed_page is not None:
-                    headings = headings.filter(source_page_number=printed_page)
-                normalized = normalize_title(query)
-                if query.strip() and not normalized.strip():
-                    headings = headings.none()
-                for token in dict.fromkeys(normalized.split()):
-                    headings = headings.filter(title_normalized__contains=token)
-                ids = list(
-                    headings.order_by("source_order", "source_row_id").values_list(
-                        "source_row_id", flat=True
-                    )[:20]
-                )
-            else:
-                found = catalog.search(edition, query, "normalized", Page(20, 0))
-                ids = [item["id"] for item in found.items]
-        except InvalidQuery as exc:
-            raise cases.CaseConflict("invalid_citation_query") from exc
-        results = []
-        for source_row_id in ids:
-            try:
-                results.append(_source(edition_id, source_row_id))
-            except cases.CaseConflict:
-                # Incomplete catalog evidence must never become a selectable citation.
-                continue
-        return {"editions": available, "results": results}
+            results.append(_source(edition_id, source_row_id))
+        except cases.CaseConflict:
+            # Incomplete catalog evidence must never become a selectable citation.
+            continue
+    return {"editions": available, "results": results}
 
 
+@mutation_service
 def read_source(
     *, case_id, subject_id, provider, edition_id, source_row_id, synthetic_fixtures_only=False
 ):
     _enabled()
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only):
-        return _source(edition_id, source_row_id)
+    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+        source = _source(edition_id, source_row_id)
+        _require_source(case, source, "READ")
+        return source
 
 
+@mutation_service
 def save_cited_answer(
     *,
     case_id,
@@ -176,6 +262,7 @@ def save_cited_answer(
             if len(item["editorial_note"]) > 2000:
                 raise cases.CaseConflict("citation_note_too_long")
             source = _source(item["edition_id"], item["source_row_id"])
+            _require_source(case, source, "CITE")
             key = (item["edition_id"], item["source_row_id"])
             if key in seen or source["source_sha256"] != item["source_sha256"]:
                 raise cases.CaseConflict("citation_source_changed_or_duplicate")
@@ -229,7 +316,7 @@ def save_cited_answer(
         return cases._staff(case)
 
 
-def citations_for_locked_answer(answer):
+def _citation_snapshots_for_locked_answer(answer):
     """Internal projection for callers holding the authorized canonical case lock.
 
     This is not an authorization entrypoint. Publication services can snapshot
@@ -253,6 +340,14 @@ def citations_for_locked_answer(answer):
             }
         )
     return result
+
+
+def citations_for_locked_answer(answer):
+    """Current CITE availability under the caller's existing canonical case lock."""
+    rows = _citation_snapshots_for_locked_answer(answer)
+    for row in rows:
+        _require_source(answer.case, {key: row[key] for key in ("source", "source_sha256")}, "CITE")
+    return rows
 
 
 def clone_citations_for_new_answer(previous, answer):
@@ -282,6 +377,7 @@ def clone_citations_for_new_answer(previous, answer):
         )
 
 
+@mutation_service
 def read_citations(*, case_id, subject_id, provider, answer_id=None, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
@@ -297,6 +393,7 @@ def read_citations(*, case_id, subject_id, provider, answer_id=None, synthetic_f
         return citations_for_locked_answer(answer)
 
 
+@mutation_service
 def suggest_sources(**kwargs):
     """Deterministic catalog candidates only; no generated text or scholarly score.
 
@@ -315,6 +412,7 @@ def suggest_sources(**kwargs):
     ]
 
 
+@mutation_service
 def read_citation_history(
     *, case_id, subject_id, provider, before_revision=None, synthetic_fixtures_only=False
 ):
@@ -339,17 +437,23 @@ def read_citation_history(
                     raise cases.CaseConflict("citation_snapshot_inconsistent")
                 try:
                     current = _source(row.source["edition_id"], row.source["source_row_id"])
-                    available = current["source_sha256"] == row.source_sha256
+                    available = current["source_sha256"] == row.source_sha256 and _permits_source(
+                        case, current, "CITE"
+                    )
                 except cases.CaseConflict:
                     available = False
+                readable = _permits_source(
+                    case, {"source": row.source, "source_sha256": row.source_sha256}, "READ"
+                )
                 correction = getattr(row, "correction", None)
                 rows.append(
                     dict(
                         id=str(row.pk),
                         ordinal=row.ordinal,
-                        source=row.source,
-                        source_sha256=row.source_sha256,
-                        editorial_note=row.editorial_note,
+                        source=row.source if readable else None,
+                        source_sha256=row.source_sha256 if readable else "",
+                        editorial_note=row.editorial_note if readable else "",
+                        rights_restricted=not readable,
                         current_source_available=available,
                         correction=None
                         if correction is None
@@ -357,7 +461,16 @@ def read_citation_history(
                             reason=correction.reason,
                             previous_id=str(correction.previous_id),
                             previous_revision=correction.previous.answer.revision,
-                            previous_source=correction.previous.source,
+                            previous_source=correction.previous.source
+                            if _permits_source(
+                                case,
+                                {
+                                    "source": correction.previous.source,
+                                    "source_sha256": correction.previous.source_sha256,
+                                },
+                                "READ",
+                            )
+                            else None,
                         ),
                     )
                 )
