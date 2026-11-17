@@ -6,10 +6,10 @@
 {% if is_staff %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
 {% else %}<a href="/casework/status/">العودة إلى متابعة السؤال</a>
 <h2>إضافة مرفق</h2>
-<p>ملف نص UTF-8 فقط، حتى 64 كيلوبايت. اسم لاتيني ينتهي بـ .txt. إضافة ملف تُبطل الاعتماد السابق وتتطلب مراجعة الوقائع. إذا كان استيضاح معلقًا فأرسل الرد النصي أولًا.</p>
+<p>نص UTF-8 حتى 64 كيلوبايت، أو PDF وJPEG وPNG وWebP وMP3 وM4A وWAV حتى 192000 بايت. أسماء ملفات لاتينية. التحقق من البنية ليس فحص برمجيات ضارة. إضافة ملف تُبطل الاعتماد السابق وتتطلب مراجعة الوقائع. إذا كان استيضاح معلقًا فأرسل الرد النصي أولًا.</p>
 <form method="post" enctype="multipart/form-data" action="/casework/status/">{% csrf_token %}
 <input type="hidden" name="action" value="attachment_upload"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="upload_proof" value="{{ upload_proof }}">
-<label>الملف الاصطناعي <input type="file" name="attachment" accept=".txt,text/plain" required></label>
+<label>الملف الاصطناعي <input type="file" name="attachment" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav" required></label>
 <label><input type="checkbox" name="synthetic_only" value="yes" required>أؤكد أن الملف اصطناعي ولا يحتوي بيانات حقيقية</label><button>حفظ الأصل وإضافة الوقائع</button></form>{% endif %}
 <h2>المرفقات المحفوظة</h2>
 {% for item in result.attachments %}<section><h3>{{ item.filename }}</h3><p>إصدار الوقائع {{ item.evidence_version }} — {{ item.size }} بايت — {{ item.media_type }} — {{ item.created_at|date:"c" }}</p><p>المصدر: تحميل السائل</p><p>SHA256: <code>{{ item.sha256 }}</code></p>
@@ -17,5 +17,9 @@
 {% if is_staff %}<input type="hidden" name="case_ref" value="{{ result.public_ref }}">{% endif %}
 <input type="hidden" name="attachment_id" value="{{ item.id }}"><button name="action" value="attachment_preview">معاينة {{ item.filename }}</button><button name="action" value="attachment_download">تنزيل الأصل {{ item.filename }}</button></form></section>
 {% empty %}<p>لا توجد مرفقات محفوظة.</p>{% endfor %}
-{% if preview %}<section><h2>معاينة الأصل: {{ preview.filename }}</h2><p>نص المصدر الأصلي دون تحرير — إصدار الوقائع {{ preview.evidence_version }}</p><pre>{{ preview.text }}</pre></section>{% endif %}
+{% if preview %}<section><h2>معاينة الأصل: {{ preview.filename }}</h2><p>نص المصدر الأصلي دون تحرير — إصدار الوقائع {{ preview.evidence_version }}</p>{% if preview.kind == "text" %}<pre>{{ preview.text }}</pre>
+{% elif preview.kind == "image" %}<img src="{{ preview.media_url }}" alt="معاينة المرفق الاصطناعي {{ preview.filename }}" width="280">
+{% elif preview.kind == "audio" %}<audio controls preload="metadata" src="{{ preview.media_url }}">متصفحك لا يدعم تشغيل الصوت.</audio>
+{% elif preview.kind == "pdf" %}<iframe title="معاينة PDF الخاصة" src="{{ preview.media_url }}" sandbox width="280" height="400"></iframe>
+{% endif %}</section>{% endif %}
 </main></body></html>

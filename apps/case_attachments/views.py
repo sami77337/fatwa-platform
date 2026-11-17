@@ -50,7 +50,7 @@ def _download(row):
     return private(
         HttpResponse(
             row["raw"],
-            content_type="text/plain; charset=utf-8",
+            content_type=row["media_type"],
             headers={
                 "Content-Disposition": f'attachment; filename="{row["filename"]}"',
             },
@@ -114,7 +114,7 @@ def requester(request):
             )
             if action == "attachment_download":
                 return _download(row)
-            preview = {**row, "text": row["raw"].decode("utf-8")}
+            preview = _preview(row, is_staff=False)
         return _page(request, result, token=token, preview=preview)
     except (InvalidForm, SuspiciousOperation):
         return denied("attachment_form_invalid", 400)
@@ -159,7 +159,7 @@ def staff(request):
             row = services.staff_read(**common, attachment_id=fields["attachment_id"])
             if action == "attachment_download":
                 return _download(row)
-            preview = {**row, "text": row["raw"].decode("utf-8")}
+            preview = _preview(row, is_staff=True)
         return _page(request, result, is_staff=True, preview=preview)
     except (InvalidForm, SuspiciousOperation):
         return denied("attachment_form_invalid", 400)
@@ -167,5 +167,75 @@ def staff(request):
         return denied("staff_identity_required", 403)
     except cases.CaseConflict:
         return denied("attachment_unavailable_or_stale", 409)
+    except (DatabaseError, SyntheticWriteDenied):
+        return denied("casework_store_unavailable", 503)
+
+
+def _preview(row, *, is_staff):
+    audience = "staff" if is_staff else "status"
+    return {
+        **row,
+        "text": row["raw"].decode("utf-8") if row["kind"] == "text" else "",
+        "media_url": f"/casework/{audience}/attachments/{row['id']}/",
+    }
+
+
+def _inline(row):
+    response = private(
+        HttpResponse(
+            row["raw"],
+            content_type=row["media_type"],
+            headers={
+                "Content-Disposition": f'inline; filename="{row["filename"]}"',
+            },
+        )
+    )
+    response["Content-Security-Policy"] = "sandbox; default-src 'none'; frame-ancestors 'self'"
+    response["X-Frame-Options"] = "SAMEORIGIN"
+    return response
+
+
+@sensitive_variables("token", "row")
+def requester_file(request, attachment_id):
+    if request.method not in {"GET", "HEAD"} or request.GET:
+        return denied("attachment_unavailable", 404)
+    try:
+        token = workspace._capability(request)
+        row = services.requester_read(
+            token=token, attachment_id=attachment_id, synthetic_fixtures_only=True
+        )
+        return _inline(row)
+    except (cases.CaseConflict, InvalidForm, SuspiciousOperation):
+        return denied("attachment_unavailable", 404)
+    except (DatabaseError, SyntheticWriteDenied):
+        return denied("casework_store_unavailable", 503)
+
+
+def staff_file(request, attachment_id):
+    if request.method not in {"GET", "HEAD"} or request.GET:
+        return denied("attachment_unavailable", 404)
+    try:
+        from .models import CaseAttachment
+
+        provider = _provider()
+        actor = current_staff(request, provider)
+        provider = RequestDirectory(provider, actor, authenticated_provider_id=provider.provider_id)
+        case_id = (
+            CaseAttachment.objects.filter(pk=attachment_id)
+            .values_list("case_id", flat=True)
+            .first()
+        )
+        if case_id is None:
+            raise cases.CaseConflict("attachment_unavailable")
+        row = services.staff_read(
+            case_id=case_id,
+            subject_id=actor.subject_id,
+            provider=provider,
+            attachment_id=attachment_id,
+            synthetic_fixtures_only=True,
+        )
+        return _inline(row)
+    except (cases.CaseConflict, IdentityUnavailable, InvalidForm, SuspiciousOperation):
+        return denied("attachment_unavailable", 404)
     except (DatabaseError, SyntheticWriteDenied):
         return denied("casework_store_unavailable", 503)
