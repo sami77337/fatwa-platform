@@ -102,7 +102,9 @@ class V7ConnectedBrowserTests(LiveServerTestCase):
         spec, rows = fixture()
         spec = replace(spec, source_book_id="622")
         preview = ingest_catalog(spec, rows)
-        ingest_catalog(spec, rows, dry_run=False, expected_checksum=preview.checksum)
+        edition = ingest_catalog(
+            spec, rows, dry_run=False, expected_checksum=preview.checksum
+        ).edition_id
         directory = BrowserDirectory()
         OUT.mkdir(parents=True, exist_ok=True)
         external, errors = [], []
@@ -218,19 +220,17 @@ class V7ConnectedBrowserTests(LiveServerTestCase):
                 self.assertIn(FOLLOWUP, staff.content())
 
                 self.click(staff, "تحرير جواب بإحالة موثقة")
-                staff.locator("#query").fill("فرع")
-                self.click(staff, "البحث في المرجع")
-                with staff.expect_navigation(wait_until="domcontentloaded") as chosen:
-                    staff.get_by_role(
-                        "button", name="اختيار هذا الموضع وتحرير الجواب"
-                    ).first.click()
-                self.assertEqual(chosen.value.status, 200)
-                staff.locator("#note").fill("تعليق تحريري اصطناعي مستقل عن عنوان المصدر.")
                 staff.locator("#answer").fill(ANSWER)
+                staff.locator("#edition").select_option(str(edition))
+                staff.locator("#query").fill("فرع")
+                self.click(staff, "البحث مع الاحتفاظ بالمسودة")
+                self.assertEqual(staff.locator("#answer").input_value(), ANSWER)
+                staff.locator("#note").fill("تعليق تحريري اصطناعي مستقل عن عنوان المصدر.")
+                self.click(staff, "إضافة الموضع 2 إلى القائمة")
                 staff.locator('input[name="confirm"]').check()
-                self.click(staff, "حفظ جواب جديد بإحالته")
+                self.click(staff, "حفظ الجواب والقائمة الكاملة")
                 self.capture(staff, "cited-answer")
-                self.click(staff, "العودة إلى القضية")
+                self.click(staff, "العودة إلى القضية دون حفظ هذه المسودة")
                 self.click(staff, "اعتماد هذه النسخة")
                 requester.goto(self.live_server_url + "/casework/status/")
                 self.assertNotIn(ANSWER, requester.content())
