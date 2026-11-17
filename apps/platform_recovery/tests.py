@@ -505,7 +505,7 @@ service.restore(**json.load(sys.stdin))
                 "--major",
                 str(self.manifest["postgres_major"]),
                 "--settings",
-                "config.settings.campaign_review",
+                self.service.V10_TEST_SETTINGS,
                 "--",
                 sys.executable,
                 "-m",

@@ -135,3 +135,16 @@ compatibility module. The shared fixture and V10 browser test now preserve the
 module actually selected by their process when applying test overlays. Neither
 policy flags nor the production recovery gate were relaxed. Only compatibility
 and directly affected fixture checks need local repetition; CI rechecks the head.
+
+The isolated compatibility rerun on each major executed 22 tests: 21 passed and
+one independent-server restore failed because that historical test hard-coded the
+ordinary settings module for its child server. It now explicitly selects the same
+V10-only test profile for that isolated child; the one affected test passed on
+PG17 (5.812s) and PG18 (5.772s). The successful 21 were not rerun manually.
+
+CI history on `3f93998`: FAST9 integrated local development journey run
+44198655774/job134446690319 passed its service and HTTP steps but failed before
+browser creation with Playwright TimeoutError at launch (10s), sandbox enabled.
+There were no page assertions, page errors or network requests yet. This is a
+recorded startup failure with cause not established, not a passing browser test
+or an assumed flake. The next exact-head CI run must supply its own result.
