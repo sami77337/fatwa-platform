@@ -113,6 +113,7 @@ jobs:
               'tests.casework.test_http',
               'tests.casework.test_adversarial',
               'tests.casework.test_tracking_bridge',
+              'tests.casework.test_delivery',
           ]
           def test_ids(suite):
               for test in suite:

@@ -180,3 +180,24 @@ class CaseEvent(models.Model):
                 name="cw_event_action",
             ),
         ]
+
+
+class CaseDelivery(models.Model):
+    """Immutable bridge to the existing queue, one exact plan per Mufti decision."""
+
+    decision = models.OneToOneField(
+        CaseDecision, primary_key=True, on_delete=models.PROTECT, related_name="delivery"
+    )
+    approval = models.OneToOneField(
+        "delivery_queue.ApprovalClaim", on_delete=models.PROTECT, related_name="case_delivery"
+    )
+    max_chars = models.PositiveIntegerField()
+    split = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(max_chars__gte=1, max_chars__lte=6000), name="cw_delivery_text_limit"
+            ),
+        ]
