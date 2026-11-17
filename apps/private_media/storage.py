@@ -1,11 +1,12 @@
 """Private storage seam: callers authorize scope before reading; adapters never return URLs.
 
-The shipped adapter packages immutable database bytes. A future object-storage
-adapter must preserve this integrity contract and define its own durable pointer
-schema/migration; no cloud configuration or credentials are supplied here.
+Inline database storage remains the default. The optional filesystem adapter
+uses the same private reference contract; no cloud configuration, credentials
+or public URLs are supplied here.
 """
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
 
@@ -24,6 +25,11 @@ class StoredOriginal:
 
 
 class PrivateStorage(ABC):
+    @contextmanager
+    def binding_lock(self, digest: str):
+        """Hold until the outermost owner-row transaction commits (inline is a no-op)."""
+        yield
+
     @abstractmethod
     def put(self, media: ValidatedMedia) -> StoredOriginal:
         """Store an immutable original under a nonpublic reference, without overwriting."""
@@ -60,3 +66,13 @@ def configured_storage() -> PrivateStorage:
     if not isinstance(storage, PrivateStorage):
         raise MediaValidationError("private_storage_unavailable")
     return storage
+
+
+def read_original(original: StoredOriginal) -> bytes:
+    """Read mixed legacy-inline/current-private rows without silently changing their backend."""
+    storage = (
+        InlineDatabaseStorage()
+        if original.backend == "inline-database-v1"
+        else configured_storage()
+    )
+    return verify_original(storage.get(original), original.sha256, original.size)
