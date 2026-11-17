@@ -285,7 +285,8 @@ class StorageBindingTests(TransactionTestCase):
             "apps.case_attachments.storage_bindings.apps.is_installed",
             side_effect=lambda name: name == "apps.answer_media",
         ):
-            self.assertFalse(live_references(row.storage_backend, row.storage_key))
+            with self.assertRaisesMessage(cases.CaseConflict, "media_owner_schema_unavailable"):
+                live_references(row.storage_backend, row.storage_key)
         path = self.storage.root / "objects" / row.storage_key
         os.utime(path, (time.time() - 7200, time.time() - 7200))
         result = self.storage.collect_orphans(live_references, grace_seconds=3600, dry_run=False)

@@ -50,7 +50,8 @@ never claimed.
    synthetic DB with FATWA_PRODUCTION=0, existing ownership settings and explicit
    `synthetic_fixtures_only=True` service arguments.
 3. Server-only `FATWA_COMPOSITE_DELIVERY_CAPABILITIES` is a callable receiving
-   canonical `case.source.channel` and returning `ChannelProfile`. Example:
+   the validated immutable inbound source (`telegram`, `youtube`, `website`),
+   or the legacy canonical `case.source.channel` for pre-import cases and returning `ChannelProfile`. Example:
 
    ```python
    ChannelProfile(

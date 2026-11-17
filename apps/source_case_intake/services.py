@@ -308,7 +308,7 @@ def attach_fixture(
                 if (raw_for_owner(stored), stored.filename, stored.media_type) != (
                     raw,
                     filename,
-                    media_type,
+                    checked.media_type,
                 ):
                     raise IntakeError("attachment_idempotency_conflict")
                 return {"id": str(stored.pk), "sha256": stored.sha256, "created": False}

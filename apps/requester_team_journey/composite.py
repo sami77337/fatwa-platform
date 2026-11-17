@@ -20,6 +20,7 @@ from apps.composite_delivery import services
 from apps.delivery_planner.planner import InvalidPlan
 from apps.delivery_queue import services as queue
 from apps.delivery_queue.author_handoff import InvalidSignedResponse, decode_signed_response
+from apps.delivery_queue.signed_provider_receipts import Ed25519ProviderEventVerifier
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 
@@ -70,6 +71,11 @@ def desk(request):
         if action in {"composite_stage", "composite_reconcile"}:
             if fields["confirm"] != "yes":
                 raise InvalidForm("confirmation_required")
+            if not isinstance(
+                getattr(settings, "FATWA_COMPOSITE_DELIVERY_PROVIDER_VERIFIER", None),
+                Ed25519ProviderEventVerifier,
+            ):
+                raise cases.CaseConflict("composite_provider_verifier_unavailable")
             if action == "composite_stage":
                 digest, receipt = decode_signed_response(fields["response_json"])
                 if not compare_digest(digest, prepared["plan_sha256"]):
