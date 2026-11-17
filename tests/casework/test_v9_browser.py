@@ -352,6 +352,31 @@ class V9ConnectedBrowserTests(LiveServerTestCase):
                     self.click(staff, "تحديث خطة التوصيل")
                     self.assertIn("اكتمل تقرير التسليم الموقّع", staff.content())
                     self.capture(staff, "signed-composite-complete")
+                    requester.goto(self.live_server_url + "/casework/status/")
+                    composite_section = requester.locator("#requester-composite-delivery")
+                    self.assertIn(
+                        "تحققت الإيصالات الموقّعة لجميع أجزاء هذا الإصدار.",
+                        requester.locator("#composite-delivery-verified").inner_text(),
+                    )
+                    self.assertIn(
+                        "أجزاء تحقق إثبات تسليمها الموقّع: 2 من 2.",
+                        composite_section.inner_text(),
+                    )
+                    self.assertIn(
+                        "ليست إرسالًا خارجيًا أو إثباتًا لقراءتك", composite_section.inner_text()
+                    )
+                    # Composite simulation evidence never unlocks the legacy #225 text path.
+                    self.assertEqual(requester.locator("#requester-answer-text").count(), 0)
+                    self.assertEqual(requester.locator("#requester-verified-parts").count(), 0)
+                    self.assertNotIn(DRAFT, requester.content())
+                    self.assertNotIn(NOTE, requester.content())
+                    self.assertEqual(
+                        requester.get_by_role(
+                            "button", name="أجزاء الجواب المتاحة خصوصيًا", exact=True
+                        ).count(),
+                        1,
+                    )
+                    self.capture(requester, "requester-composite-evidence-separate-from-text")
                     # Return through the standard same-case desk; no additional original case.
                     staff.goto(self.live_server_url + "/casework/staff/")
                     self.click(staff, source["public_ref"])
@@ -527,6 +552,8 @@ class V9ConnectedBrowserTests(LiveServerTestCase):
                                 "external_requests": 0,
                                 "page_errors": 0,
                                 "revoked_transcript_status": 404,
+                                "requester_composite_verified": True,
+                                "legacy_private_text_visible": False,
                                 "canonical": evidence,
                             },
                             indent=2,
