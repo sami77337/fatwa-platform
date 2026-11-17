@@ -33,11 +33,33 @@ source material and remain unavailable.
 Each save creates a **new canonical AnswerRevision** and clears prior approval,
 within the existing locked case history transaction. It writes no parallel case
 or answer records. Each immutable citation belongs to that exact answer revision.
-The service supports 1–12 explicitly selected references; the native form saves
-one selected citation per new revision and clearly states that previous citations
-remain in previous versions. It does not silently copy references forward.
+The service and native editor support 1–12 explicitly selected references.
+Opening the editor shows the latest answer and its complete source list. Search
+by explicit edition, exact printed part/page, and/or normalized title terms;
+select a specific source row, add several positions, remove a selection, or
+update its human note. The original source is always displayed separately.
+Search/add/remove/update actions preserve the unsaved answer text. None creates
+an answer revision. Final confirmation explicitly reviews and saves the whole
+displayed list with one new canonical answer; older lists remain unchanged.
 Stale evidence/case forms, changed fingerprints, nonexistent references, duplicate
 selections, extra fabricated source fields, and pending clarification fail closed.
+
+The native composer uses one POST form with at most **12 submitted fields**,
+including CSRF and final confirmation, regardless of reference count. Its signed
+30-minute scratch state binds the list and original revision/evidence pins to
+the current case, provider, subject, identity epoch, and browser CSRF secret.
+It is not a database record, session grant, or answer. Expired/tampered/cross-case
+state is rejected. A stale final save retains the submitted text and original
+pins for copying/review; it never silently rebinds them to newer evidence.
+Leaving the page or ending the identity session can discard unsaved work;
+the UI makes this limitation explicit. No local-storage or draft cookies.
+
+Integration: add `citation_compose` to the shared staff action dispatch (or use
+the exported `views.ACTIONS`). The isolated test settings use `case_citations.urls`
+to compose this handler with existing campaign routes without changing shared
+configuration. Existing V7 single-reference actions remain compatible.
+The composer command is `search`, `add:<edition>:<row>`, `remove:<zero-index>`,
+`note:<zero-index>`, or `save`; only `save` with `confirm=yes` writes an answer.
 
 The PostgreSQL trigger prevents changing/deleting a snapshot, mismatching source
 metadata, and appending citations after the transaction that created the answer.
@@ -51,13 +73,15 @@ Focused tests (fresh PostgreSQL 17/18 only):
 ```sh
 python infra/dev/with_casework_postgres.py --pg-bin /path/to/pg/bin --major 17 \
   --settings apps.case_citations.settings -- \
-  python manage.py test apps.case_citations.tests --noinput
+  python manage.py test apps.case_citations.tests apps.case_citations.composer_tests --noinput
 ```
 
 The source fixture is the repository's five fabricated reference headings with
 the explicit synthetic book identity `622`; no real source archive or data is
 claimed. Tests cover search, literal preservation, version binding, approval
 invalidation, authority, fabricated/stale inputs, rollback, database immutability,
-and authenticated CSRF-protected RTL forms. Campaign browser evidence is recorded
-by the integration suite. No AI writing/approval, external send, or production
+and authenticated CSRF-protected RTL forms. `apps.case_citations.browser_tests`
+exercises actual multi-selection, draft preservation, save and reopening at
+320/1280px with screenshots/JSON under `.local/qa/v8-citations/browser`.
+No AI writing/approval, external send, or production
 access. **NOT_DEPLOYED / GATES_HOLD / ACCEPTANCE_HOLD**.

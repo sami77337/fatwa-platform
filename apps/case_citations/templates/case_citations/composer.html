@@ -1,0 +1,31 @@
+{% extends "casework/base.html" %}
+{% block title %}تحرير جواب بعدة إحالات{% endblock %}
+{% block content %}
+<h2>تحرير جواب بعدة إحالات موثقة</h2>
+<p>تجربة مغلقة ببيانات اصطناعية. المصادر المتاحة عناوين فهرس كتاب 622 ومواضعها؛ ليست نص الكتاب الكامل أو تخريجًا محققًا. الملاءمة العلمية يراجعها المفتي البشري.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>العودة إلى القضية دون حفظ هذه المسودة</button></form>
+<p>{{ selected.public_ref }} · مراجعة التحرير {{ base_revision }} · إصدار الوقائع {{ base_evidence_version }}</p>
+{% if message %}<p role="status">{{ message }}</p>{% endif %}
+<p>البحث والإضافة والحذف يحتفظون بالنص غير المحفوظ في هذه الصفحة. لا يُنشأ إصدار حتى تؤكد حفظ القائمة كاملة. أعد فتح المحرر عند انتهاء جلسة الهوية؛ انسخ مسودتك قبل مغادرة الصفحة.</p>
+<form id="citation-composer" method="post" action="/casework/staff/">
+{% csrf_token %}<input type="hidden" name="action" value="citation_compose"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="workspace" value="{{ workspace }}">
+<label for="answer">نص الجواب البشري غير المحفوظ</label><textarea id="answer" name="text" maxlength="16000">{{ text }}</textarea>
+<fieldset><legend>بحث مرجع موجود واختيار موضعه</legend>
+<label for="edition">الكتاب والطبعة</label><select id="edition" name="edition_id"><option value="">اختر طبعة محددة</option>{% for edition in sources.editions %}<option value="{{ edition.id }}"{% if edition.id == edition_id %} selected{% endif %}>{{ edition.book }} — {{ edition.title }} ({{ edition.edition_key }})</option>{% endfor %}</select>
+<label for="query">كلمات العنوان</label><input id="query" name="query" maxlength="100" value="{{ query }}">
+<label for="part">الجزء كما هو في المصدر (اختياري)</label><input id="part" name="part" maxlength="100" value="{{ part }}">
+<label for="page">الصفحة المطبوعة (اختياري)</label><input id="page" name="page" type="number" min="1" max="999999999" value="{{ page|default_if_none:'' }}">
+<button name="command" value="search">البحث مع الاحتفاظ بالمسودة</button>
+<p>يمكن البحث بالجزء والصفحة دون كلمات. يعرض البحث حتى 20 موضعًا؛ ضيّق البحث عند الحاجة. اختيار موضع يعني صفه المحدد داخل الطبعة، ولا ينشئ مصدرًا جديدًا.</p>
+<label for="note">تعليق تحريري بشري للمصدر المراد إضافته أو تحديثه</label><textarea id="note" name="editorial_note" maxlength="2000">{{ editorial_note }}</textarea>
+{% for item in sources.results %}<article><h3>{{ item.source.heading_title }}</h3><p>{{ item.source.work_title }} · {{ item.source.edition_title }} · الجزء {{ item.source.printed_part }} · الصفحة {{ item.source.printed_page }} · الموضع {{ item.source.source_row_id }}</p><p>{{ item.source.path|join:" / " }}</p><button name="command" value="add:{{ item.source.edition_id }}:{{ item.source.source_row_id }}"{% if capacity %} disabled{% endif %}>إضافة الموضع {{ item.source.source_row_id }} إلى القائمة</button></article>{% empty %}<p>لا توجد نتائج معروضة؛ اختر طبعة وأدخل كلمات أو موضعًا مطبوعًا.</p>{% endfor %}
+</fieldset>
+<section><h3>القائمة الكاملة التي سيحملها الإصدار الجديد ({{ chosen|length }}/12)</h3><p>تظهر هنا إحالات أحدث إصدار عند فتح المحرر. يمكنك حذفها أو تعديل تعليقاتها قبل تأكيد القائمة الجديدة؛ تبقى الإصدارات السابقة محفوظة.</p>
+{% for item in chosen %}<article><h4>{{ forloop.counter }}. {{ item.source.heading_title }}</h4><p>العنوان الأصلي: <span class="original">{{ item.source.heading_title }}</span></p><p>{{ item.source.work_title }} — {{ item.source.edition_title }} — {{ item.source.publisher }}</p><p>الجزء {{ item.source.printed_part }} · الصفحة {{ item.source.printed_page }} · الموضع {{ item.source.source_row_id }}</p><p>{{ item.source.path|join:" / " }}</p><p>تعليق تحريري بشري مستقل:</p><p class="original">{{ item.editorial_note }}</p>
+<details><summary>هوية المصدر وإصداره المحفوظ</summary><p class="original">{{ item.source.source_namespace }} / {{ item.source.source_book_id }} / {{ item.source.edition_key }}</p><p class="original">بصمة المدخل {{ item.source.source_input_sha256 }}</p><p class="original">بصمة الأرشيف {{ item.source.source_archive_sha256 }}</p><p class="original">بصمة اللقطة {{ item.source_sha256 }}</p></details>
+<button name="command" value="note:{{ item.index }}">تحديث تعليق الإحالة {{ forloop.counter }} من حقل التعليق</button><button name="command" value="remove:{{ item.index }}">حذف الإحالة {{ forloop.counter }} من القائمة الجديدة</button></article>{% empty %}<p>أضف موضعًا واحدًا على الأقل قبل الحفظ.</p>{% endfor %}
+</section>
+<label><input type="checkbox" name="confirm" value="yes">راجعت القائمة الكاملة وصلتها بالجواب وأؤكد حفظها مع إصدار جديد وإبطال أي اعتماد سابق.</label>
+<button name="command" value="save"{% if not chosen %} disabled{% endif %}>حفظ الجواب والقائمة الكاملة</button>
+</form>
+{% endblock %}

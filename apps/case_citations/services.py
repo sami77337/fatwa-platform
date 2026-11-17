@@ -10,7 +10,8 @@ from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
 from apps.reference import services as catalog
 from apps.reference.models import ReferenceEdition, ReferenceHeading
-from apps.reference.query import InvalidQuery, Page
+from apps.reference.normalization import normalize_title
+from apps.reference.query import InvalidQuery, Page, validate_search
 from apps.reference_links.bridge import SourceIdentity
 from apps.reference_links.django_adapter import DjangoCatalog
 from apps.reference_links.resolution import Outcome, resolve
@@ -49,11 +50,29 @@ def _source(edition_id, source_row_id):
 
 
 def search_sources(
-    *, case_id, subject_id, provider, query="", edition_id=None, synthetic_fixtures_only=False
+    *,
+    case_id,
+    subject_id,
+    provider,
+    query="",
+    edition_id=None,
+    printed_part="",
+    printed_page=None,
+    synthetic_fixtures_only=False,
 ):
     _enabled()
     if type(query) is not str or len(query) > 100:
         raise cases.CaseConflict("invalid_citation_query")
+    if (
+        type(printed_part) is not str
+        or len(printed_part) > 100
+        or any(ord(char) < 32 for char in printed_part)
+        or (
+            printed_page is not None
+            and (type(printed_page) is not int or not 1 <= printed_page <= 999999999)
+        )
+    ):
+        raise cases.CaseConflict("invalid_citation_location")
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only):
         editions = list(
             ReferenceEdition.objects.filter(work__source_book_id="622")
@@ -75,13 +94,32 @@ def search_sources(
             raise cases.CaseConflict("existing_edition_required")
         edition = next(e for e in editions if e.pk == edition_id)
         try:
-            found = catalog.search(edition, query, "normalized", Page(20, 0))
+            validate_search(query, "normalized")
+            if printed_part or printed_page is not None:
+                headings = ReferenceHeading.objects.filter(edition=edition)
+                if printed_part:
+                    headings = headings.filter(source_part=printed_part)
+                if printed_page is not None:
+                    headings = headings.filter(source_page_number=printed_page)
+                normalized = normalize_title(query)
+                if query.strip() and not normalized.strip():
+                    headings = headings.none()
+                for token in dict.fromkeys(normalized.split()):
+                    headings = headings.filter(title_normalized__contains=token)
+                ids = list(
+                    headings.order_by("source_order", "source_row_id").values_list(
+                        "source_row_id", flat=True
+                    )[:20]
+                )
+            else:
+                found = catalog.search(edition, query, "normalized", Page(20, 0))
+                ids = [item["id"] for item in found.items]
         except InvalidQuery as exc:
             raise cases.CaseConflict("invalid_citation_query") from exc
         results = []
-        for item in found.items:
+        for source_row_id in ids:
             try:
-                results.append(_source(edition_id, item["id"]))
+                results.append(_source(edition_id, source_row_id))
             except cases.CaseConflict:
                 # Incomplete catalog evidence must never become a selectable citation.
                 continue
