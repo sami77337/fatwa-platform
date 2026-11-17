@@ -2,12 +2,15 @@
 
 import json
 import os
+from contextlib import ExitStack
 from hashlib import sha256
 
 from django.apps import apps
 from django.conf import settings
+from django.utils import timezone
 
 from apps.casework import services as cases
+from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.editorial_search.query_terms import normalize_editorial_search
 from apps.platform_recovery.integration import mutation_service
 
@@ -108,12 +111,21 @@ def _require_publication_sources(case, citations):
 
     if not required():
         return
-    from apps.case_citations.services import _require_source, _rights_services
+    from apps.case_citations.services import _rights_services
 
-    _rights_services()  # Missing/disabled registry must not turn into an empty grant.
+    rights = _rights_services()  # Missing/disabled registry cannot become an empty grant.
+    deadlines = []
     for item in citations:
         for usage in ("READ", "CITE", "PREVIEW_METADATA"):
-            _require_source(case, item, usage)
+            deadline = rights.reference_permission_deadline_for_locked_case(
+                case=case, source=item, usage=usage
+            )
+            if deadline is None:
+                raise cases.CaseConflict("current_source_rights_required")
+            deadlines.append(deadline)
+    # The bound is from the exact rights revision validated above. It lets a
+    # collection check all earlier grants against one clock after its last check.
+    return min(deadlines, default=None)
 
 
 def _projection(edition, *, editorial=False, rights_usage="READ"):
@@ -438,15 +450,22 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
     scoped = cases.list_cases(
         subject_id=subject_id, provider=provider, synthetic_fixtures_only=synthetic_fixtures_only
     )
-    output = []
-    for row in scoped:
-        with cases._staff_case(row["case_id"], subject_id, provider, True) as (case, _):
-            # The most recently approved edition is authoritative; withdrawal never
-            # resurrects an older publication. Unapproved candidates are never searched.
+    candidates = []
+    # Keep every authorized case locked through projection, final collection
+    # validation and filtering. The existing queue unit retains its ownership
+    # preflight; it does not create a second authorization path.
+    with synthetic_queue_atomic(), ExitStack() as stack:
+        locked = {}
+        for row in sorted(scoped, key=lambda row: row["case_id"]):
+            locked[row["case_id"]] = stack.enter_context(
+                cases._staff_case(row["case_id"], subject_id, provider, True)
+            )
+        for row in scoped:
+            case, actor = locked[row["case_id"]]
+            # Withdrawal never resurrects an older publication.
             edition = (
                 PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
-                .order_by("-number")
-                .first()
+                .order_by("-number").first()
             )
             if edition is None or edition.actions.filter(action="WITHDRAW").exists():
                 continue
@@ -455,14 +474,28 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
                 _verify(edition)
                 if edition.citations != _citation_snapshot(edition.answer):
                     continue
-                _require_publication_sources(case, edition.citations)
+                public = _projection(edition, rights_usage="PREVIEW_METADATA")
             except cases.CaseConflict:
                 continue
-            public = _projection(edition, rights_usage="PREVIEW_METADATA")
+            candidates.append((case, edition, public))
+
+        available = []
+        for case, edition, public in candidates:
             try:
-                _require_publication_sources(case, edition.citations)
+                deadline = _require_publication_sources(case, edition.citations)
             except cases.CaseConflict:
                 continue
+            available.append((public, deadline))
+        # Re-resolve every identity before returning the batch, not just before
+        # each projection. A withdrawn scope cannot leave an earlier row behind.
+        for case, actor in locked.values():
+            current = cases._identity(provider, subject_id, case)
+            if current.auth_epoch != actor.auth_epoch:
+                raise cases.CaseConflict("case_identity_changed")
+        now = timezone.now()
+        available = [(public, end) for public, end in available if end is None or end > now]
+        output = []
+        for public, _ in available:
             haystack = normalize_editorial_search(
                 " ".join((public["title"], public["category"], public["body"]))
             )
@@ -470,4 +503,9 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
                 not category or normalize_editorial_search(public["category"]) == category
             ):
                 output.append(public)
-    return output
+        # If a grant expires during filtering, fail the whole response closed.
+        # No stale partial results or metadata escape and no retry loop extends it.
+        now = timezone.now()
+        if any(end is not None and end <= now for _, end in available):
+            raise cases.CaseConflict("current_source_rights_required")
+        return output

@@ -10,6 +10,7 @@ from contextlib import contextmanager
 
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
 from apps.case_citations import services as citations
 from apps.casework import services as cases
@@ -281,38 +282,59 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
                 # Publish to the response collection only after the context's
                 # return-boundary checks succeeded. Failed exits cannot leave a
                 # stale item, category or count in the response.
-                available.append(projected)
+                available.append((edition, projected))
             except PreviewUnavailable:
                 continue
+        # Revalidate the whole collected batch after the last projection. A
+        # per-item context exit cannot protect an earlier item while later ones
+        # are assembled. Do this before deriving any facet, count or page.
+        checked = []
+        for edition, projected in available:
+            try:
+                deadline = publication._require_publication_sources(edition.case, edition.citations)
+            except cases.CaseConflict:
+                continue
+            checked.append((projected, deadline))
         _recheck(selected)
-    available.sort(key=lambda row: (normalize_editorial_search(row["title"]), row["id"]))
-    categories = sorted({row["category"] for row in available}, key=normalize_editorial_search)
-    needle = normalize_editorial_search(query)
-    category_key = normalize_editorial_search(category)
-    matched = []
-    for row in available:
-        source_text = " ".join(
-            str(source[key]) for source in row["references"] for key in SOURCE_FIELDS
-        )
-        haystack = normalize_editorial_search(
-            " ".join((row["title"], row["category"], row["body"], source_text))
-        )
-        if (
-            (not needle or needle in haystack)
-            and (not category_key or normalize_editorial_search(row["category"]) == category_key)
-            and (material != "reference" or row["references"])
-        ):
-            # Listing does not duplicate the publication body.
-            matched.append({key: value for key, value in row.items() if key != "body"})
-    start = (page - 1) * PAGE_SIZE
-    return {
-        "items": matched[start : start + PAGE_SIZE],
-        "categories": categories,
-        "total": len(matched),
-        "has_previous": page > 1,
-        "has_next": start + PAGE_SIZE < len(matched),
-        "filters": chosen,
-    }
+        now = timezone.now()
+        checked = [(row, end) for row, end in checked if end is None or end > now]
+        available = [row for row, _ in checked]
+        available.sort(key=lambda row: (normalize_editorial_search(row["title"]), row["id"]))
+        categories = sorted({row["category"] for row in available}, key=normalize_editorial_search)
+        needle = normalize_editorial_search(query)
+        category_key = normalize_editorial_search(category)
+        matched = []
+        for row in available:
+            source_text = " ".join(
+                str(source[key]) for source in row["references"] for key in SOURCE_FIELDS
+            )
+            haystack = normalize_editorial_search(
+                " ".join((row["title"], row["category"], row["body"], source_text))
+            )
+            if (
+                (not needle or needle in haystack)
+                and (not category_key or normalize_editorial_search(row["category"]) == category_key)
+                and (material != "reference" or row["references"])
+            ):
+                # Listing does not duplicate the publication body.
+                matched.append({key: value for key, value in row.items() if key != "body"})
+        start = (page - 1) * PAGE_SIZE
+        result = {
+            "items": matched[start : start + PAGE_SIZE],
+            "categories": categories,
+            "total": len(matched),
+            "has_previous": page > 1,
+            "has_next": start + PAGE_SIZE < len(matched),
+            "filters": chosen,
+        }
+        _recheck(selected)
+        # A single final clock covers grants checked earlier in the pass too.
+        # Expiry during sorting/filtering fails closed instead of exposing any
+        # stale result or rebuilding an unbounded, repeatedly expiring response.
+        now = timezone.now()
+        if any(end is not None and end <= now for _, end in checked):
+            raise PreviewUnavailable()
+        return result
 
 
 @mutation_service

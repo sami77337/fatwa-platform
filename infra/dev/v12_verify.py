@@ -8,6 +8,7 @@ from pathlib import Path
 
 LABELS = (
     "tests.casework.test_v12_administration",
+    "tests.casework.test_v12_catalog_expiry",
     "apps.platform_recovery.v12_maintenance_tests",
     "tests.casework.test_v11_maintenance",
     "tests.v12_security_review.test_maintenance",

@@ -272,6 +272,7 @@ def search(
     with (
         queue.synthetic_queue_atomic(),
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
+        citations._projection_expiry_guard(),
     ):
         editions = [
             e
@@ -443,6 +444,7 @@ def open_resource(*, case_id, subject_id, provider, resource, synthetic_fixtures
     with (
         queue.synthetic_queue_atomic(),
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
+        citations._projection_expiry_guard(),
     ):
         if resource.kind == "REFERENCE":
             fresh, result = _reference(case, actor, provider, resource.identifier, "READ_METADATA")

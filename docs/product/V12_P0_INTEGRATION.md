@@ -195,3 +195,38 @@ settings holder after class-level overrides. The fixture now preserves the actua
 selected module at that operation only. Protected CI must verify the final head;
 local affected browser passed as recorded above. V11's protected workflow and FAST9
 startup both passed on6abaeb9. The earlier FAST9 startup timeout is not erased.
+
+## Re-review block on 37c58a4: multi-result expiry (P0 remains open)
+
+The independent re-review report at `3b7157c0e6c94f17311e0a22d853723354938784`
+is preserved by cherry-pick `806abc4`. Its PG17.12/PG18.7 reproduction disproved
+this document's earlier single-item claim for **collections**: A's rights expired
+while B was being projected, yet A's metadata/category/count remained. Green CI
+on 37c58a4 and the earlier 14 probes did not establish P0 closure. P1/P2 remain
+blocked. Local baseline reproduction also failed both new anonymous/staff batch
+checks (2 tests, 2 failures on PG17, 1.266s); that failure is retained here.
+
+The repair revalidates all collected publications after the last projection,
+before search/filter/facets/counts/pagination. Both anonymous and scoped staff
+libraries retain canonical case locks throughout aggregation. The exact existing
+source-rights validation now also supplies its existing grant expiry; a single
+clock after the final validation pass removes earlier grants that expired during
+later checks. Expiry during subsequent filtering refuses the entire response.
+No renewal, cached permission, fallback rights or new publication approval exists.
+
+Analogous collections were inspected: direct citation search/suggestions/history,
+knowledge navigation and research search/open now retain an execution-local bound
+from successful exact reference/transcript permission checks and refuse the read
+if any such grant expires before the composition returns. Nested bounds are reset
+on success and exception. This is additional to identity, case scope, source pins,
+independent publication approval and preview policy. It is not an authorization
+entry point. Rights review/bootstrap and withdrawal retain their separate policy.
+
+`tests.casework.test_v12_catalog_expiry` preserves the reviewer's two-publication
+scenario and adds source/edition/page search, category/material filters, page
+boundaries, GET/HEAD, staff results, expiry during the final validation and filtering,
+and related/research/citation compositions. It is included in the existing V12 CI
+matrix; no unrelated test suite is manually rerun for this repair. The first
+focused batch passed 42/42 on PG17.12 (23.443s) and PG18.7 (23.309s); the expanded
+initial nine regressions passed 9/9 on PG17 (9.350s). These preliminary results
+precede the final affected-head run and are not a closure verdict.

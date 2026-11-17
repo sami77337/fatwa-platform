@@ -1,6 +1,7 @@
 """Human selection of existing, exact catalog entries; no generated references."""
 
 import json
+from contextlib import contextmanager
 from dataclasses import asdict
 from hashlib import sha256
 
@@ -40,6 +41,17 @@ def _rights_services():
 
     rights._enabled()
     return rights
+
+
+@contextmanager
+def _projection_expiry_guard():
+    """Additional clock boundary; optional legacy profiles retain their own policy."""
+    rights = _rights_services()
+    if rights is None:
+        yield
+    else:
+        with rights.projection_expiry_guard():
+            yield
 
 
 def _permits_source(case, source, usage):
@@ -116,7 +128,10 @@ def search_sources(
     printed_page=None,
     synthetic_fixtures_only=False,
 ):
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+    with (
+        cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _),
+        _projection_expiry_guard(),
+    ):
         return _search_sources_for_locked_case(
             case,
             query=query,
@@ -385,7 +400,10 @@ def clone_citations_for_new_answer(previous, answer):
 @mutation_service
 def read_citations(*, case_id, subject_id, provider, answer_id=None, synthetic_fixtures_only=False):
     _enabled()
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+    with (
+        cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _),
+        _projection_expiry_guard(),
+    ):
         answer = (
             case.answers.filter(pk=cases._uuid(answer_id)).first()
             if answer_id
@@ -434,7 +452,10 @@ def read_citation_history(
     _enabled()
     if before_revision is not None and (type(before_revision) is not int or before_revision < 1):
         raise cases.CaseConflict("invalid_citation_history_cursor")
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
+    with (
+        cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _),
+        _projection_expiry_guard(),
+    ):
         answers = case.answers.order_by("-revision")
         if before_revision is not None:
             answers = answers.filter(revision__lt=before_revision)

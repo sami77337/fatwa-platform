@@ -8,6 +8,7 @@ Rights never authorize a publication, private identity, or full original book te
 import json
 import os
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import timedelta
 from hashlib import sha256
 
@@ -30,6 +31,35 @@ from .models import RightsAction, RightsRevision, SourceRegistration, SourceVers
 
 USES = {"READ", "CITE", "RELATE", "PREVIEW_METADATA"}
 PRIVATE_USES = {"READ", "RELATE"}
+
+
+_PROJECTION_DEADLINES = ContextVar("source_rights_projection_deadlines", default=())
+
+
+@contextmanager
+def projection_expiry_guard():
+    """Fail a composed read closed if any used grant expires during composition.
+
+    No permission is cached or conferred. Existing exact reference/transcript
+    predicates record only their successful checks. Caller retains its case lock;
+    explicit revocation is serialized there, while time expiry needs this final
+    check. Nested compositions contribute to every enclosing read boundary.
+    """
+    deadlines = []
+    token = _PROJECTION_DEADLINES.set((*_PROJECTION_DEADLINES.get(), deadlines))
+    try:
+        yield
+        now = timezone.now()
+        if any(deadline <= now for deadline in deadlines):
+            raise cases.CaseConflict("current_source_rights_required")
+    finally:
+        _PROJECTION_DEADLINES.reset(token)
+
+
+def _projection_deadline(deadline):
+    for deadlines in _PROJECTION_DEADLINES.get():
+        deadlines.append(deadline)
+    return deadline
 
 
 def _enabled():
@@ -326,28 +356,39 @@ def review(
             return {"id": str(revision.pk), "state": _state(revision)}
 
 
-def permits_reference_for_locked_case(*, case, source, usage):
+def reference_permission_deadline_for_locked_case(*, case, source, usage):
     """Integrator hook, not an authorization entrypoint. Caller has already checked
     synthetic DB, acquired the canonical case lock and established its own access.
-    Source is the exact {source, source_sha256} citation snapshot. False by default.
+    Source is the exact {source, source_sha256} citation snapshot. None by default.
+    Return the existing grant deadline, not a new or extended permission. Collection
+    readers use it to reject expiry during later checks and result aggregation.
     Never authorizes publication, original book text, or replaces preview policy.
     """
     try:
         _enabled()
         if usage not in USES or not connection.in_atomic_block:
-            return False
+            return None
         heading = ReferenceHeading.objects.filter(
             edition_id=source["source"]["edition_id"],
             source_row_id=source["source"]["source_row_id"],
         ).first()
         record = SourceVersion.objects.filter(heading=heading).first() if heading else None
         if record is None or record.snapshot != {"kind": "TOC_METADATA", **source}:
-            return False
+            return None
         _current_source(record, case)
         revision = _latest(record, case)
-        return _state(revision) == "ALLOWED" and usage in revision.uses
+        if _state(revision) == "ALLOWED" and usage in revision.uses:
+            return _projection_deadline(revision.valid_until)
+        return None
     except (cases.CaseConflict, KeyError, TypeError, ValueError):
-        return False
+        return None
+
+
+def permits_reference_for_locked_case(*, case, source, usage):
+    """Boolean compatibility hook over the same exact, current grant validation."""
+    return reference_permission_deadline_for_locked_case(
+        case=case, source=source, usage=usage
+    ) is not None
 
 
 def _require_reference(case, heading_id, usage):
@@ -657,6 +698,9 @@ def permits_transcript_for_locked_case(*, case, transcript_id, usage):
             return False
         _current_source(source, case)
         revision = _latest(source, case)
-        return _state(revision) == "ALLOWED" and usage in revision.uses
+        if _state(revision) == "ALLOWED" and usage in revision.uses:
+            _projection_deadline(revision.valid_until)
+            return True
+        return False
     except (cases.CaseConflict, KeyError, TypeError, ValueError):
         return False

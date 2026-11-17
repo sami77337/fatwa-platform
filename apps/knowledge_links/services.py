@@ -67,9 +67,11 @@ def _edition(publication_id, subject_id, provider, synthetic_fixtures_only):
     if str(publication_id) not in {row["id"] for row in visible}:
         raise cases.CaseConflict("knowledge_publication_unavailable")
     edition = PublicationEdition.objects.get(pk=cases._uuid(publication_id))
-    with cases._staff_case(edition.case_id, subject_id, provider, synthetic_fixtures_only) as (
-        case,
-        actor,
+    with (
+        cases._staff_case(edition.case_id, subject_id, provider, synthetic_fixtures_only) as (
+            case, actor,
+        ),
+        citations._projection_expiry_guard(),
     ):
         # Revalidate under canonical lock (withdrawal/correction share this lock).
         publications._approved(case, edition)
