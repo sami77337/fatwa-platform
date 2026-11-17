@@ -1,0 +1,12 @@
+<ol>{% for part in package.parts %}<li>
+<h4>الجزء {{ part.ordinal }} — {% if part.kind == 'TEXT' %}نص الجواب{% else %}{{ part.filename }}{% endif %}</h4>
+{% if part.kind == 'TEXT' %}<p class="original">{{ package.text }}</p>{% else %}
+<p>{{ part.media_type }} · {{ part.size }} بايت</p>
+{% if is_staff %}{% url 'answer_media_staff_file' part_id=part.id as media_url %}{% else %}{% url 'answer_media_requester_file' part_id=part.id as media_url %}{% endif %}
+{% if part.kind == 'AUDIO' %}<audio controls preload="metadata" src="{{ media_url }}" aria-label="{{ part.filename }}"></audio>
+{% elif part.kind == 'IMAGE' %}<img src="{{ media_url }}" alt="ملف جواب: {{ part.filename }}">
+{% elif part.media_type == 'application/pdf' %}<iframe src="{{ media_url }}" title="ملف جواب PDF: {{ part.filename }}"></iframe>{% endif %}
+<p><a href="{{ media_url }}" target="_blank" rel="noopener">فتح الملف المصرح</a> · <a href="{{ media_url }}" download="{{ part.filename }}">تنزيل {{ part.filename }}</a></p>
+{% endif %}
+<details><summary>بصمة الجزء</summary><p class="original"><bdi>{{ part.sha256 }}</bdi></p></details>
+</li>{% endfor %}</ol>
