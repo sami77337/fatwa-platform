@@ -106,3 +106,42 @@ browser run used `FATWA_BROWSER_SANDBOX=0` and writable `XDG_CONFIG_HOME` /
 Screenshots under `/tmp/fatwa-access-review-qa` contain only synthetic status,
 never issuance screens or raw tokens. No PostgreSQL 18 or combined-branch CI result
 is claimed here. `NOT_DEPLOYED / GATES_HOLD`.
+
+
+## V6 trusted tokenless recovery — synthetic profile only (PR #225 continuation)
+
+`apps.requester_access_review.recovery.recover_lost_access` is an opt-in
+case owner recovery **without an existing tracking token**, but not without identity
+proof. Its caller supplies a public FT reference and an opaque credential; the
+server supplies `FATWA_CASEWORK_RECOVERY_AUTHORITY`, an instance of
+`TrustedRecoveryAuthority`. This configuration defaults to `None`.
+
+The external authority's `verify(credential, public_ref)` must independently
+authenticate the requester, bind both the exact case and requester, verify the
+issuer/audience, freshness, signature and revocation, and return a
+`VerifiedRecovery` with an unpredictable assertion identifier. This code does
+**not** issue external credentials, emulate identity assurance, or accept a
+browser-selected requester or role. A public FT reference alone always fails.
+
+On successful verification, the application performs one PostgreSQL
+transaction: lock and verify the existing case; reject a reused proof ID; append
+an immutable receipt containing only a digest of issuer/ID; revoke all prior
+tracking tokens; issue a fresh random token; append the case's `ROTATE_ACCESS`
+audit event. Original question, answer, evidence, case ID, and review history
+remain unchanged. Replays, mismatched owner/case, expired attestations and
+invalid claims fail closed. The replacement is displayed **once** on a private
+`no-store` form and remembered in a short-lived HttpOnly browser cookie.
+
+The synthetic Arabic page `/casework/status/` contains a recovery form only
+when the trusted authority is explicitly present. Form proof is bound to the
+browser's CSRF secret. A user who has neither a valid private token nor an
+externally verified credential has **no recovery access**.
+
+This is a development contract, not a configured production identity system or
+approval of organizational authorization. Real identity verification, credential
+delivery, MFA, customer support policy and production audit/retention rules
+remain outside the current acceptance claim.
+
+Focused tests: `apps.requester_access_review.recovery_tests`, run on both
+PostgreSQL 17 and 18 by `team-workspace.yml`. No production route, real
+requester data or third-party messaging is enabled.
