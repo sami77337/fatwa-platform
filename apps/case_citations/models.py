@@ -26,3 +26,16 @@ class AnswerCitation(models.Model):
                 condition=models.Q(ordinal__gte=1, ordinal__lte=12), name="citation_bounded_ordinal"
             ),
         ]
+
+
+class CitationCorrection(models.Model):
+    """Append-only explanation of a human correction between answer revisions."""
+
+    citation = models.OneToOneField(
+        AnswerCitation, on_delete=models.PROTECT, related_name="correction"
+    )
+    previous = models.ForeignKey(
+        AnswerCitation, on_delete=models.PROTECT, related_name="corrections"
+    )
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
