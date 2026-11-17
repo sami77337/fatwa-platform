@@ -1,0 +1,4 @@
+{% extends "casework/base.html" %}
+{% block content %}<h2>بحث المصادر ضمن القضايا المصرح بها</h2>
+{% for case in cases %}<article><h3><bdi>{{ case.public_ref }}</bdi></h3>{% include "research_workspace/entry.html" with research_case_ref=case.public_ref %}</article>{% empty %}<p>لا توجد قضايا ضمن نطاقك الحالي.</p>{% endfor %}
+{% endblock %}
