@@ -1,6 +1,6 @@
 """One local casework surface for requester and scoped Mufti team workflows."""
 
-from django.urls import path
+from django.urls import include, path
 
 from apps.answer_media import views as answer_media
 from apps.case_attachments import views as case_attachments
@@ -10,6 +10,7 @@ from apps.requester_team_journey.views import staff
 from apps.team_workspace.urls import urlpatterns as team_patterns
 
 urlpatterns = [
+    path("library-preview/", include("apps.library_preview.routes")),
     path(
         "casework/status/attachments/<uuid:attachment_id>/",
         case_attachments.requester_file,

@@ -2,7 +2,8 @@
 
 from config.settings.campaign_review import *  # noqa: F403
 
-INSTALLED_APPS = [*INSTALLED_APPS, "apps.library_preview"]  # noqa: F405
+if "apps.library_preview" not in INSTALLED_APPS:  # noqa: F405
+    INSTALLED_APPS = [*INSTALLED_APPS, "apps.library_preview"]  # noqa: F405
 FATWA_LIBRARY_PREVIEW_ENABLED = False
 FATWA_LIBRARY_PREVIEW_POLICY = None
 ROOT_URLCONF = "apps.library_preview.urls"
