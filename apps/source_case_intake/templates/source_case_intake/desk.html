@@ -1,0 +1,122 @@
+{% extends "casework/base.html" %}
+{% block title %}مكتب استقبال المصادر{% endblock %}
+{% block content %}
+<h2>مكتب استقبال المصادر</h2>
+<p>أحداث اصطناعية محفوظة من Telegram وYouTube والموقع. لا اتصال بحسابات حقيقية ولا إرسال خارجي.</p>
+<nav aria-label="تنقل مكتب المصادر">
+  <form method="post" action="/casework/staff/">{% csrf_token %}<button name="action" value="source_inbox">الأحداث المحفوظة</button></form>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_filter"><input type="hidden" name="source" value="all"><input type="hidden" name="state" value="review"><input type="hidden" name="page" value="1"><button>غير المحسوم</button></form>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<button name="action" value="journey_cases">العودة إلى مكتب القضايا</button></form>
+</nav>
+{% if error %}<p role="alert">{{ error }}</p><p><a href="/casework/staff/login/">تسجيل الدخول</a></p>{% endif %}
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+{% if resolved %}<p>مرجع القرار: <bdi id="resolved-reference">{{ resolved }}</bdi>. لم يتغير نطاق صلاحياتك. لا يُعرض رمز السائل هنا.</p>{% endif %}
+{% if raw_preview %}
+<article><h3>معاينة الأصل الخام</h3><p>{{ raw_preview.encoding }} · {{ raw_preview.size }} بايت</p><p>بصمة الأصل <code>{{ raw_preview.sha256 }}</code></p><pre class="original" id="raw-preview">{{ raw_preview.text }}</pre></article>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_raw"><input type="hidden" name="receipt_id" value="{{ raw_preview.receipt_id }}"><button>تنزيل الأصل الخام</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_open"><input type="hidden" name="receipt_id" value="{{ raw_preview.receipt_id }}"><button>العودة إلى الحدث</button></form>
+{% endif %}
+{% if inbox %}
+<form method="post" action="/casework/staff/">{% csrf_token %}
+  <input type="hidden" name="action" value="source_filter"><input type="hidden" name="page" value="1">
+  <label for="source-filter">المصدر</label>
+  <select id="source-filter" name="source">
+    <option value="all" {% if inbox.source_filter == "all" %}selected{% endif %}>جميع المصادر</option>
+    <option value="telegram" {% if inbox.source_filter == "telegram" %}selected{% endif %}>Telegram</option>
+    <option value="youtube" {% if inbox.source_filter == "youtube" %}selected{% endif %}>YouTube</option>
+    <option value="website" {% if inbox.source_filter == "website" %}selected{% endif %}>الموقع</option>
+  </select>
+  <label for="state-filter">حالة الاستقبال</label>
+  <select id="state-filter" name="state">
+    <option value="all" {% if inbox.state_filter == "all" %}selected{% endif %}>جميع الحالات المخوّلة</option>
+    <option value="review" {% if inbox.state_filter == "review" %}selected{% endif %}>بحاجة إلى مراجعة</option>
+    <option value="pending" {% if inbox.state_filter == "pending" %}selected{% endif %}>بانتظار المعالجة</option>
+    <option value="bound" {% if inbox.state_filter == "bound" %}selected{% endif %}>مرتبطة بقضية</option>
+  </select>
+  <button>تصفية الأحداث</button>
+</form>
+{% for row in inbox.receipts %}
+<article data-receipt="{{ row.receipt_id }}">
+  <h3>{{ row.source }} · الرسالة <bdi>{{ row.message_id|default:"غير متاحة" }}</bdi></h3>
+  <p>{{ row.status_label }}{% if row.reason %} — {{ row.reason_label }}{% endif %}</p>
+  <p>{{ row.display_name|default:"اسم غير متاح" }} · هوية المصدر <bdi>{{ row.sender|default:"غير متاحة" }}</bdi></p>
+  <p>وقت الحفظ: {{ row.received_at }}{% if row.public_ref %} · <bdi>{{ row.public_ref }}</bdi>{% endif %}</p>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_open"><input type="hidden" name="receipt_id" value="{{ row.receipt_id }}"><button>فتح الحدث {{ row.message_id|default:"المحفوظ" }} من {{ row.source }}</button></form>
+</article>
+{% empty %}<p>لا توجد أحداث مطابقة ضمن صلاحياتك.</p>{% endfor %}
+<p>الصفحة {{ inbox.page }}؛ حتى 25 حدثًا في الصفحة. الأحداث المرتبطة بقضايا خارج نطاقك لا تظهر.</p>
+{% if inbox.previous_page %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_filter"><input type="hidden" name="source" value="{{ inbox.source_filter }}"><input type="hidden" name="state" value="{{ inbox.state_filter }}"><input type="hidden" name="page" value="{{ inbox.previous_page }}"><button>الصفحة السابقة</button></form>{% endif %}
+{% if inbox.next_page %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_filter"><input type="hidden" name="source" value="{{ inbox.source_filter }}"><input type="hidden" name="state" value="{{ inbox.state_filter }}"><input type="hidden" name="page" value="{{ inbox.next_page }}"><button>الصفحة التالية</button></form>{% endif %}
+{% endif %}
+{% if selected %}
+<article id="source-detail">
+  <h3>الحدث الأصلي المحفوظ</h3>
+  <p>{{ selected.receipt.status_label }}{% if selected.receipt.reason %} — {{ selected.receipt.reason_label }}{% endif %}</p>
+  <dl>
+    <dt>المصدر / الحساب</dt><dd><bdi>{{ selected.receipt.source }} / {{ selected.receipt.account }}</bdi></dd>
+    <dt>السائل في المصدر</dt><dd>{{ selected.receipt.display_name|default:"اسم غير متاح" }} · <bdi>{{ selected.receipt.sender }}</bdi></dd>
+    <dt>المحادثة / الموضوع / الرسالة / الرد على</dt><dd><bdi>{{ selected.receipt.conversation }} / {{ selected.receipt.thread|default:"—" }} / {{ selected.receipt.message_id }} / {{ selected.receipt.parent_id|default:"—" }}</bdi></dd>
+    <dt>معرّف الحدث</dt><dd><bdi>{{ selected.receipt.event_id }}</bdi></dd>
+    <dt>بصمة البايتات الأصلية</dt><dd><code>{{ selected.receipt.sha256 }}</code></dd>
+  </dl>
+  <h4>السؤال كما ورد</h4><p class="original" id="source-question">{{ selected.receipt.original_text|default:"الأصل النصي غير متاح؛ راجع البايتات المحفوظة دون اختلاق نص." }}</p>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_raw"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}"><button>تنزيل الأصل الخام</button></form>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_raw_view"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}"><button>معاينة الأصل الخام</button></form>
+  {% if selected.review_note %}<p>قرار المراجع <bdi>{{ selected.reviewer }}</bdi>:</p><p class="original">{{ selected.review_note }}</p>{% endif %}
+</article>
+{% if selected.receipt.public_ref %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_timeline"><input type="hidden" name="case_ref" value="{{ selected.receipt.public_ref }}"><button>التسلسل الزمني للقضية</button></form>
+{% endif %}
+{% if selected.receipt.status == "PENDING" %}
+<form method="post" action="/casework/staff/" id="source-resume">{% csrf_token %}<input type="hidden" name="action" value="source_resume"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}"><input type="hidden" name="proof" value="{{ selected.proof }}"><p>حُفظ الأصل ولم تكتمل معالجته. الاستئناف يعيد قواعد منع التكرار والربط نفسها، ولا يتجاوز مراجعة الالتباس.</p><label><input type="checkbox" name="confirm" value="yes" required> أؤكد استئناف المعالجة التجريبية</label><button>استئناف معالجة الحدث المحفوظ</button></form>
+{% endif %}
+{% if selected.can_resolve %}
+<section aria-label="قرار الربط البشري">
+  <h3>اختيار مصير الرسالة بعد مراجعتها</h3>
+  <p>تشابه الأسماء لا يربط الأشخاص. إلحاق التعقيب يتطلب نفس هوية المصدر والمحادثة، ونطاق القضية ورمز وصولها الحالي.</p>
+  <form method="post" action="/casework/staff/" id="split-form">{% csrf_token %}
+    <input type="hidden" name="action" value="source_resolve"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}"><input type="hidden" name="proof" value="{{ selected.proof }}"><input type="hidden" name="decision" value="NEW_CASE"><input type="hidden" name="case_id" value=""><input type="hidden" name="token" value="">
+    <label for="split-note">سبب إنشاء قضية مستقلة</label><textarea id="split-note" name="note" required maxlength="16000"></textarea>
+    <label><input type="checkbox" name="confirm" value="yes" required> راجعت الأصل وأؤكد إنشاء قضية منفصلة</label><button>تأكيد إنشاء قضية مستقلة</button>
+  </form>
+  {% if selected.candidates %}
+  <form method="post" action="/casework/staff/" id="followup-form">{% csrf_token %}
+    <input type="hidden" name="action" value="source_resolve"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}"><input type="hidden" name="proof" value="{{ selected.proof }}"><input type="hidden" name="decision" value="FOLLOWUP">
+    <label for="target-case">القضية المخوّلة المطابقة لهوية المصدر</label><select id="target-case" name="case_id" required>{% for candidate in selected.candidates %}<option value="{{ candidate.id }}">{{ candidate.public_ref }} — الوقائع {{ candidate.evidence_version }}</option>{% endfor %}</select>
+    <label for="followup-token">رمز وصول القضية الحالي</label><input id="followup-token" type="password" name="token" autocomplete="off" required>
+    <label for="followup-note">سبب إلحاق التعقيب</label><textarea id="followup-note" name="note" required maxlength="16000"></textarea>
+    <label><input type="checkbox" name="confirm" value="yes" required> راجعت الأصل وأؤكد الإلحاق؛ تغير الوقائع يلغي الاعتماد السابق</label><button>تأكيد إلحاق التعقيب</button>
+  </form>
+  {% else %}<p>لا توجد قضية مخوّلة مطابقة لهوية هذه الرسالة. لا يمكن إلحاقها بقضية شخص آخر.</p>{% endif %}
+</section>
+{% elif not selected.receipt.public_ref %}<p>هذه الرسالة لا تقبل قرار ربط الآن. لا تُستبدل الأصول المعدلة أو المتعارضة ولا تُكرر الرسائل المرتبطة.</p>{% endif %}
+{% if selected.declared_files %}
+<article><h3>الملفات المعلنة في الأصل</h3>{% for file in selected.declared_files %}<p><bdi>{{ file.source_file_id }}</bdi> · {{ file.filename|default:"اسم غير مذكور" }} · <bdi>{{ file.media_type }}</bdi></p>{% endfor %}
+{% for file in selected.linked_files %}<p>مرفق محفوظ: <a href="/casework/staff/attachments/{{ file.attachment_id }}/">{{ file.attachment__filename }}</a> · إصدار الوقائع {{ file.attachment__evidence__version }} · <code>{{ file.attachment__sha256 }}</code></p>{% endfor %}</article>
+{% if selected.receipt.public_ref %}
+<form method="post" action="/casework/staff/" enctype="multipart/form-data" id="source-upload">{% csrf_token %}
+  <input type="hidden" name="action" value="source_attach"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}"><input type="hidden" name="proof" value="{{ selected.proof }}">
+  <h3>ربط ملف اصطناعي معلن بالأصل</h3><p>ملف محلي للاختبار فقط؛ هذا الإجراء لا يجلب ملفًا من المزود. تطبق حدود الوسائط الحالية.</p>
+  <label for="source-file">معرّف الملف في المصدر</label><select id="source-file" name="source_file_id">{% for file in selected.declared_files %}<option value="{{ file.source_file_id }}">{{ file.filename|default:file.source_file_id }}</option>{% endfor %}</select>
+  <label for="source-file-token">رمز وصول القضية الحالي</label><input id="source-file-token" type="password" name="token" required autocomplete="off">
+  <label for="source-upload-file">الملف الاصطناعي</label><input id="source-upload-file" type="file" name="attachment" required>
+  <label><input type="checkbox" name="confirm" value="yes" required> أؤكد أن الملف اصطناعي ومرتبط بهذا الأصل</label><button>حفظ المرفق وربطه بالأصل</button>
+</form>
+{% endif %}{% endif %}
+{% endif %}
+{% if history %}
+<h3>التسلسل الزمني للقضية <bdi>{{ history.public_ref }}</bdi></h3>
+<p>إصدار الوقائع الحالي {{ history.evidence_version }}. ترتيب السجل بحسب إصدارات الوقائع المحفوظة، وليس ادعاء ترتيب وصول المزود.</p>
+{% for item in history.timeline %}
+<article data-evidence-version="{{ item.version }}">
+  <h4>الوقائع {{ item.version }}{% if item.file %} · مرفق{% elif item.version == 1 %} · السؤال الأصلي{% else %} · تعقيب{% endif %}</h4>
+  <p>{{ item.created_at }}</p><p class="original">{{ item.text }}</p>
+  {% if item.origin %}<p>الأصل: {{ item.origin.source }} · <bdi>{{ item.origin.conversation }} / {{ item.origin.message_id }}</bdi> · هوية السائل <bdi>{{ item.origin.sender }}</bdi></p>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_open"><input type="hidden" name="receipt_id" value="{{ item.origin.receipt_id }}"><button>فتح أصل الوقائع {{ item.version }}</button></form>
+  {% else %}<p>هذه الوقائع محفوظة في القضية دون حدث مرتبط من مكتب المصادر.</p>{% endif %}
+  {% if item.file %}<p><a href="/casework/staff/attachments/{{ item.file.id }}/">فتح المرفق {{ item.file.filename }}</a> · <code>{{ item.file.sha256 }}</code></p>{% endif %}
+  {% if item.source_file_id %}<p>معرّف الملف في الأصل: <bdi>{{ item.source_file_id }}</bdi></p>{% endif %}
+</article>
+{% endfor %}
+{% endif %}
+{% endblock %}
