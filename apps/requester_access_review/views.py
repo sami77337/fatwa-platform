@@ -20,6 +20,16 @@ from apps.mufti_review.identity import IdentityUnavailable, require_provider
 from . import services
 
 
+DELIVERY_LABELS = {
+    "CURRENT_APPROVAL_REQUIRED": "ينتظر الجواب اعتمادًا مطابقًا للوقائع الحالية",
+    "NOT_STAGED": "الجواب المعتمد لم يُجهز للتسليم بعد",
+    "EVIDENCE_UNAVAILABLE": "لا يتوفر تحقق موثوق من إثبات التسليم حاليًا",
+    "NOT_FULLY_DELIVERED": "لم تثبت القناة تسليم جميع أجزاء الجواب",
+    "NEEDS_RECONCILIATION": "حالة تسليم الجواب تحتاج إلى مراجعة",
+    "PROVIDER_EVIDENCE_INCOMPLETE": "أبلغت القناة عن التسليم، لكن الإثبات الموقّع غير مكتمل",
+    "PROVIDER_REPORTED_DELIVERY_VERIFIED": "تحققت إيصالات المزود الموقّعة لجميع أجزاء الجواب",
+}
+
 @sensitive_post_parameters("token", "text")
 @sensitive_variables("token")
 @csrf_protect
@@ -28,7 +38,11 @@ def requester(request):
         return workspace.workspace(request)
     try:
         token = workspace._capability(request)
-        snapshot = services.requester_snapshot(token, synthetic_fixtures_only=True)
+        snapshot = services.requester_snapshot(
+            token,
+            verifier=getattr(settings, "FATWA_CASE_DELIVERY_PROVIDER_VERIFIER", None),
+            synthetic_fixtures_only=True,
+        )
         result = snapshot["case"]
         if request.method == "POST":
             fields = workspace._form(request, {"action", "reason", "review_proof"})
@@ -48,6 +62,9 @@ def requester(request):
                 request, token, f"followup:{result['public_ref']}:{result['revision']}"),
             "review_proof": workspace._binding(request, token, "access-review:" + result["public_ref"]),
             "access_reviews": snapshot["reviews"],
+            "delivery_label": DELIVERY_LABELS.get(
+                result.get("delivery_status"), "حالة التسليم غير محسومة"
+            ),
         }))
     except (workspace.InvalidForm, SuspiciousOperation):
         return denied("access_review_form_invalid", 400)
