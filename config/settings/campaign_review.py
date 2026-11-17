@@ -71,17 +71,18 @@ TEMPLATES = deepcopy(TEMPLATES)  # noqa: F405
 TEMPLATES[0]["OPTIONS"]["context_processors"].append(
     "apps.requester_team_journey.context.connected_navigation"
 )
-TEMPLATES[0]["OPTIONS"]["context_processors"].append(
-    "apps.mufti_workspace.context.case_workspace"
-)
+TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.mufti_workspace.context.case_workspace")
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",
     Path(__file__).resolve().parents[2] / "apps/requester_team_journey/templates",
     *TEMPLATES[0]["DIRS"],
 ]
 MIDDLEWARE = [
-    "apps.library_preview.guard.PreviewCompositionGuard"
-    if item == "apps.casework_web.guard.CaseworkGuard"
-    else item
-    for item in MIDDLEWARE  # noqa: F405
+    "apps.platform_recovery.middleware.MaintenanceGuard",
+    *[
+        "apps.library_preview.guard.PreviewCompositionGuard"
+        if item == "apps.casework_web.guard.CaseworkGuard"
+        else item
+        for item in MIDDLEWARE  # noqa: F405
+    ],
 ]
