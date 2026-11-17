@@ -1,0 +1,587 @@
+{
+  "observed_utc": "2026-11-17",
+  "comparison_head": "23839110af15baf09ed80b1002a328021cea5e31",
+  "note": "PR head ancestry is not feature acceptance. Divergent heads were semantically inspected where listed in the execution order.",
+  "pull_requests": [
+    {
+      "number": 151,
+      "title": "[FAST8] Integrate all sixteen lanes, redact intake diagnostics and register acceptance",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/151",
+      "base": "codex/20261026-fast7-ci-integration-pc1",
+      "base_sha": "92fa517ecdefe3f1a92a1ab145ff55943474df44",
+      "head": "codex/20261026-fast8-integration-pc1",
+      "head_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 152,
+      "title": "FAST9: guarded PostgreSQL fiqh source-trail acceptance",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/152",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-pg-fiqh-proof-pc1",
+      "head_sha": "7cf5e2986f6c2756414def5a20c503f36bf74f3a",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 153,
+      "title": "[FAST9 pg-workflow-audit] Guard exact persisted synthetic audit reads",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/153",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-pg-workflow-audit-pc1",
+      "head_sha": "c9319b98ea8df5f7ee3bc704f531b8f9eeb2bacc",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 154,
+      "title": "FAST9: source-pinned read-only ORM reference consistency",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/154",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-pg-reference-consistency-pc1",
+      "head_sha": "b0f9ee0be9a460cbc758a195995d9c86af26a3a3",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 155,
+      "title": "FAST9: guarded PostgreSQL operator/browser catalog acceptance",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/155",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-pg-browser-catalog-pc1",
+      "head_sha": "2a4800649573b50994016e128ca40b0a7cd9cc1f",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 156,
+      "title": "FAST9: exact transcript-origin prepared receipts and manual timing lineage",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/156",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-transcript-prepared-lineage-pc1",
+      "head_sha": "63511a56f31bd47ba2835010995227fa4403e2f1",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 157,
+      "title": "FAST9: prepared-review-export lineage conformance",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/157",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-prepared-review-lineage-pc1",
+      "head_sha": "2d5cc49f883bf5611d7d64dca5c61696a16b7a08",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 158,
+      "title": "FAST9: exact case-to-source provenance join (synthetic, read-only)",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/158",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-case-source-join-pc1",
+      "head_sha": "6801bcc6b3150cb45bce9a07bb86075c1b733698",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 159,
+      "title": "FAST9: bind deny-only case evaluation to exact synthetic policy evidence",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/159",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261027-fast9-case-policy-join-pc1",
+      "head_sha": "21f748d4a02a95c222ee0e3b11936706dda12bcd",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 160,
+      "title": "[FAST9 R1 policy] Refuse synthetic CLI diagnostics under production settings",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/160",
+      "base": "codex/20261027-fast9-case-policy-join-pc1",
+      "base_sha": "21f748d4a02a95c222ee0e3b11936706dda12bcd",
+      "head": "codex/20261029-fast9-v5-04-policy-pc1",
+      "head_sha": "ad713873a2c5920eaadeb980cf4a5fb5f621c2c2",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 161,
+      "title": "[FAST9 E6] Bound and instrument local DevTools startup",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/161",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261029-fast9-v5-02-e6-pc1",
+      "head_sha": "93f20bc6e204b0e925240976937cc7d9856a4285",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 162,
+      "title": "[FAST9 R1 CI] Verify offline tests from eight pinned source refs",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/162",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261029-fast9-v5-03-ci-pc1",
+      "head_sha": "69e2584faa3f2503abd1e987f39d1a56a03f6200",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 163,
+      "title": "[FAST9 D6] Wait for native fragment focus before opening the review packet",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/163",
+      "base": "codex/20261026-fast8-integration-pc1",
+      "base_sha": "0769f66e93fdf710ca55e9e68e87430a93f14c40",
+      "head": "codex/20261106-fast9-d6-trace",
+      "head_sha": "7502c91b61d4f4b98a866ee818aa48a3c6f853d0",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 164,
+      "title": "[FAST9 R2 catalog] Discard rejected Django database sessions",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/164",
+      "base": "codex/20261027-fast9-pg-browser-catalog-pc1",
+      "base_sha": "2a4800649573b50994016e128ca40b0a7cd9cc1f",
+      "head": "codex/20261029-fast9-v5-07-catalog-pc1",
+      "head_sha": "9f5913dd81faea0d591e176a600c87798ee1458b",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 165,
+      "title": "[FAST9 PG proof] Verify guarded provenance against B6 PostgreSQL 17 and 18",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/165",
+      "base": "codex/20261027-fast9-pg-fiqh-proof-pc1",
+      "base_sha": "7cf5e2986f6c2756414def5a20c503f36bf74f3a",
+      "head": "codex/20261029-fast9-v5-05-pg-proof-pc1",
+      "head_sha": "f989feb721b60a83326e99331266d2d7479e224d",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 166,
+      "title": "[FAST9 R2 lineage] Bind returned review evidence to the requested prepared case",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/166",
+      "base": "codex/20261027-fast9-prepared-review-lineage-pc1",
+      "base_sha": "2d5cc49f883bf5611d7d64dca5c61696a16b7a08",
+      "head": "codex/20261029-fast9-v5-06-lineage-pc1",
+      "head_sha": "3acc789d788f56b665fb6dd36f3c31fe9573a3a9",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 167,
+      "title": "[FAST9 stored audit] Verify the existing Wave7 producer receipt on B6",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/167",
+      "base": "codex/20261027-fast9-pg-workflow-audit-pc1",
+      "base_sha": "c9319b98ea8df5f7ee3bc704f531b8f9eeb2bacc",
+      "head": "codex/20261106-fast9-stored-audit-ci",
+      "head_sha": "cc6f3e8b807cc99518244163e6e964a030389b22",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 168,
+      "title": "[FAST9 Wave7] Verify reference consistency on reserved PostgreSQL 17 and 18",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/168",
+      "base": "codex/20261027-fast9-pg-reference-consistency-pc1",
+      "base_sha": "b0f9ee0be9a460cbc758a195995d9c86af26a3a3",
+      "head": "codex/20261107-fast9-reference-pg-ci",
+      "head_sha": "01dd475f2913df2f2419ef59fb2efea905ae6410",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 169,
+      "title": "[FAST9 Wave7] Verify the case-to-source join in reserved PostgreSQL services",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/169",
+      "base": "codex/20261027-fast9-case-source-join-pc1",
+      "base_sha": "6801bcc6b3150cb45bce9a07bb86075c1b733698",
+      "head": "codex/20261107-fast9-case-source-pg-ci",
+      "head_sha": "499a677a69854acc81fa5ecde7bd809f7dc5df7d",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 170,
+      "title": "S6: verify the original 556 owner points and cross-platform registry source pins",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/170",
+      "base": "codex/s6-scope-product-20261013",
+      "base_sha": "dd43478cf4c6ffe61289cf2583c2b5e3a9e4be3d",
+      "head": "codex/20261107-s6-evidence-checkout",
+      "head_sha": "dd0287507cc3587cd7e4b1984b5630907eb12d7b",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 171,
+      "title": "Require exact integer edition and row identities from citation adapters",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/171",
+      "base": "codex/20261017-wave6-e3",
+      "base_sha": "26dba43149129e3f0cbd5689247cc3da9fe5d3c2",
+      "head": "codex/20261107-reference-exact-ids",
+      "head_sha": "d0ba734ac7c6359e4b9c89d7ff59e6440e881364",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 172,
+      "title": "[P245] Measure precision, recall, ranking and coverage for fixed Arabic search queries",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/172",
+      "base": "codex/20261026-fast7b-search-pc1",
+      "base_sha": "88f3d4c5e9ba2e421c9f5902134bcf2d73f72268",
+      "head": "codex/20261107-p245-editorial-relevance",
+      "head_sha": "678acdf5f54fb08ecb967eeb2b63b1e7941bc08f",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 173,
+      "title": "[Draft D5] Add canonical URLs and sharing metadata to the catalog homepage and guide",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/173",
+      "base": "codex/20261016-wave4-functional-d5",
+      "base_sha": "814e3a155c8eb1f023720d6703a5f14a06ce618a",
+      "head": "codex/20261107-public-entry-metadata",
+      "head_sha": "b9a815f91649b6cd40b3e3adc2e3cfbe2d1a7238",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 174,
+      "title": "Review repeated case identifiers without linking distinct source rows",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/174",
+      "base": "codex/20261025-fast4-followup-pc2",
+      "base_sha": "8d44932607c5998b60a050e74d6dc5cdaa5e65e2",
+      "head": "codex/20261107-followup-review-identities",
+      "head_sha": "80202edf1be5ca9151f82b2de777e10090304805",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 175,
+      "title": "Run actual browser acceptance for the case follow-up desk",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/175",
+      "base": "codex/20261107-followup-review-identities",
+      "base_sha": "80202edf1be5ca9151f82b2de777e10090304805",
+      "head": "codex/20261107-case-followup-browser-qa",
+      "head_sha": "621b68e20cdccdca55b9c18d77445e97a285f957",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 176,
+      "title": "Replay corrections and deletions against original synthetic intake rows",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/176",
+      "base": "codex/20261107-fast9-case-source-pg-ci",
+      "base_sha": "499a677a69854acc81fa5ecde7bd809f7dc5df7d",
+      "head": "codex/20261107-wave7-source-event-history",
+      "head_sha": "cd5ea258f2dead586a89d8babbcc24a975d3e3f5",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 177,
+      "title": "Trace source corrections to the original draft and show the reviewer what changed",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/177",
+      "base": "codex/20261107-wave7-source-event-history",
+      "base_sha": "cd5ea258f2dead586a89d8babbcc24a975d3e3f5",
+      "head": "codex/20261107-draft-source-review-check",
+      "head_sha": "6b2ddbb3517bc9bfb503ae155398f3c4b4cda584",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 178,
+      "title": "Keep synthetic source corrections available after restarting the reviewer workbench",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/178",
+      "base": "codex/20261107-draft-source-review-check",
+      "base_sha": "6b2ddbb3517bc9bfb503ae155398f3c4b4cda584",
+      "head": "codex/20261107-durable-source-journal",
+      "head_sha": "f726a2b1857ad376e30e0ad2d8747dcbce27b1b6",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 179,
+      "title": "Let the synthetic reviewer record reading the displayed source and draft version",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/179",
+      "base": "codex/20261107-durable-source-journal",
+      "base_sha": "f726a2b1857ad376e30e0ad2d8747dcbce27b1b6",
+      "head": "codex/20261107-versioned-reading-desk",
+      "head_sha": "4d9167237397e514dddb0aae877573c814df02b2",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 180,
+      "title": "Request clarification, record a local reply and bring the same case back for review",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/180",
+      "base": "codex/20261107-versioned-reading-desk",
+      "base_sha": "4d9167237397e514dddb0aae877573c814df02b2",
+      "head": "codex/20261107-case-clarification-thread",
+      "head_sha": "70aeac89fcc50d69e4896b25063ec0c1fe01164c",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 181,
+      "title": "Answer a pending clarification from a separate local requester page",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/181",
+      "base": "codex/20261107-case-clarification-thread",
+      "base_sha": "70aeac89fcc50d69e4896b25063ec0c1fe01164c",
+      "head": "codex/20261107-requester-clarification-reply",
+      "head_sha": "042e3881063ebf925ac45c6c57249275e55e0ea5",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 182,
+      "title": "Connect case intake, human answer drafts, version comparison and reviewer feedback",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/182",
+      "base": "codex/20261107-requester-clarification-reply",
+      "base_sha": "042e3881063ebf925ac45c6c57249275e55e0ea5",
+      "head": "codex/20261107-authored-drafts-review-queue",
+      "head_sha": "193b1beb8cd29e73400182115e78af2c9b966115",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 183,
+      "title": "Find case questions written «بلا» when users search «بدون»",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/183",
+      "base": "codex/20261107-authored-drafts-review-queue",
+      "base_sha": "193b1beb8cd29e73400182115e78af2c9b966115",
+      "head": "codex/20261107-case-queue-arabic-query-aliases",
+      "head_sha": "99cd56ea70195526e8b02f1aced0086ae6f343f8",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 184,
+      "title": "Submit author drafts for technical review with evidence-pinned decisions",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/184",
+      "base": "codex/20261107-authored-drafts-review-queue",
+      "base_sha": "193b1beb8cd29e73400182115e78af2c9b966115",
+      "head": "codex/20261107-internal-draft-review-handoff",
+      "head_sha": "80b5ae0e4164fcacdf955e0919629aeb6321cc9f",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 185,
+      "title": "Fix Arabic search recall for «بدون مقطع» without rewriting sources",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/185",
+      "base": "codex/20261026-fast7b-search-pc1",
+      "base_sha": "88f3d4c5e9ba2e421c9f5902134bcf2d73f72268",
+      "head": "codex/20261107-arabic-search-paraphrase-recall",
+      "head_sha": "0877d2688fc3f83e67d0d60625e96b429d1cda0f",
+      "head_is_ancestor": false
+    },
+    {
+      "number": 186,
+      "title": "Introduce capability-aware delivery planning without automatic publishing",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/186",
+      "base": "codex/20261107-authored-drafts-review-queue",
+      "base_sha": "193b1beb8cd29e73400182115e78af2c9b966115",
+      "head": "codex/20261107-capability-aware-delivery-plan",
+      "head_sha": "e19108db3588a1a2600e34e1162055c816a25534",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 187,
+      "title": "Require MUFTI approval proof bound to an exact answer before delivery staging",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/187",
+      "base": "codex/20261107-capability-aware-delivery-plan",
+      "base_sha": "e19108db3588a1a2600e34e1162055c816a25534",
+      "head": "codex/20261107-mufti-approval-boundary",
+      "head_sha": "11d5a695452afa26793537b7937497a662aa0f84",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 188,
+      "title": "Persist an approval-gated delivery outbox with explicit provider receipts",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/188",
+      "base": "codex/20261107-mufti-approval-boundary",
+      "base_sha": "11d5a695452afa26793537b7937497a662aa0f84",
+      "head": "codex/20261107-durable-local-delivery-outbox",
+      "head_sha": "0278115330f5ec95e7af9b515da3fbab181080ea",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 189,
+      "title": "Add explicit lossless Arabic text segmentation for channel delivery limits",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/189",
+      "base": "codex/20261107-capability-aware-delivery-plan",
+      "base_sha": "e19108db3588a1a2600e34e1162055c816a25534",
+      "head": "codex/20261107-lossless-text-segmentation",
+      "head_sha": "35610fae6c7f4ab019d710082e6765083e546c94",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 190,
+      "title": "Make expired delivery attempts explicitly uncertain without automatic resend",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/190",
+      "base": "codex/20261107-durable-local-delivery-outbox",
+      "base_sha": "0278115330f5ec95e7af9b515da3fbab181080ea",
+      "head": "codex/20261108-outbox-uncertain-attempt-reconciliation",
+      "head_sha": "4daa867dad4475fd8caa26b50e089f108ec5e123",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 191,
+      "title": "Require independently refreshed case evidence before any delivery reservation",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/191",
+      "base": "codex/20261108-outbox-uncertain-attempt-reconciliation",
+      "base_sha": "4daa867dad4475fd8caa26b50e089f108ec5e123",
+      "head": "codex/20261108-verified-outbox-freshness-at-reservation",
+      "head_sha": "b8c63e51f2e94c4be49cdaea3867c9d5d3707bc9",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 192,
+      "title": "Fail closed on inconsistent outbox reservations and delivery receipts",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/192",
+      "base": "codex/20261108-verified-outbox-freshness-at-reservation",
+      "base_sha": "b8c63e51f2e94c4be49cdaea3867c9d5d3707bc9",
+      "head": "codex/20261108-outbox-saved-state-invariants",
+      "head_sha": "a385c5ceb5098eaec4529452c5315f72b2aa8884",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 193,
+      "title": "Add operator-only local delivery reconciliation screen without send controls",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/193",
+      "base": "codex/20261108-outbox-saved-state-invariants",
+      "base_sha": "a385c5ceb5098eaec4529452c5315f72b2aa8884",
+      "head": "codex/20261108-outbox-operator-queue",
+      "head_sha": "56295a98da3aafb0ebf84783237c80eb38b8bb18",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 194,
+      "title": "FAST9: connect the durable case journey to exact return preparation",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/194",
+      "base": "codex/20261108-outbox-operator-queue",
+      "base_sha": "56295a98da3aafb0ebf84783237c80eb38b8bb18",
+      "head": "codex/20261115-fast9-integrated-journey",
+      "head_sha": "c69d7feaae8d3417648e523ceb80363786b55a21",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 195,
+      "title": "FAST9: add signed MUFTI identity and approval verification v2",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/195",
+      "base": "codex/20261115-fast9-integrated-journey",
+      "base_sha": "c69d7feaae8d3417648e523ceb80363786b55a21",
+      "head": "codex/20261115-fast9-trusted-identity-v2",
+      "head_sha": "af5e5759030989688e764231195bd010599919a2",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 196,
+      "title": "FAST9: commit MUFTI approval claims atomically with the exact outbox plan",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/196",
+      "base": "codex/20261115-fast9-trusted-identity-v2",
+      "base_sha": "af5e5759030989688e764231195bd010599919a2",
+      "head": "codex/20261115-fast9-atomic-approval-commit-v1",
+      "head_sha": "248dcda81ded26f474d310ff93ff8670c5df820e",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 197,
+      "title": "FAST9: add complete multi-part delivery ledger and conservative recovery summary",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/197",
+      "base": "codex/20261115-fast9-atomic-approval-commit-v1",
+      "base_sha": "248dcda81ded26f474d310ff93ff8670c5df820e",
+      "head": "codex/20261115-fast9-multipart-delivery-ledger-v1",
+      "head_sha": "fc1c47f2c9a9aa327648dd32636492bf4aa76650",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 198,
+      "title": "FAST9: prove Outbox crash rollback and late-receipt race safety",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/198",
+      "base": "codex/20261115-fast9-multipart-delivery-ledger-v1",
+      "base_sha": "fc1c47f2c9a9aa327648dd32636492bf4aa76650",
+      "head": "codex/20261115-fast9-crash-consistency-v1",
+      "head_sha": "566afd081d4cd3db07455df1e718aaa17e2d4308",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 199,
+      "title": "FAST9: bind approvals to an exact ordered multipart plan manifest",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/199",
+      "base": "codex/20261115-fast9-crash-consistency-v1",
+      "base_sha": "566afd081d4cd3db07455df1e718aaa17e2d4308",
+      "head": "codex/20261115-fast9-plan-manifest-v1",
+      "head_sha": "3ffb1386998ca9ea3f81f71b1e65c596acb9038d",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 200,
+      "title": "FAST9: add externally keyed audit attestations for Outbox integrity",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/200",
+      "base": "codex/20261115-fast9-plan-manifest-v1",
+      "base_sha": "3ffb1386998ca9ea3f81f71b1e65c596acb9038d",
+      "head": "codex/20261115-fast9-external-audit-attestation-v1",
+      "head_sha": "f532611d5dfa4c113f0da78d25d78a748902371f",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 201,
+      "title": "FAST9: add PostgreSQL durable delivery queue with atomic approval and worker leases",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/201",
+      "base": "codex/20261115-fast9-external-audit-attestation-v1",
+      "base_sha": "f532611d5dfa4c113f0da78d25d78a748902371f",
+      "head": "codex/20261115-fast9-postgres-delivery-queue-v1",
+      "head_sha": "ce55b5c672599fcdd1c11aa4ebff8f3aeede25b3",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 202,
+      "title": "FAST9: bind Ed25519 MUFTI approvals to PostgreSQL atomic consumption",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/202",
+      "base": "codex/20261115-fast9-postgres-delivery-queue-v1",
+      "base_sha": "ce55b5c672599fcdd1c11aa4ebff8f3aeede25b3",
+      "head": "codex/20261115-fast9-ed25519-postgres-approval-bridge-v1",
+      "head_sha": "188f036aeb97f8e32e46fd4b177a8a3162cc8056",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 203,
+      "title": "FAST9: add hash-chained PostgreSQL audit with external attestation",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/203",
+      "base": "codex/20261115-fast9-ed25519-postgres-approval-bridge-v1",
+      "base_sha": "188f036aeb97f8e32e46fd4b177a8a3162cc8056",
+      "head": "codex/20261115-fast9-postgres-audit-attestation-v1",
+      "head_sha": "51db18cafdccc0518dc3fb872256ae97b5249209",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 204,
+      "title": "FAST9: trusted signed-approval to PostgreSQL delivery journey and scoped reporting",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/204",
+      "base": "codex/20261115-fast9-postgres-audit-attestation-v1",
+      "base_sha": "51db18cafdccc0518dc3fb872256ae97b5249209",
+      "head": "codex/20261115-fast9-trusted-delivery-journey",
+      "head_sha": "f2f1358aad1b977948c63e37b967c215f394ae44",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 205,
+      "title": "FAST9: connect the author journal to signed approval intake and PostgreSQL staging",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/205",
+      "base": "codex/20261115-fast9-trusted-delivery-journey",
+      "base_sha": "f2f1358aad1b977948c63e37b967c215f394ae44",
+      "head": "codex/20261115-fast9-author-approval-desk",
+      "head_sha": "038a4a7b00dc897797446a730c3d30e7ff35e6ef",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 206,
+      "title": "FAST9: human Mufti review decisions, author feedback and reviewed receipt intake",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/206",
+      "base": "codex/20261115-fast9-author-approval-desk",
+      "base_sha": "038a4a7b00dc897797446a730c3d30e7ff35e6ef",
+      "head": "codex/20261115-fast9-mufti-review-cycle",
+      "head_sha": "84d1e2b26c41e2cb33d7ec1a0c1813d8687dd34e",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 207,
+      "title": "FAST9: verified offline provider status receipts and immutable evidence",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/207",
+      "base": "codex/20261115-fast9-mufti-review-cycle",
+      "base_sha": "84d1e2b26c41e2cb33d7ec1a0c1813d8687dd34e",
+      "head": "codex/20261115-fast9-signed-provider-evidence",
+      "head_sha": "27d790fe67970f5e8d94dfc280233228dff3aa34",
+      "head_is_ancestor": true
+    },
+    {
+      "number": 208,
+      "title": "FAST9: multi-case requester tracking with private status capability",
+      "url": "https://github.com/sami77337/fatwa-platform/pull/208",
+      "base": "codex/20261115-fast9-signed-provider-evidence",
+      "base_sha": "27d790fe67970f5e8d94dfc280233228dff3aa34",
+      "head": "codex/20261115-fast9-multicase-requester-tracking",
+      "head_sha": "23839110af15baf09ed80b1002a328021cea5e31",
+      "head_is_ancestor": true
+    }
+  ]
+}

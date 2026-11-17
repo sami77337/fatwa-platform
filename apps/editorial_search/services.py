@@ -2,11 +2,13 @@
 
 import unicodedata
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from heapq import nsmallest
 
 from apps.editorial_queue.services import QueueCatalog, QueueRow
 from apps.reference.normalization import normalize_title
+
+from .query_terms import normalize_editorial_search, synonym_pattern
 
 PAGE_SIZE = 10
 MAX_RESULTS = 200
@@ -37,10 +39,19 @@ class SearchHit:
     source_sha256: str
     fixture_label: str
     anchor: str
+    match_kind: str = ""
 
     @property
     def source_label(self) -> str:
         return dict(SOURCE_TYPES)[self.source]
+
+    @property
+    def match_label(self) -> str:
+        return {
+            "exact": "تطابق كامل بعد تجاهل فروق الكتابة",
+            "words": "تطابق كلمات البحث",
+            "synonym": "تطابق بتكافؤ بلا وبدون",
+        }.get(self.match_kind, "")
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,19 +216,31 @@ def search_catalog(
     validate_query(q, source, batch, page)
     if batch and batch not in {item.batch_id for item in catalog.batches}:
         raise ValueError("unknown_batch")
-    normalized_query = normalize_title(q)
+    literal_query = normalize_title(q)
+    normalized_query = normalize_editorial_search(q)
     terms = normalized_query.split()
+    literal_terms = literal_query.split()
+    patterns = tuple(synonym_pattern(term) for term in terms)
 
-    def ranked_matches() -> Iterator[tuple[bool, int, SearchHit]]:
+    def ranked_matches() -> Iterator[tuple[int, int, SearchHit]]:
         if not terms:
             return
         for position, document in enumerate(_documents(catalog, batch)):
             if source and document.source != source:
                 continue
-            fields = tuple(normalize_title(field.text) for field in document.fields)
+            literal_fields = tuple(normalize_title(field.text) for field in document.fields)
+            fields = tuple(normalize_editorial_search(field.text) for field in document.fields)
             searchable = " ".join(fields)
-            if all(term in searchable for term in terms):
-                yield normalized_query not in fields, position, document
+            literal_searchable = " ".join(literal_fields)
+            literal_match = all(term in literal_searchable for term in literal_terms)
+            if literal_match or all(pattern.search(searchable) for pattern in patterns):
+                if literal_query in literal_fields:
+                    rank, kind = 0, "exact"
+                elif literal_match:
+                    rank, kind = 1, "words"
+                else:
+                    rank, kind = 2, "synonym"
+                yield rank, position, replace(document, match_kind=kind)
 
     # Scan every eligible document so a late exact match cannot be lost to the cap.
     # Retain only the best 201 entries; the extra entry detects actual truncation.
