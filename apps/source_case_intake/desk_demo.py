@@ -28,6 +28,7 @@ def main(argv=None):
     settings.FATWA_CASEWORK_WEB_ENABLED = True
     settings.FATWA_SOURCE_CASE_INTAKE_ENABLED = True
     settings.FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED = True
+    settings.FATWA_SOURCE_CASE_INTAKE_SIMULATOR_ENABLED = True
     settings.FATWA_CASE_ATTACHMENTS_ENABLED = True
     settings.ROOT_URLCONF = "apps.source_case_intake.urls"
     roots = []

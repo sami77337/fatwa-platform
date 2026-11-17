@@ -1,5 +1,8 @@
 # V9 source case intake — lane A
 
+Later UI additions: [V10 desk](V10_DESK.md) and [V11 source workflow](V11_SOURCE.md).
+The historical V9 evidence below is preserved as recorded.
+
 Development only: **Gate B NOT_PASSED / C-D-E HOLD / Phase01 BLOCKED /
 NOT_DEPLOYED / ACCEPTANCE_HOLD**. No webhook, provider client, real account,
 outbound message, production permission or AI-written answer is introduced.

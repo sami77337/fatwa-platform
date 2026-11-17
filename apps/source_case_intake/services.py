@@ -19,7 +19,13 @@ from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 from apps.private_media.storage import configured_storage
 
 from .adapters import IntakeError, SourceContext, digest, project
-from .models import AttachmentBinding, EvidenceBinding, ReviewTicket, SourceReceipt
+from .models import (
+    AttachmentBinding,
+    EvidenceBinding,
+    ReviewTicket,
+    SourceReceipt,
+    SourceReviewNote,
+)
 
 REVIEW_SCOPE = "source-intake-review"
 
@@ -227,6 +233,7 @@ def resolve_review(
     token=None,
     expected_revision=None,
     expected_evidence_version=None,
+    expected_notes_version=None,
     synthetic_fixtures_only=False,
 ):
     """A scoped human may resolve correlation only, never a source edit/conflict.
@@ -250,6 +257,18 @@ def resolve_review(
         ticket = ReviewTicket.objects.filter(receipt=row).first()
         if ticket is None or row.problem or ticket.reason == "message_already_bound":
             raise IntakeError("correlation_review_required")
+        if (
+            expected_notes_version is not None
+            and row.review_notes.count() != expected_notes_version
+        ):
+            raise IntakeError("source_notes_changed")
+        disposition = (
+            SourceReviewNote.objects.filter(receipt=row, kind__in=["HOLD", "REOPEN"])
+            .order_by("-sequence")
+            .first()
+        )
+        if disposition and disposition.kind == "HOLD":
+            raise IntakeError("source_review_on_hold")
         audit = dict(
             subject_id=identity.subject_id,
             provider_id=provider.provider_id,
