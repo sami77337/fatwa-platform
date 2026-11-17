@@ -1,6 +1,7 @@
 {% extends "casework/requester_workspace.html" %}
 {% block content %}
 {{ block.super }}
+{% if result %}
 <section aria-labelledby="access-review-title">
 <h2 id="access-review-title">طلب مراجعة رمز الوصول</h2>
 <p>يمكنك طلب مساعدة الفريق ما دام الوصول الخاص الحالي صالحًا. حفظ الطلب لا يُبطل الرمز ولا يصدر رمزًا جديدًا. إذا كان الرمز قد انكشف، اطلب من الفريق إبطاله عبر مسار التحقق الموثوق؛ إغلاق المتصفح وحده لا يُبطله.</p>
@@ -12,5 +13,35 @@
 <label for="review-reason">سبب طلب المراجعة</label><select id="review-reason" name="reason" required>
 <option value="LOST_COPY">فقدان نسخة الرمز</option><option value="EXPOSED">احتمال انكشاف الرمز</option></select>
 <p>يُحفظ طلب واحد لكل رمز وصول. لا تُدخل الرمز أو بيانات شخصية في سبب الطلب.</p><button type="submit">حفظ طلب مراجعة الوصول</button></form>
+</section>
+{% endif %}
+{% if issued_recovery_token %}
+<section aria-labelledby="recovered-token-title" id="recovery-confirmation">
+<h2 id="recovered-token-title">رمز الوصول الجديد</h2>
+<p>أُبطل كل رمز قديم ضمن المعاملة نفسها. انسخ الرمز التالي واحفظه في مكان آمن؛ يظهر هنا مرة واحدة فقط.</p>
+<p class="original"><bdi id="recovered-token">{{ issued_recovery_token }}</bdi></p>
+<a href="/casework/status/">فتح القضية بالوصول الجديد</a>
+</section>
+{% endif %}
+<section aria-labelledby="trusted-recovery-title" id="trusted-recovery">
+<h2 id="trusted-recovery-title">استعادة الوصول بعد فقد الرمز</h2>
+{% if recovery_enabled %}
+<p>تستلزم الاستعادة رمز تحقق مستقلًا صادرًا عن جهة تحقق موثوقة ومربوطًا بالقضية وصاحبها. رقم FT وحده لا يكفي. تُبطل جميع الرموز السابقة عند نجاح العملية.</p>
+<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="trusted_recover">
+<input type="hidden" name="recovery_nonce" value="{{ recovery_nonce }}">
+<input type="hidden" name="recovery_proof" value="{{ recovery_proof }}">
+<label for="recover-case-ref">رقم القضية</label>
+<input id="recover-case-ref" name="public_ref" type="text" required maxlength="40"
+ pattern="FT-[0-9]{4}-[A-F0-9]{20}" autocomplete="off" dir="ltr">
+<label for="recover-credential">رمز التحقق الخارجي الموثوق</label>
+<input id="recover-credential" name="credential" type="password" required
+ minlength="32" maxlength="512" autocomplete="off">
+<button type="submit">تحقق واستعد الوصول</button>
+</form>
+{% else %}
+<p>مسار الاستعادة بالتحقق الخارجي غير مفعّل في هذه البيئة. اطلب المساعدة من الفريق عبر قناة تحقق معتمدة؛ لا تُرسل رمزك السري أو نص السؤال في طلب عام.</p>
+{% endif %}
+<p>هذه الوظيفة داخل بيئة اختبار اصطناعية. لا ترسل إشعارات ولا تتحقق من هوية حقيقية إلا عبر مزود موثوق يضبطه الخادم.</p>
 </section>
 {% endblock %}
