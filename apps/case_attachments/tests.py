@@ -193,7 +193,7 @@ class AttachmentTests(TransactionTestCase):
             self.assertEqual(bytes(old_model.objects.get(pk=result["id"]).original), RAW)
         finally:
             executor = MigrationExecutor(connection)
-            executor.migrate([("case_attachments", "0003_remove_caseattachment_ca_size_and_more")])
+            executor.migrate([("case_attachments", "0004_caseattachment_storage_backend_and_more")])
         with self.assertRaises(IntegrityError), transaction.atomic():
             CaseAttachment.objects.filter(pk=result["id"]).update(filename="changed.txt")
         self.assertEqual(

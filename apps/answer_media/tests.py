@@ -288,7 +288,7 @@ class AnswerMediaTests(TransactionTestCase):
         self.save()
         original = list(AnswerPart.objects.values_list("sha256", "original"))
         call_command("migrate", "answer_media", "0001", verbosity=0)
-        call_command("migrate", "answer_media", "0003", verbosity=0)
+        call_command("migrate", "answer_media", "0004", verbosity=0)
         self.assertEqual(list(AnswerPart.objects.values_list("sha256", "original")), original)
         with self.assertRaises(IntegrityError), transaction.atomic():
             AnswerPart.objects.update(source="REPLACEMENT")

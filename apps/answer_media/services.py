@@ -9,8 +9,15 @@ from hashlib import sha256
 from django.apps import apps
 from django.conf import settings
 
+from apps.case_attachments.storage_bindings import (
+    binding_locks,
+    copied_pointer,
+    raw_for_owner,
+    stored_fields,
+)
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
+from apps.private_media.storage import configured_storage
 from apps.private_media.validation import TYPES, MediaValidationError, validate
 
 from .models import AnswerManifest, AnswerPart, PrivateAnswerRelease
@@ -121,7 +128,7 @@ def _verified(manifest):
     if len(rows) != manifest.part_count or not 2 <= len(rows) <= MAX_PARTS:
         raise cases.CaseConflict("answer_parts_inconsistent")
     for ordinal, row in enumerate(rows, 1):
-        raw = bytes(row.original)
+        raw = raw_for_part(row)
         if (
             row.ordinal != ordinal
             or row.sha256 != sha256(raw).hexdigest()
@@ -177,14 +184,19 @@ def save_multipart_answer(
             checked.append(validate(**file))
     except MediaValidationError as exc:
         raise cases.CaseConflict("answer_file_invalid") from exc
-    with cases._staff_case(
-        case_id,
-        subject_id,
-        provider,
-        synthetic_fixtures_only,
-        expected_revision=expected_revision,
-        expected_evidence_version=expected_evidence_version,
-    ) as (case, actor):
+    storage = configured_storage()
+    actor_provider_id = provider.provider_id
+    with (
+        binding_locks(storage, [media.sha256 for media in checked]),
+        cases._staff_case(
+            case_id,
+            subject_id,
+            provider,
+            synthetic_fixtures_only,
+            expected_revision=expected_revision,
+            expected_evidence_version=expected_evidence_version,
+        ) as (case, actor),
+    ):
         if case.stage == "NEEDS_CLARIFICATION":
             raise cases.CaseConflict("requester_clarification_still_required")
         retained = []
@@ -199,7 +211,7 @@ def save_multipart_answer(
                 if part_id not in available:
                     raise cases.CaseConflict("retained_answer_parts_unavailable")
                 row = available[part_id]
-                retained.append({**_fields(row), "original": bytes(row.original)})
+                retained.append({**_fields(row), **copied_pointer(row)})
         raw = text.encode()
         parts = [
             {
@@ -229,7 +241,7 @@ def save_multipart_answer(
                     "id": uuid.uuid4(),
                     "ordinal": len(parts) + 1,
                     "kind": kind,
-                    "original": media.raw,
+                    **stored_fields(storage, media),
                     "sha256": media.sha256,
                     "size": media.size,
                     "media_type": media.media_type,
@@ -237,6 +249,13 @@ def save_multipart_answer(
                     "metadata": media.metadata,
                 }
             )
+        current_actor = cases._identity(provider, subject_id, case)
+        if (current_actor.subject_id, current_actor.auth_epoch, provider.provider_id) != (
+            actor.subject_id,
+            actor.auth_epoch,
+            actor_provider_id,
+        ):
+            raise cases.CaseConflict("case_identity_changed")
         previous_answer = case.answers.order_by("-revision").first()
         case.answer_revision += 1
         answer = AnswerRevision.objects.create(
@@ -401,7 +420,7 @@ def validate_for_approval(answer):
         return None
     for row in _verified(manifest)[1:]:
         try:
-            checked = validate(bytes(row.original), row.filename, row.media_type)
+            checked = validate(raw_for_part(row), row.filename, row.media_type)
         except MediaValidationError as exc:
             raise cases.CaseConflict("answer_media_content_invalid") from exc
         if (
@@ -444,7 +463,7 @@ def clone_parts_for_new_answer(previous, answer):
         }
     ]
     for row in rows[1:]:
-        parts.append({**_fields(row), "id": uuid.uuid4(), "original": bytes(row.original)})
+        parts.append({**_fields(row), "id": uuid.uuid4(), **copied_pointer(row)})
     manifest = AnswerManifest.objects.create(
         answer=answer, sha256=_digest(parts), part_count=len(parts)
     )
@@ -514,7 +533,7 @@ def requester_read(*, token, part_id, synthetic_fixtures_only=False):
         )
         if row is None:
             raise cases.CaseConflict("answer_part_unavailable")
-        return {**_fields(row), "raw": bytes(row.original)}
+        return {**_fields(row), "raw": raw_for_part(row)}
 
 
 def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
@@ -532,4 +551,23 @@ def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
         _verified(row.manifest)
         if row.ordinal == 1:
             raise cases.CaseConflict("answer_part_unavailable")
-        return {**_fields(row), "raw": bytes(row.original)}
+        return {**_fields(row), "raw": raw_for_part(row)}
+
+
+def raw_for_part(row):
+    """Exact original resolver for already-authorized internal callers; never a public URL."""
+    return raw_for_owner(row)
+
+
+def private_availability_for_locked_case(case):
+    """Minimal current private availability, under the caller's requester case lock."""
+    try:
+        _release_enabled()
+        manifest = _requester_manifest(case)
+    except cases.CaseConflict:
+        return {"available": False, "answer_revision": None, "part_count": None}
+    return {
+        "available": True,
+        "answer_revision": manifest.answer.revision,
+        "part_count": manifest.part_count,
+    }
