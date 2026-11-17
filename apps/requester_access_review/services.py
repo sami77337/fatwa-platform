@@ -5,6 +5,7 @@ Private core context managers are intentionally reused at the pinned V6 boundary
 """
 from hashlib import sha256
 
+from django.apps import apps as django_apps
 from django.utils import timezone
 
 from apps.casework import delivery
@@ -92,6 +93,11 @@ def requester_snapshot(
             if answer is None or answer.pk != decision.answer_id:
                 raise cases.CaseConflict("current_private_answer_unavailable")
             private_answer = {"text": answer.text, "revision": answer.revision}
+        private_media = {"available": False, "answer_revision": None, "part_count": None}
+        if django_apps.is_installed("apps.answer_media"):
+            from apps.answer_media.services import private_availability_for_locked_case
+
+            private_media = private_availability_for_locked_case(case)
         reviews = list(AccessReview.objects.filter(case=case).select_related("grant")
                        .order_by("-created_at")[:10])
         for review in reviews:
@@ -100,6 +106,7 @@ def requester_snapshot(
             "case": result,
             "reviews": [_public(review) for review in reviews],
             "private_answer": private_answer,
+            "private_media_availability": private_media,
             "requester_history": _requester_history(case, private_answer),
         }
 

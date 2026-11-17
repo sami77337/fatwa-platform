@@ -11,10 +11,12 @@ from django.conf import settings
 from django.db import connection, transaction
 
 from apps.case_attachments import services as attachments
+from apps.case_attachments.storage_bindings import binding_locks, raw_for_owner
 from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
+from apps.private_media.storage import configured_storage
 
 from .adapters import IntakeError, SourceContext, digest, project
 from .models import AttachmentBinding, EvidenceBinding, ReviewTicket, SourceReceipt
@@ -285,7 +287,9 @@ def attach_fixture(
     method performs no network access and never bypasses V8 validation or limits.
     """
     _guard(synthetic_fixtures_only)
-    with synthetic_queue_atomic():
+    checked = attachments._validate(raw, filename, media_type)
+    storage = configured_storage()
+    with binding_locks(storage, [checked.sha256]), synthetic_queue_atomic():
         row = _receipt(receipt_id)
         _lock(row.source, row.account)
         bound = EvidenceBinding.objects.filter(receipt=row).first()
@@ -301,7 +305,7 @@ def attach_fixture(
             )
             if existing:
                 stored = existing.attachment
-                if (bytes(stored.original), stored.filename, stored.media_type) != (
+                if (raw_for_owner(stored), stored.filename, stored.media_type) != (
                     raw,
                     filename,
                     media_type,

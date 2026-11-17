@@ -9,7 +9,7 @@
   <p>رقم المتابعة: <bdi id="workspace-reference">{{ result.public_ref }}</bdi></p>
   <p>التحديث الحالي: <bdi>{{ result.revision }}</bdi> · عدد التعقيبات المحفوظة: <bdi id="followup-count">{{ result.evidence_version|add:"-1" }}</bdi></p>
   {% if result.clarification %}<h3>الاستيضاح المطلوب</h3><p class="original" id="requested-clarification">{{ result.clarification }}</p>{% endif %}
-  <p class="notice">اعتماد الجواب لا يثبت تسليمه أو قراءته. لا يُعرض نص الجواب إلا ضمن الوصول الخاص وبسماح صريح بعد إثبات التسليم الموقّع.</p>
+  <p class="notice">اعتماد الجواب لا يثبت تسليمه أو قراءته. عرض النص عبر مسار التسليم يتطلب إثباتًا موقّعًا وسماحًا صريحًا. أما إتاحة الأجزاء داخل البوابة فتحتاج موافقة خاصة مستقلة، ولا تُعد تسليمًا إلى قناة خارجية.</p>
   {% if result.delivery_status %}
   <section id="requester-delivery-evidence" aria-labelledby="requester-delivery-heading">
     <h3 id="requester-delivery-heading">حالة تسليم الجواب</h3>
@@ -44,8 +44,14 @@
 </section>{% endif %}
 {% if attachments_enabled %}<form method="post" action="/casework/status/">{% csrf_token %}
 <input type="hidden" name="action" value="attachments"><button type="submit">مرفقات سؤالي</button></form>{% endif %}
-{% if answer_media_enabled %}<form method="post" action="/casework/status/">{% csrf_token %}
-<input type="hidden" name="action" value="answer_media"><button type="submit">أجزاء الجواب المتاحة خصوصيًا</button></form>{% endif %}
+<section id="requester-portal-availability" aria-labelledby="portal-availability-title">
+<h3 id="portal-availability-title">إتاحة أجزاء الجواب في البوابة</h3>
+{% if private_media_availability.available %}
+<p>إصدار الجواب {{ private_media_availability.answer_revision }} متاح لك هنا بموافقة خاصة حالية؛ عدد الأجزاء {{ private_media_availability.part_count }}. فتحها لا يثبت القراءة أو التسليم عبر القناة.</p>
+<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="answer_media"><button type="submit">أجزاء الجواب المتاحة خصوصيًا</button></form>
+{% else %}<p>لا توجد أجزاء جواب متاحة لك حاليًا داخل البوابة. أعد تحديث الحالة لاحقًا.</p>{% endif %}
+</section>
 <form method="post" action="/casework/status/">
   {% csrf_token %}<input type="hidden" name="action" value="followup">
   <input type="hidden" name="revision" value="{{ result.revision }}">

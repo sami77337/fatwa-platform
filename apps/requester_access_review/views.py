@@ -145,7 +145,7 @@ def requester(request):
             "private_answer": snapshot["private_answer"],
             "requester_history": snapshot.get("requester_history", []),
             "attachments_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_ENABLED", False) is True,
-            "answer_media_enabled": getattr(settings, "FATWA_ANSWER_MEDIA_PRIVATE_ENABLED", False) is True,
+            "private_media_availability": snapshot["private_media_availability"],
             "delivery_label": DELIVERY_LABELS.get(
                 result.get("delivery_status"), "حالة التسليم غير محسومة"
             ),

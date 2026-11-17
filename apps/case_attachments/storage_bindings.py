@@ -1,6 +1,7 @@
 """Authorized synthetic storage conversions; these never alter case facts or approval."""
 
 from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 
 from django.apps import apps
 from django.conf import settings
@@ -9,12 +10,15 @@ from django.db import connection
 from apps.casework import services as cases
 from apps.casework.models import CaseMediaStorageTransition
 from apps.private_media.storage import (
+    InlineDatabaseStorage,
     PrivateStorage,
     StoredOriginal,
     configured_storage,
     read_original,
 )
 from apps.private_media.validation import MediaValidationError, ValidatedMedia
+
+ACTIVE_BINDINGS = ContextVar("fatwa_private_storage_bindings", default=frozenset())
 
 INLINE = "inline-database-v1"
 FILESYSTEM = "private-filesystem-v1"
@@ -57,14 +61,28 @@ def copied_pointer(row):
 
 @contextmanager
 def binding_locks(storage, digests):
-    """Acquire in sorted order before the caller's case transaction; release after commit."""
+    """Hold external references through outer commit; only explicitly held locks nest.
+
+    Source intake composes upload inside its guarded unit. It must acquire these
+    locks before entering that unit; an arbitrary nested external write still fails.
+    Inline bytes have no independent orphan collector and need no filesystem lock.
+    """
+    digests = sorted(set(digests))
+    needed = frozenset((id(storage), digest) for digest in digests)
     if connection.in_atomic_block:
+        if isinstance(storage, InlineDatabaseStorage) or needed <= ACTIVE_BINDINGS.get():
+            yield
+            return
         raise cases.CaseConflict("storage_lock_requires_outer_transaction_boundary")
     try:
         with ExitStack() as stack:
-            for digest in sorted(set(digests)):
+            for digest in digests:
                 stack.enter_context(storage.binding_lock(digest))
-            yield
+            token = ACTIVE_BINDINGS.set(ACTIVE_BINDINGS.get() | needed)
+            try:
+                yield
+            finally:
+                ACTIVE_BINDINGS.reset(token)
     except (MediaValidationError, OSError) as exc:
         raise cases.CaseConflict("private_storage_unavailable") from exc
 

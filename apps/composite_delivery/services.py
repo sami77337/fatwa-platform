@@ -81,9 +81,12 @@ def _prepare(case, subject_id, provider):
     manifest = media.manifest_for_locked_answer(answer)
     if manifest is None:
         raise cases.CaseConflict("composite_manifest_required")
-    profile = _profile(case.source.channel)
+    origin = cases._delivery_origin_for_locked_case(case)
+    profile = _profile(origin["channel"])
     capability_sha = _profile_hash(profile)
-    evidence = replace(base, answer_sha256=manifest["sha256"])
+    evidence = replace(
+        base, answer_sha256=manifest["sha256"], source_digest=_hash([base.source_digest, origin])
+    )
     parts = tuple(
         Part(
             p["ordinal"],
@@ -99,6 +102,7 @@ def _prepare(case, subject_id, provider):
             case.requester_id,
             case.source.channel,
             case.source.source_event_id,
+            origin,
         ]
     )
     plan = plan_delivery(
@@ -167,6 +171,7 @@ def prepare_composite_delivery(*, case_id, subject_id, provider, synthetic_fixtu
         _reader(case, subject_id, provider, prepared)(case.public_ref)
         return {
             "status": "REQUEST_NOT_APPROVED",
+            "origin_channel": cases._delivery_origin_for_locked_case(case)["channel"],
             "decision_id": str(decision.pk),
             "manifest_sha256": manifest["sha256"],
             "capability_sha256": capability_sha,
