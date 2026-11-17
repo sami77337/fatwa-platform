@@ -13,6 +13,7 @@ from django.views.decorators.http import require_safe
 
 from apps.reference.query import (
     MAX_OFFSET,
+    MAX_SOURCE_ID,
     InvalidQuery,
     Page,
     bounded_int,
@@ -23,6 +24,7 @@ from apps.reference.services import (
     CatalogUnavailable,
     HeadingNotFound,
     list_books,
+    node,
     resolve_edition,
     roots,
     search,
@@ -81,10 +83,11 @@ def _search_link(context: dict, offset: int) -> str:
     # Rebuild only validated search fields; never copy arbitrary request parameters.
     params = {
         key: context[key]
-        for key in ("query", "mode", "depth", "has_children")
+        for key in ("query", "mode", "depth", "has_children", "root")
         if context[key] != ""
     }
-    params["q"] = params.pop("query")
+    if "query" in params:
+        params["q"] = params.pop("query")
     if offset:
         params["offset"] = offset
     return reverse("home") + "?" + urlencode(params) + "#results-title"
@@ -100,10 +103,11 @@ def home(request: HttpRequest) -> HttpResponse:
         "mode": request.GET.get("mode", "normalized"),
         "depth": request.GET.get("depth", ""),
         "has_children": request.GET.get("has_children", ""),
+        "root": request.GET.get("root", ""),
     }
     try:
         if any(
-            key not in {"q", "mode", "depth", "has_children", "offset"} or len(values) != 1
+            key not in {"q", "mode", "depth", "has_children", "offset", "root"} or len(values) != 1
             for key, values in request.GET.lists()
         ):
             raise InvalidQuery("Unknown or duplicate parameter")
@@ -112,8 +116,13 @@ def home(request: HttpRequest) -> HttpResponse:
         depth = bounded_int(context["depth"], 1, 5) if context["depth"] else None
         has_children = strict_bool(context["has_children"]) if context["has_children"] else None
         offset = bounded_int(request.GET.get("offset", "0"), 0, MAX_OFFSET)
-        if not text.strip() and (depth or has_children is not None or "offset" in request.GET):
-            raise InvalidQuery("Search text required")
+        root_id = bounded_int(context["root"], 1, MAX_SOURCE_ID) if context["root"] else None
+        if (
+            not text.strip()
+            and root_id is None
+            and (depth or has_children is not None or "offset" in request.GET)
+        ):
+            raise InvalidQuery("Search text or source section required")
         books = list_books(Page(1))
         if books.total != 1:
             context["catalog_state"] = "multiple" if books.total else "empty"
@@ -122,7 +131,21 @@ def home(request: HttpRequest) -> HttpResponse:
             edition = resolve_edition(metadata["id"])
             if edition is None:
                 raise CatalogUnavailable("Missing edition")
+            section = None
+            if root_id is not None:
+                try:
+                    heading = node(edition, root_id)
+                except HeadingNotFound as error:
+                    raise InvalidQuery("Unknown source section") from error
+                if heading.parent_id is not None or heading.depth != 1:
+                    raise InvalidQuery("Select a source root")
+                section = {"id": root_id, "title": heading.title_original}
+                context["root"] = str(root_id)
             root_page = roots(edition, Page(100))
+            section_options = list(root_page.items)
+            if section and not any(item["id"] == root_id for item in section_options):
+                # A valid root beyond the first bounded root page remains selectable.
+                section_options.append(section)
             context.update(
                 {
                     "catalog_state": "available",
@@ -130,11 +153,13 @@ def home(request: HttpRequest) -> HttpResponse:
                     "edition_id": metadata["id"],
                     "heading_count": metadata["heading_count"],
                     "roots": root_page,
-                    "searching": bool(text.strip() or depth or has_children is not None),
+                    "section": section,
+                    "section_options": section_options,
+                    "searching": bool(text.strip() or root_id or depth or has_children is not None),
                 }
             )
             if context["searching"]:
-                # The homepage keeps text required, even with filters or pagination.
+                # Only an explicit source root permits browsing without search text.
                 results = search(
                     edition,
                     text,
@@ -142,6 +167,7 @@ def home(request: HttpRequest) -> HttpResponse:
                     Page(30, offset),
                     depth=depth,
                     has_children=has_children,
+                    **({"root_id": root_id} if root_id is not None else {}),
                 )
                 context.update(
                     results=results,
@@ -161,11 +187,18 @@ def home(request: HttpRequest) -> HttpResponse:
                         and results.next_offset is None
                         and offset + len(results.items) < results.total
                     ),
+                    all_sections_url=(
+                        _search_link({**context, "root": ""}, 0)
+                        if text.strip()
+                        else reverse("home")
+                    ),
                 )
     except InvalidQuery:
         if context["catalog_state"] != "available":
             context["catalog_state"] = "invalid"
-        context["error"] = "تحقق من البحث: اكتب حتى ١٦٠ حرفًا وعشر كلمات، واختر مرشحات صالحة."
+        context["error"] = (
+            "تحقق من البحث: اكتب حتى ١٦٠ حرفًا وعشر كلمات، أو اختر بابًا متاحًا، واختر مرشحات صالحة."
+        )
         return _render_page(request, context, status=400)
     except (DatabaseError, CatalogUnavailable, HeadingNotFound):
         context = {"current_page": "home", "catalog_state": "unavailable"}
