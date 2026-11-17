@@ -282,6 +282,19 @@ class SignedDeliveryRequesterViewTests(CaseDeliveryFixture, TransactionTestCase)
         self.assertFalse(verified.context["result"]["read_confirmed"])
         self.assertContains(verified, 'id="requester-verified-parts"')
         self.assertEqual(previous_audit, list(DeliveryAuditEvent.objects.values()))
+        # The default policy never exposes the approved answer, even with valid proofs.
+        with override_settings(
+            FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED=True,
+            FATWA_CASE_DELIVERY_PROVIDER_VERIFIER=self.channel_verifier,
+        ):
+            authorized = self.requester.get(URL)
+        self.assertContains(authorized, 'id="requester-answer-text"')
+        self.assertContains(authorized, approved["answers"][-1]["text"])
+        self.assertEqual(
+            authorized.context["private_answer"]["revision"],
+            approved["answers"][-1]["revision"],
+        )
+        self.assertFalse(authorized.context["result"]["read_confirmed"])
         for secret in (
             approved["answers"][-1]["text"], self.a["token"], self.a["case_id"],
             "signature_b64url", "plan_sha256", "read_confirmed=True",
@@ -299,6 +312,14 @@ class SignedDeliveryRequesterViewTests(CaseDeliveryFixture, TransactionTestCase)
             "PROVIDER_EVIDENCE_INCOMPLETE",
         )
         self.assertFalse(revoked_key.context["result"]["delivery_verified"])
+        with override_settings(
+            FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED=True,
+            FATWA_CASE_DELIVERY_PROVIDER_VERIFIER=self.verifier(
+                revoked_key_ids=frozenset({"channel-key"})
+            ),
+        ):
+            revoked_private = self.requester.get(URL)
+        self.assertNotContains(revoked_private, 'id="requester-answer-text"')
 
         newest = cases.requester_status(self.a["token"], synthetic_fixtures_only=True)
         cases.add_followup(
@@ -309,6 +330,12 @@ class SignedDeliveryRequesterViewTests(CaseDeliveryFixture, TransactionTestCase)
         self.assertEqual(stale.context["result"]["delivery_status"], "CURRENT_APPROVAL_REQUIRED")
         self.assertFalse(stale.context["result"]["delivery_verified"])
         self.assertNotContains(stale, 'id="requester-verified-parts"')
+        with override_settings(
+            FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED=True,
+            FATWA_CASE_DELIVERY_PROVIDER_VERIFIER=self.channel_verifier,
+        ):
+            stale_private = self.requester.get(URL)
+        self.assertNotContains(stale_private, 'id="requester-answer-text"')
 
     def test_missing_server_verifier_or_foreign_case_does_not_leak_delivery(self):
         self.approve()
@@ -319,6 +346,12 @@ class SignedDeliveryRequesterViewTests(CaseDeliveryFixture, TransactionTestCase)
         self.assertEqual(unavailable.context["result"]["delivery_status"], "EVIDENCE_UNAVAILABLE")
         self.assertFalse(unavailable.context["result"]["delivery_verified"])
         self.assertNotContains(unavailable, 'id="requester-verified-parts"')
+        with override_settings(
+            FATWA_CASEWORK_PRIVATE_ANSWER_ENABLED=True,
+            FATWA_CASE_DELIVERY_PROVIDER_VERIFIER=None,
+        ):
+            unavailable_private = self.requester.get(URL)
+        self.assertNotContains(unavailable_private, 'id="requester-answer-text"')
 
         other = self.intake("b")
         self.unlock(other["token"])
