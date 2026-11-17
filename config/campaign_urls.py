@@ -4,7 +4,7 @@ from django.urls import path
 
 from apps.casework_web import requester_intake
 from apps.requester_access_review.views import requester
-from apps.team_workspace.campaign import staff
+from apps.requester_team_journey.views import staff
 from apps.team_workspace.urls import urlpatterns as team_patterns
 
 urlpatterns = [

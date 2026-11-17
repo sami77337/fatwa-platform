@@ -89,10 +89,9 @@ class CampaignBrowserTests(LiveServerTestCase):
                     staff.goto(self.live_server_url + "/casework/staff/login/")
                     staff.locator("#credential").fill(directory.credential)
                     click(staff, "دخول المكتب")
-                    click(staff, "طلبات مراجعة الوصول")
+                    click(staff, "طلبات مراجعة الوصول الخاص")
                     self.assertNotIn(token, staff.content())
                     click(staff, "بدء متابعة التحقق")
-                    click(staff, "طلبات مراجعة الوصول")
                     self.assertIn("الفريق يتابع التحقق الموثوق", staff.content())
                     self.assertEqual(
                         staff.get_by_role(
