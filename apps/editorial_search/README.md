@@ -1,5 +1,60 @@
 # Unified Arabic editorial search (FAST4)
 
+## Search result reference cards (2026-11-17)
+
+Base: `e000cdc22c1a0dfd1e0e38eb8fd7cfbfc392487e`, the checked head of
+`codex/20261117-v6-durable-case-integration` (#209). Existing Arabic matching,
+ranking, synonym explanations and result limits are reused unchanged.
+
+Each reference result now opens its own card, identified by case, occurrence
+ordinal, and diagnostic versus exact historical revision. The card preserves
+the query, source filter, batch and page in a validated local return link. It
+shows the saved pointer, its UTF-8 SHA-256, its intake provenance and links to
+the exact workbench context. Duplicate pointers retain separate ordinals.
+
+Diagnostic cards reuse the existing `research_bridge.bridge_reference` check
+against the read-only Django catalog. Only a complete exact match exposes the
+edition-scoped library link, original heading/path, printed part/page and source
+pins. Missing, mismatching or unavailable evidence closes the link with a reason.
+Historical revision pointers remain explicitly unverified: current diagnostic
+evidence is never borrowed. Serialized revision identities are labelled as such,
+not presented as original book quotations. Search result rendering performs no
+catalog queries; only opening a diagnostic card can read the catalog.
+
+Routes are added to this app's existing URL include, with no `config/urls.py`
+change, migration, seed command or dependency change:
+
+- `/dev/editorial-search/references/<case>/diagnostics/<ordinal>`
+- `/dev/editorial-search/references/<case>/revisions/<revision>/<ordinal>`
+
+For example, search `verified` with source `reference`, open the first reference
+card, then follow its library link when the exact synthetic catalog is available.
+Without matching catalog data the card still explains why navigation is closed.
+Search `SYN-REMOVE` to inspect separate historical occurrences at revisions 1, 9
+and 11, with their original context and return navigation.
+
+Validation: Python 3.13.16, Django 5.2.18, isolated PostgreSQL 17 container.
+72 focused tests passed (51 search tests, including 2 real PostgreSQL tests,
+and 21 reused bridge tests). Ruff lint/format over changed Python files,
+Django system check and `git diff --check` passed. The PostgreSQL test fixture
+`search-reference-card-synthetic-v1` inserts only the existing fabricated Wave7
+root identity (edition 7001 / row 1); the repeated `a`/`b` pins are synthetic
+assertions, not hashes of owner archives. The positive integration follows the
+actual library URL; another test confirms missing row 2 cannot select row 1.
+The search request is asserted to use zero database queries; card database
+statements are asserted read-only and bounded to at most four for the root fixture.
+
+Run against a disposable synthetic PostgreSQL test database using the existing
+`PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGTESTDATABASE` settings:
+
+```sh
+python manage.py test tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_query_terms tests.editorial_search.test_relevance tests.editorial_search.test_reference_cards tests.editorial_search.test_reference_cards_db tests.research_bridge.test_services tests.research_bridge.test_views --settings=config.settings.test --noinput
+```
+
+No production data, owner archives, external scholarly content or browser
+acceptance is claimed. Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED;
+NOT_DEPLOYED. Revert this feature commit to remove the cards and their routes.
+
 Development-only, synthetic, read-only search at `/dev/editorial-search`.
 Base: FAST3 PR #106, `a149b39bfd624e330762459a7c3e0b4febc7187b`.
 

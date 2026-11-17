@@ -40,6 +40,8 @@ class SearchHit:
     fixture_label: str
     anchor: str
     match_kind: str = ""
+    reference_ordinal: int | None = None
+    reference_origin: str = ""
 
     @property
     def source_label(self) -> str:
@@ -102,7 +104,7 @@ def _reference_fields(value: object, label: str) -> Iterator[SearchField]:
 def _row_documents(row: QueueRow) -> Iterator[SearchHit]:
     case = row.case
 
-    def document(source, fields, revision=None, anchor="intake"):
+    def document(source, fields, revision=None, anchor="intake", ordinal=None, origin=""):
         return SearchHit(
             source,
             case.key,
@@ -113,6 +115,8 @@ def _row_documents(row: QueueRow) -> Iterator[SearchHit]:
             row.source_sha256,
             case.fixture_label,
             anchor,
+            reference_ordinal=ordinal,
+            reference_origin=origin,
         )
 
     yield document("question", _fields(السؤال=case.question))
@@ -138,13 +142,15 @@ def _row_documents(row: QueueRow) -> Iterator[SearchHit]:
     )
     # Intake diagnostics have no revision identity. The existing history adapter
     # explicitly labels its diagnostics as current-snapshot references instead.
-    for reference in case.references:
+    for ordinal, reference in enumerate(case.references, 1):
         current = case.record.current.number if case.key == "history" and case.record else None
         yield document(
             "reference",
             tuple(_reference_fields(reference, "الإحالة")),
             current,
             "references",
+            ordinal,
+            "diagnostic",
         )
     for entry in row.history:
         revision = entry.revision
@@ -174,6 +180,8 @@ def _row_documents(row: QueueRow) -> Iterator[SearchHit]:
                 tuple(_reference_fields(asdict(reference), f"مرجع_{ordinal}")),
                 revision.number,
                 "snapshot",
+                ordinal,
+                "revision",
             )
 
 

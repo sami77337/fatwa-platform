@@ -15,6 +15,7 @@
 <article>
   <h3><a href="{{ row.url }}">{{ row.hit.source_label }} — {% if row.hit.case_key %}<bdi>{{ row.hit.case_key }}</bdi>{% else %}<bdi>{{ row.hit.batch_id }}</bdi>{% endif %}</a></h3>
   <p>{{ row.hit.match_label }}</p>
+  {% if row.reference_url %}<p><a href="{{ row.reference_url }}">فتح بطاقة الإحالة {{ row.hit.reference_ordinal }}{% if row.hit.reference_origin == 'revision' %} في المراجعة {{ row.hit.revision }}{% else %} في التشخيص المحفوظ{% endif %}</a></p>{% endif %}
   <p>الدفعة: <bdi>{{ row.hit.batch_id }}</bdi> · {% if row.hit.revision %}المراجعة: {{ row.hit.revision }}{% else %}مصدر الاستلام أو الدفعة؛ بلا هوية مراجعة{% endif %}</p>
   <dl>{% for field in row.fields %}<dt>{{ field.label }}</dt><dd><pre>{{ field.text }}</pre></dd>{% endfor %}</dl>
   <details><summary>هوية المصدر وبصمته</summary>
