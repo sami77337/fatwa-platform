@@ -1,0 +1,16 @@
+{% extends "casework/requester_workspace.html" %}
+{% block content %}
+{{ block.super }}
+<section aria-labelledby="access-review-title">
+<h2 id="access-review-title">طلب مراجعة رمز الوصول</h2>
+<p>يمكنك طلب مساعدة الفريق ما دام الوصول الخاص الحالي صالحًا. حفظ الطلب لا يُبطل الرمز ولا يصدر رمزًا جديدًا. إذا كان الرمز قد انكشف، اطلب من الفريق إبطاله عبر مسار التحقق الموثوق؛ إغلاق المتصفح وحده لا يُبطله.</p>
+{% if access_reviews %}<h3>آخر طلبات المراجعة لهذه القضية</h3><ol id="access-review-history">
+{% for review in access_reviews %}<li><strong>{{ review.state_label }}</strong><p>{{ review.reason_label }}</p><time>{{ review.created_at|date:"Y-m-d H:i" }}</time></li>{% endfor %}
+</ol>{% endif %}
+<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="request_access_review"><input type="hidden" name="review_proof" value="{{ review_proof }}">
+<label for="review-reason">سبب طلب المراجعة</label><select id="review-reason" name="reason" required>
+<option value="LOST_COPY">فقدان نسخة الرمز</option><option value="EXPOSED">احتمال انكشاف الرمز</option></select>
+<p>يُحفظ طلب واحد لكل رمز وصول. لا تُدخل الرمز أو بيانات شخصية في سبب الطلب.</p><button type="submit">حفظ طلب مراجعة الوصول</button></form>
+</section>
+{% endblock %}
