@@ -90,7 +90,10 @@ class V11Harness(BrowserHarness):
         self.click(page, "دخول المكتب")
 
     def open_case(self, page, ref):
-        page.goto(self.live_server_url + "/casework/staff/")
+        response = page.goto(self.live_server_url + "/casework/staff/")
+        self.assertEqual(
+            response.status, 200, response.text()[:300] if response.status >= 400 else "staff queue"
+        )
         self.click(page, ref)
         self.assert_case_header(page, ref)
 
@@ -137,6 +140,7 @@ class V11Harness(BrowserHarness):
         self.click(requester, "إرسال التعقيب")
         self.assertIn("حُفظ ردك ومرفقه معًا", requester.content())
         picture = requester.locator("#attachments img")
+        picture.scroll_into_view_if_needed()
         picture.evaluate("img=>img.decode()")
         self.assertGreater(picture.evaluate("img=>img.naturalWidth"), 0)
         self.assertNotIn(PRIVATE, requester.content())

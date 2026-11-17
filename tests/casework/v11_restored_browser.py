@@ -7,6 +7,7 @@ answer creation or approval occurs after restoration.
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
@@ -36,6 +37,34 @@ from tests.casework.v11_fixtures import (
     RightsAuthority,
     inventory,
 )
+
+
+def respect_restored_budget_window():
+    """Let preserved source request budgets expire naturally before target rehearsal.
+
+    Read-only: no counter deletion/reset, request retry, policy override or clock patch.
+    This is a new browser session, not a claim that restoring resets rate limits.
+    """
+    from apps.casework_web.models import ThrottleBucket
+
+    before = list(ThrottleBucket.objects.order_by("pk").values("pk", "window", "requests"))
+    now = time.time()
+    current_window = int(now) // 60
+    latest = max((row["window"] for row in before), default=-1)
+    assert latest <= current_window, "a future restored throttle window requires clock review"
+    started = time.monotonic()
+    if latest == current_window:
+        deadline = (current_window + 1) * 60
+        while (remaining := deadline - time.time()) > 0:
+            time.sleep(min(remaining, 1))
+    after = list(ThrottleBucket.objects.order_by("pk").values("pk", "window", "requests"))
+    assert before == after
+    assert all(row["window"] < int(time.time()) // 60 for row in after)
+    return {
+        "throttle_wait_seconds": round(time.monotonic() - started, 3),
+        "preserved_throttle_rows": len(after),
+        "throttle_windows_naturally_expired": True,
+    }
 
 
 class TargetProofMiddleware:
@@ -104,6 +133,7 @@ class TargetChecks(V11Harness, TestCase):
                     )
                     self.assertNotIn(PRIVATE, requester.content())
                     image = requester.locator("#attachments img")
+                    image.scroll_into_view_if_needed()
                     image.evaluate("e=>e.decode()")
                     self.assertGreater(image.evaluate("e=>e.naturalWidth"), 0)
                     attachment = image.get_attribute("src")
@@ -188,6 +218,7 @@ class TargetChecks(V11Harness, TestCase):
                                 "target_database_per_request": True,
                                 "target_private_root_per_request": True,
                                 "checked_requests": proof["requests"],
+                                **proof["budget_window"],
                                 "exact_assets": "PASS",
                                 "same_approved_answer": "PASS",
                                 "signed_delivery": "PASS",
@@ -272,5 +303,6 @@ def verify():
                 "FATWA_RECOVERY_MAINTENANCE_ROOT": control,
             }
         ):
+            proof["budget_window"] = respect_restored_budget_window()
             TargetChecks().exercise(spec, directory, proof)
     print("V11_RESTORED_HTTP_PASS")

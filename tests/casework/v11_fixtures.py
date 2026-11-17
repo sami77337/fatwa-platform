@@ -2,8 +2,11 @@
 
 import json
 from dataclasses import replace
+from datetime import timedelta
 from hashlib import sha256
 from pathlib import Path
+
+from django.utils import timezone
 
 from apps.pilot_workbench.fixtures import FixtureOperatorAuthority
 from apps.source_rights.authority import SourceRightsAuthority
@@ -18,14 +21,20 @@ OUT = Path(".local/qa/v11/browser")
 
 
 class Directory(V10Directory):
+    def __init__(self):
+        super().__init__()
+        self.valid_until = timezone.now() + timedelta(minutes=30)
+
     def resolve(self, subject_id):
         if subject_id == "synthetic-outsider":
             return replace(
                 super().resolve("synthetic-publisher"),
                 subject_id=subject_id,
                 case_keys=frozenset({"unrelated-synthetic-case"}),
+                valid_until=self.valid_until,
             )
-        return super().resolve(subject_id)
+        identity = super().resolve(subject_id)
+        return replace(identity, valid_until=self.valid_until) if identity is not None else None
 
     def authenticate(self, credential):
         return (
