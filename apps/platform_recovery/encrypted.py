@@ -19,12 +19,14 @@ from .maintenance import frozen
 
 FORMAT = "fatwa-recovery-fernet-v1"
 MAX_TOKEN_BYTES = 64 * 1024 * 1024
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _key(path, *, forbidden=()):
     path = Path(path)
     service.safe_directory(path.parent)
     service.require(path == path.resolve(strict=True), "key_path_invalid")
+    service.require(not path.is_relative_to(REPOSITORY_ROOT), "key_inside_repository")
     for directory in forbidden:
         service.require(not path.is_relative_to(Path(directory).resolve()), "key_inside_artifacts")
     raw = service.read_file(path)
@@ -42,6 +44,7 @@ def generate_key(*, path, synthetic_fixtures_only=False):
     )
     path = Path(path)
     service.safe_directory(path.parent)
+    service.require(not path.is_relative_to(REPOSITORY_ROOT), "key_inside_repository")
     # Existing key files are never overwritten. The caller supplies a distinct key directory.
     service.write_file(path, Fernet.generate_key())
     service.sync_directory(path.parent)
@@ -125,7 +128,10 @@ def _open(bundle, expected_ciphertext_sha256, key_file, *, forbidden=()):
         raise service.RecoveryError("backup_authentication_failed") from None
     try:
         data = json.loads(payload)
-        service.require(data["format"] == FORMAT, "encrypted_format_invalid")
+        service.require(
+            type(data) is dict and data.get("format") == FORMAT, "encrypted_format_invalid"
+        )
+        service.require(type(data.get("files")) is dict, "encrypted_payload_invalid")
         files = {name: base64.b64decode(raw, validate=True) for name, raw in data["files"].items()}
         manifest = service.verify_bundle(None, data["manifest_sha256"], _files=files)
     except (ValueError, KeyError, TypeError):
