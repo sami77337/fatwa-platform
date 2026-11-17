@@ -84,6 +84,34 @@ worktrees for current-case presentation, publication navigation, local provider
 simulation, rights enforcement, maintenance enforcement and the final browser
 journey. Shared configuration/routing and cherry-picks have one integration owner.
 
+## Run the manual rehearsal
+
+Use the existing pinned Python environment and a PostgreSQL 17 or 18 binary
+directory. The helper creates a disposable owned cluster; use synthetic files only.
+
+```sh
+python infra/dev/with_casework_postgres.py \
+  --pg-bin /absolute/path/to/postgresql/17/bin --major 17 \
+  --settings config.settings.campaign_review -- \
+  python -m infra.dev.v11_demo
+```
+
+Append `--smoke` for a short startup/HTTP/freeze/resume check. The interactive
+command prints temporary local credentials; do not copy them into evidence or
+commit them. It seeds one source question and an unresolved followup, not an
+answer, scholarly approval, rights approval, delivery intent or publication.
+The primary Mufti proposes exact source rights; the separately scoped publisher
+reviews them. Then use the case tabs to research, edit, review and explicitly
+release the answer. The separate local simulator records only the part outcomes
+chosen by the human. The private experimental library is usable; anonymous
+preview remains closed until its independent exact policy is supplied.
+
+The fixture expires, does not persist signing keys, and is deleted with its owned
+runtime. Restart is not permission to reconstruct an interrupted provider attempt
+or retry delivery. Recovery operations use the explicit CLI contract in
+[`V11_CONTRACT.md`](../../apps/platform_recovery/V11_CONTRACT.md); there is no
+production job, scheduler, automatic cutover or automatic maintenance resume.
+
 ## Evidence and limits
 
 Lane receipts remain with their applications. Final integrated test results and
