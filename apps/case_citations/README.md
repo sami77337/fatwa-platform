@@ -94,3 +94,77 @@ exercises actual multi-selection, draft preservation, save and reopening at
 320/1280px with screenshots/JSON under `.local/qa/v8-citations/browser`.
 No AI writing/approval, external send, or production
 access. **NOT_DEPLOYED / GATES_HOLD / ACCEPTANCE_HOLD**.
+
+## V9 research and correction workflow
+
+V9 extends the V8 composer; it does not introduce another answer store or duplicate
+multi-citation search. All changes remain in `apps/case_citations/**`.
+
+- Open a result or selected reference inside the native POST editor, then return
+  with the answer, search filters, selected order and note field intact.
+- Ask for up to five **existing normalized heading matches**, shown separately as
+  unapproved proposals. Preview and explicitly select one before the final human
+  save. No AI, external service, generated quotation, scientific confidence score,
+  hadith database, full book text or rights expansion is involved. A short/empty or
+  unmatched phrase gives no proposal. A proposal is temporary signed draft state,
+  not a durable scientific relationship or an approval.
+- Move citations up/down with keyboard-accessible buttons. Notes and order are
+  saved with the canonical answer revision; old snapshots remain unchanged.
+- For a saved citation, choose **تصحيح مصدر الإحالة**, enter its correction reason
+  in the existing note input, then choose **استبدال بالإحالة المصححة** on a result.
+  The existing editorial note remains separate and can be changed using its note
+  button. Save the complete list to record the correction. No extra POST field
+  is added; the 12-field form limit remains intact.
+- Read history in pages of 20 answer revisions, showing the original snapshot,
+  note, answer author/time/evidence version, and old/new correction source and
+  reason. Unresolvable current sources are marked historical and unavailable for
+  opening, not rewritten or presented as verified current evidence.
+
+`CitationCorrection` links the new immutable citation to one citation on the
+immediately preceding answer of the **same case**, with a nonblank reason of at
+most 2,000 characters. The record is created in the same transaction as the new
+answer. PostgreSQL rejects mutation, late insertion, reverse/stale lineage and
+cross-case links. Failure rolls back the answer, events, files and cleared
+approval. The existing media-clone helper preserves originals and fingerprints;
+approval and private availability are never copied.
+
+### Final integration contract
+
+Apply migrations `0003_citationcorrection` and `0004_correction_guards`. Keep the
+existing app, feature flag and `citation_compose` dispatch already installed by
+V8; **no shared route, settings or media change is required**. The signed workspace
+uses salt v2; a pre-upgrade scratch form must be reopened (saved answers unaffected).
+All reads/writes retain current scoped MUFTI authority and synthetic guards;
+U03 researcher/organizer permissions have not been invented.
+
+Existing `selections`, `read_citations` and clone-helper contracts are unchanged.
+`save_cited_answer` additionally accepts an optional `corrections` list:
+
+```python
+corrections=[{
+    "ordinal": 1,  # one-based position in the new selections list
+    "previous_id": "<citation UUID from latest answer of this case>",
+    "reason": "<human correction reason>",
+}]
+```
+
+`read_citation_history(**scoped_case_args, before_revision=None)` returns
+`{revisions: [...], next_before: int | None}`. This is a **private staff projection**
+including actor identities, not a public-library payload. Existing publication
+callers continue using `citations_for_locked_answer` under their independent
+scope and approval contracts. `suggest_sources` takes `search_sources` arguments
+and returns at most five exact-source candidates with status
+`PROPOSED_REQUIRES_HUMAN_REVIEW` and method `EXISTING_NORMALIZED_HEADING_MATCH`.
+Integrators must not interpret either as verified scholarly relevance.
+
+New composer commands: `open:<edition>:<row>`, `return`, `suggest`,
+`accept:<edition>:<row>`, `up:<index>`, `down:<index>`, `correct:<index>`,
+`replace:<edition>:<row>`, `cancel_correction`, `history:latest`,
+`history:<before-revision>`. Proposals require a matching signed candidate before
+acceptance; ordinary manual source selection remains available without proposals.
+Only `save` with `confirm=yes` creates an answer/correction record.
+
+Add `apps.case_citations.research_tests` and
+`apps.case_citations.research_browser_tests` to the unified V9 focused run. Browser
+artifacts go to `.local/qa/v9-research/browser/`. Local evidence and limits are in
+[V9_RESEARCH_REPORT.md](V9_RESEARCH_REPORT.md).
