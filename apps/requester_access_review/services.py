@@ -7,7 +7,8 @@ from hashlib import sha256
 
 from django.utils import timezone
 
-from apps.casework import delivery, services as cases
+from apps.casework import delivery
+from apps.casework import services as cases
 from apps.delivery_queue.models import RequesterTrackingToken
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 
@@ -30,6 +31,45 @@ def _verify_binding(review, case):
         raise cases.CaseConflict("access_review_binding_invalid")
     if review.state == "CLOSED" and review.grant.revoked_at is None:
         raise cases.CaseConflict("access_review_resolution_invalid")
+
+
+def _requester_history(case, private_answer):
+    """Allowlisted conversation projection, never the internal event/audit log.
+
+    FOLLOWUP is also used by staff imports. Only an unannotated event authored
+    by this requester represents their own submitted text. Imported evidence and
+    attachment provenance have their own guarded surfaces and stay out of this one.
+    """
+    evidence = {item.version: item for item in case.evidence.all()}
+    history = []
+    for event in case.events.order_by("sequence"):
+        kind, label, text = None, "", ""
+        if event.action == "INTAKE":
+            kind, label, text = "question", "سؤالك الأصلي كما وصل", evidence[1].text
+        elif (
+            event.action == "FOLLOWUP" and event.subject_id == case.requester_id and not event.note
+        ):
+            kind, label, text = "followup", "تعقيبك المحفوظ", evidence[event.evidence_version].text
+        elif event.action == "CLARIFICATION":
+            kind, label, text = "clarification", "استيضاح من الفريق", event.note
+        elif (
+            event.action == "APPROVE"
+            and private_answer is not None
+            and event.answer_id == case.approved_answer_id
+        ):
+            kind, label = "answer", "إصدار الجواب المعتمد المتاح حاليًا"
+        if kind:
+            history.append(
+                {
+                    "kind": kind,
+                    "label": label,
+                    "text": text,
+                    "evidence_version": event.evidence_version,
+                    "answer_revision": private_answer["revision"] if kind == "answer" else None,
+                    "created_at": event.created_at,
+                }
+            )
+    return history
 
 
 def requester_snapshot(
@@ -60,6 +100,7 @@ def requester_snapshot(
             "case": result,
             "reviews": [_public(review) for review in reviews],
             "private_answer": private_answer,
+            "requester_history": _requester_history(case, private_answer),
         }
 
 

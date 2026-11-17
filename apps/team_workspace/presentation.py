@@ -27,6 +27,13 @@ EVENTS = {
     "ROTATE_ACCESS": "تدوير وصول السائل",
     "REVOKE_ACCESS": "إبطال وصول السائل",
 }
+NEXT_STEPS = {
+    "draft": "راجع الوقائع ثم حرر مسودة",
+    "waiting": "بانتظار رد السائل على الاستيضاح",
+    "review": "راجع أحدث مسودة واتخذ القرار",
+    "returned": "راجع سبب الإعادة وعدّل المسودة",
+    "approved": "راجع التسليم المستقل؛ الاعتماد لا يثبت الوصول",
+}
 
 
 def describe(snapshot):
@@ -42,7 +49,7 @@ def describe(snapshot):
         **snapshot,
         "stage_label": STAGES[stage],
         "category": category,
-        "next_step": FILTERS[category],
+        "next_step": NEXT_STEPS[category],
         "latest_answer": latest,
         "stale_answer": bool(latest and not current),
         "can_review": category == "review",
@@ -54,10 +61,13 @@ def read_workspace_case(**common):
     # integrity boundary for this additional projection; never query by a naked ref.
     # Integration can promote this adapter into a public core read API later.
     with services._staff_case(
-        common["case_id"], common["subject_id"], common["provider"],
+        common["case_id"],
+        common["subject_id"],
+        common["provider"],
         common["synthetic_fixtures_only"],
     ) as (case, _identity):
         snapshot = describe(services._staff(case))
+        evidence = {item.version: item.text for item in case.evidence.all()}
         snapshot["timeline"] = [
             {
                 "sequence": event.sequence,
@@ -65,23 +75,49 @@ def read_workspace_case(**common):
                 "note": event.note,
                 "answer_revision": event.answer_revision,
                 "evidence_version": event.evidence_version,
+                "created_at": event.created_at,
+                "text": (
+                    evidence[event.evidence_version]
+                    if event.action in {"INTAKE", "FOLLOWUP"}
+                    else event.answer.text
+                    if event.action == "SAVE_ANSWER"
+                    else ""
+                ),
             }
-            for event in case.events.order_by("sequence")
+            for event in case.events.select_related("answer").order_by("sequence")
         ]
         return snapshot
 
 
 def queue(rows, selected_filter, query):
-    # Search identifiers only: never reveal another case's question/answer as a snippet.
+    # list_cases has already revalidated every case against the current scoped
+    # identity. Search only that projection, and keep result cards free of snippets.
     described = [describe(row) for row in reversed(rows)]
-    matched = [row for row in described if query.casefold() in row["public_ref"].casefold()]
-    counts = {key: sum(key == "all" or row["category"] == key for row in matched)
-              for key in FILTERS}
+    needle = query.strip().casefold()
+    matched = [
+        row
+        for row in described
+        if any(
+            needle in text.casefold()
+            for text in (
+                row["public_ref"],
+                row["original_question"],
+                *(item["text"] for item in row["followups"]),
+                *(item["text"] for item in row["answers"]),
+                *row["clarifications"],
+            )
+        )
+    ]
+    counts = {
+        key: sum(key == "all" or row["category"] == key for row in matched) for key in FILTERS
+    }
     return {
-        "rows": [row for row in matched
-                 if selected_filter == "all" or row["category"] == selected_filter],
-        "filters": [{"key": key, "label": label, "count": counts[key]}
-                    for key, label in FILTERS.items()],
+        "rows": [
+            row for row in matched if selected_filter == "all" or row["category"] == selected_filter
+        ],
+        "filters": [
+            {"key": key, "label": label, "count": counts[key]} for key, label in FILTERS.items()
+        ],
         "selected_filter": selected_filter,
         "query": query,
         "total": len(described),

@@ -12,7 +12,8 @@
 <h2 id="queue-heading">القضايا المخوّلة ({{ total }})</h2>
 <form method="post" action="/casework/staff/">{% csrf_token %}
 <input type="hidden" name="action" value="filter">
-<label for="queue-query">بحث برقم القضية</label><input id="queue-query" name="query" value="{{ query }}" maxlength="40" autocomplete="off">
+<label for="queue-query">بحث في القضايا المخوّلة: الرقم أو السؤال أو التعقيب أو الجواب</label><input id="queue-query" name="query" value="{{ query }}" maxlength="40" autocomplete="off">
+<p>تظهر أرقام النتائج وحالتها فقط. افتح القضية لقراءة نصوصها ضمن صلاحيتك.</p>
 <label for="queue-state">مرحلة العمل</label>
 <select id="queue-state" name="state">{% for item in filters %}<option value="{{ item.key }}"{% if item.key == selected_filter %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
 <button type="submit">عرض القضايا</button><a href="/casework/staff/">كل القضايا</a>
@@ -25,6 +26,11 @@
 {% if selected %}
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
+<nav aria-label="أدوات القضية">
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="attachment_list"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">مرفقات القضية</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="citations"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">تحرير جواب بإحالة موثقة</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">نسخة النشر التجريبية</button></form>
+</nav>
 <p id="workspace-status">{{ selected.stage_label }} · إصدار الوقائع {{ selected.evidence_version }} · نسخة السجل {{ selected.revision }}</p>
 <nav aria-label="أقسام القضية"><a href="#question">السؤال والاستيضاحات</a><a href="#editor">تحرير الجواب</a><a href="#review">المراجعة</a><a href="#history">سجل الإجراءات</a></nav>
 <h3 id="question">السؤال الأصلي كما وصل</h3><p class="original" id="original-question">{{ selected.original_question }}</p>
@@ -67,7 +73,9 @@
 {% for answer in selected.answers %}<article><h3>إصدار الجواب {{ answer.revision }}</h3><p>إصدار الوقائع {{ answer.evidence_version }}</p><p class="original">{{ answer.text }}</p>{% if answer.id == selected.approved_answer_id %}<p>النسخة المعتمدة حاليًا.</p>{% endif %}</article>{% empty %}<p>لم تُحفظ مسودة بعد.</p>{% endfor %}
 </details>
 <section id="history" aria-labelledby="history-heading"><h2 id="history-heading">سجل الإجراءات</h2>
-<ol>{% for event in selected.timeline %}<li><strong>{{ event.label }}</strong> — الوقائع {{ event.evidence_version }}{% if event.answer_revision %}، الجواب {{ event.answer_revision }}{% endif %}{% if event.note %}<p class="original">{{ event.note }}</p>{% endif %}</li>{% endfor %}</ol></section>
+<ol>{% for event in selected.timeline %}<li><strong>{{ event.label }}</strong> — الوقائع {{ event.evidence_version }}{% if event.answer_revision %}، الجواب {{ event.answer_revision }}{% endif %}
+<time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:"Y-m-d H:i:s" }}</time>
+{% if event.text %}<p class="original">{{ event.text }}</p>{% endif %}{% if event.note %}<p class="original">{{ event.note }}</p>{% endif %}</li>{% endfor %}</ol></section>
 <article><h3>إدارة وصول السائل</h3>
 {% if recovery_available %}<p>يتطلب الاسترداد تحققًا موثوقًا من ارتباط السائل بالقضية.</p><div class="actions">
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit" name="action" value="revoke">إبطال رموز الوصول</button></form>
