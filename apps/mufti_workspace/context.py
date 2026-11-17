@@ -19,6 +19,7 @@ TABS = (
     ("overview", "case_workspace", "القضية والمراجعة", None),
     ("origins", "source_timeline", "أصل الأحداث وتسلسلها", "FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED"),
     ("attachments", "attachment_list", "مرفقات الوقائع", "FATWA_CASE_ATTACHMENTS_ENABLED"),
+    ("rights", "rights_desk", "حقوق المصادر ومراجعتها", "FATWA_SOURCE_RIGHTS_ENABLED"),
     ("citations", "citations", "الإحالات العلمية", "FATWA_CASE_CITATIONS_ENABLED"),
     ("answer", "answer_media", "أجزاء الجواب والإتاحة", "FATWA_ANSWER_MEDIA_ENABLED"),
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
@@ -27,6 +28,8 @@ TABS = (
 
 
 def _active(action):
+    if action.startswith("rights_"):
+        return "rights"
     if action.startswith("source_"):
         return "origins"
     if action.startswith("attachment_"):

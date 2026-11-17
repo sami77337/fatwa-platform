@@ -48,6 +48,12 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.source_rights"):
+            from apps.source_rights.views import ACTIONS as RIGHTS_ACTIONS
+            from apps.source_rights.views import workspace as rights_workspace
+
+            if action in RIGHTS_ACTIONS:
+                return _panel(rights_workspace(request), "cases")
         if django_apps.is_installed("apps.source_case_intake"):
             from apps.source_case_intake.views import ACTIONS as SOURCE_ACTIONS
             from apps.source_case_intake.views import desk as source_desk

@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "apps.library_preview",
     "apps.requester_portal",
     "apps.mufti_workspace",
+    "apps.source_rights",
 ]
 # Explicit, separate opt-ins for the closed synthetic V7 workflow.
 FATWA_CASE_ATTACHMENTS_ENABLED = False
@@ -29,6 +30,14 @@ FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = False
 FATWA_MEDIA_STORAGE_MIGRATION_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED = False
+FATWA_SOURCE_CASE_INTAKE_SIMULATOR_ENABLED = False
+FATWA_SOURCE_RIGHTS_ENABLED = False
+FATWA_SOURCE_RIGHTS_AUTHORITY = None
+# V11 explicitly requires current source grants; older isolated profiles retain
+# their historical contract until the complete V11 composition is selected.
+FATWA_SOURCE_RIGHTS_ENFORCED = False
+FATWA_RECOVERY_MAINTENANCE_REQUIRED = False
+FATWA_RECOVERY_MAINTENANCE_ROOT = None
 FATWA_KNOWLEDGE_LINKS_ENABLED = False
 FATWA_KNOWLEDGE_LINKS_AUTHORITY = None
 FATWA_COMPOSITE_DELIVERY_ENABLED = False
