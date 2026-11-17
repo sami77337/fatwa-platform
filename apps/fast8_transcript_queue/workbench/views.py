@@ -18,7 +18,19 @@ from django.views.decorators.debug import sensitive_post_parameters
 from apps.editorial_workbench.reviewer_access import browser_proof
 from apps.transcript_pipeline import MAX_BYTES
 
-from .services import Document, ValidationError, export_bundle, open_document, review, revise
+from .services import (
+    MAX_BUNDLE_BYTES,
+    Document,
+    ValidationError,
+    _rows,
+    checkpoint,
+    document_changes,
+    export_bundle,
+    open_document,
+    restore_bundle,
+    review,
+    revise,
+)
 
 BASE = "/transcripts/"
 STATE_SALT = "fatwa.transcript-workbench.v1"
@@ -86,7 +98,14 @@ class LocalGuard:
             return _failure(400)
         try:
             length = int(request.META.get("CONTENT_LENGTH") or "0")
-            if not 0 <= length <= MAX_BODY or len(request.body) > MAX_BODY:
+            limit = (
+                MAX_BUNDLE_BYTES + 100_000
+                if request.method == "POST"
+                and request.path == BASE
+                and request.content_type == "multipart/form-data"
+                else MAX_BODY
+            )
+            if not 0 <= length <= limit or len(request.body) > limit:
                 return _failure(413)
         except (ValueError, SuspiciousOperation):
             return _failure(413)
@@ -157,10 +176,15 @@ def _page(request, document=None, *, index=0, error="", status=200):
             }[finding["severity"]]
         if not 0 <= index < len(rows):
             raise ValidationError("review: invalid_segment")
+        changes = document_changes(document)
+        original_rows = _rows(document.original, document.original_suffix)
         context.update(
             state=_seal(request, document),
             rows=rows,
             selected=rows[index],
+            selected_original=original_rows[index],
+            selected_changed=rows[index] != original_rows[index],
+            changed_count=len(changes),
             index=index,
             timeline=timeline,
             can_export=queue is not None,
@@ -185,19 +209,21 @@ def index(request):
         if len(request.FILES.getlist("transcript")) != 1:
             raise ValidationError("form: one_file_required")
         upload = request.FILES["transcript"]
-        if upload.size > MAX_BYTES:
+        suffix = Path(upload.name).suffix.lower()
+        limit = MAX_BUNDLE_BYTES if suffix == ".zip" else MAX_BYTES
+        if upload.size > limit:
             return _failure(413)
-        document = open_document(
-            upload.read(MAX_BYTES + 1),
-            Path(upload.name).suffix.lower(),
-            synthetic_fixtures_only=True,
-        )
+        if suffix == ".zip":
+            document = restore_bundle(upload.read(limit + 1), synthetic_fixtures_only=True)
+        else:
+            document = open_document(upload.read(limit + 1), suffix, synthetic_fixtures_only=True)
         return _page(request, document)
     except (ValidationError, SuspiciousOperation):
         return _page(
             request,
-            error="لم يُستورد الملف. تحقق من صيغة JSON أو CSV أو JSONL، "
-            "والحقول المطلوبة وإقرار البيانات الاصطناعية؛ الحد مليون بايت.",
+            error="لم يُستورد الملف. استخدم تفريغ JSON أو CSV أو JSONL حتى مليون بايت، "
+            "أو حزمة ZIP أصلية من هذه المساحة حتى ١٦ مليون بايت. "
+            "تحقق من سلامة الملفات وإقرار البيانات الاصطناعية.",
             status=400,
         )
 
@@ -212,19 +238,22 @@ def update(request):
             names |= {"index"}
         if action == "revise":
             names |= {"start_ms", "end_ms", "text"}
-        if action not in {"select", "revise", "export"}:
+        if action not in {"select", "revise", "export", "checkpoint"}:
             raise ValidationError("form: invalid_action")
         fields = _fields(request, names, {"replace_text"} if action == "revise" else ())
         if request.FILES:
             raise ValidationError("form: unexpected_file")
         document = _unseal(request, fields["state"])
         index = _integer(fields["index"]) if "index" in fields else 0
-        if action == "export":
-            raw = export_bundle(document)
+        if action in {"export", "checkpoint"}:
+            raw = checkpoint(document) if action == "checkpoint" else export_bundle(document)
             response = HttpResponse(raw, content_type="application/zip")
-            response["Content-Disposition"] = (
-                'attachment; filename="synthetic-transcript-review.zip"'
+            filename = (
+                "synthetic-transcript-checkpoint.zip"
+                if action == "checkpoint"
+                else "synthetic-transcript-review.zip"
             )
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
             response["X-Export-SHA256"] = sha256(raw).hexdigest()
             return response
         if action == "revise":
