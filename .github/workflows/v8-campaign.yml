@@ -90,7 +90,7 @@ jobs:
       - name: Focused V8 functionality and signed-text regression contracts
         run: |
           set -euo pipefail
-          python manage.py test apps.private_media.tests apps.case_attachments.tests apps.case_attachments.media_tests apps.answer_media.tests apps.case_citations.tests apps.case_citations.composer_tests apps.case_citations.preservation_tests tests.casework.test_v8_integration apps.requester_access_review.tests.SignedDeliveryRequesterViewTests tests.casework.test_delivery.CaseDeliveryTests.test_journey_binds_human_answer_all_signed_parts_and_private_case --noinput --verbosity 2 2>&1 | tee .local/qa/v8/tests.log
+          python manage.py test apps.private_media.tests apps.case_attachments.tests apps.case_attachments.media_tests apps.answer_media.tests apps.case_citations.tests apps.case_citations.composer_tests apps.case_citations.preservation_tests tests.casework.test_v8_integration apps.requester_access_review.tests.SignedDeliveryRequesterViewTests tests.casework.test_delivery.CaseDeliveryTests.test_journey_binds_human_answer_all_signed_parts_and_private_case tests.casework.test_delivery.CaseDeliveryTests.test_guard_migration_preserves_populated_bindings_and_signed_evidence --noinput --verbosity 2 2>&1 | tee .local/qa/v8/tests.log
       - name: Real Chrome with browser sandbox
         if: matrix.postgres == '17'
         env:

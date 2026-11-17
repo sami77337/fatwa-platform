@@ -141,3 +141,15 @@ or guessed. Source rights/full text, production storage/scanning, production
 identity/delivery, U03 and acceptance gates remain unresolved. AGENTS.md, scope and
 decision/testing instructions already read for V7 remain applicable; `.agents/skills`
 was absent. No extra governance layer or PR per small edit was introduced.
+
+### Initial remote CI and migration-test correction
+
+At `7309cde99b5350c9a7c94b1594f432c12ec09ca2`, V8 passed 55/55 on both
+PostgreSQL17/18 and its sandboxed Chrome157 browser. V7 and team workspace also
+passed. Two older workflow suites failed after their populated delivery-guard
+migration test rolled back casework and dependent media tables, then reapplied only
+casework. Its cleanup now restores the complete migration graph before invoking
+current services; the migration test and following signed-delivery test passed
+locally (2/2) and the former is included in V8 CI. No product fail-open workaround
+was added. FAST9 separately timed out during browser startup before any page was
+visited. The Draft PR preserves both initial failures and final-head CI results.

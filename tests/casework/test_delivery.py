@@ -353,7 +353,9 @@ class CaseDeliveryTests(CaseDeliveryFixture, TransactionTestCase):
                 before, [list(model.objects.order_by("pk").values()) for model in models]
             )
         finally:
-            call_command("migrate", "casework", "0004", interactive=False, verbosity=0)
+            # Reversing casework also reverses dependent apps; restore the
+            # complete current graph before any current service reads it.
+            call_command("migrate", interactive=False, verbosity=0)
         self.assertEqual(before, [list(model.objects.order_by("pk").values()) for model in models])
         self.assertTrue(self.status()["delivery_verified"])
         with self.assertRaises(IntegrityError), transaction.atomic():
