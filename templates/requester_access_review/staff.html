@@ -1,0 +1,16 @@
+{% extends "casework/base.html" %}
+{% block title %}طلبات مراجعة الوصول الخاص{% endblock %}
+{% block content %}
+<h2>طلبات مراجعة الوصول الخاص</h2>
+<p class="notice">هذه قائمة طلبات ضمن نطاقك الموثوق، وليست تحققًا من الهوية أو إذنًا لاستعادة الوصول. انتقل إلى القضية وأكمل المسار الموثوق الموجود. لا تغلق الطلب قبل إبطال الرمز الذي أنشأه.</p>
+<p>تُعرض أقدم ٥٠ طلبًا مفتوحًا ضمن نطاقك. تختفي الطلبات المغلقة من القائمة وتبقى في سجل السائل.</p>
+{% for review in reviews %}<article>
+<h3><bdi>{{ review.public_ref }}</bdi></h3><p>{{ review.reason_label }}</p><p>{{ review.state_label }}</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ review.public_ref }}"><button type="submit">فتح القضية والتحقق الموثوق</button></form>
+{% if review.can_acknowledge %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="access_acknowledge"><input type="hidden" name="review_id" value="{{ review.review_id }}"><input type="hidden" name="revision" value="{{ review.revision }}"><button type="submit">بدء متابعة التحقق</button></form>{% endif %}
+{% if review.can_close %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="access_close"><input type="hidden" name="review_id" value="{{ review.review_id }}"><input type="hidden" name="revision" value="{{ review.revision }}"><button type="submit">إغلاق الطلب بعد إبطال الرمز السابق</button></form>
+{% elif not review.can_acknowledge %}<p>لا يمكن إغلاق الطلب قبل إبطال الرمز السابق عبر المسار الموثوق.</p>{% endif %}
+</article>{% empty %}<p>لا توجد طلبات مفتوحة ضمن نطاقك.</p>{% endfor %}
+<h2>القضايا المتاحة لك</h2><p>يمكنك فتح القضية لمتابعة السؤال والجواب والاستيضاحات عبر المكتب الحالي.</p>
+{% for case in cases %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ case.public_ref }}"><button type="submit"><bdi>{{ case.public_ref }}</bdi></button></form>{% empty %}<p>لا توجد قضايا ضمن نطاقك.</p>{% endfor %}
+{% endblock %}

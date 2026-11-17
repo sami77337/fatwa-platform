@@ -1,0 +1,5 @@
+{% extends "case_delivery_desk/desk.html" %}
+{% block content %}
+{% if authenticated %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="journey_cases"><button type="submit">العودة إلى مساحة القضايا</button></form>{% endif %}
+{{ block.super }}
+{% endblock %}

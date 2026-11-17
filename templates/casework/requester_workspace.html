@@ -1,0 +1,33 @@
+{% extends "casework/base.html" %}
+{% block title %}مساحة متابعة سؤالي{% endblock %}
+{% block content %}
+<h2>مساحة متابعة سؤالي</h2>
+{% if message %}<p class="notice" role="alert">{{ message }}</p>{% endif %}
+{% if result %}
+<article id="requester-workspace" aria-labelledby="requester-status">
+  <h3 id="requester-status">{{ status_label }}</h3>
+  <p>رقم المتابعة: <bdi id="workspace-reference">{{ result.public_ref }}</bdi></p>
+  <p>التحديث الحالي: <bdi>{{ result.revision }}</bdi> · عدد التعقيبات المحفوظة: <bdi id="followup-count">{{ result.evidence_version|add:"-1" }}</bdi></p>
+  {% if result.clarification %}<h3>الاستيضاح المطلوب</h3><p class="original" id="requested-clarification">{{ result.clarification }}</p>{% endif %}
+  <p class="notice">هذه حالة معالجة السؤال، وليست إثبات تسليم أو قراءة. لا يُعرض الجواب في هذه المساحة حاليًا.</p>
+  <a href="/casework/status/">تحديث الحالة</a>
+</article>
+<form method="post" action="/casework/status/">
+  {% csrf_token %}<input type="hidden" name="action" value="followup">
+  <input type="hidden" name="revision" value="{{ result.revision }}">
+  <input type="hidden" name="form_proof" value="{{ form_proof }}">
+  <label for="workspace-followup">{% if result.clarification %}الرد على الاستيضاح{% else %}تعقيب أو تصحيح إضافي{% endif %}</label>
+  <textarea id="workspace-followup" name="text" required maxlength="16000" aria-describedby="followup-help">{{ text }}</textarea>
+  <p id="followup-help">يُضاف النص إلى القضية نفسها دون تغيير السؤال الأصلي. راجع رقم المتابعة قبل الإرسال. يعود السؤال إلى المراجعة عند إضافة معلومات جديدة.</p>
+  <button type="submit">حفظ التعقيب</button>
+</form>
+<form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="leave"><button type="submit">إغلاق الوصول الخاص</button><p>يُغلق الوصول في هذا المتصفح. يبقى رمز الوصول صالحًا ما لم يُبطله الفريق عبر المسار الموثوق.</p></form>
+<details><summary>فتح متابعة سؤال آخر</summary>
+{% else %}
+<p>رقم المتابعة وحده لا يفتح القضية. استخدم رمز الوصول الخاص الذي ظهر بعد حفظ السؤال.</p>
+{% endif %}
+<form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="unlock"><label for="workspace-token">رمز الوصول الخاص</label><input type="password" id="workspace-token" name="token" required maxlength="128" autocomplete="off"><button type="submit">فتح المتابعة الخاصة</button></form>
+{% if result %}</details>{% endif %}
+<p>يبقى الوصول مفتوحًا لمدة ١٥ دقيقة من فتحه، ويمكن فتحه مجددًا بالرمز. أغلقه عند استعمال جهاز مشترك.</p>
+<details id="recovery-help"><summary>فقدت رمز الوصول أو انتهت صلاحيته</summary><p>احتفظ برقم المتابعة واطلب الاستعادة من الفريق عبر مسار التحقق الموثوق في البيئة التجريبية. رقم المتابعة وحده لا يثبت ملكية القضية. بعد التحقق يصدر الفريق رمزًا جديدًا ويُبطل القديم؛ لا تُحذف القضية أو تعقيباتها. لا تُرسل سؤالًا جديدًا لاستعادة السؤال السابق.</p><p>هذه الصفحة لا تستعيد الوصول تلقائيًا ولا ترسل طلب استعادة. لا توجد استعادة ذاتية مفعلة حاليًا.</p></details>
+{% endblock %}

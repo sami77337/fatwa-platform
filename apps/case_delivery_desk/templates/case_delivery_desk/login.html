@@ -1,0 +1,1 @@
+{% extends "case_delivery_desk/base.html" %}{% block content %}<h2>دخول المفتي</h2><form method="post">{% csrf_token %}<label for="credential">رمز الهوية التجريبي</label><input id="credential" name="credential" type="password" autocomplete="off" required maxlength="1024"><button>دخول المكتب</button></form>{% endblock %}

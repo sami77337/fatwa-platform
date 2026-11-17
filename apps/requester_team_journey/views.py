@@ -1,0 +1,81 @@
+"""Dispatch to existing authenticated views; the panel cookie grants no authority."""
+
+from django.core.exceptions import SuspiciousOperation
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.debug import sensitive_post_parameters
+
+from apps.case_delivery_desk.views import desk as delivery_desk
+from apps.casework_web.access import current_staff
+from apps.casework_web.guard import denied, private
+from apps.casework_web.views import InvalidForm, _form, _provider
+from apps.mufti_review.identity import IdentityUnavailable
+from apps.requester_access_review.views import staff as access_review
+from apps.team_updates.views import inbox as updates_inbox
+from apps.team_workspace.views import workspace as team_workspace
+from apps.transcript_case_links.views import ACTIONS as TRANSCRIPT_ACTIONS
+from apps.transcript_case_links.views import staff as transcript_desk
+
+PANEL_COOKIE = "fatwa_team_panel"
+STAFF = "/casework/staff/"
+ACCESS_ACTIONS = frozenset({"access_queue", "access_acknowledge", "access_close"})
+UPDATE_ACTIONS = frozenset({"updates_filter", "updates_seen"})
+DELIVERY_ACTIONS = frozenset({"prepare", "export", "stage", "quarantine"})
+PANELS = {
+    "access": access_review,
+    "updates": updates_inbox,
+    "cases": team_workspace,
+    "delivery": delivery_desk,
+}
+
+
+def _panel(response, panel):
+    # This is a UI preference only. Never store case IDs, tokens, roles or identity.
+    # The selected handler must authenticate again on every request.
+    response.set_cookie(
+        PANEL_COOKIE, panel, max_age=900, httponly=True, samesite="Strict", path=STAFF, secure=False
+    )
+    return response
+
+
+@sensitive_post_parameters("text", "note", "token")
+@csrf_protect
+def staff(request):
+    try:
+        if request.method in ("GET", "HEAD"):
+            handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
+            return handler(request)
+        action = request.POST.get("action", "")
+        if action in TRANSCRIPT_ACTIONS:
+            response = transcript_desk(request)
+            if response.status_code == 200:
+                _panel(response, "cases")
+            return response
+        if action in {"journey_cases", "journey_delivery"}:
+            _form(request, {"action"})
+            current_staff(request, _provider())
+            panel = "delivery" if action == "journey_delivery" else "cases"
+            return private(_panel(HttpResponse(status=303, headers={"Location": STAFF}), panel))
+        if action in DELIVERY_ACTIONS or (
+            action == "open" and request.COOKIES.get(PANEL_COOKIE) == "delivery"
+        ):
+            response = delivery_desk(request)
+            if response.status_code in (200, 303):
+                _panel(response, "delivery")
+            return response
+        panel = (
+            "access"
+            if action in ACCESS_ACTIONS
+            else "updates"
+            if action in UPDATE_ACTIONS
+            else "cases"
+        )
+        handler = PANELS[panel]
+        response = handler(request)
+        if response.status_code in (200, 303):
+            _panel(response, panel)
+        return response
+    except (InvalidForm, SuspiciousOperation):
+        return denied("staff_form_invalid", 400)
+    except IdentityUnavailable:
+        return denied("staff_identity_required", 403)

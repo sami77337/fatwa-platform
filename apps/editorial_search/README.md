@@ -1,5 +1,146 @@
 # Unified Arabic editorial search (FAST4)
 
+## Original-text match locations (2026-11-17, third slice)
+
+Base: `da7576a9c9ae90ad3f6bcc2993863fa6b989835e`, the case/revision scope slice.
+Branch: `codex/20261117-search-match-locations`.
+
+Search results now mark matching text in its original form and expose links to
+the matching fields within each result. Native fragment targets have unique
+page-local IDs and keyboard focus targets. Underlining supplements the highlight
+color. Existing case/revision scopes, reference cards and evidence links continue
+to work; the matcher, ranking and source data are not changed.
+
+The pure highlighter maps the existing normalization onto original code-point
+spans, retaining Arabic marks/tatweel, ligatures, case-fold expansions, combining
+characters and original line endings. Alias matches use the existing query-term
+normalizer/patterns; a length-changing alias highlights its whole original word.
+Literal matches retain literal substring semantics. Every rendered segment is
+escaped before adding static `<mark>` elements, and original CRs remain character
+entities. Concatenating displayed segment text reconstructs the exact source.
+
+Work is bounded to 20,000 original code points and 100 candidate matches per
+field. If a normalization mapping cannot be proven equal to the existing whole
+string normalization (for example Hangul Jamo composition across clusters),
+highlighting is skipped rather than guessing positions. Limits/fallbacks are
+labelled in the UI; the complete original text remains visible. Counts describe
+merged displayed highlight spans, not scholarly relevance or additional search
+results. These limits do not change search eligibility or ranking.
+
+Validation: 74 focused synthetic tests passed on Python 3.13.16 / Django 5.2.18,
+including 12 new pure/HTTP tests for original text, Unicode mapping, alias word
+boundaries, HTML escaping, limits, actual anchor targets and unchanged hit
+identities/ranking. Existing scope and reference-card navigation tests pass.
+Ruff lint/format, Django system check and whitespace checks passed. Tests use the
+existing synthetic queue plus in-memory original-text/limit fixtures; they forbid
+database access. No new PostgreSQL or browser acceptance is claimed for this
+presentation-only slice. Run:
+
+```sh
+python manage.py test tests.editorial_search.test_highlights tests.editorial_search.test_scope tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_reference_cards tests.editorial_search.test_query_terms tests.editorial_search.test_relevance --settings=config.settings.test --noinput
+```
+
+Changes stay inside search code, CSS, templates and tests. No new routes,
+dependencies, schema, owner sources or scientific material. Revert this commit
+independently to remove match-location navigation. NOT_DEPLOYED; gates unchanged.
+
+## Case and exact revision search scope (2026-11-17, second slice)
+
+Base: reference cards commit `705b3abfb2c2568f36610a4ac293b81c25ddc355`.
+Branch: `codex/20261117-search-case-revision-scope`.
+
+The existing search now accepts optional `case_key` and `revision` filters.
+Users can choose a case in the search form, then choose from that case's actual
+stored revision numbers. Result and reference-card links offer case-scoped
+search; historical reference cards also offer their exact revision scope.
+Pagination and card return links preserve the scope. Clearing the scope keeps
+the existing query/source/batch filters and resets pagination to page one.
+
+Scope is applied before relevance ranking, the 200-result cap and pagination.
+Revision scope includes only that revision's saved draft, reference occurrences
+and technical status. It never substitutes intake diagnostics, including the
+diagnostic explicitly labelled with the current history revision. Case and batch
+must agree; unknown/ambiguous cases, absent gapped revisions, malformed numeric
+IDs and revision-without-case requests fail closed. Empty searches still return
+no results. Return-query revision state cannot override the reference card's
+path identity. No matcher, scholarly content, resolver, schema or root URL change.
+
+Example: `/dev/editorial-search?q=SYN&source=reference&case_key=history&revision=9`.
+The synthetic fixture offers revisions 1, 2, 4, 7, 9 and 11; revision 3 is not
+silently mapped to a neighboring revision. Duplicate pointers retain individual
+ordinals across result pages and card navigation.
+
+Validation: 64 focused search tests passed on Python 3.13.16 / Django 5.2.18,
+including 13 new scope tests and the 2 real PostgreSQL 17 reference-card tests.
+New fixtures are in-memory copies of the existing synthetic queue (including
+205 case keys and 12 repeated pointers for cap/pagination boundaries); the
+database tests reuse `search-reference-card-synthetic-v1`. Ruff lint/format,
+Django system check and whitespace checks passed. No browser acceptance or
+owner-source acceptance is claimed. Run:
+
+```sh
+python manage.py test tests.editorial_search.test_scope tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_reference_cards tests.editorial_search.test_reference_cards_db tests.editorial_search.test_query_terms tests.editorial_search.test_relevance --settings=config.settings.test --noinput
+```
+
+Use disposable synthetic PostgreSQL settings as documented below. This slice
+changes only search code/templates/tests and can be reverted independently of
+reference cards. NOT_DEPLOYED; existing gates remain unchanged.
+
+## Search result reference cards (2026-11-17)
+
+Base: `e000cdc22c1a0dfd1e0e38eb8fd7cfbfc392487e`, the checked head of
+`codex/20261117-v6-durable-case-integration` (#209). Existing Arabic matching,
+ranking, synonym explanations and result limits are reused unchanged.
+
+Each reference result now opens its own card, identified by case, occurrence
+ordinal, and diagnostic versus exact historical revision. The card preserves
+the query, source filter, batch and page in a validated local return link. It
+shows the saved pointer, its UTF-8 SHA-256, its intake provenance and links to
+the exact workbench context. Duplicate pointers retain separate ordinals.
+
+Diagnostic cards reuse the existing `research_bridge.bridge_reference` check
+against the read-only Django catalog. Only a complete exact match exposes the
+edition-scoped library link, original heading/path, printed part/page and source
+pins. Missing, mismatching or unavailable evidence closes the link with a reason.
+Historical revision pointers remain explicitly unverified: current diagnostic
+evidence is never borrowed. Serialized revision identities are labelled as such,
+not presented as original book quotations. Search result rendering performs no
+catalog queries; only opening a diagnostic card can read the catalog.
+
+Routes are added to this app's existing URL include, with no `config/urls.py`
+change, migration, seed command or dependency change:
+
+- `/dev/editorial-search/references/<case>/diagnostics/<ordinal>`
+- `/dev/editorial-search/references/<case>/revisions/<revision>/<ordinal>`
+
+For example, search `verified` with source `reference`, open the first reference
+card, then follow its library link when the exact synthetic catalog is available.
+Without matching catalog data the card still explains why navigation is closed.
+Search `SYN-REMOVE` to inspect separate historical occurrences at revisions 1, 9
+and 11, with their original context and return navigation.
+
+Validation: Python 3.13.16, Django 5.2.18, isolated PostgreSQL 17 container.
+72 focused tests passed (51 search tests, including 2 real PostgreSQL tests,
+and 21 reused bridge tests). Ruff lint/format over changed Python files,
+Django system check and `git diff --check` passed. The PostgreSQL test fixture
+`search-reference-card-synthetic-v1` inserts only the existing fabricated Wave7
+root identity (edition 7001 / row 1); the repeated `a`/`b` pins are synthetic
+assertions, not hashes of owner archives. The positive integration follows the
+actual library URL; another test confirms missing row 2 cannot select row 1.
+The search request is asserted to use zero database queries; card database
+statements are asserted read-only and bounded to at most four for the root fixture.
+
+Run against a disposable synthetic PostgreSQL test database using the existing
+`PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`, `PGTESTDATABASE` settings:
+
+```sh
+python manage.py test tests.editorial_search.test_services tests.editorial_search.test_views tests.editorial_search.test_query_terms tests.editorial_search.test_relevance tests.editorial_search.test_reference_cards tests.editorial_search.test_reference_cards_db tests.research_bridge.test_services tests.research_bridge.test_views --settings=config.settings.test --noinput
+```
+
+No production data, owner archives, external scholarly content or browser
+acceptance is claimed. Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED;
+NOT_DEPLOYED. Revert this feature commit to remove the cards and their routes.
+
 Development-only, synthetic, read-only search at `/dev/editorial-search`.
 Base: FAST3 PR #106, `a149b39bfd624e330762459a7c3e0b4febc7187b`.
 

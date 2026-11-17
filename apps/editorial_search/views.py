@@ -15,8 +15,11 @@ from django.views.decorators.http import require_safe
 from apps.editorial_demo.views import local_only
 from apps.editorial_queue.services import build_queue_catalog
 from apps.editorial_workbench.services import WorkbenchDataError
+from apps.research_bridge.services import bridge_reference
 from apps.revision_core.revision_history import HistoryDataError
 
+from .highlights import highlight
+from .reference_cards import ReferenceNotFound, reference_card
 from .services import SOURCE_TYPES, SearchHit, search_catalog, validate_query
 
 
@@ -28,7 +31,7 @@ def _error(request: HttpRequest, message: str, status: int) -> HttpResponse:
 
 def _parameters(request: HttpRequest) -> dict:
     query = request.GET
-    if set(query) - {"q", "source", "batch", "page"} or any(
+    if set(query) - {"q", "source", "batch", "page", "case_key", "revision"} or any(
         len(query.getlist(key)) != 1 for key in query
     ):
         raise ValueError("invalid_parameters")
@@ -37,6 +40,13 @@ def _parameters(request: HttpRequest) -> dict:
         raise ValueError("invalid_page")
     params = {key: query.get(key, "") for key in ("q", "source", "batch")}
     params["page"] = int(page)
+    if query.get("case_key"):
+        params["case_key"] = query["case_key"]
+    if query.get("revision"):
+        revision = query["revision"]
+        if re.fullmatch(r"[1-9][0-9]{0,9}", revision) is None:
+            raise ValueError("invalid_revision")
+        params["revision"] = int(revision)
     validate_query(**params)
     return params
 
@@ -56,6 +66,54 @@ def _exact(text: str) -> str:
     return mark_safe("<code>" + str(escape(text)).replace("\r", "&#13;") + "</code>")
 
 
+def _reference_url(hit: SearchHit, params: dict) -> str | None:
+    if hit.reference_ordinal is None:
+        return None
+    args = [hit.case_key]
+    if hit.reference_origin == "revision":
+        name = "editorial_search:revision_reference"
+        args.append(hit.revision)
+    else:
+        name = "editorial_search:reference"
+    args.append(hit.reference_ordinal)
+    return reverse(name, args=args) + "?" + urlencode(params)
+
+
+def _scope_url(params: dict, case_key: str, revision: int | None = None) -> str:
+    # Scope links deliberately start at page one; never retain another case's batch.
+    scoped = {"q": params["q"], "source": params["source"], "case_key": case_key}
+    if revision is not None:
+        scoped["revision"] = revision
+    return reverse("editorial_search:index") + "?" + urlencode(scoped)
+
+
+def _search_row(hit: SearchHit, params: dict, index: int) -> dict:
+    fields = []
+    for ordinal, field in enumerate(hit.fields, 1):
+        result = highlight(field.text, params["q"], hit.match_kind)
+        parts = []
+        for segment in result.segments:
+            safe = str(escape(segment.text)).replace("\r", "&#13;")
+            parts.append(f"<mark>{safe}</mark>" if segment.matched else safe)
+        fields.append(
+            {
+                "id": f"result-{index}-field-{ordinal}",
+                "label": field.label,
+                "text": mark_safe("<code>" + "".join(parts) + "</code>"),
+                "matches": result.count,
+                "limited": result.limited,
+            }
+        )
+    return {
+        "hit": hit,
+        "url": _hit_url(hit),
+        "reference_url": _reference_url(hit, params),
+        "case_search_url": _scope_url(params, hit.case_key) if hit.case_key else None,
+        "fields": tuple(fields),
+        "matched_fields": tuple(field for field in fields if field["matches"]),
+    }
+
+
 @require_safe
 def search(request: HttpRequest) -> HttpResponse:
     local_only(request)
@@ -70,10 +128,16 @@ def search(request: HttpRequest) -> HttpResponse:
     try:
         result = search_catalog(catalog, **params)
     except ValueError:
-        return _error(request, "الدفعة أو الصفحة غير متاحة لهذا البحث. ابدأ من الصفحة الأولى.", 400)
+        return _error(
+            request,
+            "السجل أو المراجعة أو الدفعة أو الصفحة غير متاحة لهذا البحث. راجع النطاق وابدأ من الصفحة الأولى.",
+            400,
+        )
 
     def page_url(number):
         return reverse("editorial_search:index") + "?" + urlencode({**params, "page": number})
+
+    selected = next((row for row in catalog.rows if row.case.key == params.get("case_key")), None)
 
     response = render(
         request,
@@ -82,19 +146,82 @@ def search(request: HttpRequest) -> HttpResponse:
             "filters": params,
             "sources": SOURCE_TYPES,
             "batches": catalog.batches,
+            "cases": catalog.rows,
+            "selected_case": selected,
+            "scope_revision": params.get("revision"),
+            "clear_scope_url": reverse("editorial_search:index")
+            + "?"
+            + urlencode(
+                {
+                    **{
+                        key: value
+                        for key, value in params.items()
+                        if key not in {"case_key", "revision"}
+                    },
+                    "page": 1,
+                }
+            ),
             "result": result,
             "rows": tuple(
-                {
-                    "hit": hit,
-                    "url": _hit_url(hit),
-                    "fields": tuple(
-                        {"label": field.label, "text": _exact(field.text)} for field in hit.fields
-                    ),
-                }
-                for hit in result.hits
+                _search_row(hit, params, index) for index, hit in enumerate(result.hits, 1)
             ),
             "previous_url": page_url(result.page - 1) if result.page > 1 else None,
             "next_url": page_url(result.page + 1) if result.page < result.pages else None,
+        },
+    )
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+@require_safe
+def reference(
+    request: HttpRequest, key: str, ordinal: int, revision: int | None = None
+) -> HttpResponse:
+    local_only(request)
+    try:
+        params = _parameters(request)
+    except (ValueError, UnicodeError, TooManyFieldsSent):
+        return _error(request, "معايير العودة إلى البحث غير صالحة.", 400)
+    try:
+        catalog = build_queue_catalog()
+        card = reference_card(catalog, key, ordinal, revision)
+        # Validate the return page/batch with the same bounded search contract.
+        search_catalog(catalog, **params)
+    except ReferenceNotFound:
+        return _error(
+            request, "الإحالة أو المراجعة غير موجودة. عد إلى البحث واختر نتيجة متاحة.", 404
+        )
+    except (WorkbenchDataError, HistoryDataError):
+        return _error(request, "تعذر تحميل دليل الإحالة بأمان. أعد المحاولة من البحث.", 503)
+    except ValueError:
+        return _error(
+            request,
+            "نطاق السجل أو المراجعة أو الدفعة أو صفحة العودة غير متاحة. ابدأ من البحث مجددًا.",
+            400,
+        )
+    result = bridge_reference(card.diagnostic) if card.diagnostic is not None else None
+    workbench_url = reverse("editorial_workbench:detail", args=[key])
+    if card.revision is not None:
+        workbench_url += "?" + urlencode({"revision": card.revision})
+    workbench_url += "#snapshot" if card.origin == "revision" else "#references"
+    response = render(
+        request,
+        "editorial_search/reference.html",
+        {
+            "card": card,
+            "source_text": _exact(card.source_text),
+            "bridge": result,
+            "return_url": reverse("editorial_search:index") + "?" + urlencode(params),
+            "workbench_url": workbench_url,
+            "case_search_url": _scope_url(params, key),
+            "revision_search_url": _scope_url(params, key, card.revision)
+            if card.origin == "revision"
+            else None,
+            "triage_url": (
+                reverse("reference_triage:detail", args=[key]) + f"#reference-{ordinal}"
+                if card.origin == "diagnostic"
+                else None
+            ),
         },
     )
     response["Cache-Control"] = "no-store"

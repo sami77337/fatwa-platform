@@ -1,24 +1,39 @@
 """Owned synthetic PostgreSQL queue. No sender or production activation."""
 from __future__ import annotations
 
+import json
+import re
+import secrets
 from collections import Counter
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from hashlib import sha256
 from hmac import compare_digest
-import json
-import re
-import secrets
 from types import MappingProxyType
 
 from django.db import connection, transaction
 from django.utils import timezone
-from apps.intake_workflow.guards import require_synthetic_write, SyntheticWriteDenied
-from .models import (
-    ApprovalClaim, DeliveryAttempt, DeliveryAuditEvent, DeliveryAuditHead,
-    DeliveryIntent, ProviderReceipt, ProviderSignatureEvidence, SignedDeliveryContext,
+
+from apps.intake_workflow.guards import (
+    SyntheticWriteDenied,
+    require_synthetic_write,
+    validate_write_configuration,
 )
 
+from .models import (
+    ApprovalClaim,
+    DeliveryAttempt,
+    DeliveryAuditEvent,
+    DeliveryAuditHead,
+    DeliveryIntent,
+    ProviderReceipt,
+    ProviderSignatureEvidence,
+    SignedDeliveryContext,
+)
+
+_QUEUE_UNIT = ContextVar("fatwa_owned_queue_unit", default=None)
 _HEX = re.compile(r"[a-f0-9]{64}")
 _REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
 _NONCE = re.compile(r"[A-Za-z0-9_-]{32,128}")
@@ -85,9 +100,36 @@ def _postgres_only():
     if connection.vendor != "postgresql":
         raise QueueConflict("postgresql_backend_required")
     try:
-        require_synthetic_write(synthetic_fixtures_only=True)
+        unit = _QUEUE_UNIT.get()
+        if unit is None:
+            return require_synthetic_write(synthetic_fixtures_only=True)
+        raw_connection, block, owned = unit
+        target = validate_write_configuration(synthetic_fixtures_only=True)
+        if (connection.connection is not raw_connection or not connection.in_atomic_block
+            or block not in connection.atomic_blocks
+            or target.database_name != owned.database_name):
+            raise QueueConflict("owned_queue_transaction_changed")
+        return owned
     except SyntheticWriteDenied as exc:
         raise QueueConflict("synthetic_database_not_authorized") from exc
+
+
+@contextmanager
+def synthetic_queue_atomic():
+    """Compose case + queue writes after the sole ownership guard, never bypass it.
+
+    Only this context can reuse its guard in nested queue calls. The binding is
+    execution-local and pinned to the actual connection and live atomic block;
+    arbitrary caller transactions still fail the original preflight guard.
+    """
+    owned = _postgres_only()
+    with transaction.atomic():
+        block = connection.atomic_blocks[-1]
+        token = _QUEUE_UNIT.set((connection.connection, block, owned))
+        try:
+            yield
+        finally:
+            _QUEUE_UNIT.reset(token)
 
 
 def _audit_payload(sequence, intent_id, old_state, new_state, reference, payload_sha, recorded_at):
@@ -388,14 +430,20 @@ def record_receipt(*, lease, receipt_reference, provider_message_id, reported, v
         return intent
 
 
-def quarantine_expired_leases(*, now=None, limit=100):
+def quarantine_expired_leases(*, now=None, limit=100, plan_fingerprint=None):
+    """Quarantine uncertainty without retry; optionally restrict to one exact plan."""
     _postgres_only()
-    if type(limit) is not int or not 1 <= limit <= 500 or (now is not None and not _utc(now)):
+    if (type(limit) is not int or not 1 <= limit <= 500
+        or (now is not None and not _utc(now))
+        or (plan_fingerprint is not None and not _hex(plan_fingerprint))):
         raise QueueConflict("invalid_reconciliation_limit_or_clock")
     current, changed = now or timezone.now(), []
     with transaction.atomic():
-        rows = list(DeliveryIntent.objects.select_for_update(skip_locked=True).filter(
-            state="LEASED", lease_expires_at__lte=current).order_by("lease_expires_at", "intent_key")[:limit])
+        query = DeliveryIntent.objects.select_for_update(skip_locked=True).filter(
+            state="LEASED", lease_expires_at__lte=current)
+        if plan_fingerprint is not None:
+            query = query.filter(plan_fingerprint=plan_fingerprint)
+        rows = list(query.order_by("lease_expires_at", "intent_key")[:limit])
         for intent in rows:
             intent.state = "UNKNOWN_REQUIRES_RECONCILIATION"
             intent.save(update_fields=["state", "updated_at"])
