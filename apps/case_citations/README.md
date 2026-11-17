@@ -68,6 +68,15 @@ If any citation insert fails, the new answer, event, and cleared approval roll b
 case. `citations_for_locked_answer` is an **internal** projection for publication
 services already holding their authorized case lock; it is not an access endpoint.
 
+Cross-editor preservation uses `clone_citations_for_new_answer(previous, answer)`
+inside the caller's authorized case transaction, after the new canonical answer
+and its SAVE_ANSWER event exist. It revalidates the source snapshots and creates
+new citation IDs for the next revision of the same case. The citation editor
+likewise calls `answer_media.services.clone_parts_for_new_answer` when that
+optional app is installed, preserving the previous answer's associated files.
+Neither helper inherits approval or private release; failure rolls back the
+entire answer edit. No nested case lock or parallel answer is created.
+
 Focused tests (fresh PostgreSQL 17/18 only):
 
 ```sh

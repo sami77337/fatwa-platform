@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict
 from hashlib import sha256
 
+from django.apps import apps as django_apps
 from django.conf import settings
 
 from apps.casework import services as cases
@@ -160,6 +161,7 @@ def save_cited_answer(
     ) as (case, actor):
         if case.stage == "NEEDS_CLARIFICATION":
             raise cases.CaseConflict("requester_clarification_still_required")
+        previous = case.answers.order_by("-revision").first()
         checked, seen = [], set()
         for item in selections:
             if type(item) is not dict or set(item) != {
@@ -198,6 +200,10 @@ def save_cited_answer(
             AnswerCitation.objects.create(
                 answer=answer, heading=heading, ordinal=ordinal, editorial_note=note, **source
             )
+        if previous is not None and django_apps.is_installed("apps.answer_media"):
+            from apps.answer_media.services import clone_parts_for_new_answer
+
+            clone_parts_for_new_answer(previous, answer)
         return cases._staff(case)
 
 
@@ -225,6 +231,33 @@ def citations_for_locked_answer(answer):
             }
         )
     return result
+
+
+def clone_citations_for_new_answer(previous, answer):
+    """Copy verified references in an already authorized answer-edit transaction.
+
+    Caller holds the case lock, created the next canonical answer and SAVE_ANSWER
+    event, and cleared approval. Copies source snapshots, never approval/release.
+    PostgreSQL rejects writes outside the answer's creation transaction as well.
+    """
+    if (
+        previous.case_id != answer.case_id
+        or previous.pk == answer.pk
+        or answer.revision != previous.revision + 1
+    ):
+        raise cases.CaseConflict("citation_answer_lineage_mismatch")
+    snapshots = citations_for_locked_answer(previous)
+    previous_rows = {str(row.pk): row for row in AnswerCitation.objects.filter(answer=previous)}
+    for snapshot in snapshots:
+        old = previous_rows[snapshot["id"]]
+        AnswerCitation.objects.create(
+            answer=answer,
+            heading_id=old.heading_id,
+            ordinal=old.ordinal,
+            source=old.source,
+            source_sha256=old.source_sha256,
+            editorial_note=old.editorial_note,
+        )
 
 
 def read_citations(*, case_id, subject_id, provider, answer_id=None, synthetic_fixtures_only=False):

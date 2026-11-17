@@ -2,6 +2,7 @@
 {% block title %}تحرير جواب بعدة إحالات{% endblock %}
 {% block content %}
 <h2>تحرير جواب بعدة إحالات موثقة</h2>
+<p>عند وجود ملفات جواب مرتبطة بالإصدار السابق، تُحفظ مع الإصدار الجديد. يلزم اعتماد مفتي جديد؛ لا تنتقل موافقة الإتاحة الخاصة.</p>
 <p>تجربة مغلقة ببيانات اصطناعية. المصادر المتاحة عناوين فهرس كتاب 622 ومواضعها؛ ليست نص الكتاب الكامل أو تخريجًا محققًا. الملاءمة العلمية يراجعها المفتي البشري.</p>
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>العودة إلى القضية دون حفظ هذه المسودة</button></form>
 <p>{{ selected.public_ref }} · مراجعة التحرير {{ base_revision }} · إصدار الوقائع {{ base_evidence_version }}</p>
