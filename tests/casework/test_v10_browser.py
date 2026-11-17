@@ -600,6 +600,13 @@ class V10ConnectedBrowserTests(BrowserHarness, LiveServerTestCase):
                     "token": source.token,
                     "public_ref": source.public_ref,
                     "expected": canonical,
+                    # Explicit test trust reattachment, never private signing keys or SQL grants.
+                    "approval_public_key": signer.approval_key.public_key()
+                    .public_bytes_raw()
+                    .hex(),
+                    "provider_public_key": simulator.verifier._keys["ephemeral-fixture"]
+                    .public_bytes_raw()
+                    .hex(),
                 }
                 process = subprocess.run(
                     [
@@ -621,6 +628,7 @@ class V10ConnectedBrowserTests(BrowserHarness, LiveServerTestCase):
                 self.assertIn(
                     "V10_RESTORED_IDENTITIES_BYTES_LINKS_AND_DENIALS_PASS", process.stdout
                 )
+                self.assertIn("V10_RESTORED_HTTP_BROWSER_PASS", process.stdout)
                 self.assertEqual(canonical_evidence(source.case_id, storage_root), canonical)
                 (OUT / "result.json").write_text(
                     json.dumps(
@@ -638,7 +646,7 @@ class V10ConnectedBrowserTests(BrowserHarness, LiveServerTestCase):
                                 "new_private_root": True,
                                 "fresh_process_services": "PASS",
                                 "source_unchanged": True,
-                                "restored_browser": "NOT_RUN",
+                                "restored_browser": "PASS",
                                 "manifest_sha256": manifest_pin,
                             },
                         },

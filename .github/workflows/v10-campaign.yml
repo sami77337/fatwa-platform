@@ -8,7 +8,7 @@ on:
       - 'apps/platform_recovery/**'
       - 'infra/dev/v10_demo.py'
       - 'infra/dev/v10_verify.py'
-      - 'tests/casework/v10_fixtures.py'
+      - 'tests/casework/v10_*.py'
       - 'templates/casework/base.html'
       - 'apps/case_attachments/**'
       - 'apps/case_citations/**'

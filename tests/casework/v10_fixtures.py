@@ -209,4 +209,7 @@ def verify_restored():
                     raise AssertionError(
                         "restoration must not recreate an absent scope or identity"
                     )
+        from tests.casework.v10_restored_browser import verify_restored_http
+
+        verify_restored_http(spec, storage)
     print("V10_RESTORED_IDENTITIES_BYTES_LINKS_AND_DENIALS_PASS")

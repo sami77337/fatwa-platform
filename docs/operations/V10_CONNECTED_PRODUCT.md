@@ -48,7 +48,18 @@ demo and recovery failure review. Shared routing and configuration had one write
   signed part preparation/receipts, independent publication and knowledge preview.
   It stops HTTP before snapshot and restores into a new database/private root.
   A fresh process verifies exact bytes, IDs, relations and permission denials.
-  Browser on the restored target is **NOT_RUN**; service verification is explicit.
+  A subsequent focused extension now starts a fresh loopback HTTP server against
+  that restored database/private root. Every HTTP request checks `current_database()`
+  and the configured storage root against the restored identities, rejecting the
+  source identities. It explicitly reattaches scoped synthetic authority and only
+  the original public approval/provider verification keys, without signing or
+  creating new approvals. Chrome opens the restored Mufti case and requester
+  answer, compares exact attachment/audio bytes, plays audio, verifies signed
+  delivery and rejects anonymous files, an authenticated out-of-scope principal,
+  and private answer/audio after authority revocation. Source HTTP stays stopped.
+  The local extended journey passed on PostgreSQL 17.12 with Chromium sandbox
+  disabled; the same journey uses Chrome sandbox in CI. The artifact
+  `browser/restored-http.json` records target verification and denial results.
 - The affected V9 browser journey passed after updating its delivery UI selectors.
 - Initial remote compatibility runs exposed two old profile assertions for the
   previous requester handler and middleware name. They now check the explicit
