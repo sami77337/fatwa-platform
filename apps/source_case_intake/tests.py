@@ -433,6 +433,7 @@ class SourceIntakeTests(TransactionTestCase):
                 bytes(SourceReceipt.objects.get(pk=root["receipt_id"]).raw), f.telegram()
             )
         finally:
-            MigrationExecutor(connection).migrate([("source_case_intake", "0002_integrity_guards")])
+            executor = MigrationExecutor(connection)
+            executor.migrate(executor.loader.graph.leaf_nodes())
         with self.assertRaises(IntegrityError), transaction.atomic():
             SourceReceipt.objects.filter(pk=root["receipt_id"]).update(sender="other")
