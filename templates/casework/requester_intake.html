@@ -1,0 +1,15 @@
+{% extends "casework/base.html" %}
+{% block title %}إرسال سؤال تجريبي{% endblock %}
+{% block content %}
+{% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
+{% if result %}
+<article id="intake-result"><h2>{% if result.created %}حُفظ السؤال{% else %}سبق حفظ هذا الطلب{% endif %}</h2>
+<p>رقم المتابعة: <bdi id="public-reference">{{ result.public_ref }}</bdi></p>
+{% if result.token %}<p>احتفظ برمز الوصول الخاص في مكان آمن. يظهر هنا مرة واحدة، ولا تشاركه مع الآخرين.</p><code id="issued-token">{{ result.token }}</code><p><a href="/casework/status/">متابعة هذا السؤال</a></p>
+{% else %}<p>استعمل رمز الوصول الذي حصلت عليه عند الحفظ الأول. لا يُصدر تكرار الطلب رمزًا جديدًا.</p><a href="/casework/status/">فتح المتابعة الخاصة</a>{% endif %}</article>
+{% else %}
+<form method="post" action="/casework/">{% csrf_token %}
+<input type="hidden" name="request_id" value="{{ request_id }}"><input type="hidden" name="confirmation" value="{{ confirmation }}">
+<label for="question">السؤال الأصلي</label><textarea id="question" name="question" required maxlength="16000" aria-describedby="question-help">{{ question }}</textarea><p id="question-help">يُحفظ السؤال كما تكتبه. لا تستخدم بيانات حقيقية. تُضاف الاستيضاحات لاحقًا إلى القضية نفسها.</p><button type="submit">حفظ السؤال</button></form>
+{% endif %}
+{% endblock %}
