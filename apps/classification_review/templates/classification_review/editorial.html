@@ -1,0 +1,22 @@
+{% extends "casework/base.html" %}
+{% block title %}محاكاة ربط التصنيف بالنسخة التحريرية{% endblock %}
+{% block content %}
+<h1>محاكاة ربط التصنيف بالنسخة التحريرية</h1>
+<p>مسار اصطناعي مغلق؛ سياسة الانتقال الفعلية غير معتمدة. لا اعتماد آلي ولا إذن إنتاج أو نشر عام.</p>
+<p>التصنيف العلمي العام مستقل عن فهرس كتاب622؛ الفهرس ليس متنًا ولا إثباتًا لعلاقة علمية بالتشابه.</p>
+<p>سياسة المحاكاة: <bdi>{{ policy_id }}</bdi></p>
+<p>معرّف الربط: <bdi>{{ binding_id }}</bdi> — التصنيف المعتمد: <bdi>{{ revision_id }}</bdi></p>
+<h2>نسخة تحريرية {{ edition.number }} — {{ edition.state }}</h2>
+<p>نسخة جديدة مستقلة؛ إعدادها لا يغيّر نسخة المكتبة الحالية. موافقة التصنيف ليست موافقة نشر.</p>
+<p>العنوان: {{ edition.title }}</p><p>التصنيف التجريبي المنقول: {{ edition.category }}</p>
+<p>سبب التصنيف: {{ classification_reason }}</p>
+<div class="original">{{ edition.body }}</div>
+<details><summary>المصدر الموثق للتصنيف — فهرس فقط</summary>{% include "knowledge_links/source.html" %}</details>
+{% if can_review or can_approve %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="binding_id" value="{{ binding_id }}">
+<label><input name="confirm" type="checkbox" value="yes" required>راجعت النسخة الحالية ومصدرها وأؤكد الإجراء البشري في المحاكاة</label>
+{% if can_review %}<button name="action" value="classification_editorial_review">تسجيل مراجعة التحرير والخصوصية</button>{% else %}<button name="action" value="classification_editorial_approve">موافقة نشر مستقلة في المحاكاة</button>{% endif %}
+</form>{% endif %}<p>الخادم يتحقق من التفويض والاستقلال عند كل إجراء؛ معتمد التصنيف لا يعتمد نشر النسخة المرتبطة.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="binding_id" value="{{ binding_id }}"><button name="action" value="classification_editorial_inspect">تحديث النسخة المرتبطة</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><button name="action" value="classification_history">تاريخ التصنيف الأصلي المختصر</button></form>
+{% endblock %}

@@ -13,9 +13,9 @@ from apps.casework_web.views import InvalidForm, _form, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 
-from . import services
+from . import editorial_views, services
 
-ACTIONS = {
+ACTIONS = editorial_views.ACTIONS | {
     "classification_desk",
     "classification_history",
     "classification_propose",
@@ -28,6 +28,8 @@ ACTIONS = {
 @sensitive_post_parameters("label", "reason", "note")
 @csrf_protect
 def workspace(request):
+    if request.POST.get("action") in editorial_views.ACTIONS:
+        return editorial_views.workspace(request)
     try:
         services._enabled()
         if request.method != "POST" or request.POST.get("action") not in ACTIONS:

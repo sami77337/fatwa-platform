@@ -6,3 +6,6 @@ INSTALLED_APPS = list(dict.fromkeys([*INSTALLED_APPS, "apps.classification_revie
 FATWA_CLASSIFICATION_REVIEW_ENABLED = False
 FATWA_CLASSIFICATION_REVIEW_AUTHORITY = None
 ROOT_URLCONF = "apps.classification_review.urls"
+# No accepted production policy for this transition exists in the inspected baseline.
+FATWA_CLASSIFICATION_EDITORIAL_SIMULATION_ENABLED = False
+FATWA_CLASSIFICATION_EDITORIAL_SIMULATION_POLICY = None

@@ -55,3 +55,20 @@ class ClassificationAction(models.Model):
                 name="classification_action_kind",
             ),
         ]
+
+
+class EditorialBinding(models.Model):
+    """Immutable provenance from reviewed classification to a canonical candidate."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    revision = models.OneToOneField(ClassificationRevision, on_delete=models.PROTECT)
+    edition = models.OneToOneField(
+        "experimental_publication.PublicationEdition", on_delete=models.PROTECT
+    )
+    policy_id = models.CharField(max_length=128)
+    snapshot = models.JSONField()
+    snapshot_sha256 = models.CharField(max_length=64)
+    subject_id = models.CharField(max_length=128)
+    provider_id = models.CharField(max_length=128)
+    auth_epoch = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
