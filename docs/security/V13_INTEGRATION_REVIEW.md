@@ -102,3 +102,37 @@ external designated V13 review as separate evidence.
 Gate B **NOT_PASSED**; C/D/E **HOLD**; Phase01 **BLOCKED**; **NOT_DEPLOYED**.
 No real data/audio/keys, external delivery, main merge, GitHub setting change,
 U03 permission, automated scholarly approval, or inferred rights were introduced.
+
+## Supplemental static review of the four new applications
+
+Requested while hosted verification was running; inspected target
+`09cc55aa021660f593bb1b70e850d0f448ddad3a`. Its `apps/`, `config/` and `templates/`
+product delta from repaired `4f71d2e` is empty. A path-limited comparison also
+confirmed that the four applications and reused authority/admission services in
+this review worktree are identical to that exact target. The V12-to-V13 product
+delta includes these new applications; this supplement expands the earlier
+shared-integration review rather than treating their implementation tests as an
+independent rerun.
+
+**Outcome: no additional concrete security blocker established by this static
+review.** This is a bounded source inspection, not comprehensive clearance.
+The external designated V13 application review remains **PENDING**; this reviewer
+has only received its separate historical baseline review, not its V13 verdict.
+The dynamic tests and failure history above remain attributed to their original
+heads. No existing test, browser, or hosted CI suite was rerun for this supplement.
+
+| Newly inspected source scope | Security observations |
+|---|---|
+| `browser_audio/assets.py`, `context.py`, `capture.html`, `capture.js`, `worklet.js` | Fixed local asset map, synthetic feature gates and exact methods; no client-selected filesystem path. Microphone request occurs on explicit start, no initialization capture/device enumeration. Epoch checks dispose late permission results; cancel, pagehide, hidden-page, device-ended and worklet-error paths release tracks/context. Preview bytes become the native input only after acceptance; capture adds no network upload/ASR or server permission. Worklet limits frames, WAV is bounded PCM, and output is silent. Native server validation remains mandatory. No unsafe HTML sink or external send was found in these inspected client files. Browser timing/device compatibility is not established by static inspection. |
+| `timed_citations/services.py`, `rights.py`, `views.py`, `guard.py`, models and both migrations | Canonical scoped case lock, exact immutable owner/source/version/hash/metadata/duration pins, mandatory READ_MEDIA plus CITE with aware deadlines, repaired post-callback checks and final identity checks. UUIDs do not act as capabilities. Mutation forms retain CSRF and server identities; audio routes resolve current scoped identity and recompute source eligibility. Proposal/confirmation require the current unreviewed answer; corrected history is append-only, old references are not auto-cloned, withdrawal remains possible without source readability. PostgreSQL guards bind lineage/owner/case/answer and reject conflicting history changes. Public entry services carry mutation admission; the internal `for_locked_answer` hook still relies on its documented caller-owned canonical lock. |
+| `arabic_search_eval/services.py`, `ranking.py`, `evaluation.py` | Ranking runs over an already authorized bounded reference window. Strict source-rights mode and the existing case/workspace gates are mandatory; candidate source opens and selected-result DISCOVER/read checks surround ranking, with final actor and enclosing source-expiry checks. Query/token/window/type bounds are explicit; no dynamic SQL/network/content generation is introduced. Returned coverage remains a bounded window, book-622 material is TOC metadata, and human review remains PENDING. The fixture evaluation oracle is not an authorization implementation or proof of real corpus relevance. |
+| `classification_review/authority.py`, `services.py`, `views.py`, models, SQL guards and template | Explicit per-action authority supplements current case/publication/knowledge/source checks. Approval/rejection requires a different provider/subject from the proposer, and append-only DB guards enforce decision/lineage conflicts. Source verification is current, exact and rights-aware; ordinary desks are enclosed by the inherited projection-expiry guard. Audit/withdrawal paths omit labels/reasons/source details/decision text and do not confer availability. Mutations use existing admission and transaction scopes, with final authority/identity rechecks. UI state is advisory only: no canonical publication category or knowledge relationship is automatically mutated. Escaped native CSRF forms accept no client-supplied actor. |
+
+The supplementary reads included the reused `knowledge_links._edition` /
+`_withdrawal_edition` scopes, `case_citations._projection_expiry_guard`, strict
+research-rights adapter boundary, request-bound directory and maintenance
+`mutation_service`. They support the limited observations above; they do not
+establish protection from privileged SQL, arbitrary malicious Python authority
+implementations, unreviewed production configuration, or every possible
+concurrency interleaving. No new reproduction was added because this inspection
+did not establish a new concrete concern requiring an experiment.
