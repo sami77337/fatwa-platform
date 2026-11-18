@@ -1,5 +1,14 @@
 # V13 connected synthetic development integration
 
+**Current recovery status: SEC13-01 remains BLOCKED pending external re-review.**
+The external review97dd579 proved different quoted SQL predicates share the old
+fingerprint and an altered encrypted target reached READY at38cd137, despite
+its16 green workflows. Historical success receipts below do not close that gap.
+Token-aware repair21fd10d passed20 focused schema/restore/quarantine checks on
+PG17.12 and18.7; see `docs/security/SEC13_01_REPAIR.md`. Recovery scope credit is
+suspended, original evidence retained, and no repaired-head external PASS is claimed.
+
+
 Base: PR #231, `5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8`.
 Integration branch: `codex/20261118-v13-integration`. One integrator owns shared
 configuration, routing, native UI composition and final validation. V12 is retained.
