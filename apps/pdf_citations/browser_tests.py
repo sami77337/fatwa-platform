@@ -3,9 +3,8 @@
 import io
 import os
 
-from pypdf import PdfReader
-
 from django.test import LiveServerTestCase, override_settings
+from pypdf import PdfReader
 
 from .models import PdfCitation
 from .tests import SETTINGS, Fixture
