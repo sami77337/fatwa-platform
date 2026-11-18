@@ -63,7 +63,7 @@ def _approved(case, edition=None):
         )
     ):
         raise cases.CaseConflict("publication_source_changed")
-    cases._answer_timed(answer)
+    cases._answer_annotations(answer)
     return answer, decision
 
 
@@ -110,7 +110,7 @@ def _require_publication_sources(case, citations):
     """
     from apps.source_rights.enforcement import required
 
-    timed_deadline = cases._answer_timed(case.approved_answer)
+    timed_deadline = cases._answer_annotations(case.approved_answer)
     if not required():
         return timed_deadline
     from apps.case_citations.services import _rights_services

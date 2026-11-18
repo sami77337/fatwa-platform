@@ -37,6 +37,11 @@ TIMED_MEDIA_ROUTE = re.compile(
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
     r"(?:audio|review-audio)/"
 )
+PDF_MEDIA_ROUTE = re.compile(
+    r"/casework/staff/pdf-citations/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+    r"(?:document|review-document)/"
+)
 LIMITS = {"read": 150, "intake": 10, "login": 10, "requester": 30, "staff": 60}
 
 
@@ -141,7 +146,9 @@ class CaseworkGuard:
             return denied("casework_host_invalid", 400)
         methods = ROUTES.get(request.path)
         if methods is None and (
-            PRIVATE_MEDIA_ROUTE.fullmatch(request.path) or TIMED_MEDIA_ROUTE.fullmatch(request.path)
+            PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
+            or TIMED_MEDIA_ROUTE.fullmatch(request.path)
+            or PDF_MEDIA_ROUTE.fullmatch(request.path)
         ):
             methods = ("GET", "HEAD")
         if methods is None:

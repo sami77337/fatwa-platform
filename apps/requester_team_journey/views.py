@@ -54,6 +54,12 @@ def staff(request):
 
             if action in TIMED_ACTIONS:
                 return _panel(timed_workspace(request), "cases")
+        if django_apps.is_installed("apps.pdf_citations"):
+            from apps.pdf_citations.views import ACTIONS as PDF_ACTIONS
+            from apps.pdf_citations.views import workspace as pdf_workspace
+
+            if action in PDF_ACTIONS:
+                return _panel(pdf_workspace(request), "cases")
         if django_apps.is_installed("apps.classification_review"):
             from apps.classification_review.views import ACTIONS as CLASSIFICATION_ACTIONS
             from apps.classification_review.views import workspace as classification_workspace

@@ -83,6 +83,10 @@ jobs:
             --label apps.classification_review.editorial_tests \
             --label apps.classification_review.editorial_http_tests \
             --label apps.classification_review.editorial_browser_tests \
+            --label apps.pdf_citations.tests \
+            --label apps.pdf_citations.browser_tests \
+            --label apps.timed_citations.test_preview_context \
+            --label tests.casework.test_v14_pdf_bindings \
             --label tests.v14_security_review.test_search_boundary
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
