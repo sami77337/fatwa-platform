@@ -1,0 +1,17 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_changed_quoted_index_predicate_on_restored_target_is_quarantined (tests.v13_security_review.test_final_schema.EncryptedSchemaReview.test_changed_quoted_index_predicate_on_restored_target_is_quarantined) ... ok
+test_partial_index_string_value_change_must_change_recovery_fingerprint (tests.v13_security_review.test_final_schema.SchemaLiteralReviewTests.test_partial_index_string_value_change_must_change_recovery_fingerprint) ... ok
+test_changed_partial_index_on_real_restored_target_is_quarantined (tests.casework.test_v13_recovery_schema.CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined) ... ok
+test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index (tests.casework.test_v13_recovery_schema.CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index) ... ok
+test_changed_index_name_uniqueness_values_predicate_or_column_remain_different (tests.casework.test_v13_recovery_schema.SchemaCanonicalTests.test_changed_index_name_uniqueness_values_predicate_or_column_remain_different) ... ok
+test_function_source_and_nonliteral_arrays_are_never_canonicalized (tests.casework.test_v13_recovery_schema.SchemaCanonicalTests.test_function_source_and_nonliteral_arrays_are_never_canonicalized) ... ok
+test_literal_cast_equivalence_preserves_exact_partial_index_and_check (tests.casework.test_v13_recovery_schema.SchemaCanonicalTests.test_literal_cast_equivalence_preserves_exact_partial_index_and_check) ... ok
+test_changed_predicate_is_quarantined_before_ready_with_assets_preserved (tests.casework.test_v13_schema_quarantine.SchemaQuarantineTests.test_changed_predicate_is_quarantined_before_ready_with_assets_preserved) ... ok
+test_changed_predicate_with_unproven_identity_preserves_target_for_manual_review (tests.casework.test_v13_schema_quarantine.SchemaQuarantineTests.test_changed_predicate_with_unproven_identity_preserves_target_for_manual_review) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 5.016s
+
+OK
+Found 9 test(s).
+System check identified no issues (0 silenced).
