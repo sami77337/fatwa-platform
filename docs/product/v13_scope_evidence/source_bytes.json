@@ -1,0 +1,51 @@
+{
+  "local_status": "SOURCE_BYTES_UNAVAILABLE",
+  "observed_date": "2026-11-18",
+  "local_original_byte_verification": false,
+  "original_filename": "Fatwa_Platform_Scope_556.xlsx",
+  "parent_reported_sha256": "874326f71ded93a1a4ccb11a9038429a8f604d1e9e23acef7e8c52327b42969e",
+  "parent_reported_size": 211695,
+  "parent_reported_sheets": 8,
+  "independent_attestation": {
+    "environment": "parent_local_environment",
+    "status": "VERIFIED_IN_OTHER_ENVIRONMENT",
+    "reported_local_status": "SOURCE_BYTES_VERIFIED_LOCALLY",
+    "verification_basis": "PARENT_SUPPLIED_ATTESTATION_NOT_LOCALLY_REEXECUTED",
+    "sha256": "874326f71ded93a1a4ccb11a9038429a8f604d1e9e23acef7e8c52327b42969e",
+    "size": 211695,
+    "receipt": "Integrator message relaying parent P0-A independent local matching, 2026-11-18; no original-byte transfer to this Cloud worktree.",
+    "scope_comparison": {
+      "compared_base_sha": "5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8",
+      "sheets": 8,
+      "values": 11289,
+      "headers": 52,
+      "owner_points": 556,
+      "specification_clauses": 479,
+      "point_spec_text_and_order": "MATCH",
+      "matrix_and_specification_fields": "NO_DIFFERENCES",
+      "whole_workbook_string_equivalence": false,
+      "date_serialization_differences": {
+        "count": 17,
+        "sheet": "المراجع والقرارات",
+        "range": "C5:C21",
+        "ooxml": "t=d ISO8601Z",
+        "extraction": "space separator, six fractional digits, no UTC suffix",
+        "time_components": "MATCH"
+      },
+      "actual_excel_row_rule": "parsed_index + 2",
+      "point_1_excel_row": 5,
+      "point_556_excel_row": 560,
+      "formula_cells": 9,
+      "formula_comparison": "SAVED_VALUES_ONLY",
+      "recalculation": false,
+      "visual_validation": false,
+      "original_word_byte_validation": false
+    },
+    "independent_result_count": 2,
+    "reported_shared_result_sha256": "a73978ac0c72b20c982b72f35b49ab803f5b53b4bd2ddd542f68b6010f321a15",
+    "reported_stdlib_validator_sha256": "8cad3eb213d74234a84daa83478c8f1ba1551d7a1ef9722c81d4120b1b7f4bd3",
+    "receipt_bytes_inspected_here": false
+  },
+  "original_uploaded_to_repository": false,
+  "distinction": "Parent-reported original identity is separate from extracted-text hashes and local-byte verification."
+}

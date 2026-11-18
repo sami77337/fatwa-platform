@@ -1,0 +1,20 @@
+{
+  "base_sha": "5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8",
+  "owner_points": 556,
+  "specification_clauses": 479,
+  "decision_ids": 72,
+  "decision_occurrences": 77,
+  "preserved_status_counts": {
+    "PARTIAL": 303,
+    "DECISION": 52,
+    "NOT_IMPLEMENTED": 168,
+    "OUT_OF_SCOPE": 33
+  },
+  "candidate_points": 55,
+  "verified_points": 0,
+  "status_upgrades": 0,
+  "acceptance": "HOLD",
+  "percentage": null,
+  "source_bytes_local": "SOURCE_BYTES_UNAVAILABLE",
+  "source_bytes_parent_attested": true
+}
