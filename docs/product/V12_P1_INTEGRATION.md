@@ -114,6 +114,11 @@ The source stayed unchanged/FROZEN. Receipts are `result.json` and
 `restored-http.json` under `.local/qa/v12/browser`; the local run log was
 `/tmp/v12-browser-sixth.log`. This is not PG18 or sandboxed-Chrome proof.
 
+The first pushed P1 head `1cedacb` did not launch V12 CI: an unquoted inline YAML
+command contained `--only-binary=:all:`. It is now a block scalar and parses
+successfully. The missing workflow is **NOT RUN**, not a passing test or a flake.
+Product code and browser assertions did not change in this CI correction.
+
 `infra/dev/v12_p1_verify.py` checks the expected SHA and clean tracked files, system
 configuration, migration drift, P2 source/build consistency and its six validator
 tests, 54 affected service/HTTP/security tests, then one connected browser/recovery
