@@ -8,10 +8,13 @@ READ_MEDIA/CITE, identity, source and expiry checks rather than replacing them.
 
 from contextlib import contextmanager
 from contextvars import ContextVar
+from datetime import datetime
 
 from django.conf import settings
+from django.utils import timezone
 
 _SCOPES = ContextVar("casework_media_policy_scopes", default=())
+_DEADLINES = ContextVar("casework_media_projection_deadlines", default=())
 
 
 def _epoch(policy):
@@ -41,6 +44,23 @@ def pin_media_policy(policy):
             scope.extend((policy, epoch))
 
 
+def pin_media_deadline(deadline):
+    """Retain validated media deadlines through every enclosing epoch read.
+
+    This stores only a conservative expiry, not permission or bytes. No policy
+    callback is invoked here or after the final boundary clock check.
+    """
+    from .services import CaseConflict
+
+    if not isinstance(deadline, datetime) or timezone.is_naive(deadline):
+        raise CaseConflict("timed_grant_expiry_required")
+    scopes = _DEADLINES.get()
+    if not scopes:
+        raise CaseConflict("media_projection_boundary_required")
+    for scope in scopes:
+        scope[0] = deadline if scope[0] is None else min(scope[0], deadline)
+
+
 @contextmanager
 def media_projection_boundary():
     """Check once at each enclosing return boundary, without another permits loop."""
@@ -48,6 +68,8 @@ def media_projection_boundary():
 
     scope = []
     token = _SCOPES.set((*_SCOPES.get(), scope))
+    earliest = [None]
+    deadline_token = _DEADLINES.set((*_DEADLINES.get(), earliest))
     try:
         yield
         if scope:
@@ -57,5 +79,10 @@ def media_projection_boundary():
                 or _epoch(policy) != epoch
             ):
                 raise CaseConflict("media_policy_changed")
+        # The final atomic epoch lookup may span a deadline without changing it.
+        # This runs inside _staff_case transaction.atomic, before commit/return.
+        if earliest[0] is not None and earliest[0] <= timezone.now():
+            raise CaseConflict("timed_grant_expired")
     finally:
+        _DEADLINES.reset(deadline_token)
         _SCOPES.reset(token)

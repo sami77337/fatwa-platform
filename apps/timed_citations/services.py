@@ -53,7 +53,7 @@ def _rights(case, actor, provider, snapshot):
     policy = getattr(settings, "FATWA_RESEARCH_WORKSPACE_RIGHTS", None)
     if not isinstance(policy, TimedMediaRights):
         raise cases.CaseConflict("timed_explicit_media_rights_required")
-    from apps.casework.media_boundary import pin_media_policy
+    from apps.casework.media_boundary import pin_media_deadline, pin_media_policy
 
     pin_media_policy(policy)
     # READ_MEDIA is not CITE. A configured policy must explicitly permit both.
@@ -77,6 +77,7 @@ def _rights(case, actor, provider, snapshot):
         except Exception as exc:
             raise cases.CaseConflict("timed_grant_expiry_required") from exc
         _projection_deadline(deadline)
+        pin_media_deadline(deadline)
     # Deadline lookup is a configured authority call, not a cached grant. It
     # may observe a concurrent/serialized withdrawal after its first lookup.
     # Recheck both permissions after all deadline callbacks, before any caller

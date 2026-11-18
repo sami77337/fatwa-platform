@@ -1,0 +1,15 @@
+{
+  "evaluation_initial_pg17.txt": "886fce8b70f0faba917f5eae28fbe64f56ca578a06e0322734e4eb6e17ade769",
+  "evaluation_initial_pg18.txt": "e2f5110f33d28d92f96ad4c39ab1d108229830286a5d96443bbf7274a86af99d",
+  "hosted_pg17.txt": "53c9e70245b81f6e840b6f55ce708f4f4e28511d3fc2adc86b496058f9b9ee95",
+  "hosted_pg18.txt": "d698ed93d9cd91c03995c0e7af09173c115f4dd568c8e2b02d74b163e2933d44",
+  "media_corrected_pg17.txt": "ac3848a67302451e9ce7328d34a2167c36712a13dc39ecdd4dfed720962fa670",
+  "media_corrected_pg18.txt": "0a11ce90c0bd23f16573a08903b66259c64fb3370497ab32f968d8a873767829",
+  "media_injection_initial_pg17.txt": "81f290c886376c7c26ba8b67b9089ece914698386ee701b6ad208f13f7aa27d9",
+  "media_injection_initial_pg18.txt": "cd11c0f1749b558de825f2da6b0bb36c02a734da23c4e8ac4e94375606e68980",
+  "regressions_pg17.txt": "b39aa47dea28a2113f71113384e3e3ecc045a1d4564f9e88e138b9b284732f00",
+  "regressions_pg18.txt": "916c91dbb450a87d3e043f531cc94f4cf5e9794943f8d1440d1c8f1685a6693b",
+  "support_labels.txt": "f238eed0dc37f0379458c48d918f0b3ecdb1005602ab2d79dc50ffc6a1ddeb9d",
+  "support_pg17.txt": "b7b4497f90d1fed647ed852c106910939f136cc0570e26303361715fc33e2318",
+  "support_pg18.txt": "8ac46f4e42bb494fc95312ce8a7245723875a1ded1f26986d330a25f6f570f0d"
+}

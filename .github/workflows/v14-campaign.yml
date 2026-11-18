@@ -94,7 +94,10 @@ jobs:
             --label apps.arabic_search_eval.test_browser \
             --label tests.casework.test_v14_search_final \
             --label tests.v14_integration_security.test_crosskind \
-            --label tests.v14_security_review.test_search_repair
+            --label tests.v14_security_review.test_search_repair \
+            --label tests.v14_security_review.test_final_boundaries \
+            --label tests.v14_security_review.test_final_recovery \
+            --label tests.v14_security_review.test_additional_boundaries
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

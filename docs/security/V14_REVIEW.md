@@ -1,4 +1,191 @@
-# V14 independent security review — search repair still BLOCKED
+# V14 independent security review — BLOCKED on e8ebef8
+
+## Integrated-head verdict (2026-11-18)
+
+**BLOCKED** on **`e8ebef812d7e7cd3411252a8fe11fedb0ab2cc94`**, remote
+`codex/20261118-v14-integration`, Draft PR #233. Both remote refs matched before
+and after execution. New independent tests reveal two remaining security
+boundaries: late identity revocation in evaluation review, and direct PDF/audio
+reads outliving their grant during the final media epoch read. The affected
+paths and campaign/P2 clearance must remain pending repair and independent retest.
+
+SEC14-01/01B original reproducers now pass unchanged. The byte-for-byte diff of
+both earlier external search test files against reviewer commit `3204bbf` is
+empty. The new ledger-only final read occurs after policy/identity/epoch callbacks;
+strict scope, exact pins and expiry checks remain. This closes those specific
+reproductions at this head, not the new findings below. Historical failures and
+prior lane-only dispositions remain intact after this section.
+
+## SEC14-02 — evaluation's final authority callback follows its last identity check
+
+Affected: `apps/arabic_search_eval/review.py`, particularly `decide` and `history`.
+Each calls `workspace._recheck(...)` and then its final `_permit(...)`. That last
+explicit authority callback can invalidate the actor while returning its prior
+literal True. `_staff_case` does not re-resolve the actor on exit. There is no
+later identity check before commit/response.
+
+New independent methods in `test_final_boundaries.EvaluationReturnBoundary`:
+
+- `test_last_authority_callback_cannot_commit_decision_after_identity_revocation`:
+  create a real pending synthetic evaluation, invoke its independent reviewer,
+  then set that reviewer's directory identity inactive during the second/final
+  APPROVE callback. The callback executes once. The service returns successfully
+  and **one EvaluationDecision is persisted** despite the inactive reviewer.
+- `test_last_view_authority_callback_cannot_disclose_after_identity_revocation`:
+  invalidate the editor during the second/final VIEW callback. The actual corpus
+  and judgement history returns rather than denying.
+
+Both fail on PG17.12 and PG18.7. The real identity provider, evaluation rows,
+review service and transactions are used; only the explicit authority callback
+is wrapped. These are deterministic callback identity mutations, not a claim of
+concurrent SQL or an unauthenticated endpoint exploit. The tests assert the
+attack ran and do not use xfail. The mutation result is a synthetic evaluation
+approval, **not a scholarly fatwa approval or actual human gold validation**.
+
+Repair must revalidate current identity after the final authority callbacks and
+before returning or committing, with rollback of a late-invalid decision.
+Inspect `propose` as well: it has the same ordering, though the supplied
+reproducers specifically exercise decision and history. Keep independent reviewer,
+exact dataset/judgement/ranker binding and explicit per-query review requirements.
+
+## SEC14-03 — direct PDF and timed-audio bytes can expire during final epoch read
+
+Affected: direct `pdf_citations.services.open_pdf` and
+`timed_citations.services.open_audio` (and inspect analogous locator operations).
+Their inner `projection_expiry_guard` checks deadlines before the surrounding
+`_staff_case` exits its `media_projection_boundary`. For these direct locator
+reads the outer `_answer_use_boundary` has no contributed annotation deadline.
+A final pure atomic media epoch read can span the deadline, keep the same epoch,
+and return bytes after the inner guard's last clock. The library-specific
+post-epoch clock fix does not cover these services.
+
+New independent methods:
+
+- `PdfFinalEpochExpiry.test_pdf_bytes_cannot_outlive_deadline_during_final_epoch_read`
+- `AudioFinalEpochExpiry.test_audio_bytes_cannot_outlive_deadline_during_final_epoch_read`
+
+Each creates and confirms a real locator, first verifies that a normal open
+returns the exact original bytes, then models elapsed time during **only the
+outermost exit epoch read**. The unchanged epoch is returned; policy/grants/source
+are not mutated. The deterministic clock crosses `valid_until` by one second.
+The injected boundary is asserted to execute exactly once. Actual results return
+**671 original PDF bytes / 1644 original audio bytes** instead of denying, on
+both PG17.12 and PG18.7.
+
+This is a clock-boundary regression, not forged epoch input or a grant change.
+Keep the policy's atomic, side-effect-free contract. Ensure final exact deadlines
+survive until *after* the final epoch read for direct byte and metadata operations,
+as well as canonical approval/use and library projection. Do not add a final
+permission callback that can mutate another grant after checking it.
+
+Initial media probes inspected only the immediate Python caller, which was
+unittest.mock's dispatcher, so their attack-executed assertions failed before
+exercising the suspected boundary. Both logs are retained. Corrected probes
+identify the actual exit frame through the stack and require the sole outer
+scope; the two affected methods were rerun and now fail on the actual leaked
+bytes. No application code, rights rule or negative expectation was changed.
+
+## Coverage and evidence on this exact head
+
+Read AGENTS, current scope/decision constraints, lane contracts, actual changed
+services/migrations and the full internal mixed-media failure history. Executed
+focused checks instead of all campaign suites. All runs used actual fresh owned
+PostgreSQL17.12/18.7, campaign_review and explicit synthetic fixtures. Reviewer
+changes were overlaid into a detached exact head, with no tracked product edits.
+
+| Independently executed batch | PG17.12 | PG18.7 |
+| --- | --- | --- |
+| Original external search 6 + internal mixed-media 8 + final search callback 2 | 16 PASS, 17.852s | 16 PASS, 17.949s |
+| New V14 encrypted schema restore 1 + prior tampered-target reproduction 1 + selected affected contracts 11 | 13 PASS, 17.580s | 13 PASS, 17.478s |
+| New evaluation identity probes (first run) | 2 FAIL, 0.525s | 2 FAIL, 0.500s |
+| Evaluation diagnostic plus initial media injection attempt | 2 product FAIL + 2 injection assertion FAIL, 1.986s | 2 product FAIL + 2 injection assertion FAIL, 1.961s |
+| Corrected direct-media expiry probes only | 2 FAIL, 1.292s | 2 FAIL, 1.342s |
+
+Final observed outcomes across **33 distinct methods: 29 PASS / 4 FAIL per major**.
+This is not a green combined-suite run. The reused integrator methods are identified
+by their recorded labels, not claimed as newly authored reviewer tests. The original
+SEC14-01B assertion has not been weakened. Ruff/format and whitespace checks pass.
+
+- Search/batch: original late-policy and ledger regressions pass; malformed/changed
+  epoch denial, post-identity expiry, exact scalar source parity, pages/count/facets,
+  mixed-edition rights and immutable validation receipts were exercised. The four
+  authorized source sample is now **32 SQL** on each major after the added final
+  ledger reads, not the earlier lane's 24. This remains a sample, not an SLO.
+- Evaluation: static checks preserve current revision, exact corpus/judgement hashes,
+  ranker source hash, independent reviewer, full explicit judgements, append-only
+  records, and new-version PENDING. SEC14-02 prevents current authorization clearance.
+  **Human relevance quality remains PENDING**; synthetic tests do not supply gold.
+- Classification/publication: independently reran the separate manual review and
+  independent publication approval, canonical-action bypass denial, FROZEN denial,
+  late rights revocation/inspection rollback and competing approval test. These pass;
+  the separate simulation policy and canonical source/Evidence checks remain. This
+  does not accept unresolved production classification policy or U03 permissions.
+- PDF/canonical use: forged page/version/digest, changing identity/scope, omitted
+  app/disabled editor with persisted locators and READ_MEDIA/CITE revocation across
+  downstream surfaces pass. The internal cross-kind audio withdrawal during PDF
+  checks and library epoch-read expiry adversary also pass on this exact head.
+  SEC14-03 independently blocks the direct locator read surfaces.
+- Recording: read the actual JS delta and native integration. Explicit user start
+  calls getUserMedia; only acceptance assigns input.files; pending/recording/preview
+  blocks submit. Interrupt/watchdog paths cancel, tracks/ports/contexts/URLs are
+  released, and frame/byte caps remain. No network upload API or policy widening was
+  added. This is static review plus separately attributed hosted runtime evidence;
+  the reviewer's **local protected microphone runtime remains NOT_RUN** due the
+  previously documented sandbox limitation. No sandbox bypass was attempted.
+- Maintenance/restore: independent encrypted roundtrip preserves complete source/
+  target schema and original synthetic private bytes, and keeps source FROZEN.
+  New assertions verify all five V14 tables and all six PDF/evaluation/editorial
+  guard functions/triggers on the restored target. The original altered quoted
+  predicate target still rejects/quarantines. This local fixture proves new schema
+  and original assets, not a locally repeated full V14 populated browser journey.
+  The hosted journey is separate evidence. External privileged SQL is not covered.
+
+Durable logs, precise support labels and SHA-256 manifest:
+`tests/v14_security_review/evidence/final_e8ebef8/`.
+Reproduce new failures using the existing wrapper with matching PG17/18 binaries:
+
+```sh
+FATWA_TEST_PG_BIN="$TEST_PG_BIN" V12_PG_BIN="$TEST_PG_BIN" \
+  python infra/dev/with_casework_postgres.py --pg-bin "$TEST_PG_BIN" \
+  --major "$TEST_PG_MAJOR" --settings config.settings.campaign_review -- \
+  python manage.py test tests.v14_security_review.test_final_boundaries --verbosity 2
+```
+
+New recovery label: `tests.v14_security_review.test_final_recovery`.
+Other exact labels are in `support_labels.txt`; regression batch labels are
+`tests.v14_security_review.test_search_repair`,
+`tests.v14_integration_security.test_crosskind`,
+`tests.casework.test_v14_search_final`. Old standalone reviewer branch lacks the
+new product applications; run against this reviewed integration head with only
+reviewer tests overlaid, or import the reviewer commit into integration.
+
+## Hosted proof is real but does not override the new failures
+
+Independently fetched job metadata and decoded logs for run **44238104547**:
+job134579044254 (PG17.12) and job134579044703 (PG18.7), both completed/success at
+exact `e8ebef8`. They record109 affected checks plus one connected Chrome journey
+per major, Chrome157.0.8103.50, sandbox=true,320/1280 widths, no external requests
+or page errors, independent encrypted target READY/HTTP PASS, unchanged FROZEN
+source and preserved partial delivery. Minimal exact-head extracts are preserved.
+The connector returned17 PR workflow runs for this head, all successful; its
+first-page response is not independent verification of the parent's20/20 count.
+
+Both browser receipts explicitly record **pdf_plugin_selected_page=NOT_VERIFIED**.
+No screenshot or successful #page=N navigation is promoted to rendered-page proof.
+These existing receipts do not execute the four new external challenges. They
+remain historical successful bounded runs at a now-security-blocked head, not
+proof that the findings are resolved. Do not credit affected security behavior
+from green CI alone or relabel the old successful/failed evidence.
+
+Handoff: fix SEC14-02 and SEC14-03 in owning product/integration files; keep this
+lane test/report-only. Run focused affected checks and return the exact repaired
+integrated SHA for independent re-review. No formal acceptance, new engineering
+percentage, main merge, production, external sending, real data/keys or GitHub
+settings changes. Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED.
+
+---
+
+# Historical search-lane review — repair still BLOCKED
 
 ## Search-lane re-review at e5c504b (2026-11-18)
 

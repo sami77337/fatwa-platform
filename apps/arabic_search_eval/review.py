@@ -194,9 +194,12 @@ def propose(
             provider_id=provider.provider_id,
             auth_epoch=actor.auth_epoch,
         )
+        result = _data(row)
         workspace._recheck(case, actor, provider)
         _permit(case, actor, provider, "PROPOSE")
-        return _data(row)
+        # The authority callback may revoke the actor while returning its old grant.
+        workspace._recheck(case, actor, provider)
+        return result
 
 
 @mutation_service
@@ -260,9 +263,11 @@ def decide(
             provider_id=provider.provider_id,
             auth_epoch=actor.auth_epoch,
         )
+        result = _data(row)
         workspace._recheck(case, actor, provider)
         _permit(case, actor, provider, action)
-        return _data(row)
+        workspace._recheck(case, actor, provider)
+        return result
 
 
 @mutation_service
@@ -281,4 +286,5 @@ def history(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
         }
         workspace._recheck(case, actor, provider)
         _permit(case, actor, provider, "VIEW")
+        workspace._recheck(case, actor, provider)
         return result
