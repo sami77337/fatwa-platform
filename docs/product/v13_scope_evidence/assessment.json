@@ -299,63 +299,17 @@
         435
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "VERIFIED_BOUNDED",
+      "state": "SUSPENDED_SECURITY",
       "bounded_goal": "رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.",
-      "bounded_claim": "رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.",
-      "remaining": "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة.",
-      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-      "code": [
-        "apps/platform_recovery/encrypted.py#snapshot",
-        "apps/platform_recovery/encrypted.py#restore",
-        "apps/platform_recovery/service.py#canonical_schema",
-        "tests/casework/v13_restored_browser.py#restore_and_verify",
-        "tests/casework/v13_restored_browser.py#TargetChecks.exercise"
-      ],
-      "positive_tests": [
-        "tests/casework/test_v13_recovery_schema.py#CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index"
-      ],
-      "negative_tests": [
-        "tests/casework/test_v13_recovery_schema.py#CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined",
-        "tests/v13_integration_security/test_boundaries.py#TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes"
-      ],
-      "receipts": [
-        {
-          "postgres_major": 17,
-          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "run_id": 44222224904,
-          "job_id": 134526633973,
-          "status": "completed",
-          "conclusion": "success",
-          "excerpt": "receipts/pg17-cd22cbd.json"
-        },
-        {
-          "postgres_major": 18,
-          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "run_id": 44222224904,
-          "job_id": 134526634232,
-          "status": "completed",
-          "conclusion": "success",
-          "excerpt": "receipts/pg18-cd22cbd.json"
-        }
-      ],
-      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
-      "credited_owner_points": [
-        30,
-        43,
-        44,
-        46,
-        75,
-        76,
-        82,
-        406,
-        408,
-        414,
-        415,
-        419,
-        425,
-        434,
-        435
-      ]
+      "bounded_claim": null,
+      "remaining": "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR.",
+      "product_sha": null,
+      "code": [],
+      "positive_tests": [],
+      "negative_tests": [],
+      "receipts": [],
+      "browser_test": null,
+      "credited_owner_points": []
     }
   ]
 }

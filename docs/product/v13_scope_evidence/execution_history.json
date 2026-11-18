@@ -57,11 +57,26 @@
         "receipts/pg18-cd22cbd.json"
       ],
       "evidence_basis": "JOB_METADATA_AND_DECODED_LOGS_FETCHED_INDEPENDENTLY",
-      "security_status": "BOUNDED_INTEGRATION_PASS",
-      "blocked_groups": [],
-      "security_report_basis": "docs/security/V13_INTEGRATION_REVIEW.md at cd22cbd265db4b57124a1f091a041fd5200637b8; dynamic product4f71d2e and supplement09cc55aa kept separate",
-      "external_v13_security_review": "PENDING",
-      "remaining": "Bounded functional evidence only. FAST9 run44222225041 failed before browser launch; root cause UNKNOWN. No whole-campaign completion or acceptance. These product runs remain attributed to cd22cbd, not later documentation/diagnostic heads."
+      "security_status": "BLOCKED",
+      "blocked_groups": [
+        "connected-recovery"
+      ],
+      "security_report_basis": "docs/security/V13_REVIEW.md at97dd5793e44118d8cd050607717a6acb555f0f1c; reviewed product38cd137, affected service.py identical tocd22cbd",
+      "external_v13_security_review": "BLOCKED_SEC13_01",
+      "remaining": "Bounded functional evidence only. FAST9 run44222225041 failed before browser launch; root cause UNKNOWN. No whole-campaign completion or acceptance. These product runs remain attributed to cd22cbd, not later documentation/diagnostic heads.",
+      "finding": "Quoted SQL data is normalized as an array expression; distinct real partial-index predicates collide and the encrypted tampered target incorrectly becomes READY. Reproduced by external reviewer on PG17.12 and18.7. Earlier green CI is historical and insufficient for this group."
+    },
+    {
+      "sha": "38cd137db50cc95ae53fa275b5d90b8274096e5d",
+      "ci_status": "HISTORICAL_GREEN_REPORTED_IN_EXTERNAL_REVIEW",
+      "security_status": "BLOCKED",
+      "blocked_groups": [
+        "connected-recovery"
+      ],
+      "external_v13_security_review": "BLOCKED_SEC13_01",
+      "security_report_basis": "97dd5793e44118d8cd050607717a6acb555f0f1c",
+      "independent_browser_result": "ENVIRONMENT_ERROR_BEFORE_PAGE_CREATION_NOT_PASS",
+      "remaining": "Affected recovery path suspended until repair and independent re-review; no encryption/signature or unauthenticated SQL bypass claimed."
     }
   ]
 }

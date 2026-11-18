@@ -127,6 +127,26 @@ class ScopeTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "known security blocker"):
             build.groups_for(assessment)
 
+    def test_cd22_green_recovery_receipt_cannot_override_sec13_01(self):
+        assessment = copy.deepcopy(build.read("assessment.json"))
+        history = build.read("suspended_recovery_evidence.json")["historical_assessment"]
+        assessment["groups"] = [
+            history if g["id"] == "connected-recovery" else g for g in assessment["groups"]
+        ]
+        with self.assertRaisesRegex(AssertionError, "known security blocker"):
+            build.groups_for(assessment)
+
+    def test_suspension_removes_only_affected_group_credit_and_keeps_receipts(self):
+        rows = json.loads(build.render()["matrix.json"])
+        self.assertEqual(rows[424]["v13"]["verified_group_ids"], [])
+        self.assertEqual(rows[424]["v13"]["suspended_group_ids"], ["connected-recovery"])
+        self.assertEqual(rows[424]["v13"]["assessment_effect"], "SUSPENDED_SECURITY")
+        self.assertIn("browser-audio", rows[24]["v13"]["verified_group_ids"])
+        history = build.read("suspended_recovery_evidence.json")["historical_assessment"]
+        self.assertEqual(len(history["receipts"]), 2)
+        for receipt in history["receipts"]:
+            self.assertEqual(build.read(receipt["excerpt"])["conclusion"], "success")
+
     def test_missing_negative_pass_on_one_major_is_rejected(self):
         group, refs, sources = self.execution_fixture()
         sources["synthetic-pg18"]["lines"] = [

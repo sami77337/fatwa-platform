@@ -177,40 +177,12 @@
 
 ## connected-recovery
 
-الحالة: **VERIFIED_BOUNDED**
+الحالة: **SUSPENDED_SECURITY**
 
 الهدف المحدد: رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.
 
-الحدود: مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة.
+الحدود: SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR.
 
 النقاط المرشحة: 30, 43, 44, 46, 75, 76, 82, 406, 408, 412, 414, 415, 419, 423, 424, 425, 428, 434, 435
 
-النقاط التي أضيف لها دليل مثبت: 30, 43, 44, 46, 75, 76, 82, 406, 408, 414, 415, 419, 425, 434, 435
-
-المثبت فقط: رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.
-
-الرأس: `cd22cbd265db4b57124a1f091a041fd5200637b8`
-
-### code
-
-- [apps/platform_recovery/encrypted.py — snapshot](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/encrypted.py#L54-L97)
-- [apps/platform_recovery/encrypted.py — restore](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/encrypted.py#L154-L169)
-- [apps/platform_recovery/service.py — canonical_schema](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/service.py#L216-L257)
-- [tests/casework/v13_restored_browser.py — restore_and_verify](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/v13_restored_browser.py#L380-L456)
-- [tests/casework/v13_restored_browser.py — TargetChecks.exercise](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/v13_restored_browser.py#L70-L299)
-
-### positive_tests
-
-- [tests/casework/test_v13_recovery_schema.py — CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_recovery_schema.py#L79-L108)
-
-### negative_tests
-
-- [tests/casework/test_v13_recovery_schema.py — CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_recovery_schema.py#L110-L137)
-- [tests/v13_integration_security/test_boundaries.py — TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/v13_integration_security/test_boundaries.py#L56-L77)
-
-### Protected connected browser
-
-- [tests/casework/test_v13_browser.py — V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646)
-- The receipt must contain actual sandbox=true and exact tested SHA; an environment flag alone is insufficient.
-- [PG17 job134526633973](https://github.com/sami77337/fatwa-platform/actions/runs/44222224904/job/134526633973) — exact-head PASS
-- [PG18 job134526634232](https://github.com/sami77337/fatwa-platform/actions/runs/44222224904/job/134526634232) — exact-head PASS
+النقاط التي أضيف لها دليل مثبت: لا شيء بعد

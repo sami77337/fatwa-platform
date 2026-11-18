@@ -1,8 +1,31 @@
 # V13 bounded functional evidence update
 
+**Current security suspension — SEC13-01.** The external review at
+`97dd5793e44118d8cd050607717a6acb555f0f1c` is **BLOCKED** on product
+`38cd137db50cc95ae53fa275b5d90b8274096e5d`. Its affected recovery implementation
+is identical tocd22cbd (`git diff` of `apps/platform_recovery/service.py` is empty).
+Canonical-schema regex normalization rewrites quoted SQL data, causing different
+real partial-index predicates to share a fingerprint; an encrypted restored target
+with that altered predicate incorrectly reaches READY. Both reproductions fail
+on PG17.12 and18.7 in the external review. No encryption/signature bypass or
+unauthenticated SQL access is inferred.
+
+The **connected-recovery group is SUSPENDED_SECURITY**. Four unaffected bounded
+groups now attach evidence to27 selected points; prior38-point attribution and
+successful receipts are retained in `suspended_recovery_evidence.json` and git
+history, not erased or treated as current recovery verification. Original556
+classifications remain unchanged. Green CI cannot override this blocker. Repair
+and independent re-review are required before restoring the affected credit.
+The external reviewer's protected browser attempt had an **ENVIRONMENT ERROR
+before page creation**, not a local browser PASS. No product tests were rerun by
+this scope-evidence lane.
+
+The following execution figures are historical facts, with recovery credit
+suspended as stated above.
+
 Tested product: **`cd22cbd265db4b57124a1f091a041fd5200637b8`**. The later commit
 containing this document is an evidence update, not an additional product run.
-Five bounded groups add evidence to **38 selected original points**; all556
+The initial update added five groups to38 points before SEC13-01; all556
 baseline texts, SPEC/source/decision fields, classifications and historical
 P0/P1 evidence remain unchanged:303 PARTIAL,52 DECISION,168 NOT_IMPLEMENTED,
 33 OUT_OF_SCOPE,0 COMPLETE. These are retained classifications, not a new progress
@@ -14,7 +37,7 @@ estimate or acceptance verdict.
 | Timed citations | 179,346,543,549,551,552,554,556 | Exact private audio version/hash/time and human confirmation; no public timed locator, print/export or automatic migration |
 | Measured Arabic search | 216,221,231,242,245,246 | First20 authorized TOC metadata candidates; synthetic baseline/after, not full text, whole corpus, semantic or human-reviewed gold |
 | Human classification | 47,417 | Private experimental proposal/review ledger and unchanged Evidence; not primary/additional taxonomy, official Tags or mutation of publication category |
-| Connected recovery | 30,43,44,46,75,76,82,406,408,414,415,419,425,434,435 | One website/audio case, independent human approval/publication, partial simulated delivery, encrypted restore and target HTTP; not external-source correlation or production readiness |
+| Connected recovery — SUSPENDED_SECURITY | Previously30,43,44,46,75,76,82,406,408,414,415,419,425,434,435; no current credit from this group | Historical run preserved, but SEC13-01 invalidates claimed schema-integrity verification until repair/re-review |
 
 Wide requirements receive only the bounded evidence described in
 [EVIDENCE.md](EVIDENCE.md), with exact code and positive/negative test symbols.
@@ -78,7 +101,10 @@ quarantine requirements remain in force.
 
 Read the [independent bounded integration review](https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/docs/security/V13_INTEGRATION_REVIEW.md).
 It does not replace the designated external full V13 application review, which
-remains **PENDING**. Original D6 root cause also remains ROOT_CAUSE_UNKNOWN;
+now reports **BLOCKED — SEC13-01** in the
+[external report](https://github.com/sami77337/fatwa-platform/blob/97dd5793e44118d8cd050607717a6acb555f0f1c/docs/security/V13_REVIEW.md).
+That later review supersedes the earlier pending state without erasing the
+bounded internal review's historical results. Original D6 root cause remains ROOT_CAUSE_UNKNOWN;
 passing lifecycle diagnostics does not prove its historical cause.
 
 The derived reference workbook matching receipt establishes fidelity to the

@@ -133,18 +133,22 @@ def groups_for(assessment):
     groups = copy.deepcopy(assessment["groups"])
     assert len({g["id"] for g in groups}) == len(groups)
     for group in groups:
-        assert group["state"] in {"PENDING", "VERIFIED_BOUNDED"}
+        assert group["state"] in {"PENDING", "SUSPENDED_SECURITY", "VERIFIED_BOUNDED"}
         points = group["candidate_owner_points"]
         assert points and len(set(points)) == len(points)
         assert all(type(n) is int and 1 <= n <= 556 for n in points)
         assert group["remaining"] and group["selection"].startswith("EXPLICIT_")
-        if group["state"] == "PENDING":
+        if group["state"] in {"PENDING", "SUSPENDED_SECURITY"}:
             assert group["credited_owner_points"] == []
             assert group["product_sha"] is None and group["bounded_claim"] is None
             assert not any(
                 group[k] for k in ("code", "positive_tests", "negative_tests", "receipts")
             )
             assert group["browser_test"] is None
+            if group["state"] == "SUSPENDED_SECURITY":
+                suspension = read("suspended_recovery_evidence.json")
+                assert suspension["finding_status"] == "BLOCKED"
+                assert suspension["historical_assessment"]["id"] == group["id"]
             continue
         sha = group["product_sha"]
         for attempt in read("execution_history.json")["entries"]:
@@ -186,12 +190,16 @@ def render():
             for g in candidates
             if g["state"] == "VERIFIED_BOUNDED" and number in g["credited_owner_points"]
         ]
+        suspended = [g["id"] for g in candidates if g["state"] == "SUSPENDED_SECURITY"]
         row["v13"] = {
             "candidate_group_ids": [g["id"] for g in candidates],
             "verified_group_ids": [g["id"] for g in verified],
+            "suspended_group_ids": suspended,
             "evidence_shas": sorted({g["product_sha"] for g in verified}),
             "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE"
             if verified
+            else "SUSPENDED_SECURITY"
+            if suspended
             else "NOT_YET_ASSESSED",
             "remaining": [g["remaining"] for g in candidates],
             "attested_original_excel_row": row["source_locator"]["parsed_index"] + 2

@@ -2921,135 +2921,17 @@
         435
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "VERIFIED_BOUNDED",
+      "state": "SUSPENDED_SECURITY",
       "bounded_goal": "رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.",
-      "bounded_claim": "رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.",
-      "remaining": "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة.",
-      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-      "code": [
-        {
-          "path": "apps/platform_recovery/encrypted.py",
-          "symbol": "snapshot",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "f2ac8b99d4a869e447a4179a8a0f67ef6b7513dc3b74ce74f1b3bff44716818e",
-          "line": 54,
-          "end_line": 97,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/encrypted.py#L54-L97"
-        },
-        {
-          "path": "apps/platform_recovery/encrypted.py",
-          "symbol": "restore",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "f2ac8b99d4a869e447a4179a8a0f67ef6b7513dc3b74ce74f1b3bff44716818e",
-          "line": 154,
-          "end_line": 169,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/encrypted.py#L154-L169"
-        },
-        {
-          "path": "apps/platform_recovery/service.py",
-          "symbol": "canonical_schema",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "331a3e809c8c2907addfa3dcf6199f487e070716aa01fe04844151db499c6d15",
-          "line": 216,
-          "end_line": 257,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/service.py#L216-L257"
-        },
-        {
-          "path": "tests/casework/v13_restored_browser.py",
-          "symbol": "restore_and_verify",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "4910fcf05dd2a6b61a8d66686572cbed7f76dff14a61df526a3e500a0c638078",
-          "line": 380,
-          "end_line": 456,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/v13_restored_browser.py#L380-L456"
-        },
-        {
-          "path": "tests/casework/v13_restored_browser.py",
-          "symbol": "TargetChecks.exercise",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "4910fcf05dd2a6b61a8d66686572cbed7f76dff14a61df526a3e500a0c638078",
-          "line": 70,
-          "end_line": 299,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/v13_restored_browser.py#L70-L299"
-        }
-      ],
-      "positive_tests": [
-        {
-          "path": "tests/casework/test_v13_recovery_schema.py",
-          "symbol": "CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "f68428a2c54be282adb7d1a6bebdec030bc7d061dbeacd4a85355eab85cc1133",
-          "line": 79,
-          "end_line": 108,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_recovery_schema.py#L79-L108"
-        }
-      ],
-      "negative_tests": [
-        {
-          "path": "tests/casework/test_v13_recovery_schema.py",
-          "symbol": "CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "f68428a2c54be282adb7d1a6bebdec030bc7d061dbeacd4a85355eab85cc1133",
-          "line": 110,
-          "end_line": 137,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_recovery_schema.py#L110-L137"
-        },
-        {
-          "path": "tests/v13_integration_security/test_boundaries.py",
-          "symbol": "TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes",
-          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "file_sha256": "ccb7fa95c6881890c0107866b8d45989f33b90f3a4d046d719fd6f873793dceb",
-          "line": 56,
-          "end_line": 77,
-          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/v13_integration_security/test_boundaries.py#L56-L77"
-        }
-      ],
-      "receipts": [
-        {
-          "postgres_major": 17,
-          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "run_id": 44222224904,
-          "job_id": 134526633973,
-          "status": "completed",
-          "conclusion": "success",
-          "excerpt": "receipts/pg17-cd22cbd.json"
-        },
-        {
-          "postgres_major": 18,
-          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-          "run_id": 44222224904,
-          "job_id": 134526634232,
-          "status": "completed",
-          "conclusion": "success",
-          "excerpt": "receipts/pg18-cd22cbd.json"
-        }
-      ],
-      "browser_test": {
-        "path": "tests/casework/test_v13_browser.py",
-        "symbol": "V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
-        "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
-        "file_sha256": "ba4bb5d26ad6f970a9aade03ba51db19c87ade596941fd4b6e3ac29c83b969d9",
-        "line": 407,
-        "end_line": 646,
-        "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646"
-      },
-      "credited_owner_points": [
-        30,
-        43,
-        44,
-        46,
-        75,
-        76,
-        82,
-        406,
-        408,
-        414,
-        415,
-        419,
-        425,
-        434,
-        435
-      ]
+      "bounded_claim": null,
+      "remaining": "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR.",
+      "product_sha": null,
+      "code": [],
+      "positive_tests": [],
+      "negative_tests": [],
+      "receipts": [],
+      "browser_test": null,
+      "credited_owner_points": []
     }
   ]
 }

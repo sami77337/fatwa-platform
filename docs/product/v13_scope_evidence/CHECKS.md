@@ -46,3 +46,13 @@ the sandbox environment flag) and READY independent-target recovery HTTP evidenc
 Final local build/check and18/18 documentary tests PASS (2.405s), Ruff PASS.
 No product suite was rerun by this scope-evidence lane. Overall FAST9 failure,
 historical failed heads and pending external review remain explicit in V13_UPDATE.md.
+
+SEC13-01 suspension: external report97dd579 blocks the real quoted-predicate
+fingerprint/tampered-target cases on PG17/18. The affected service is unchanged
+betweencd22cbd and reviewed38cd137, so connected-recovery is now
+SUSPENDED_SECURITY; its old full assessment and receipts are retained separately.
+Four unrelated groups continue to provide bounded evidence for27 points; all556
+baseline statuses remain unchanged. Build and20/20 documentary tests PASS
+(2.541s), including rejection of green recovery receipts at the blocked head and
+preservation of unaffected credit/history. Ruff/diff PASS. No product rerun;
+reviewer's local browser attempt is ENVIRONMENT_ERROR, never attributed as PASS.
