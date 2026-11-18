@@ -99,6 +99,32 @@ def check_execution(group, refs):
             ), (receipt["postgres_major"], ref, "missing actual pass")
         if group["browser_test"]:
             assert any("FATWA_BROWSER_SANDBOX: 1" in line for line in lines)
+            observed = [
+                json.loads(line.split("V13_BROWSER_PROOF=", 1)[1])
+                for line in lines
+                if "V13_BROWSER_PROOF=" in line
+            ]
+            assert len(observed) == 1, "actual protected browser proof required"
+            proof = observed[0]
+            assert proof["tested_sha"] == group["product_sha"] and proof["sandbox"] is True
+            assert proof["external_requests"] == 0 and proof["page_errors"] == 0
+            assert proof["canonical"]["cases"] == 1
+            assert proof["widths"] == [320, 1280]
+            if group.get("id") == "connected-recovery":
+                recovery = proof["recovery"]
+                assert recovery["state"] == "READY" and recovery["target_http"] == "PASS"
+                assert all(
+                    recovery[key] is True
+                    for key in (
+                        "encrypted_only",
+                        "independent_target_postgres_server",
+                        "separate_key",
+                        "source_left_frozen",
+                        "source_unchanged",
+                        "partial_delivery_preserved",
+                    )
+                )
+                assert recovery["wrong_key_and_hash_before_target"] == "DENIED"
 
 
 def groups_for(assessment):
@@ -307,6 +333,15 @@ def render():
                     f"- [{ref['path']} — {ref['symbol'] or 'file'}]({ref['url']})"
                     for ref in group[kind]
                 ]
+            browser = group["browser_test"]
+            evidence += [
+                "",
+                "### Protected connected browser",
+                "",
+                f"- [{browser['path']} — {browser['symbol']}]({browser['url']})",
+                "- The receipt must contain actual sandbox=true and exact tested SHA; "
+                "an environment flag alone is insufficient.",
+            ]
             for receipt in group["receipts"]:
                 evidence += [
                     f"- [PG{receipt['postgres_major']} job{receipt['job_id']}]({REPO}/actions/runs/{receipt['run_id']}/job/{receipt['job_id']}) — exact-head PASS"

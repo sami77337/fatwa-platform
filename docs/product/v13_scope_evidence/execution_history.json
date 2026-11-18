@@ -4,17 +4,64 @@
       "sha": "1ea53ead8e6166a64b766968efbb63ea00f4c7c1",
       "ci_status": "PASS_OBSERVED",
       "run_id": 44219214321,
-      "postgres_majors": [17, 18],
+      "postgres_majors": [
+        17,
+        18
+      ],
       "affected_tests_per_major": 84,
       "protected_connected_browser_per_major": 1,
-      "receipts": ["receipts/pg17-1ea53ea.json", "receipts/pg18-1ea53ea.json"],
+      "receipts": [
+        "receipts/pg17-1ea53ea.json",
+        "receipts/pg18-1ea53ea.json"
+      ],
       "evidence_basis": "JOB_METADATA_AND_DECODED_LOGS_FETCHED_INDEPENDENTLY",
       "security_status": "BLOCKED",
-      "blocked_groups": ["timed-citations", "connected-recovery"],
+      "blocked_groups": [
+        "timed-citations",
+        "connected-recovery"
+      ],
       "security_report_basis": "INTEGRATOR_REPORTED_INDEPENDENT_REPRODUCER_NOT_REEXECUTED_HERE",
       "finding": "A grant_deadline callback after the final timed-source identity check can revoke the same-call identity while staff_read still returns bytes. Integrator reported a reproducer on PG17 and is fixing it.",
       "external_v13_security_review": "PENDING",
       "remaining": "Preserve successful historical CI, but do not treat it as completion or credit affected groups at this SHA. Await fixed code, independent review and both-major affected/protected-browser receipts."
+    },
+    {
+      "sha": "09cc55aa021660f593bb1b70e850d0f448ddad3a",
+      "ci_status": "PARTIAL_FAILURE_OBSERVED",
+      "run_id": 44221424598,
+      "postgres_results": {
+        "17": "FAILED_NODE_STARTUP_DIAGNOSTIC_BEFORE_PRODUCT_TESTS",
+        "18": "91_AFFECTED_AND_1_PROTECTED_BROWSER_PASS"
+      },
+      "receipts": [
+        "receipts/pg17-09cc55a.json",
+        "receipts/pg18-09cc55a.json"
+      ],
+      "evidence_basis": "DECODED_JOB_LOGS_FETCHED_INDEPENDENTLY",
+      "security_status": "BOUNDED_INTEGRATION_PASS",
+      "blocked_groups": [],
+      "security_report_basis": "docs/security/V13_INTEGRATION_REVIEW.md at cd22cbd265db4b57124a1f091a041fd5200637b8; dynamic product4f71d2e and supplement09cc55aa kept separate",
+      "external_v13_security_review": "PENDING",
+      "remaining": "PG17 Node diagnostic asserted1ms remaining timer budget equals0; this failed before affected/browser execution. PG18 success cannot replace missing exact-head PG17 success. Integrator reports941d3be deterministic diagnostic fix with a1ms clock-rounding boundary,2ms negative controls and no production timeout extension."
+    },
+    {
+      "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "ci_status": "V13_CAMPAIGN_PASS_NOT_ALL_WORKFLOWS",
+      "run_id": 44222224904,
+      "postgres_results": {
+        "17": "91_AFFECTED_AND_1_PROTECTED_BROWSER_PASS",
+        "18": "91_AFFECTED_AND_1_PROTECTED_BROWSER_PASS"
+      },
+      "receipts": [
+        "receipts/pg17-cd22cbd.json",
+        "receipts/pg18-cd22cbd.json"
+      ],
+      "evidence_basis": "JOB_METADATA_AND_DECODED_LOGS_FETCHED_INDEPENDENTLY",
+      "security_status": "BOUNDED_INTEGRATION_PASS",
+      "blocked_groups": [],
+      "security_report_basis": "docs/security/V13_INTEGRATION_REVIEW.md at cd22cbd265db4b57124a1f091a041fd5200637b8; dynamic product4f71d2e and supplement09cc55aa kept separate",
+      "external_v13_security_review": "PENDING",
+      "remaining": "Bounded functional evidence only. FAST9 run44222225041 failed before browser launch; root cause UNKNOWN. No whole-campaign completion or acceptance. These product runs remain attributed to cd22cbd, not later documentation/diagnostic heads."
     }
   ]
 }

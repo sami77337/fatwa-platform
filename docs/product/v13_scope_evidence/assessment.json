@@ -21,17 +21,60 @@
         533
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "تسجيل متصفح اصطناعي بإذن صريح وربط الأصل المحقق بالوقائع أو إصدار الجواب، مع معاينة وإلغاء.",
-      "bounded_claim": null,
-      "remaining": "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "رحلة Chrome اصطناعية بإذن ميكروفون صريح ورفض/إلغاء قبل الحفظ ثم بدء/إيقاف/معاينة؛ WAV متحقق خاص مرتبط بالقضية الواحدة وإصدار الوقائع، ثم تسجيل جزء جواب ضمن الإصدار والمراجعة البشرية. ليست تسجيلات مستخدمين حقيقيين.",
+      "remaining": "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        "apps/browser_audio/static/browser_audio/capture.js",
+        "apps/browser_audio/static/browser_audio/worklet.js",
+        "apps/browser_audio/context.py#capture",
+        "apps/casework_web/requester_intake.py#submit_intake"
+      ],
+      "positive_tests": [
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_one_native_case_private_original_and_exact_replay_no_second_upload",
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_existing_requester_and_mufti_forms_render_scoped_recorders"
+      ],
+      "negative_tests": [
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_disk_failure_rolls_back_case_source_evidence_and_retry_succeeds",
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_invalid_consent_proof_csrf_or_content_never_creates_case",
+        "tests/casework/test_v13_audio_wiring.py#RecorderPolicyTests.test_only_trusted_html_recorder_receives_permission_not_bytes_or_escaped_text"
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+      "credited_owner_points": [
+        25,
+        36,
+        44,
+        46,
+        70,
+        75,
+        77,
+        78,
+        81,
+        82,
+        533
+      ]
     },
     {
       "id": "timed-citations",
@@ -49,17 +92,65 @@
         556
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "موضع بداية/نهاية ضمن مدة أصل ثابت وبصمة ونسخة محددة، مع تاريخ تصحيح وحقوق حالية.",
-      "bounded_claim": null,
-      "remaining": "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "اختيار أصل صوتي خاص ثابت وموضع بداية/نهاية ضمن مدته المحققة، تأكيد بشري وتصحيح محفوظ بلا نقل تلقائي، وفحص الصلاحية والانتهاء في الاعتماد والاستخدام اللاحق. يشمل رفض سحب الهوية أو CITE في آخر callback بعد إصلاح الفشل التاريخي.",
+      "remaining": "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        "apps/timed_citations/services.py#propose",
+        "apps/timed_citations/services.py#act",
+        "apps/timed_citations/services.py#open_audio",
+        "apps/timed_citations/services.py#for_locked_answer",
+        "apps/casework/services.py#_answer_timed",
+        "apps/casework/services.py#_answer_use_boundary",
+        "apps/experimental_publication/services.py#_require_publication_sources"
+      ],
+      "positive_tests": [
+        "apps/timed_citations/tests.py#TimedTests.test_exact_duration_human_confirmation_and_original_bytes",
+        "apps/timed_citations/tests.py#TimedTests.test_correction_is_append_only_and_previous_revision_cannot_open",
+        "tests/casework/test_v13_timed_bindings.py#TimedBindingsTests.test_confirmed_attachment_and_answer_media_allow_real_approval_and_private_bytes"
+      ],
+      "negative_tests": [
+        "apps/timed_citations/tests.py#TimedTests.test_invalid_times_and_forged_duration_version_digest_are_denied",
+        "apps/timed_citations/tests.py#TimedTests.test_old_answer_does_not_inherit_citation_and_exact_old_recording_never_redirects",
+        "tests/casework/test_v13_timed_bindings.py#TimedBindingsTests.test_approved_then_expired_blocks_private_release_files_delivery_and_publication",
+        "tests/casework/test_v13_timed_bindings.py#TimedBindingsTests.test_collection_rechecks_timed_expiry_after_later_legacy_result_projection",
+        "tests/v13_integration_security/test_boundaries.py#TimedFinalCallbackTests.test_staff_revocation_in_final_deadline_callback_denies_private_bytes",
+        "tests/v13_integration_security/test_boundaries.py#TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes",
+        "tests/v13_integration_security/test_boundaries.py#TimedFinalCallbackTests.test_no_policy_deadline_callback_after_validated_hook_returns"
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+      "credited_owner_points": [
+        179,
+        346,
+        543,
+        549,
+        551,
+        552,
+        554,
+        556
+      ]
     },
     {
       "id": "measured-arabic-search",
@@ -74,17 +165,56 @@
         246
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "مقارنة baseline/after عربية قابلة للتكرار على نطاق مصرح مع قياسات وحدود ظاهرة.",
-      "bounded_claim": null,
-      "remaining": "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "ترتيب كلمات وأرقام عربية لعناوين أول20 نتيجة مرجعية مصرح بها؛ قياس baseline/after اصطناعي، مع حفظ الموضع والطبعة والعودة وسبب الترتيب ورفض الحقوق المسحوبة أو المنتهية. يعرض حد النافذة وحالة المراجعة البشرية PENDING.",
+      "remaining": "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        "apps/arabic_search_eval/ranking.py#rank_titles",
+        "apps/arabic_search_eval/services.py#search_reference_titles",
+        "apps/arabic_search_eval/evaluation.py#evaluate",
+        "apps/research_workspace/views.py#_search"
+      ],
+      "positive_tests": [
+        "apps/arabic_search_eval/test_services.py#AdapterTests.test_real_baseline_vs_digit_and_boundary_ranking_preserves_source_and_open_pins",
+        "apps/arabic_search_eval/test_ranking.py#RankingTests.test_explicit_fixture_expectations_and_negative_queries",
+        "tests/casework/test_v13_search_ui.py#SearchUiTests.test_ranked_search_open_back_preserves_scope_filters_and_canonical_answer"
+      ],
+      "negative_tests": [
+        "apps/arabic_search_eval/test_services.py#AdapterTests.test_rights_expiry_during_rank_closes_response_even_if_no_hits_selected",
+        "apps/arabic_search_eval/test_ranking.py#RankingTests.test_pending_stale_incomplete_and_altered_review_are_not_approval",
+        "tests/casework/test_v13_search_ui.py#SearchUiTests.test_flag_strict_kind_and_revoked_source_do_not_fallback"
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+      "credited_owner_points": [
+        216,
+        221,
+        231,
+        242,
+        245,
+        246
+      ]
     },
     {
       "id": "human-classification",
@@ -99,17 +229,51 @@
         417
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "اقتراح تصنيف مفسر المصدر ومراجعة قبول/رفض بشرية وتاريخ دون تغيير وقائع السؤال.",
-      "bounded_claim": null,
-      "remaining": "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "سجل اقتراح تسمية تجريبية خاصة مبني على علاقة مرجعية معتمدة ومثبتة النسخة؛ قبول/رفض بشري مستقل وتاريخ تصحيح وسحب؛ لا يغيّر Evidence أو تصنيف النسخة المنشورة. هذا دليل على عدم تبديل الوقائع وتسجيل المراجعة فقط.",
+      "remaining": "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        "apps/classification_review/services.py#propose",
+        "apps/classification_review/services.py#act",
+        "apps/classification_review/services.py#desk"
+      ],
+      "positive_tests": [
+        "apps/classification_review/tests.py#ClassificationTests.test_proposed_until_independent_human_no_canonical_mutation",
+        "apps/classification_review/tests.py#ClassificationTests.test_reject_correction_and_withdrawal_never_reapprove",
+        "tests/casework/test_v13_classification_wiring.py#ClassificationWiringTests.test_native_navigation_scope_and_independent_pending_state"
+      ],
+      "negative_tests": [
+        "apps/classification_review/tests.py#ClassificationTests.test_database_append_only_self_review_and_exclusive_decision",
+        "apps/classification_review/tests.py#ClassificationTests.test_real_rights_expiry_revocation_and_redacted_history",
+        "tests/casework/test_v13_classification_wiring.py#ClassificationWiringTests.test_freeze_blocks_shared_http_and_service_without_insert"
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+      "credited_owner_points": [
+        47,
+        417
+      ]
     },
     {
       "id": "connected-recovery",
@@ -135,17 +299,63 @@
         435
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.",
-      "bounded_claim": null,
-      "remaining": "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.",
+      "remaining": "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        "apps/platform_recovery/encrypted.py#snapshot",
+        "apps/platform_recovery/encrypted.py#restore",
+        "apps/platform_recovery/service.py#canonical_schema",
+        "tests/casework/v13_restored_browser.py#restore_and_verify",
+        "tests/casework/v13_restored_browser.py#TargetChecks.exercise"
+      ],
+      "positive_tests": [
+        "tests/casework/test_v13_recovery_schema.py#CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index"
+      ],
+      "negative_tests": [
+        "tests/casework/test_v13_recovery_schema.py#CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined",
+        "tests/v13_integration_security/test_boundaries.py#TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes"
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+      "credited_owner_points": [
+        30,
+        43,
+        44,
+        46,
+        75,
+        76,
+        82,
+        406,
+        408,
+        414,
+        415,
+        419,
+        425,
+        434,
+        435
+      ]
     }
   ]
 }

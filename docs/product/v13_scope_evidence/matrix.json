@@ -1162,11 +1162,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 29,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -1411,11 +1415,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 34,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -1707,11 +1715,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 40,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2073,11 +2085,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 47,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2131,12 +2147,17 @@
         "browser-audio",
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio",
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا.",
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 48,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2247,12 +2268,17 @@
         "browser-audio",
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio",
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا.",
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 50,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2297,11 +2323,15 @@
       "candidate_group_ids": [
         "human-classification"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "human-classification"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 51,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3418,11 +3448,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 74,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3665,12 +3699,17 @@
         "browser-audio",
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio",
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا.",
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 79,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3728,11 +3767,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 80,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3778,11 +3821,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 81,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3837,11 +3884,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 82,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3950,7 +4001,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 84,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -4002,11 +4053,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 85,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -4061,12 +4116,17 @@
         "browser-audio",
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio",
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا.",
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 86,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8007,7 +8067,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 165,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8058,7 +8118,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 166,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8113,7 +8173,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 167,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8167,7 +8227,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 168,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8410,7 +8470,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 173,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8463,7 +8523,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 174,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -8887,11 +8947,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 183,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -10643,7 +10707,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 219,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -10704,11 +10768,15 @@
       "candidate_group_ids": [
         "measured-arabic-search"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "measured-arabic-search"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 220,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -10864,7 +10932,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 223,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -10966,11 +11034,15 @@
       "candidate_group_ids": [
         "measured-arabic-search"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "measured-arabic-search"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 225,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -11466,11 +11538,15 @@
       "candidate_group_ids": [
         "measured-arabic-search"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "measured-arabic-search"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 235,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -12011,11 +12087,15 @@
       "candidate_group_ids": [
         "measured-arabic-search"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "measured-arabic-search"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 246,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -12155,11 +12235,15 @@
       "candidate_group_ids": [
         "measured-arabic-search"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "measured-arabic-search"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 249,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -12207,11 +12291,15 @@
       "candidate_group_ids": [
         "measured-arabic-search"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "measured-arabic-search"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة."
+        "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط."
       ],
       "attested_original_excel_row": 250,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -17142,11 +17230,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 350,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20146,11 +20238,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 410,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20248,11 +20344,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 412,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20448,7 +20548,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 416,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20548,11 +20648,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 418,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20600,11 +20704,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 419,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20699,11 +20807,15 @@
       "candidate_group_ids": [
         "human-classification"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "human-classification"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها."
+        "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط."
       ],
       "attested_original_excel_row": 421,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20800,11 +20912,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 423,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21000,7 +21116,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 427,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21059,7 +21175,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 428,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21115,11 +21231,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 429,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21267,7 +21387,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 432,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21460,7 +21580,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 436,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21556,11 +21676,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 438,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21606,11 +21730,15 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "connected-recovery"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة."
       ],
       "attested_original_excel_row": 439,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -26169,11 +26297,15 @@
       "candidate_group_ids": [
         "browser-audio"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "browser-audio"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا."
+        "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع."
       ],
       "attested_original_excel_row": 537,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -26729,11 +26861,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 547,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -26797,7 +26933,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 548,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27073,11 +27209,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 553,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27182,11 +27322,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 555,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27241,11 +27385,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 556,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27303,7 +27451,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 557,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27371,11 +27519,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 558,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27432,7 +27584,7 @@
       "evidence_shas": [],
       "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 559,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -27489,11 +27641,15 @@
       "candidate_group_ids": [
         "timed-citations"
       ],
-      "verified_group_ids": [],
-      "evidence_shas": [],
-      "assessment_effect": "NOT_YET_ASSESSED",
+      "verified_group_ids": [
+        "timed-citations"
+      ],
+      "evidence_shas": [
+        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد."
+        "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير."
       ],
       "attested_original_excel_row": 560,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"

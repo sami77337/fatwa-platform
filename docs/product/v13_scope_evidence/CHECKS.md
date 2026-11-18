@@ -36,3 +36,13 @@ The parent's source-provenance correction now identifies XLSX as a derived
 reference workbook, not the authoring document;542.docx bytes remain UNVERIFIED.
 A negative rejects promotion of workbook matching into Word-byte verification.
 Build, Ruff and16/16 documentary tests PASS (0.682s). No product suites were rerun.
+
+Final bounded update: independently fetched successful run44222224904 and both
+job logs atcd22cbd265db4b57124a1f091a041fd5200637b8 prove91 affected tests plus1
+protected connected browser per PostgreSQL17.12/18.7. Five bounded groups attach
+evidence to38 explicitly selected points without changing their baseline status.
+The new documentary validator additionally checks actual browser proof (not only
+the sandbox environment flag) and READY independent-target recovery HTTP evidence.
+Final local build/check and18/18 documentary tests PASS (2.405s), Ruff PASS.
+No product suite was rerun by this scope-evidence lane. Overall FAST9 failure,
+historical failed heads and pending external review remain explicit in V13_UPDATE.md.

@@ -1,6 +1,7 @@
 """Protect source fidelity and prevent credit from planned or wrong-head checks."""
 
 import copy
+import json
 import unittest
 from unittest.mock import patch
 
@@ -43,6 +44,28 @@ class ScopeTraceTests(unittest.TestCase):
                     "test_allow (tests.synthetic.test_boundary.Boundary.test_allow) ... ok",
                     "test_deny (tests.synthetic.test_boundary.Boundary.test_deny) ... ok",
                     "FATWA_BROWSER_SANDBOX: 1",
+                    "V13_BROWSER_PROOF="
+                    + json.dumps(
+                        {
+                            "tested_sha": sha,
+                            "sandbox": True,
+                            "external_requests": 0,
+                            "page_errors": 0,
+                            "canonical": {"cases": 1},
+                            "widths": [320, 1280],
+                            "recovery": {
+                                "state": "READY",
+                                "target_http": "PASS",
+                                "encrypted_only": True,
+                                "independent_target_postgres_server": True,
+                                "separate_key": True,
+                                "source_left_frozen": True,
+                                "source_unchanged": True,
+                                "partial_delivery_preserved": True,
+                                "wrong_key_and_hash_before_target": "DENIED",
+                            },
+                        }
+                    ),
                 ],
             }
         return group, refs, sources
@@ -130,6 +153,27 @@ class ScopeTraceTests(unittest.TestCase):
         sources["synthetic-pg17"]["lines"] = [
             line for line in sources["synthetic-pg17"]["lines"] if "SANDBOX" not in line
         ]
+        with patch.object(build, "read", side_effect=sources.__getitem__):
+            with self.assertRaises(AssertionError):
+                build.check_execution(group, refs)
+
+    def test_declared_sandbox_does_not_override_observed_unprotected_browser(self):
+        group, refs, sources = self.execution_fixture(browser=True)
+        sources["synthetic-pg17"]["lines"][-1] = sources["synthetic-pg17"]["lines"][-1].replace(
+            '"sandbox": true', '"sandbox": false'
+        )
+        with patch.object(build, "read", side_effect=sources.__getitem__):
+            with self.assertRaises(AssertionError):
+                build.check_execution(group, refs)
+
+    def test_restore_claim_requires_actual_independent_ready_target_http_proof(self):
+        group, refs, sources = self.execution_fixture(browser=True)
+        group["id"] = "connected-recovery"
+        with patch.object(build, "read", side_effect=sources.__getitem__):
+            build.check_execution(group, refs)
+        sources["synthetic-pg18"]["lines"][-1] = sources["synthetic-pg18"]["lines"][-1].replace(
+            '"target_http": "PASS"', '"target_http": "NOT_RUN"'
+        )
         with patch.object(build, "read", side_effect=sources.__getitem__):
             with self.assertRaises(AssertionError):
                 build.check_execution(group, refs)

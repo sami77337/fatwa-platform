@@ -2251,17 +2251,140 @@
         533
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "تسجيل متصفح اصطناعي بإذن صريح وربط الأصل المحقق بالوقائع أو إصدار الجواب، مع معاينة وإلغاء.",
-      "bounded_claim": null,
-      "remaining": "رفع ملف صوت ليس تسجيل ميكروفون؛ الاستكمال والتسجيل على الأجهزة كافة والتفريغ والخدمات الخارجية لا تثبت تلقائيًا.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "رحلة Chrome اصطناعية بإذن ميكروفون صريح ورفض/إلغاء قبل الحفظ ثم بدء/إيقاف/معاينة؛ WAV متحقق خاص مرتبط بالقضية الواحدة وإصدار الوقائع، ثم تسجيل جزء جواب ضمن الإصدار والمراجعة البشرية. ليست تسجيلات مستخدمين حقيقيين.",
+      "remaining": "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        {
+          "path": "apps/browser_audio/static/browser_audio/capture.js",
+          "symbol": null,
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "922d1999b2a651da1ace0ab71dee75b119d9eb9facbda8060cd6bce7a032a516",
+          "line": 1,
+          "end_line": 136,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/browser_audio/static/browser_audio/capture.js#L1-L136"
+        },
+        {
+          "path": "apps/browser_audio/static/browser_audio/worklet.js",
+          "symbol": null,
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "4adb772256f454e2a476be23974887784262749c685c42e1a25b1b9c2cf84283",
+          "line": 1,
+          "end_line": 25,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/browser_audio/static/browser_audio/worklet.js#L1-L25"
+        },
+        {
+          "path": "apps/browser_audio/context.py",
+          "symbol": "capture",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "201846df5423daebddaba1edcfc046707241b532f51c6412b1b44ae84d174621",
+          "line": 8,
+          "end_line": 12,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/browser_audio/context.py#L8-L12"
+        },
+        {
+          "path": "apps/casework_web/requester_intake.py",
+          "symbol": "submit_intake",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "e16c1312bd7b0bc6d15d5613b22773eaba28757a397fe735674b97b7063d4d68",
+          "line": 80,
+          "end_line": 119,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/casework_web/requester_intake.py#L80-L119"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "tests/casework/test_v13_audio_wiring.py",
+          "symbol": "InitialAudioTests.test_one_native_case_private_original_and_exact_replay_no_second_upload",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "e1af78d3e97a98391e0664223096a668fddfcf89a8346bafef60ded66f0bf0f2",
+          "line": 77,
+          "end_line": 107,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_audio_wiring.py#L77-L107"
+        },
+        {
+          "path": "tests/casework/test_v13_audio_wiring.py",
+          "symbol": "InitialAudioTests.test_existing_requester_and_mufti_forms_render_scoped_recorders",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "e1af78d3e97a98391e0664223096a668fddfcf89a8346bafef60ded66f0bf0f2",
+          "line": 109,
+          "end_line": 126,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_audio_wiring.py#L109-L126"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "tests/casework/test_v13_audio_wiring.py",
+          "symbol": "InitialAudioTests.test_disk_failure_rolls_back_case_source_evidence_and_retry_succeeds",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "e1af78d3e97a98391e0664223096a668fddfcf89a8346bafef60ded66f0bf0f2",
+          "line": 135,
+          "end_line": 141,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_audio_wiring.py#L135-L141"
+        },
+        {
+          "path": "tests/casework/test_v13_audio_wiring.py",
+          "symbol": "InitialAudioTests.test_invalid_consent_proof_csrf_or_content_never_creates_case",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "e1af78d3e97a98391e0664223096a668fddfcf89a8346bafef60ded66f0bf0f2",
+          "line": 143,
+          "end_line": 148,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_audio_wiring.py#L143-L148"
+        },
+        {
+          "path": "tests/casework/test_v13_audio_wiring.py",
+          "symbol": "RecorderPolicyTests.test_only_trusted_html_recorder_receives_permission_not_bytes_or_escaped_text",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "e1af78d3e97a98391e0664223096a668fddfcf89a8346bafef60ded66f0bf0f2",
+          "line": 172,
+          "end_line": 185,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_audio_wiring.py#L172-L185"
+        }
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": {
+        "path": "tests/casework/test_v13_browser.py",
+        "symbol": "V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+        "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "file_sha256": "ba4bb5d26ad6f970a9aade03ba51db19c87ade596941fd4b6e3ac29c83b969d9",
+        "line": 407,
+        "end_line": 646,
+        "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646"
+      },
+      "credited_owner_points": [
+        25,
+        36,
+        44,
+        46,
+        70,
+        75,
+        77,
+        78,
+        81,
+        82,
+        533
+      ]
     },
     {
       "id": "timed-citations",
@@ -2279,17 +2402,209 @@
         556
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "موضع بداية/نهاية ضمن مدة أصل ثابت وبصمة ونسخة محددة، مع تاريخ تصحيح وحقوق حالية.",
-      "bounded_claim": null,
-      "remaining": "لا إحالة تلقائية إلى نسخة أخرى، ولا متن أو علاقة أو توقيت غير محقق؛ الطباعة والتصدير وكل المصادر لا تثبت من مسار واحد.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "اختيار أصل صوتي خاص ثابت وموضع بداية/نهاية ضمن مدته المحققة، تأكيد بشري وتصحيح محفوظ بلا نقل تلقائي، وفحص الصلاحية والانتهاء في الاعتماد والاستخدام اللاحق. يشمل رفض سحب الهوية أو CITE في آخر callback بعد إصلاح الفشل التاريخي.",
+      "remaining": "الصوت الخاص فقط؛ لا corpus دروس/فيديو كامل أو إحالة عامة/تصدير/طباعة. #t تنقل داخل الأصل المصرح لا قص بايتات أو Range. لا توليد قول أو توقيت، ولا نقل تلقائي. 543 لا يثبت تحديد عبارة داخل المحرر؛556 يثبت التاريخ ولا يثبت العرض في التصدير.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        {
+          "path": "apps/timed_citations/services.py",
+          "symbol": "propose",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "0e395cb772b7e1e1a3d6e1731bdd0d2701958cb7df575b891c6c7abd8a6fcecb",
+          "line": 206,
+          "end_line": 286,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/services.py#L206-L286"
+        },
+        {
+          "path": "apps/timed_citations/services.py",
+          "symbol": "act",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "0e395cb772b7e1e1a3d6e1731bdd0d2701958cb7df575b891c6c7abd8a6fcecb",
+          "line": 290,
+          "end_line": 323,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/services.py#L290-L323"
+        },
+        {
+          "path": "apps/timed_citations/services.py",
+          "symbol": "open_audio",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "0e395cb772b7e1e1a3d6e1731bdd0d2701958cb7df575b891c6c7abd8a6fcecb",
+          "line": 327,
+          "end_line": 361,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/services.py#L327-L361"
+        },
+        {
+          "path": "apps/timed_citations/services.py",
+          "symbol": "for_locked_answer",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "0e395cb772b7e1e1a3d6e1731bdd0d2701958cb7df575b891c6c7abd8a6fcecb",
+          "line": 365,
+          "end_line": 395,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/services.py#L365-L395"
+        },
+        {
+          "path": "apps/casework/services.py",
+          "symbol": "_answer_timed",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "5140f48ea6ddf85bdb9b67a41ac93eb7b09cf379a44d6b4fd47333097d95813a",
+          "line": 80,
+          "end_line": 127,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/casework/services.py#L80-L127"
+        },
+        {
+          "path": "apps/casework/services.py",
+          "symbol": "_answer_use_boundary",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "5140f48ea6ddf85bdb9b67a41ac93eb7b09cf379a44d6b4fd47333097d95813a",
+          "line": 131,
+          "end_line": 142,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/casework/services.py#L131-L142"
+        },
+        {
+          "path": "apps/experimental_publication/services.py",
+          "symbol": "_require_publication_sources",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "de2a7958056cb1519624adc85eefefd9a6dee60bc7dd57f8d9d8664d65912265",
+          "line": 105,
+          "end_line": 130,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/experimental_publication/services.py#L105-L130"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/timed_citations/tests.py",
+          "symbol": "TimedTests.test_exact_duration_human_confirmation_and_original_bytes",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "efac4b21ae0dfa9a480996c0a3dcc783849d50d2dc817821c0f13785c0f566f5",
+          "line": 138,
+          "end_line": 160,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/tests.py#L138-L160"
+        },
+        {
+          "path": "apps/timed_citations/tests.py",
+          "symbol": "TimedTests.test_correction_is_append_only_and_previous_revision_cannot_open",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "efac4b21ae0dfa9a480996c0a3dcc783849d50d2dc817821c0f13785c0f566f5",
+          "line": 205,
+          "end_line": 234,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/tests.py#L205-L234"
+        },
+        {
+          "path": "tests/casework/test_v13_timed_bindings.py",
+          "symbol": "TimedBindingsTests.test_confirmed_attachment_and_answer_media_allow_real_approval_and_private_bytes",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "047f18394f00c126539dc0515b390d010fc108ea7c52ebb8f0624179fb513b30",
+          "line": 149,
+          "end_line": 157,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_timed_bindings.py#L149-L157"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/timed_citations/tests.py",
+          "symbol": "TimedTests.test_invalid_times_and_forged_duration_version_digest_are_denied",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "efac4b21ae0dfa9a480996c0a3dcc783849d50d2dc817821c0f13785c0f566f5",
+          "line": 162,
+          "end_line": 184,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/tests.py#L162-L184"
+        },
+        {
+          "path": "apps/timed_citations/tests.py",
+          "symbol": "TimedTests.test_old_answer_does_not_inherit_citation_and_exact_old_recording_never_redirects",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "efac4b21ae0dfa9a480996c0a3dcc783849d50d2dc817821c0f13785c0f566f5",
+          "line": 186,
+          "end_line": 203,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/timed_citations/tests.py#L186-L203"
+        },
+        {
+          "path": "tests/casework/test_v13_timed_bindings.py",
+          "symbol": "TimedBindingsTests.test_approved_then_expired_blocks_private_release_files_delivery_and_publication",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "047f18394f00c126539dc0515b390d010fc108ea7c52ebb8f0624179fb513b30",
+          "line": 179,
+          "end_line": 215,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_timed_bindings.py#L179-L215"
+        },
+        {
+          "path": "tests/casework/test_v13_timed_bindings.py",
+          "symbol": "TimedBindingsTests.test_collection_rechecks_timed_expiry_after_later_legacy_result_projection",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "047f18394f00c126539dc0515b390d010fc108ea7c52ebb8f0624179fb513b30",
+          "line": 269,
+          "end_line": 311,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_timed_bindings.py#L269-L311"
+        },
+        {
+          "path": "tests/v13_integration_security/test_boundaries.py",
+          "symbol": "TimedFinalCallbackTests.test_staff_revocation_in_final_deadline_callback_denies_private_bytes",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "ccb7fa95c6881890c0107866b8d45989f33b90f3a4d046d719fd6f873793dceb",
+          "line": 29,
+          "end_line": 54,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/v13_integration_security/test_boundaries.py#L29-L54"
+        },
+        {
+          "path": "tests/v13_integration_security/test_boundaries.py",
+          "symbol": "TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "ccb7fa95c6881890c0107866b8d45989f33b90f3a4d046d719fd6f873793dceb",
+          "line": 56,
+          "end_line": 77,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/v13_integration_security/test_boundaries.py#L56-L77"
+        },
+        {
+          "path": "tests/v13_integration_security/test_boundaries.py",
+          "symbol": "TimedFinalCallbackTests.test_no_policy_deadline_callback_after_validated_hook_returns",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "ccb7fa95c6881890c0107866b8d45989f33b90f3a4d046d719fd6f873793dceb",
+          "line": 79,
+          "end_line": 108,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/v13_integration_security/test_boundaries.py#L79-L108"
+        }
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": {
+        "path": "tests/casework/test_v13_browser.py",
+        "symbol": "V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+        "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "file_sha256": "ba4bb5d26ad6f970a9aade03ba51db19c87ade596941fd4b6e3ac29c83b969d9",
+        "line": 407,
+        "end_line": 646,
+        "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646"
+      },
+      "credited_owner_points": [
+        179,
+        346,
+        543,
+        549,
+        551,
+        552,
+        554,
+        556
+      ]
     },
     {
       "id": "measured-arabic-search",
@@ -2304,17 +2619,144 @@
         246
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "مقارنة baseline/after عربية قابلة للتكرار على نطاق مصرح مع قياسات وحدود ظاهرة.",
-      "bounded_claim": null,
-      "remaining": "لا semantic search ولا gold benchmark حقيقي أو تحكيم متخصص دون دليل؛ النقاط243/244 تظل فجوات صريحة.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "ترتيب كلمات وأرقام عربية لعناوين أول20 نتيجة مرجعية مصرح بها؛ قياس baseline/after اصطناعي، مع حفظ الموضع والطبعة والعودة وسبب الترتيب ورفض الحقوق المسحوبة أو المنتهية. يعرض حد النافذة وحالة المراجعة البشرية PENDING.",
+      "remaining": "TOC_METADATA_ONLY ونافذة20 عنوانًا؛ لا بحث متن أو corpus كامل أو semantic، ولا stem/synonyms أو ادعاء تسريع. fixture42 حكمًا اصطناعيًا لمؤلف الاختبار وليست gold مستقلة؛243/244 وتحكيم المختصين ما زالت فجوة. 622 فهرس فقط.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        {
+          "path": "apps/arabic_search_eval/ranking.py",
+          "symbol": "rank_titles",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "2de827f5b8151c3194d804b151456e7e806aec095ad9089869f2e15f228317bf",
+          "line": 45,
+          "end_line": 78,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/ranking.py#L45-L78"
+        },
+        {
+          "path": "apps/arabic_search_eval/services.py",
+          "symbol": "search_reference_titles",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "11879ce17b2be761fa62fc74405bbaaa4246d214d1bb91f1b4fb18acf28aea17",
+          "line": 17,
+          "end_line": 86,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/services.py#L17-L86"
+        },
+        {
+          "path": "apps/arabic_search_eval/evaluation.py",
+          "symbol": "evaluate",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "90b37a2b5a5c50497448dd93b25548afb3055a8d34883b5cc5d74b46775b0b76",
+          "line": 72,
+          "end_line": 142,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/evaluation.py#L72-L142"
+        },
+        {
+          "path": "apps/research_workspace/views.py",
+          "symbol": "_search",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "70ccf9b2984ce3ec84dbb2854c80370f561934f0112c483eb2b98bf271d5d1a4",
+          "line": 49,
+          "end_line": 60,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/research_workspace/views.py#L49-L60"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/arabic_search_eval/test_services.py",
+          "symbol": "AdapterTests.test_real_baseline_vs_digit_and_boundary_ranking_preserves_source_and_open_pins",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "841f9cfa8d59de60c2970530c7992d2978fd2d864d9476bb30c03af38cefdbad",
+          "line": 85,
+          "end_line": 114,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/test_services.py#L85-L114"
+        },
+        {
+          "path": "apps/arabic_search_eval/test_ranking.py",
+          "symbol": "RankingTests.test_explicit_fixture_expectations_and_negative_queries",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "1a9e8cc55ab4f1825c17ecf57dd7cfb5b53c59e27f5b9ca117e03345704b1b8c",
+          "line": 11,
+          "end_line": 23,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/test_ranking.py#L11-L23"
+        },
+        {
+          "path": "tests/casework/test_v13_search_ui.py",
+          "symbol": "SearchUiTests.test_ranked_search_open_back_preserves_scope_filters_and_canonical_answer",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "dbc8ff3a7e136fc500e848763f0e2ca5da01a06cec024e99b7213268466fa820",
+          "line": 55,
+          "end_line": 72,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_search_ui.py#L55-L72"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/arabic_search_eval/test_services.py",
+          "symbol": "AdapterTests.test_rights_expiry_during_rank_closes_response_even_if_no_hits_selected",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "841f9cfa8d59de60c2970530c7992d2978fd2d864d9476bb30c03af38cefdbad",
+          "line": 154,
+          "end_line": 171,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/test_services.py#L154-L171"
+        },
+        {
+          "path": "apps/arabic_search_eval/test_ranking.py",
+          "symbol": "RankingTests.test_pending_stale_incomplete_and_altered_review_are_not_approval",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "1a9e8cc55ab4f1825c17ecf57dd7cfb5b53c59e27f5b9ca117e03345704b1b8c",
+          "line": 68,
+          "end_line": 86,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/arabic_search_eval/test_ranking.py#L68-L86"
+        },
+        {
+          "path": "tests/casework/test_v13_search_ui.py",
+          "symbol": "SearchUiTests.test_flag_strict_kind_and_revoked_source_do_not_fallback",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "dbc8ff3a7e136fc500e848763f0e2ca5da01a06cec024e99b7213268466fa820",
+          "line": 74,
+          "end_line": 88,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_search_ui.py#L74-L88"
+        }
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": {
+        "path": "tests/casework/test_v13_browser.py",
+        "symbol": "V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+        "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "file_sha256": "ba4bb5d26ad6f970a9aade03ba51db19c87ade596941fd4b6e3ac29c83b969d9",
+        "line": 407,
+        "end_line": 646,
+        "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646"
+      },
+      "credited_owner_points": [
+        216,
+        221,
+        231,
+        242,
+        245,
+        246
+      ]
     },
     {
       "id": "human-classification",
@@ -2329,17 +2771,131 @@
         417
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "اقتراح تصنيف مفسر المصدر ومراجعة قبول/رفض بشرية وتاريخ دون تغيير وقائع السؤال.",
-      "bounded_claim": null,
-      "remaining": "فهرس622 ليس تصنيفًا عامًا؛ لا صلاحية U03 ولا إنشاء آلي لتصنيف أو علاقة علمية من التشابه. تحقق primary/additional وTags منفصلًا قبل نسبة أي منها.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "سجل اقتراح تسمية تجريبية خاصة مبني على علاقة مرجعية معتمدة ومثبتة النسخة؛ قبول/رفض بشري مستقل وتاريخ تصحيح وسحب؛ لا يغيّر Evidence أو تصنيف النسخة المنشورة. هذا دليل على عدم تبديل الوقائع وتسجيل المراجعة فقط.",
+      "remaining": "ليس سجل Taxonomy أو تصنيفًا رئيسيًا/إضافيًا أو Tags رسمية، ولا نقل فئة المنشور. 161/162/164/169/170 غير منسوبة لهذه المجموعة. لا AI classifier أو صلاحية U03 أو علاقة علمية مستنتجة؛622 فهرس كتاب فقط.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        {
+          "path": "apps/classification_review/services.py",
+          "symbol": "propose",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "b10e295e210e1641c5ccfa17c0c94d11ffb2c060dfe0d64b22ff3fe4303f0c7f",
+          "line": 122,
+          "end_line": 167,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/services.py#L122-L167"
+        },
+        {
+          "path": "apps/classification_review/services.py",
+          "symbol": "act",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "b10e295e210e1641c5ccfa17c0c94d11ffb2c060dfe0d64b22ff3fe4303f0c7f",
+          "line": 171,
+          "end_line": 212,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/services.py#L171-L212"
+        },
+        {
+          "path": "apps/classification_review/services.py",
+          "symbol": "desk",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "b10e295e210e1641c5ccfa17c0c94d11ffb2c060dfe0d64b22ff3fe4303f0c7f",
+          "line": 216,
+          "end_line": 300,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/services.py#L216-L300"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/classification_review/tests.py",
+          "symbol": "ClassificationTests.test_proposed_until_independent_human_no_canonical_mutation",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "d282fe3c67d5e3a854acf9b3d63d84ca417bd1d0f76c7869f52b3f548ff2bb03",
+          "line": 77,
+          "end_line": 95,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/tests.py#L77-L95"
+        },
+        {
+          "path": "apps/classification_review/tests.py",
+          "symbol": "ClassificationTests.test_reject_correction_and_withdrawal_never_reapprove",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "d282fe3c67d5e3a854acf9b3d63d84ca417bd1d0f76c7869f52b3f548ff2bb03",
+          "line": 127,
+          "end_line": 143,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/tests.py#L127-L143"
+        },
+        {
+          "path": "tests/casework/test_v13_classification_wiring.py",
+          "symbol": "ClassificationWiringTests.test_native_navigation_scope_and_independent_pending_state",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "12b764901e13d75a7ce4c053b37116de93edcbe204257a0b97021bb86c9d0310",
+          "line": 65,
+          "end_line": 82,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_classification_wiring.py#L65-L82"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/classification_review/tests.py",
+          "symbol": "ClassificationTests.test_database_append_only_self_review_and_exclusive_decision",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "d282fe3c67d5e3a854acf9b3d63d84ca417bd1d0f76c7869f52b3f548ff2bb03",
+          "line": 217,
+          "end_line": 248,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/tests.py#L217-L248"
+        },
+        {
+          "path": "apps/classification_review/tests.py",
+          "symbol": "ClassificationTests.test_real_rights_expiry_revocation_and_redacted_history",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "d282fe3c67d5e3a854acf9b3d63d84ca417bd1d0f76c7869f52b3f548ff2bb03",
+          "line": 349,
+          "end_line": 399,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/classification_review/tests.py#L349-L399"
+        },
+        {
+          "path": "tests/casework/test_v13_classification_wiring.py",
+          "symbol": "ClassificationWiringTests.test_freeze_blocks_shared_http_and_service_without_insert",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "12b764901e13d75a7ce4c053b37116de93edcbe204257a0b97021bb86c9d0310",
+          "line": 84,
+          "end_line": 91,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_classification_wiring.py#L84-L91"
+        }
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": {
+        "path": "tests/casework/test_v13_browser.py",
+        "symbol": "V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+        "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "file_sha256": "ba4bb5d26ad6f970a9aade03ba51db19c87ade596941fd4b6e3ac29c83b969d9",
+        "line": 407,
+        "end_line": 646,
+        "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646"
+      },
+      "credited_owner_points": [
+        47,
+        417
+      ]
     },
     {
       "id": "connected-recovery",
@@ -2365,17 +2921,135 @@
         435
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "PENDING",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.",
-      "bounded_claim": null,
-      "remaining": "رحلة اصطناعية ليست كل المنتج أو PITR/KMS إنتاجيًا، ولا قبول إرسال المزود إثبات تسليم/قراءة ولا إعادة تشغيل للمرسل القديم.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.",
+      "remaining": "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الأمنية الخارجية الشاملة منفصلة ومعلّقة؛ Gate B وباقي البوابات ثابتة.",
+      "product_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+      "code": [
+        {
+          "path": "apps/platform_recovery/encrypted.py",
+          "symbol": "snapshot",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "f2ac8b99d4a869e447a4179a8a0f67ef6b7513dc3b74ce74f1b3bff44716818e",
+          "line": 54,
+          "end_line": 97,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/encrypted.py#L54-L97"
+        },
+        {
+          "path": "apps/platform_recovery/encrypted.py",
+          "symbol": "restore",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "f2ac8b99d4a869e447a4179a8a0f67ef6b7513dc3b74ce74f1b3bff44716818e",
+          "line": 154,
+          "end_line": 169,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/encrypted.py#L154-L169"
+        },
+        {
+          "path": "apps/platform_recovery/service.py",
+          "symbol": "canonical_schema",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "331a3e809c8c2907addfa3dcf6199f487e070716aa01fe04844151db499c6d15",
+          "line": 216,
+          "end_line": 257,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/apps/platform_recovery/service.py#L216-L257"
+        },
+        {
+          "path": "tests/casework/v13_restored_browser.py",
+          "symbol": "restore_and_verify",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "4910fcf05dd2a6b61a8d66686572cbed7f76dff14a61df526a3e500a0c638078",
+          "line": 380,
+          "end_line": 456,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/v13_restored_browser.py#L380-L456"
+        },
+        {
+          "path": "tests/casework/v13_restored_browser.py",
+          "symbol": "TargetChecks.exercise",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "4910fcf05dd2a6b61a8d66686572cbed7f76dff14a61df526a3e500a0c638078",
+          "line": 70,
+          "end_line": 299,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/v13_restored_browser.py#L70-L299"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "tests/casework/test_v13_recovery_schema.py",
+          "symbol": "CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "f68428a2c54be282adb7d1a6bebdec030bc7d061dbeacd4a85355eab85cc1133",
+          "line": 79,
+          "end_line": 108,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_recovery_schema.py#L79-L108"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "tests/casework/test_v13_recovery_schema.py",
+          "symbol": "CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "f68428a2c54be282adb7d1a6bebdec030bc7d061dbeacd4a85355eab85cc1133",
+          "line": 110,
+          "end_line": 137,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_recovery_schema.py#L110-L137"
+        },
+        {
+          "path": "tests/v13_integration_security/test_boundaries.py",
+          "symbol": "TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes",
+          "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "file_sha256": "ccb7fa95c6881890c0107866b8d45989f33b90f3a4d046d719fd6f873793dceb",
+          "line": 56,
+          "end_line": 77,
+          "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/v13_integration_security/test_boundaries.py#L56-L77"
+        }
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526633973,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-cd22cbd.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+          "run_id": 44222224904,
+          "job_id": 134526634232,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-cd22cbd.json"
+        }
+      ],
+      "browser_test": {
+        "path": "tests/casework/test_v13_browser.py",
+        "symbol": "V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+        "sha": "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "file_sha256": "ba4bb5d26ad6f970a9aade03ba51db19c87ade596941fd4b6e3ac29c83b969d9",
+        "line": 407,
+        "end_line": 646,
+        "url": "https://github.com/sami77337/fatwa-platform/blob/cd22cbd265db4b57124a1f091a041fd5200637b8/tests/casework/test_v13_browser.py#L407-L646"
+      },
+      "credited_owner_points": [
+        30,
+        43,
+        44,
+        46,
+        75,
+        76,
+        82,
+        406,
+        408,
+        414,
+        415,
+        419,
+        425,
+        434,
+        435
+      ]
     }
   ]
 }
