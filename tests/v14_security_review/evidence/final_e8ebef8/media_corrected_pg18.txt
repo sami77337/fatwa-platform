@@ -1,0 +1,36 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_pdf_bytes_cannot_outlive_deadline_during_final_epoch_read (tests.v14_security_review.test_final_boundaries.PdfFinalEpochExpiry.test_pdf_bytes_cannot_outlive_deadline_during_final_epoch_read) ... FAIL
+test_audio_bytes_cannot_outlive_deadline_during_final_epoch_read (tests.v14_security_review.test_final_boundaries.AudioFinalEpochExpiry.test_audio_bytes_cannot_outlive_deadline_during_final_epoch_read) ... FAIL
+
+======================================================================
+FAIL: test_pdf_bytes_cannot_outlive_deadline_during_final_epoch_read (tests.v14_security_review.test_final_boundaries.PdfFinalEpochExpiry.test_pdf_bytes_cannot_outlive_deadline_during_final_epoch_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v14-final-review/tests/v14_security_review/test_final_boundaries.py", line 112, in test_pdf_bytes_cannot_outlive_deadline_during_final_epoch_read
+    assert_final_epoch_expiry_denies(self, lambda: self.opened(row))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/v14-final-review/tests/v14_security_review/test_final_boundaries.py", line 103, in assert_final_epoch_expiry_denies
+    test.assertTrue(denied, "Original bytes escaped after deadline crossed in final epoch read")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : Original bytes escaped after deadline crossed in final epoch read
+
+======================================================================
+FAIL: test_audio_bytes_cannot_outlive_deadline_during_final_epoch_read (tests.v14_security_review.test_final_boundaries.AudioFinalEpochExpiry.test_audio_bytes_cannot_outlive_deadline_during_final_epoch_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v14-final-review/tests/v14_security_review/test_final_boundaries.py", line 121, in test_audio_bytes_cannot_outlive_deadline_during_final_epoch_read
+    assert_final_epoch_expiry_denies(self, lambda: self.opened(row))
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/v14-final-review/tests/v14_security_review/test_final_boundaries.py", line 103, in assert_final_epoch_expiry_denies
+    test.assertTrue(denied, "Original bytes escaped after deadline crossed in final epoch read")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : Original bytes escaped after deadline crossed in final epoch read
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.342s
+
+FAILED (failures=2)
+Found 2 test(s).
+System check identified no issues (0 silenced).
+EXTERNAL_EXPIRED_MEDIA returned_bytes=671
+EXTERNAL_EXPIRED_MEDIA returned_bytes=1644
