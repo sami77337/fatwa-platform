@@ -30,7 +30,10 @@ The external P2 task is thread `6afc8096-82c4-8191-98d8-58fba73eb00c`, branch
 `codex/20261118-v12-scope-evidence`. Its exclusive
 `docs/product/v12_scope_evidence/**` baseline commit
 `cd8ecfd8b78de3884f7f54226385f228f817fdac` is integrated as `d15c54a`.
-The baseline assesses P0 only; P1 evidence refresh is required before final delivery.
+The baseline assesses P0 only. The additional P1 update
+`bb9ef02c618e65353a3625a94b5c6b0d95959dad` is integrated as `c1fd38f`,
+without repeating or replacing the baseline. See
+[P1 scope update](v12_scope_evidence/P1_UPDATE.md).
 These are actual identifiers, not invented task URLs.
 
 ## Usable connected changes
@@ -119,9 +122,31 @@ command contained `--only-binary=:all:`. It is now a block scalar and parses
 successfully. The missing workflow is **NOT RUN**, not a passing test or a flake.
 Product code and browser assertions did not change in this CI correction.
 
+**CI checkpoint `0055a5ab05c6dbe6d41a528666666f9db07f2fee`: 22/22 workflows PASS.**
+[V12 run 44208238581](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581)
+checked this exact SHA. Decoded job logs independently confirm:
+
+| Stage | PG17.12, job134479648225 | PG18.7, job134479647759 |
+| --- | --- | --- |
+| P0 functional/security | 183/183 | 183/183 |
+| Strict recovery / encrypted V11 / isolated V10 | 8/8 +16/16 +22/22 | 8/8 +16/16 +22/22 |
+| Affected P1 service/HTTP/security | 54/54, 20.333s | 54/54, 33.920s |
+| P2 validator and source/build check | 6/6 + PASS | 6/6 + PASS |
+| One connected Chrome/new-server recovery journey | 1/1, 91.697s | 1/1, 115.158s |
+| System / migration drift | PASS / PASS | PASS / PASS |
+
+Both jobs set `FATWA_BROWSER_SANDBOX=1`, including the target child process.
+[PG17 artifact 14385281316](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581/artifacts/14385281316)
+and [PG18 artifact 14384119015](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581/artifacts/14384119015)
+were uploaded successfully. Their API manifests and job logs were read. Local ZIP
+download returned Forbidden, so no independent ZIP byte inspection is claimed.
+This checkpoint precedes the external P2 P1-evidence refresh; the merged final head
+must still receive CI verification. The baseline validator's success does not
+mean that P1 had already been assessed in the baseline matrix.
+
 `infra/dev/v12_p1_verify.py` checks the expected SHA and clean tracked files, system
-configuration, migration drift, P2 source/build consistency and its six validator
-tests, 54 affected service/HTTP/security tests, then one connected browser/recovery
+configuration, migration drift, P2 source/build consistency and its nine validator
+tests after the P2 update (six at the earlier checkpoint), 54 affected service/HTTP/security tests, then one connected browser/recovery
 journey. The V12 workflow retains P0 checks and runs this with PostgreSQL17 and18
 and **Chrome sandbox enabled on both**. No manual unrelated-suite reruns are needed.
 Local browser runs explicitly using `sandbox=False` are not protected-Chrome proof.
@@ -158,3 +183,34 @@ P2's source has 556 original points, 479 specification IDs and 72 decision IDs i
 hashes are not XLSX hashes. Main protection returned Forbidden, so its state remains
 unknown and recommendations only. The P0 baseline's partial classifications cannot
 be represented as P1 completion or a new engineering percentage.
+
+## P2 integration and final handoff
+
+Five separately pinned P1 evidence groups now extend **91 original points**, with
+P0 evidence, source text and classifications preserved. The 556 original points
+remain **303 PARTIAL, 52 DECISION, 168 NOT_IMPLEMENTED by available evidence,
+33 OUT_OF_SCOPE, 0 COMPLETE**. These are evidence classifications, not a computed
+completion percentage or proof that all unproven points lack any implementation.
+There are 479 specification IDs and 72 decision IDs in 77 preserved occurrences.
+Only the 91 assessed rows carry P1 evidence; no global SHA replacement or status
+upgrade was made. Original-source byte and main-protection limitations above persist.
+
+The integrator ran only the affected documentary checks after cherry-picking the
+update: deterministic build/source check, validator, and **9/9 documentary tests**.
+The new negatives reject wrong-head attribution or a P1 test without a recorded
+pass on either PostgreSQL major. No product file changed after `0055a5ab` in this
+final documentation integration; no unrelated product suite was manually rerun.
+The existing CI command discovers tests dynamically and needs no hard-coded count
+change. It runs the nine documentary tests plus the existing exact-head PG17/18
+and protected-browser checks when the final branch is pushed.
+
+The P1 execution evidence above remains attributed to **0055a5ab**, never silently
+relabelled to this documentation commit. Final remote SHA, every returned workflow
+status, exact-head run/job links and any later result are recorded in
+[Draft PR #231](https://github.com/sami77337/fatwa-platform/pull/231) and the final
+handoff after those runs complete. Historical P0 failures and the scoped independent
+PASS report are preserved, not reissued as a new independent review of P1/P2.
+
+This delivers a reviewable synthetic V12 candidate. It does not authorize a pilot
+with real users, production publishing/sending, main merge, a new campaign, or any
+change to acceptance gates or the owner's engineering reference.
