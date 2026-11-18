@@ -82,6 +82,7 @@ def _desk_page(request, common, fields, *, correction=None, error=None, status=2
                 else "",
                 "library_query": fields.get("library_query", ""),
                 "library_category": fields.get("library_category", ""),
+                "library_page": fields.get("library_page", "1"),
             },
             status=status,
         )
@@ -122,7 +123,14 @@ def workspace(request):
             "library_query" in request.POST or "library_category" in request.POST
         ):
             required |= {"library_query", "library_category"}
+        if action in {"pub_library", "pub_read"} and "page" in request.POST:
+            required.add("page")
+        if action not in {"pub_library", "pub_read"} and "library_page" in request.POST:
+            required.add("library_page")
         fields = _form(request, required)
+        for key in ("page", "library_page"):
+            if key in fields and not 1 <= _integer(fields[key]) <= 100:
+                raise InvalidForm("publication_page_invalid")
         for key in ("library_query", "library_category", "query"):
             value = fields.get(key, "")
             cases._text(value, optional=True)
@@ -142,11 +150,9 @@ def workspace(request):
                     request,
                     "experimental_publication/library.html",
                     {
-                        "publications": services.library(
-                            **common, query=fields["query"], category=fields.get("category", "")
-                        ),
-                        "categories": sorted(
-                            {row["category"] for row in services.library(**common)}
+                        **services.library_catalog(
+                            **common, query=fields["query"], category=fields.get("category", ""),
+                            page=_integer(fields.get("page", "1")),
                         ),
                         "query": fields["query"],
                         "category": fields.get("category", ""),
@@ -163,6 +169,8 @@ def workspace(request):
             )
             if edition is None:
                 return denied("publication_unavailable", 404)
+            selected = services.editorial_case(**common, edition_id=edition["id"])
+            request.publication_authorized_case_ref = selected["public_ref"]
             return private(
                 render(
                     request,
@@ -175,6 +183,7 @@ def workspace(request):
                         is True,
                         "query": fields.get("query", ""),
                         "category": fields.get("category", ""),
+                        "page": _integer(fields.get("page", "1")),
                     },
                 )
             )

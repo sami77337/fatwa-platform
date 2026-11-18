@@ -438,8 +438,26 @@ def correction_draft(*, case_id, edition_id, subject_id, provider, synthetic_fix
         }
 
 
+LIBRARY_PAGE_SIZE = 12
+
+
 @mutation_service
 def library(*, subject_id, provider, query="", category="", synthetic_fixtures_only=False):
+    return _library(subject_id=subject_id, provider=provider, query=query, category=category,
+                    synthetic_fixtures_only=synthetic_fixtures_only)
+
+
+@mutation_service
+def library_catalog(*, subject_id, provider, query="", category="", page=1,
+                    synthetic_fixtures_only=False):
+    """One rights-current collection supplies rows, facets, count and bounded pages."""
+    if type(page) is not int or not 1 <= page <= 100:
+        raise cases.CaseConflict("publication_page_invalid")
+    return _library(subject_id=subject_id, provider=provider, query=query, category=category,
+                    page=page, synthetic_fixtures_only=synthetic_fixtures_only)
+
+
+def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, page=None):
     _enabled()
     cases._text(query, optional=True)
     cases._text(category, optional=True)
@@ -496,16 +514,33 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
         available = [(public, end) for public, end in available if end is None or end > now]
         output = []
         for public, _ in available:
+            source_text = " ".join(
+                str(item["source"].get(key, ""))
+                for item in public["citations"]
+                for key in ("work_title", "edition_title", "edition_key", "heading_title",
+                            "publisher", "printed_part", "printed_page")
+            )
             haystack = normalize_editorial_search(
-                " ".join((public["title"], public["category"], public["body"]))
+                " ".join((public["title"], public["category"], public["body"], source_text))
             )
             if (not query or query in haystack) and (
                 not category or normalize_editorial_search(public["category"]) == category
             ):
                 output.append(public)
+        result = output
+        if page is not None:
+            start = (page - 1) * LIBRARY_PAGE_SIZE
+            result = {
+                "publications": output[start:start + LIBRARY_PAGE_SIZE],
+                "categories": sorted({row["category"] for row, _ in available},
+                                     key=normalize_editorial_search),
+                "total": len(output), "page": page,
+                "has_previous": page > 1,
+                "has_next": start + LIBRARY_PAGE_SIZE < len(output),
+            }
         # If a grant expires during filtering, fail the whole response closed.
         # No stale partial results or metadata escape and no retry loop extends it.
         now = timezone.now()
         if any(end is not None and end <= now for _, end in available):
             raise cases.CaseConflict("current_source_rights_required")
-        return output
+        return result

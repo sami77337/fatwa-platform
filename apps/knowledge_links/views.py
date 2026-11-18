@@ -10,7 +10,7 @@ from django.views.decorators.debug import sensitive_post_parameters
 from apps.casework import services as cases
 from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.guard import denied, private
-from apps.casework_web.views import InvalidForm, _form, _provider
+from apps.casework_web.views import InvalidForm, _form, _integer, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 
@@ -48,7 +48,17 @@ def workspace(request):
             required |= {"kind", "target_id", "reason", "replaces_id"}
         elif action in {"knowledge_approve", "knowledge_withdraw"}:
             required |= {"revision_id", "confirm"}
+        navigation = {"library_query", "library_category", "library_page"}
+        if navigation & set(request.POST):
+            required |= navigation
         fields = _form(request, required)
+        for key in ("library_query", "library_category"):
+            cases._text(fields.get(key, ""), optional=True)
+            if len(fields.get(key, "")) > 80:
+                raise InvalidForm("knowledge_navigation_invalid")
+        library_page = _integer(fields.get("library_page", "1"))
+        if library_page > 100:
+            raise InvalidForm("knowledge_navigation_invalid")
         if request.FILES:
             raise InvalidForm("knowledge_form_invalid")
         query = fields["query"]
@@ -62,7 +72,10 @@ def workspace(request):
             synthetic_fixtures_only=True,
         )
         get_token(request)
-        context = {"query": query, "publication_id": fields["publication_id"]}
+        context = {"query": query, "publication_id": fields["publication_id"],
+                   "library_query": fields.get("library_query", ""),
+                   "library_category": fields.get("library_category", ""),
+                   "library_page": library_page}
         if action in {"knowledge_open", "knowledge_preview"}:
             reader = (
                 services.open_material if action == "knowledge_open" else services.preview_material
@@ -99,6 +112,15 @@ def workspace(request):
                 )
             context.update(services.desk(**common))
             template = "desk"
+        # Only the authorized service result permits a same-case frame. Browser
+        # navigation fields never supply or authorize a case reference.
+        from apps.experimental_publication.services import editorial_case
+
+        selected = editorial_case(
+            edition_id=fields["publication_id"], subject_id=identity.subject_id,
+            provider=provider, synthetic_fixtures_only=True,
+        )
+        request.knowledge_authorized_case_ref = selected["public_ref"]
         return private(render(request, f"knowledge_links/{template}.html", context))
     except (InvalidForm, SuspiciousOperation):
         return denied("knowledge_form_invalid", 400)
