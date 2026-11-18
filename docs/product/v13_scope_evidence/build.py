@@ -304,13 +304,61 @@ def render():
     return output
 
 
+def draft_anchors_document(draft=None):
+    """Validate static anchors separately; their existence grants no test credit."""
+    draft = read("draft_anchors.json") if draft is None else draft
+    assert draft["review_kind"] == "STATIC_CODE_REVIEW_ONLY"
+    assert draft["execution_state"] == "PENDING"
+    assert draft["credited_owner_points"] == []
+    assert draft["source_attribution"] == "PARENT_LOCAL_ATTESTATION_PRESERVED_SEPARATELY"
+    candidates = {g["id"]: g for g in read("assessment.json")["groups"]}
+    assert {g["id"] for g in draft["groups"]} == set(candidates)
+    assert len(draft["groups"]) == len(candidates)
+    rows = baseline()["matrix.json"]
+    lines = [
+        "# V13 static code anchors — execution pending",
+        "",
+        f"Read SHA: `{draft['read_sha']}`. **STATIC_CODE_REVIEW_ONLY; PENDING execution.**",
+        "",
+        "These exact code/test symbols were read and resolved at this SHA. Their existence is",
+        "not an executed PASS, independent security review or credited scope point. All original",
+        "556 classifications and prior evidence remain unchanged. Final execution evidence must",
+        "name its own actual SHA and both PostgreSQL majors plus protected Chrome.",
+        "",
+        "Source-byte attribution remains in [SOURCE_BYTES.md](SOURCE_BYTES.md): parent-local",
+        "attestation, not original XLSX byte verification in this Cloud environment.",
+    ]
+    for group in draft["groups"]:
+        lines += ["", "## " + group["id"], "", group["bounded_scope_to_verify"], ""]
+        lines += ["Candidate points retain original SPEC links; none is credited here:", ""]
+        for number in candidates[group["id"]]["candidate_owner_points"]:
+            row = rows[number - 1]
+            specs = row["direct_spec_ids"] + row["additional_reverse_spec_ids"]
+            lines.append(f"- {number}: {row['original_text']} — SPEC: {', '.join(specs) or 'none'}")
+        for kind in ("code", "positive_tests", "negative_tests", "browser_candidates"):
+            lines += ["", "### " + kind, ""]
+            assert len(group[kind]) == len(set(group[kind]))
+            for value in group[kind]:
+                ref = reference(value, draft["read_sha"])
+                if kind != "code":
+                    assert ref["symbol"] and ref["symbol"].split(".")[-1].startswith("test_")
+                lines.append(f"- [{value}]({ref['url']})")
+            if not group[kind]:
+                lines.append("Pending integrated anchor; no execution claim.")
+        assert not set(group["positive_tests"]) & set(group["negative_tests"])
+        lines += ["", "### Remaining limits", ""] + ["- " + gap for gap in group["gaps"]]
+    return "\n".join(lines) + "\n"
+
+
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    for name, value in render().items():
+    outputs = render()
+    outputs["DRAFT_ANCHORS.md"] = draft_anchors_document()
+    for name, value in outputs.items():
         if args.check:
             assert (HERE / name).read_text() == value, (name, "output drift")
         else:

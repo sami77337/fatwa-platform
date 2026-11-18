@@ -1,0 +1,140 @@
+{
+  "read_sha": "be40a352e17f9a03d1f2d2c1c52182f6116c13fb",
+  "review_kind": "STATIC_CODE_REVIEW_ONLY",
+  "execution_state": "PENDING",
+  "credited_owner_points": [],
+  "source_attribution": "PARENT_LOCAL_ATTESTATION_PRESERVED_SEPARATELY",
+  "groups": [
+    {
+      "id": "browser-audio",
+      "code": [
+        "apps/browser_audio/static/browser_audio/capture.js",
+        "apps/browser_audio/static/browser_audio/worklet.js",
+        "apps/browser_audio/context.py#capture",
+        "apps/casework_web/requester_intake.py#submit_intake"
+      ],
+      "positive_tests": [
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_one_native_case_private_original_and_exact_replay_no_second_upload",
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_existing_requester_and_mufti_forms_render_scoped_recorders"
+      ],
+      "negative_tests": [
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_disk_failure_rolls_back_case_source_evidence_and_retry_succeeds",
+        "tests/casework/test_v13_audio_wiring.py#InitialAudioTests.test_invalid_consent_proof_csrf_or_content_never_creates_case",
+        "tests/casework/test_v13_audio_wiring.py#RecorderPolicyTests.test_only_trusted_html_recorder_receives_permission_not_bytes_or_escaped_text"
+      ],
+      "browser_candidates": [
+        "apps/browser_audio/test_browser.py#BrowserAudioTests.test_capture_native_private_attachment_and_answer_revision",
+        "apps/browser_audio/test_browser.py#BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup"
+      ],
+      "bounded_scope_to_verify": "Explicit synthetic microphone start/stop/listen/cancel; accepted WAV enters existing private evidence or answer-part persistence. Atomic initial intake preserves one case and idempotency.",
+      "gaps": [
+        "Capture is PCM16LE mono 8000Hz, at most 10 seconds/160044 bytes; no resume or cross-device compatibility claim for point77.",
+        "Original means retained browser-generated WAV, not physical microphone signal without conversion.",
+        "No ASR/transcription service exists here; point432 transcription-outage handling cannot be credited from recording alone.",
+        "Point533 is scoped MUFTI case access; this does not prove every case is visible or authorize U03."
+      ]
+    },
+    {
+      "id": "timed-citations",
+      "code": [
+        "apps/timed_citations/services.py#propose",
+        "apps/timed_citations/services.py#act",
+        "apps/timed_citations/services.py#open_audio",
+        "apps/timed_citations/services.py#for_locked_answer",
+        "apps/casework/services.py#_answer_timed",
+        "apps/casework/services.py#_answer_use_boundary",
+        "apps/experimental_publication/services.py#_require_publication_sources"
+      ],
+      "positive_tests": [
+        "apps/timed_citations/tests.py#TimedTests.test_exact_duration_human_confirmation_and_original_bytes",
+        "apps/timed_citations/tests.py#TimedTests.test_correction_is_append_only_and_previous_revision_cannot_open",
+        "tests/casework/test_v13_timed_bindings.py#TimedBindingsTests.test_confirmed_attachment_and_answer_media_allow_real_approval_and_private_bytes"
+      ],
+      "negative_tests": [
+        "apps/timed_citations/tests.py#TimedTests.test_invalid_times_and_forged_duration_version_digest_are_denied",
+        "apps/timed_citations/tests.py#TimedTests.test_old_answer_does_not_inherit_citation_and_exact_old_recording_never_redirects",
+        "tests/casework/test_v13_timed_bindings.py#TimedBindingsTests.test_approved_then_expired_blocks_private_release_files_delivery_and_publication",
+        "tests/casework/test_v13_timed_bindings.py#TimedBindingsTests.test_collection_rechecks_timed_expiry_after_later_legacy_result_projection"
+      ],
+      "browser_candidates": [
+        "apps/timed_citations/browser_tests.py#TimedBrowserTests.test_native_audio_locator_and_withdrawal"
+      ],
+      "bounded_scope_to_verify": "Human-confirmed bounded locator pins private attachment/answer media owner, immutable version/hash/parser metadata and measured duration; canonical approval and downstream uses recheck current rights.",
+      "gaps": [
+        "Private audio only: no lesson/video corpus support is established by this slice; points179/346/549 remain broader.",
+        "Time fragment is navigation in the authorized original, not byte clipping, HTTP Range or interval-only authorization.",
+        "No new public/requester timed-citation projection, print/export or automatic source-version migration.",
+        "Point553 nearest documented fallback is not proved by an exact private audio locator."
+      ]
+    },
+    {
+      "id": "measured-arabic-search",
+      "code": [
+        "apps/arabic_search_eval/ranking.py#rank_titles",
+        "apps/arabic_search_eval/services.py#search_reference_titles",
+        "apps/arabic_search_eval/evaluation.py#evaluate",
+        "apps/research_workspace/views.py#_search"
+      ],
+      "positive_tests": [
+        "apps/arabic_search_eval/test_services.py#AdapterTests.test_real_baseline_vs_digit_and_boundary_ranking_preserves_source_and_open_pins",
+        "apps/arabic_search_eval/test_ranking.py#RankingTests.test_explicit_fixture_expectations_and_negative_queries",
+        "tests/casework/test_v13_search_ui.py#SearchUiTests.test_ranked_search_open_back_preserves_scope_filters_and_canonical_answer"
+      ],
+      "negative_tests": [
+        "apps/arabic_search_eval/test_services.py#AdapterTests.test_rights_expiry_during_rank_closes_response_even_if_no_hits_selected",
+        "apps/arabic_search_eval/test_ranking.py#RankingTests.test_pending_stale_incomplete_and_altered_review_are_not_approval",
+        "tests/casework/test_v13_search_ui.py#SearchUiTests.test_flag_strict_kind_and_revoked_source_do_not_fallback"
+      ],
+      "browser_candidates": [],
+      "bounded_scope_to_verify": "Explicit digit/word title ranking within the first20 authorized reference metadata candidates; original title/location and open/return binding preserved; synthetic baseline/after metrics and review status displayed.",
+      "gaps": [
+        "No full-text/whole-corpus/semantic retrieval; point219 full text is not established.",
+        "42 authored synthetic judgements over28 metadata titles are AUTHOR_PROPOSED_REVIEW_PENDING; no held-out real Arabic gold or specialist review for243/244.",
+        "No latency improvement or production SLO is claimed; inherited rights checks dominate observed adapter cost.",
+        "Protected integrated search browser test has not been supplied at this read SHA."
+      ]
+    },
+    {
+      "id": "human-classification",
+      "code": [
+        "apps/classification_review/services.py#propose",
+        "apps/classification_review/services.py#act",
+        "apps/classification_review/services.py#desk"
+      ],
+      "positive_tests": [
+        "apps/classification_review/tests.py#ClassificationTests.test_proposed_until_independent_human_no_canonical_mutation",
+        "apps/classification_review/tests.py#ClassificationTests.test_reject_correction_and_withdrawal_never_reapprove",
+        "tests/casework/test_v13_classification_wiring.py#ClassificationWiringTests.test_native_navigation_scope_and_independent_pending_state"
+      ],
+      "negative_tests": [
+        "apps/classification_review/tests.py#ClassificationTests.test_database_append_only_self_review_and_exclusive_decision",
+        "apps/classification_review/tests.py#ClassificationTests.test_real_rights_expiry_revocation_and_redacted_history",
+        "tests/casework/test_v13_classification_wiring.py#ClassificationWiringTests.test_freeze_blocks_shared_http_and_service_without_insert"
+      ],
+      "browser_candidates": [
+        "apps/classification_review/browser_tests.py#ClassificationBrowserTests.test_native_propose_independent_review_withdraw_rtl"
+      ],
+      "bounded_scope_to_verify": "Private experimental label proposal with pinned independently approved reference relation, separate human review/withdrawal and append-only history, without changing canonical case Evidence or publication category.",
+      "gaps": [
+        "No formal taxonomy registry, taxonomy version mapping or primary/additional category assignment: do not credit161/162/164 from a review ledger.",
+        "Point169 refers to Tags in its original section; generic experimental label review is related partial evidence only, not a complete Tag system.",
+        "No AI classifier is present. Absence of AI writes is not a tested AI suggestion/review implementation for163/170.",
+        "622 is a book TOC only; no inferred scientific relationship or general taxonomy; nothing private projects to public library."
+      ]
+    },
+    {
+      "id": "connected-recovery",
+      "code": [],
+      "positive_tests": [],
+      "negative_tests": [],
+      "browser_candidates": [],
+      "bounded_scope_to_verify": "Pending final single-case integrated browser journey and encrypted backup/restored-target HTTP, bytes and revocation checks.",
+      "gaps": [
+        "Restore schema partial-index cast normalization fix remains in progress at this static read SHA.",
+        "No final combined PG17/18 run, protected Chrome result or independent V13 security verdict supplied.",
+        "D6 root cause remains ROOT_CAUSE_UNKNOWN; prior V12 security PASS does not review V13.",
+        "No PITR/KMS production validation, privileged SQL protection, actual external send or read confirmation."
+      ]
+    }
+  ]
+}

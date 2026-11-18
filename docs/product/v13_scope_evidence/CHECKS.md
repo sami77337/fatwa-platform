@@ -17,3 +17,9 @@ as locally verified, and erasing workbook serialization differences.
 
 Actual V13 code, test and integrated browser/recovery execution evidence is still
 PENDING. No test from this documentary package is a product-security PASS.
+
+Static code-anchor update at `be40a352e17f9a03d1f2d2c1c52182f6116c13fb`:
+build/check PASS and14/14 documentary tests PASS (0.571s), including exact static
+symbols and rejection of static-to-execution credit. Initial format check requested
+two reformats; corrected without changing behavior. No product tests were rerun.
+The matrix still credits0 V13 points and retains all556 historical classifications.
