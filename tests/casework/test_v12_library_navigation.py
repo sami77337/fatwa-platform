@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.experimental_publication import services as publication
-from apps.experimental_publication.tests_ui import Forms, PublicationContinuityTests
+from apps.experimental_publication import tests_ui as publication_ui
 from apps.knowledge_links import services as knowledge
 from apps.source_rights import services as rights
 from apps.source_rights.tests import ENABLED, RightsFixture
@@ -17,10 +17,10 @@ from tests.casework.test_http import WEB_SETTINGS, post
 
 @override_settings(**{
     **WEB_SETTINGS, **ENABLED, "ROOT_URLCONF": "config.campaign_urls",
-    "FATWA_SOURCE_RIGHTS_ENFORCED": False,
+    "FATWA_SOURCE_RIGHTS_ENFORCED": False, "FATWA_MUFTI_WORKSPACE_ENABLED": True,
 })
 class LibraryNavigationTests(RightsFixture, TransactionTestCase):
-    login = PublicationContinuityTests.login
+    login = publication_ui.PublicationContinuityTests.login
 
     def setUp(self):
         super().setUp()
@@ -32,7 +32,7 @@ class LibraryNavigationTests(RightsFixture, TransactionTestCase):
         self.library = {key: value for key, value in self.common.items() if key != "case_id"}
 
     def submit(self, client, page, action):
-        fields = next(row for row in Forms(page.content.decode()).forms if row.get("action") == action)
+        fields = next(row for row in publication_ui.Forms(page.content.decode()).forms if row.get("action") == action)
         response = post(client, "/casework/staff/", fields, page)
         self.assertEqual(response.status_code, 200, response.content[:300])
         return response
@@ -69,10 +69,13 @@ class LibraryNavigationTests(RightsFixture, TransactionTestCase):
         self.assertEqual(read.call_count, 1)
         self.assertEqual(page.context["total"], 1)
         page = self.submit(client, page, "pub_read")
+        self.assertEqual(page.context["mufti_workspace"]["case"]["case_id"], self.receipt["case_id"])
         page = self.submit(client, page, "knowledge_browse")
+        self.assertEqual(page.context["mufti_workspace"]["case"]["case_id"], self.receipt["case_id"])
         self.assertEqual(page.context["library_query"], self.heading.title_original)
         self.assertEqual(page.context["library_category"], self.edition["category"])
         page = self.submit(client, page, "knowledge_open")
+        self.assertEqual(page.context["mufti_workspace"]["case"]["case_id"], self.receipt["case_id"])
         self.assertContains(page, self.heading.title_original)
         page = self.submit(client, page, "pub_read")
         self.assertEqual(page.context["query"], self.heading.title_original)
