@@ -54,7 +54,7 @@ def main():
     (logs / "tested-sha.txt").write_text(head + "\n")
     print("TESTED_SHA=" + head, flush=True)
     env = {**os.environ, "V12_PG_BIN": pg_bin, "FATWA_TEST_PG_BIN": pg_bin,
-           "FATWA_RECOVERY_PG_BIN": pg_bin}
+           "FATWA_RECOVERY_PG_BIN": pg_bin, "FATWA_FASTBUILD_PYTHON": sys.executable}
     labels = list(dict.fromkeys([SECURITY_LABEL, *args.label]))
     stages = [
         ("system", ["manage.py", "check"]),
@@ -62,15 +62,20 @@ def main():
         ("scope-evidence", ["docs/product/v13_scope_evidence/build.py", "--check"]),
         ("scope-validator", ["-m", "unittest", "discover", "-s",
                              "docs/product/v13_scope_evidence", "-p", "test_*.py", "-v"]),
+        ("startup-evidence", ["-m", "unittest", "tests.v13_browser_startup.test_evidence", "-v"]),
         ("affected", ["manage.py", "test", *labels, "--noinput", "--verbosity", "2"]),
     ]
     if args.browser:
         stages.append(("browser-recovery", ["manage.py", "test",
                        "tests.casework.test_v13_browser", "--noinput", "--verbosity", "2"]))
+    stages = [(name, [sys.executable, *command]) for name, command in stages]
+    stages.insert(2, ("startup-lifecycle", [
+        "node", "--test", "tests/v13_browser_startup/startup_contract.test.mjs",
+    ]))
     for name, command in stages:
         path = logs / (name + ".log")
         with path.open("w", encoding="utf-8") as output:
-            result = subprocess.run([sys.executable, *command], env=env,
+            result = subprocess.run(command, env=env,
                                     stdout=output, stderr=subprocess.STDOUT)
         print(name.upper() + " EXIT=" + str(result.returncode), flush=True)
         print(path.read_text(), flush=True)
