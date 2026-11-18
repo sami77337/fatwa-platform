@@ -214,47 +214,14 @@ class PostgresTools:
 
 
 def canonical_schema(raw):
-    """Retain the schema except pg_dump nonces and equivalent literal-array casts.
+    """Recognize the narrow deparser equivalence without rewriting quoted SQL."""
+    from .sql_schema import SchemaLexicalError
+    from .sql_schema import canonical_schema as fingerprint_schema
 
-    PostgreSQL reparses varchar literal arrays on restore, distributing their text
-    cast over individual elements. This also occurs in partial-index predicates,
-    not only CHECK constraints. Preserve every value, order, index/constraint name,
-    and predicate. Never rewrite a function's quoted source body.
-    """
-    literal = r"'(?:[^']|'')*'::character varying"
-    array = re.compile(r"\(ARRAY\[((?:" + literal + r")(?:, " + literal + r")*)\]\)::text\[\]")
-    body_tag = None
-    lines = []
-    for line in raw.splitlines():
-        if body_tag is not None:
-            lines.append(line)
-            if body_tag in line:
-                body_tag = None
-            continue
-        quoted_body = re.match(r"^\s+AS (\$(?:[A-Za-z_][A-Za-z_0-9]*)?\$)", line)
-        if quoted_body:
-            tag = quoted_body[1]
-            if line.count(tag) == 1:
-                body_tag = tag
-            lines.append(line)
-            continue
-        if line.startswith(("\\restrict ", "\\unrestrict ")):
-            continue
-        check = line.lstrip().startswith("CONSTRAINT ") and " CHECK " in line
-        partial_index = (
-            line.startswith(("CREATE INDEX ", "CREATE UNIQUE INDEX ")) and " WHERE " in line
-        )
-        if check or partial_index:
-            line = array.sub(
-                lambda match: (
-                    "ARRAY["
-                    + re.sub(literal, lambda item: "(" + item[0] + ")::text", match[1])
-                    + "]"
-                ),
-                line,
-            )
-        lines.append(line)
-    return "\n".join(lines).encode()
+    try:
+        return fingerprint_schema(raw)
+    except SchemaLexicalError:
+        raise RecoveryError("schema_lexical_unsupported") from None
 
 
 def database_profile(db):
