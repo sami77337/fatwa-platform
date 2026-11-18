@@ -77,3 +77,37 @@ startup failures) and12 offline evidence checks passed in the wiring worktree.
 Protected B6 must now prove the actual emitted READY observation schema and four
 phases through its existing mandatory Python gate. No timeout, retry or sandbox
 behavior changed. [Wiring history](V14_B6_WIRING.md) retains initial fixture errors.
+
+That focused hosted proof subsequently passed at exact
+`d1ac1a33a1bcdba032e23e55b6a618def2d1af26`, before PDF/classification integration:
+[B6 run44233080034](https://github.com/sami77337/fatwa-platform/actions/runs/44233080034).
+Decoded logs were read for [PG17 job134562585220](https://github.com/sami77337/fatwa-platform/actions/runs/44233080034/job/134562585220)
+and [PG18 job134562585202](https://github.com/sami77337/fatwa-platform/actions/runs/44233080034/job/134562585202).
+Each reports10 PASS, four startup phases and READY; measured total startup647ms
+and6655ms respectively, with port polling bound12000ms unchanged. These separate
+observations prove wiring, not a cause or permanent fix for the historical timeout.
+The final V14 head still requires its own CI; these runs are not attributed to it.
+
+## PDF approval/use boundary
+
+PDF lane `fbf06a03db093aeafbdf38321d18c8f81fc7bfbf` is registered default-off and
+composed through exact staff routes, the existing request budget/maintenance and
+case navigation. Shared `_answer_annotations` adds the PDF guard to the existing
+timed guard at scholarly approval, private availability/bytes, simulated delivery,
+publication and library checks, retaining the earliest validated deadline through
+the outer response/transaction. An omitted app cannot hide retained annotations.
+
+On shared product wiring `c5f44a3`, the new PDF boundary tests have11 distinct
+successful checks on each PostgreSQL17.12/18.7 across focused runs;18 existing
+affected PDF/audio-context tests also passed per major. This covers READ_MEDIA
+and CITE withdrawal separately, late expiry, whole-library counts/categories,
+FROZEN, stale evidence, absence of automatic locator copying and exact HTTP/HEAD
+authorization. Initial new fixtures lacked maintenance admission around the
+simulator constructor (10 setup errors each); after fixing the fixture,9/10 passed
+and the remaining HTTP expectation was corrected from standalone405 to the shared
+guard's existing400. That HTTP test plus the added collection adversary then passed
+2/2 on each major. Product guards were unchanged during those fixture corrections.
+
+PDF parser page count, authorized bytes and `#page` navigation are distinct from
+visual page selection in Chrome's PDF engine. The latter remains NOT_VERIFIED.
+No private locator or its source becomes a public PDF publication permission.

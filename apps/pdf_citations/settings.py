@@ -2,7 +2,7 @@
 
 from config.settings.campaign_review import *  # noqa: F403
 
-INSTALLED_APPS = [*INSTALLED_APPS, "apps.pdf_citations"]  # noqa: F405
+INSTALLED_APPS = list(dict.fromkeys([*INSTALLED_APPS, "apps.pdf_citations"]))  # noqa: F405
 FATWA_PDF_CITATIONS_ENABLED = False
 ROOT_URLCONF = "apps.pdf_citations.urls"
 MIDDLEWARE = [
