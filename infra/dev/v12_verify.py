@@ -46,7 +46,7 @@ def main():
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if head != os.environ.get("EXPECTED_SHA", head):
         parser.error("checked-out SHA differs from EXPECTED_SHA")
-    subprocess.run(["git", "diff", "--exit-code", "--quiet"], check=True)
+    subprocess.run(["git", "diff", "HEAD", "--exit-code", "--quiet"], check=True)
     pg_bin = str(args.pg_bin.resolve(strict=True))
     logs = Path(f".local/qa/v12/p0-pg{args.major}")
     logs.mkdir(parents=True, exist_ok=True)
