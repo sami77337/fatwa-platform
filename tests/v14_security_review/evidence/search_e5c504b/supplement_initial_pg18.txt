@@ -1,0 +1,86 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_counts_pages_pins_and_query_sample_only_include_readable_sources (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_counts_pages_pins_and_query_sample_only_include_readable_sources) ... ok
+test_expiry_at_final_identity_check_denies_counts_even_for_empty_page (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_expiry_at_final_identity_check_denies_counts_even_for_empty_page) ... ok
+test_catalog_version_change_after_rank_denies_all_projection (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_catalog_version_change_after_rank_denies_all_projection) ... ERROR
+
+======================================================================
+ERROR: test_catalog_version_change_after_rank_denies_all_projection (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_catalog_version_change_after_rank_denies_all_projection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.CheckViolation: Source catalog snapshots are immutable
+CONTEXT:  PL/pgSQL function reference_reject_mutation() line 3 at RAISE
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/v14-search-review/tests/v14_security_review/test_search_repair.py", line 129, in test_catalog_version_change_after_rank_denies_all_projection
+    self.ranked("عنوان")
+    ~~~~~~~~~~~^^^^^^^^^
+  File "/tmp/v14-search-review/apps/arabic_search_eval/test_services.py", line 81, in ranked
+    return services.search_reference_titles(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        **{**self.common, "edition_id": self.catalog_id, "query": query, **kwargs}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/tmp/v14-search-review/apps/platform_recovery/integration.py", line 142, in guarded
+    value = function(*args, **kwargs)
+  File "/tmp/v14-search-review/apps/arabic_search_eval/services.py", line 72, in search_reference_titles
+    hits = rank_titles(
+        query,
+        [Candidate(row["resource"]["identifier"], row["title"]) for row in rows],
+        limit=64,
+    )
+  File "/tmp/v9-python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/tmp/v9-python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/tmp/v9-python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/unittest/mock.py", line 1240, in _execute_mock_call
+    result = effect(*args, **kwargs)
+  File "/tmp/v14-search-review/tests/v14_security_review/test_search_repair.py", line 121, in change
+    count = ReferenceEdition.objects.filter(pk=self.catalog_id).update(
+        source_input_sha256="f" * 64
+    )
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 1263, in update
+    rows = query.get_compiler(self.db).execute_sql(ROW_COUNT)
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 2060, in execute_sql
+    row_count = super().execute_sql(result_type)
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/models/sql/compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/psycopg/cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.IntegrityError: Source catalog snapshots are immutable
+CONTEXT:  PL/pgSQL function reference_reject_mutation() line 3 at RAISE
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.232s
+
+FAILED (errors=1)
+Found 3 test(s).
+System check identified no issues (0 silenced).
+EXTERNAL_V14_SQL four_authorized=24

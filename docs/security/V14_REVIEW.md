@@ -1,4 +1,106 @@
-# V14 independent security review — baseline SEC14-01 BLOCKED
+# V14 independent security review — search repair still BLOCKED
+
+## Search-lane re-review at e5c504b (2026-11-18)
+
+**BLOCKED** on `e5c504bb51157a67865ed2547d7fb67a38842117`, remote
+`codex/20261118-v14-search`, verified before and after tests. The original
+SEC14-01 reproducer now **PASS** on PG17.12 and PG18.7 unchanged. However, a
+stronger actual-ledger late-callback challenge fails on both majors. This is a
+lane-only assessment; no final V14 integrated-head verdict is issued.
+
+### SEC14-01B: final custom policy callback can revoke the authoritative ledger
+
+`reference_batch.recheck_locked` reloads the ledger, compares the whole batch,
+then performs a final per-row policy pass. A callback in that final pass can call
+the existing authorized `source_rights.services.review(..., action='REVOKE')`
+for an earlier source. No authoritative ledger check follows that callback.
+The outer policy epoch remains unchanged because the *custom research policy*
+has not changed: only the separate canonical rights ledger has changed.
+`projection_expiry_guard` detects time expiry, not a newly inserted REVOKE action.
+
+Independent reproducer:
+`tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_ledger_revocation_during_final_policy_pass_closes_response`.
+
+- Independently approve READ rights for two synthetic registered headings.
+- During the later heading's third READ_METADATA callback (the final whole-set
+  policy pass), call the real authorized ledger review service to revoke the
+  first heading. Assert the service returned and the attack occurred once.
+- Query with `page_size=1`. Expect denial before any response projection escapes.
+- Actual result contains the revoked first heading's title, full source metadata
+  and exact resource pins, **total=2, pages=2, next_page=2, facet count=2**.
+  The test fails on PG17 and PG18. The snapshot/epoch mechanism did not reject it.
+
+This is a same-transaction real service mutation via a deterministic callback,
+not direct SQL tampering or evidence of simultaneous cross-connection revocation.
+The wrapper never changes `SyntheticRights.denied`, its identity or epoch. The
+research policy still grants; the authoritative source ledger veto should apply.
+A REVOKE service call is stronger evidence than just toggling a fake permission
+boolean. The repair's existing rank-time ledger test covers an earlier boundary
+and does not cover this final-pass mutation.
+
+Required correction: make the final authoritative ledger/provenance check occur
+at a coherent boundary after callbacks capable of changing it, including final
+identity/authority checks. Avoid adding another callback after that check which
+can recreate the gap. Keep policy-epoch and expiry checks, case scoping, source
+hashes and current-revision rules intact. Do not make the epoch of a separate
+custom policy an undocumented substitute for the canonical ledger. Rerun both
+unchanged original and new late-ledger regressions independently before closure.
+
+### Other independently executed checks
+
+- Unknown/malformed epoch (`None`, empty, boolean, integer, oversized string) and
+  a changed valid epoch deny. No scalar fallback or silent grant was observed.
+- Expiry induced after the final identity recheck denies the entire projection,
+  including an empty-match response and a later page; the attack executes once.
+- Four-authorized-source query measured **24 SQL** independently on each major.
+  Source metadata/digest match the canonical scalar source; no internal rights
+  revision is emitted; totals/facets/page hints match the authorized matches and
+  human_review remains PENDING. This does not rerun the historical 558-query
+  baseline, prove load performance, or establish human-reviewed ranking quality.
+- An attempted catalog input-hash mutation is rejected by the existing database
+  immutability trigger before projection returns; the original hash remains.
+  The first test incorrectly expected CaseConflict and got IntegrityError. Both
+  initial logs remain. The corrected test specifically asserts that real DB
+  guard; it is not claimed as a successful post-mutation projection recheck.
+
+| Independently executed batch | PG17.12 | PG18.7 |
+| --- | --- | --- |
+| Unchanged original + late ledger + epoch | 2 PASS / 1 FAIL, 1.126s | 2 PASS / 1 FAIL, 1.145s |
+| Counts/pins/SQL + expiry + initial catalog expectation | 2 PASS / 1 ERROR, 1.149s | 2 PASS / 1 ERROR, 1.232s |
+| Corrected catalog guard only | 1 PASS, 0.280s | 1 PASS, 0.324s |
+
+Six distinct methods have final observed outcomes **5 PASS / 1 FAIL per major**
+across these focused batches. This is not a clean full-module PASS. No expected
+failures/skips or weakened security assertions. Test source and original
+reproducer are overlaid into a detached exact target; no product files changed.
+Logs/manifests: `tests/v14_security_review/evidence/search_e5c504b/`.
+Use the existing fresh-cluster command below with label
+`tests.v14_security_review.test_search_repair` at the repaired product head.
+The module inherits the unchanged original reproducer, so it executes once there.
+
+### Other lane contracts inspected, not cleared
+
+Read the exact PDF `fbf06a03db093aeafbdf38321d18c8f81fc7bfbf`, classification
+`ae75b1dc54a87e3421c98bde7efc5b358925f840`, and recording
+`397bd75344dc4e14bfa5c992addcef072eabaaf9` handoff contracts. No execution/clearance
+of those product deltas is claimed in this search-focused review.
+
+Integration review must specifically verify PDF approval/downstream guards and
+expiry propagation even when editing is disabled or persisted app rows survive
+restore; classification's independent publication policy and additive DB trigger;
+and recorder explicit acceptance, protected assets, maintenance rejection and
+resource cleanup. New tables/triggers must survive the exact encrypted recovery
+journey. Their reported sandbox-disabled local browser receipts do not replace
+protected Chrome evidence. This reviewer's historical local microphone runtime
+remains NOT_RUN. Final disposition awaits the nominated integrated SHA after
+repair, not merely any remote integration branch observed during discovery.
+
+Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED. No acceptance,
+percentage change or production authorization. Baseline history follows intact.
+
+---
+
+# Historical baseline review — SEC14-01 BLOCKED
 
 ## Exact baseline and scope
 

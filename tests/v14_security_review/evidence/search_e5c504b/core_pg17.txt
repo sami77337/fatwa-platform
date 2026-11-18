@@ -1,0 +1,20 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_later_result_policy_callback_cannot_leave_revoked_earlier_title (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_later_result_policy_callback_cannot_leave_revoked_earlier_title) ... ok
+test_ledger_revocation_during_final_policy_pass_closes_response (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_ledger_revocation_during_final_policy_pass_closes_response) ... FAIL
+test_missing_malformed_and_changed_policy_epoch_deny (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_missing_malformed_and_changed_policy_epoch_deny) ... ok
+
+======================================================================
+FAIL: test_ledger_revocation_during_final_policy_pass_closes_response (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_ledger_revocation_during_final_policy_pass_closes_response)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v14-search-review/tests/v14_security_review/test_search_repair.py", line 44, in test_ledger_revocation_during_final_policy_pass_closes_response
+    self.assertTrue(denied, f"Stale projection escaped after ledger revocation: {result}")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : Stale projection escaped after ledger revocation: {'public_ref': 'FT-2026-B4609D522312F966EC27', 'revision': 4, 'evidence_version': 2, 'results': [{'resource': {'kind': 'REFERENCE', 'identifier': '2:2', 'sha256': '04c349576a1f2e309c68a7b545e76a62869a5e0f20b8ed1f4b0650643b297cec', 'edition_id': 2, 'source_namespace': 'synthetic', 'source_book_id': '622', 'edition_key': 'test', 'source_archive_sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'source_input_sha256': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}, 'kind': 'REFERENCE', 'title': 'عنوان رقم 12', 'label': 'عنوان فهرس؛ ليس متن الكتاب ولا فتوى', 'source': {'edition_id': 2, 'source_row_id': 2, 'work_title': 'مرجع اصطناعي للاختبار', 'heading_title': 'عنوان رقم 12', 'printed_part': 'مقدمة', 'printed_page': 2, 'path': ['عنوان عام', 'عنوان رقم 12'], 'source_namespace': 'synthetic', 'source_book_id': '622', 'source_input_sha256': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'edition_key': 'test', 'source_archive_sha256': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'edition_title': 'طبعة اختبار', 'publisher': 'ناشر اصطناعي', 'kind': 'SOURCE_BOOK_TOC_NOT_FATWAS'}, 'ranking': {'tier': 2, 'reason': 'contiguous_words'}}], 'ranking_version': 'arabic-title-words-v2-capacity64', 'coverage': 'CURRENT_CASE_REGISTERED_TOC', 'candidate_pool_limit': 64, 'total': 2, 'page': 1, 'page_size': 1, 'pages': 2, 'next_page': 2, 'previous_page': None, 'facets': [{'printed_part': 'مقدمة', 'count': 2}], 'human_review': 'PENDING', 'material': 'TOC_METADATA_ONLY'}
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.126s
+
+FAILED (failures=1)
+Found 3 test(s).
+System check identified no issues (0 silenced).
