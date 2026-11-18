@@ -10,6 +10,8 @@ import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import p1
+
 ROOT = Path(__file__).resolve().parents[3]
 HERE = Path(__file__).resolve().parent
 SHA = "5aff9ba3cce35241b3ded27ed3428e0d4ecad768"
@@ -31,13 +33,13 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def pinned(path):
-    return subprocess.check_output(["git", "show", f"{SHA}:{path}"], cwd=ROOT)
+def pinned(path, sha=SHA):
+    return subprocess.check_output(["git", "show", f"{sha}:{path}"], cwd=ROOT)
 
 
-def reference(value):
+def reference(value, sha=SHA):
     path, _, symbol = value.partition("#")
-    raw = pinned(path)
+    raw = pinned(path, sha=sha)
     line, end = 1, len(raw.splitlines())
     if symbol:
         nodes = [
@@ -54,9 +56,9 @@ def reference(value):
         symbol=symbol or None,
         line=line,
         end_line=end,
-        sha=SHA,
+        sha=sha,
         file_sha256=digest(raw),
-        url=f"{REPO}/blob/{SHA}/{path}#L{line}-L{end}",
+        url=f"{REPO}/blob/{sha}/{path}#L{line}-L{end}",
     )
 
 
@@ -211,6 +213,7 @@ def build():
                 assessed_p1=False,
             )
         )
+    p1.apply(matrix, groups, read=read, reference=reference, baseline_sha=SHA)
     for d in decs:
         d["owner_points"] = [
             r["original_id"] for r in matrix if d["original_id"] in r["decision_ids"]
@@ -259,6 +262,8 @@ def build():
             "evidence_ids",
             "evidence_sha",
             "acceptance",
+            "p1_evidence_ids",
+            "evidence_shas",
         ]
     )
     for r in matrix:
@@ -275,15 +280,17 @@ def build():
                 ";".join(r["evidence_ids"]),
                 SHA,
                 "HOLD",
+                ";".join(r["p1_evidence_ids"]),
+                ";".join(r["evidence_shas"]),
             ]
         )
     products["matrix.csv"] = csvout.getvalue()
     md = [
         "# مصفوفة أدلة V12 P2",
         "",
-        f"الرأس: `{SHA}`. جميع الصفوف ACCEPTANCE_HOLD؛ لا نسبة إنجاز مشتقة.",
+        f"أساس P0: `{SHA}`؛ طبقة P1: `{p1.P1_SHA}`. جميع الصفوف ACCEPTANCE_HOLD؛ لا نسبة إنجاز مشتقة.",
         "",
-        "التصنيفات تصف الأدلة الهندسية عند P0 فقط. غير منفذ بالدليل المتاح لا يجزم بغياب كل كود متعلق.",
+        "تصنيفات P0 محفوظة؛ أضيفت أدلة P1 للنقاط المتأثرة دون ترقية حالة. غير منفذ بالدليل المتاح لا يجزم بغياب كل كود متعلق.",
         "المطابقة الوثائقية في Excel محفوظة مستقلة؛ لا تتحول تلقائيًا إلى مكتمل. [المنهج والحدود](README.md).",
         "",
     ]
@@ -324,7 +331,7 @@ def build():
         )
     products["MATRIX.md"] = "\n".join(md) + "\n"
     emd = [
-        "# شواهد محددة عند P0",
+        "# شواهد محددة عند P0 وطبقة P1",
         "",
         "كل مجموعة تثبت الجزء المكتوب فقط؛ اشتراك نقاط في شاهد لا يجعلها متكافئة.",
     ]
@@ -361,7 +368,10 @@ def build():
                     for state in STATES
                 },
                 acceptance="HOLD",
-                p1_evidence_included=False,
+                p1_evidence_included=True,
+                p1_evidence_sha=p1.P1_SHA,
+                p1_assessed_points=sum(r["assessed_p1"] for r in matrix),
+                status_upgrades=0,
                 percentage=None,
             ),
             ensure_ascii=False,

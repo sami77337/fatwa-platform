@@ -1,0 +1,224 @@
+{
+  "workflow_runs": [
+    {
+      "id": 44208238622,
+      "name": "FAST9 outbox reconciliation",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 30,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238622/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238622/logs",
+      "workflow_id": 411309387
+    },
+    {
+      "id": 44208238666,
+      "name": "FAST9 synthetic approval and delivery outbox",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 58,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238666/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238666/logs",
+      "workflow_id": 410656685
+    },
+    {
+      "id": 44208238636,
+      "name": "Team updates campaign compatibility",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 38,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238636/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238636/logs",
+      "workflow_id": 421277291
+    },
+    {
+      "id": 44208238463,
+      "name": "V7 connected synthetic campaign",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 18,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238463/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238463/logs",
+      "workflow_id": 421472871
+    },
+    {
+      "id": 44208238626,
+      "name": "Team updates inbox synthetic",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 40,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238626/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238626/logs",
+      "workflow_id": 421263477
+    },
+    {
+      "id": 44208238468,
+      "name": "V10 connected product and recovery",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 14,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238468/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238468/logs",
+      "workflow_id": 421735352
+    },
+    {
+      "id": 44208238786,
+      "name": "FAST9 Mufti review cycle",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 41,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238786/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238786/logs",
+      "workflow_id": 419209194
+    },
+    {
+      "id": 44208238923,
+      "name": "FAST9 capability-aware delivery planner",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 64,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238923/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238923/logs",
+      "workflow_id": 410649582
+    },
+    {
+      "id": 44208238755,
+      "name": "FAST9 author approval desk",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 43,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238755/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238755/logs",
+      "workflow_id": 419185515
+    },
+    {
+      "id": 44208238760,
+      "name": "FAST9 internal draft handoff",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 18,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238760/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238760/logs",
+      "workflow_id": 410642395
+    },
+    {
+      "id": 44208238516,
+      "name": "D6 Wave4 functional acceptance",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 749,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238516/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238516/logs",
+      "workflow_id": 386741099
+    },
+    {
+      "id": 44208238603,
+      "name": "FAST9 integrated local development journey",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 124,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238603/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238603/logs",
+      "workflow_id": 419032677
+    },
+    {
+      "id": 44208238731,
+      "name": "V9 origin knowledge and connected workflows",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 15,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238731/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238731/logs",
+      "workflow_id": 421623887
+    },
+    {
+      "id": 44208238657,
+      "name": "V6 durable casework journey (synthetic)",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 44,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238657/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238657/logs",
+      "workflow_id": 421210484
+    },
+    {
+      "id": 44208238550,
+      "name": "B6 committed integration QA",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 800,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238550/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238550/logs",
+      "workflow_id": 386599240
+    },
+    {
+      "id": 44208238694,
+      "name": "FAST9 trusted delivery journey",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 49,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238694/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238694/logs",
+      "workflow_id": 419129536
+    },
+    {
+      "id": 44208238651,
+      "name": "Team workspace synthetic cases",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 44,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238651/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238651/logs",
+      "workflow_id": 421248909
+    },
+    {
+      "id": 44208238718,
+      "name": "V8 connected synthetic multimedia campaign",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 17,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238718/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238718/logs",
+      "workflow_id": 421522904
+    },
+    {
+      "id": 44208238765,
+      "name": "Transcript binding campaign integration",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 36,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238765/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238765/logs",
+      "workflow_id": 421310836
+    },
+    {
+      "id": 44208238640,
+      "name": "V11 functional completion and encrypted recovery",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 10,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238640/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238640/logs",
+      "workflow_id": 421946904
+    },
+    {
+      "id": 44208238581,
+      "name": "V12 strict P0 and connected P1 integration",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 8,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238581/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238581/logs",
+      "workflow_id": 421981914
+    },
+    {
+      "id": 44208238781,
+      "name": "C6 integrated pure and full importer QA",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 771,
+      "jobs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238781/jobs",
+      "logs_url": "https://api.github.com/repos/sami77337/fatwa-platform/actions/runs/44208238781/logs",
+      "workflow_id": 386656604
+    }
+  ]
+}

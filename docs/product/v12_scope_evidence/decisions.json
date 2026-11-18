@@ -124,6 +124,8 @@
     ],
     "evidence_ids": [
       "case-original",
+      "p1-browser-restored",
+      "p1-case-journey",
       "requester",
       "source-intake"
     ],
@@ -151,7 +153,9 @@
     ],
     "evidence_ids": [
       "answer-parts",
-      "case-original"
+      "case-original",
+      "p1-browser-restored",
+      "p1-multipart-edit"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
     "status": "DECISION",
@@ -258,6 +262,7 @@
       "219"
     ],
     "evidence_ids": [
+      "p1-library-roundtrip",
       "research",
       "search-baseline"
     ],
@@ -302,6 +307,8 @@
       "answer-parts",
       "case-original",
       "identity",
+      "p1-browser-restored",
+      "p1-multipart-edit",
       "private-files",
       "transcript"
     ],
@@ -355,6 +362,7 @@
     ],
     "evidence_ids": [
       "knowledge-links",
+      "p1-library-roundtrip",
       "research",
       "search-baseline"
     ],
@@ -443,6 +451,7 @@
       "241"
     ],
     "evidence_ids": [
+      "p1-library-roundtrip",
       "research"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -631,6 +640,7 @@
     ],
     "evidence_ids": [
       "mufti-desk",
+      "p1-case-journey",
       "publication",
       "source-intake"
     ],
@@ -659,6 +669,7 @@
     "evidence_ids": [
       "answer-parts",
       "case-original",
+      "p1-multipart-edit",
       "publication",
       "transcript"
     ],
@@ -708,6 +719,7 @@
     ],
     "evidence_ids": [
       "answer-parts",
+      "p1-browser-restored",
       "private-files"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -765,6 +777,7 @@
     "evidence_ids": [
       "case-original",
       "delivery",
+      "p1-browser-restored",
       "source-intake"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -803,6 +816,7 @@
     "evidence_ids": [
       "answer-parts",
       "delivery",
+      "p1-browser-restored",
       "publication"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -836,6 +850,8 @@
     "evidence_ids": [
       "answer-parts",
       "delivery",
+      "p1-browser-restored",
+      "p1-library-roundtrip",
       "publication"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -897,6 +913,9 @@
     "evidence_ids": [
       "identity",
       "maintenance",
+      "p1-browser-restored",
+      "p1-library-roundtrip",
+      "p1-rights-inspector",
       "private-files",
       "publication",
       "recovery",
@@ -932,6 +951,7 @@
     "evidence_ids": [
       "core-without-ai",
       "maintenance",
+      "p1-browser-restored",
       "private-files",
       "recovery",
       "transcript"
@@ -1061,6 +1081,7 @@
     ],
     "evidence_ids": [
       "identity",
+      "p1-rights-inspector",
       "publication",
       "rights"
     ],
@@ -1089,6 +1110,7 @@
       "417"
     ],
     "evidence_ids": [
+      "p1-library-roundtrip",
       "reference-import",
       "research",
       "search-baseline"
@@ -1118,6 +1140,7 @@
       "417"
     ],
     "evidence_ids": [
+      "p1-library-roundtrip",
       "reference-import",
       "research",
       "search-baseline"
@@ -1147,6 +1170,7 @@
     ],
     "evidence_ids": [
       "knowledge-links",
+      "p1-library-roundtrip",
       "research",
       "search-baseline"
     ],
@@ -1238,6 +1262,10 @@
       "case-original",
       "delivery",
       "mufti-desk",
+      "p1-browser-restored",
+      "p1-case-journey",
+      "p1-library-roundtrip",
+      "p1-multipart-edit",
       "requester",
       "research",
       "source-intake"
@@ -1270,6 +1298,8 @@
     ],
     "evidence_ids": [
       "case-original",
+      "p1-browser-restored",
+      "p1-case-journey",
       "requester"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -1301,6 +1331,7 @@
     "evidence_ids": [
       "case-original",
       "identity",
+      "p1-browser-restored",
       "requester"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -1323,6 +1354,7 @@
     ],
     "evidence_ids": [
       "mufti-desk",
+      "p1-browser-restored",
       "source-intake"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -1366,6 +1398,7 @@
       "334"
     ],
     "evidence_ids": [
+      "p1-rights-inspector",
       "reference-import",
       "rights"
     ],
@@ -1412,6 +1445,7 @@
       "356"
     ],
     "evidence_ids": [
+      "p1-rights-inspector",
       "reference-import",
       "rights"
     ],
@@ -1487,6 +1521,9 @@
       "case-original",
       "delivery",
       "mufti-desk",
+      "p1-browser-restored",
+      "p1-case-journey",
+      "p1-multipart-edit",
       "private-files",
       "requester",
       "transcript"
@@ -1555,6 +1592,8 @@
       "answer-parts",
       "knowledge-links",
       "mufti-desk",
+      "p1-browser-restored",
+      "p1-library-roundtrip",
       "publication",
       "requester",
       "research",
@@ -1638,6 +1677,8 @@
       "case-original",
       "knowledge-links",
       "mufti-desk",
+      "p1-browser-restored",
+      "p1-library-roundtrip",
       "recovery",
       "reference-import",
       "research",
@@ -1714,6 +1755,7 @@
     ],
     "evidence_ids": [
       "delivery",
+      "p1-browser-restored",
       "publication"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -1735,6 +1777,7 @@
     ],
     "evidence_ids": [
       "mufti-desk",
+      "p1-case-journey",
       "source-intake"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -1773,6 +1816,9 @@
     "evidence_ids": [
       "citation-history",
       "knowledge-links",
+      "p1-browser-restored",
+      "p1-library-roundtrip",
+      "p1-rights-inspector",
       "research",
       "rights"
     ],
@@ -1866,6 +1912,7 @@
       "core-without-ai",
       "identity",
       "knowledge-links",
+      "p1-library-roundtrip",
       "research",
       "search-baseline"
     ],
@@ -1935,6 +1982,7 @@
       "core-without-ai",
       "identity",
       "knowledge-links",
+      "p1-library-roundtrip",
       "research",
       "search-baseline"
     ],
@@ -2116,6 +2164,9 @@
       "core-without-ai",
       "identity",
       "knowledge-links",
+      "p1-browser-restored",
+      "p1-library-roundtrip",
+      "p1-rights-inspector",
       "publication",
       "reference-import",
       "research",
@@ -2194,6 +2245,7 @@
       "530"
     ],
     "evidence_ids": [
+      "p1-browser-restored",
       "requester"
     ],
     "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
@@ -2278,6 +2330,8 @@
     ],
     "evidence_ids": [
       "knowledge-links",
+      "p1-library-roundtrip",
+      "p1-rights-inspector",
       "publication",
       "reference-import",
       "rights"
