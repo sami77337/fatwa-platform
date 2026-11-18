@@ -24,10 +24,18 @@ ROUTES = {
     BASE + "staff/": ("GET", "HEAD", "POST"),
     BASE + "staff/logout/": ("POST",),
     BASE + "casework.css": ("GET", "HEAD"),
+    BASE + "audio-capture.js": ("GET", "HEAD"),
+    BASE + "audio-worklet.js": ("GET", "HEAD"),
+    BASE + "audio-capture.css": ("GET", "HEAD"),
 }
 PRIVATE_MEDIA_ROUTE = re.compile(
     r"/casework/(?:staff|status)/(?:attachments|answer-media)/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+)
+TIMED_MEDIA_ROUTE = re.compile(
+    r"/casework/staff/timed-citations/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+    r"(?:audio|review-audio)/"
 )
 LIMITS = {"read": 150, "intake": 10, "login": 10, "requester": 30, "staff": 60}
 
@@ -50,6 +58,25 @@ def private(response, *, head=False):
         "img-src 'self'; media-src 'self'; frame-src 'self'; "
         "base-uri 'none'; frame-ancestors 'none'"
     ))
+    # Only the server-rendered native recorder opts this HTML response into the
+    # microphone. Private original byte responses and custom sandbox CSPs retain
+    # their policy; user text is escaped by these templates, never trusted markup.
+    if (
+        enabled()
+        and getattr(settings, "FATWA_BROWSER_AUDIO_ENABLED", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+        and not getattr(response, "streaming", False)
+        and b'<fieldset data-browser-audio data-input-name="' in response.content
+        and "sandbox" not in response["Content-Security-Policy"]
+    ):
+        policy = response["Content-Security-Policy"]
+        if "script-src" not in policy:
+            response["Content-Security-Policy"] = (
+                policy.replace("media-src 'self';", "media-src 'self' blob:;")
+                + "; script-src 'self'; worker-src 'self'"
+            )
+        response["Permissions-Policy"] = "microphone=(self), camera=()"
     if head:
         response.content = b""
     return response
@@ -113,7 +140,9 @@ class CaseworkGuard:
         if re.fullmatch(r"(?:127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", host) is None:
             return denied("casework_host_invalid", 400)
         methods = ROUTES.get(request.path)
-        if methods is None and PRIVATE_MEDIA_ROUTE.fullmatch(request.path):
+        if methods is None and (
+            PRIVATE_MEDIA_ROUTE.fullmatch(request.path) or TIMED_MEDIA_ROUTE.fullmatch(request.path)
+        ):
             methods = ("GET", "HEAD")
         if methods is None:
             return denied("casework_not_found", 404)

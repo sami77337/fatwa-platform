@@ -73,6 +73,7 @@
 <form method="post" action="/casework/status/" enctype="multipart/form-data">{% csrf_token %}
 <input type="hidden" name="action" value="attachment_upload"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="upload_proof" value="{{ upload_proof }}">
 <label for="portal-attachment">مرفق اصطناعي للسؤال</label><input id="portal-attachment" type="file" name="attachment" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav" required>
+{% if audio_capture_enabled %}{% include "browser_audio/capture.html" with audio_input_name="attachment" %}{% endif %}
 <p>الحد 192000 بايت، وللنص 65536 بايت؛ تطبق حدود النوع والتحليل القائمة. لا ادعاء بفحص فيروسات.</p>
 <label><input type="checkbox" name="synthetic_only" value="yes" required>ملف اصطناعي مخصص لهذه التجربة</label><button>حفظ مرفق السؤال</button>
 </form>{% else %}<p>يمكنك إرفاق الملف مع ردك على الاستيضاح في النموذج أدناه.</p>{% endif %}
@@ -82,6 +83,7 @@
 <form id="portal-reply-form" method="post" action="/casework/status/" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="reply"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="form_proof" value="{{ form_proof }}">
 <label for="portal-followup">نص التعقيب</label><textarea id="portal-followup" name="text" maxlength="16000" required>{{ text }}</textarea>
 {% if result.attachments_enabled %}<label for="reply-attachment">ملف مع الرد (اختياري)</label><input id="reply-attachment" type="file" name="reply_attachment" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav">
+{% if audio_capture_enabled %}{% include "browser_audio/capture.html" with audio_input_name="reply_attachment" %}{% endif %}
 <p>يُحفظ الرد والملف معًا؛ عند فشل أحدهما لا يُحفظ الآخر. الحد 192000 بايت، وللنص 65536 بايت.</p>
 <label><input type="checkbox" name="synthetic_only" value="yes">إن أرفقت ملفًا، أؤكد أنه اصطناعي لهذه التجربة</label>{% endif %}
 <p>يُحفظ النص ضمن قضيتك ويعيد الجواب للمراجعة. لا تُعرض الأجوبة السابقة بعد تغير الوقائع.</p><button>إرسال التعقيب</button></form>

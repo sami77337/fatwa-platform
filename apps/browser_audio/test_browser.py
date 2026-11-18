@@ -59,6 +59,14 @@ OBSERVE = """() => {
 }"""
 
 
+def recorder(page):
+    """Exercise the upload/editor under test, independently of the reply recorder."""
+    return page.locator(
+        'form:has([name="action"][value="attachment_upload"]) [data-browser-audio], '
+        'form:has([name="action"][value="answer_media_save"]) [data-browser-audio]'
+    )
+
+
 @override_settings(**FEATURES)
 class BrowserAudioTests(LiveServerTestCase):
     host = "127.0.0.1"
@@ -179,7 +187,7 @@ class BrowserAudioTests(LiveServerTestCase):
             "() => document.querySelector('[data-browser-audio]')?.dataset.audioState === 'idle'"
         )
         self.assertEqual(page.evaluate("probe.calls"), 0)
-        page.locator("[data-audio-start]").click()
+        recorder(page).locator("[data-audio-start]").click()
         page.wait_for_function(
             "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'recording'"
         )
@@ -187,12 +195,12 @@ class BrowserAudioTests(LiveServerTestCase):
             page.wait_for_function(
                 "() => +document.querySelector('[data-browser-audio]').dataset.audioFrames >= 1600"
             )
-            page.locator("[data-audio-stop]").click()
+            recorder(page).locator("[data-audio-stop]").click()
         page.wait_for_function(
             "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'preview'"
         )
         self.released(page)
-        page.locator("[data-audio-accept]").click()
+        recorder(page).locator("[data-audio-accept]").click()
         encoded = page.locator('input[type="file"]').first.evaluate("""async input => {
             const bytes = new Uint8Array(await input.files[0].arrayBuffer());
             let out = ''; for (const b of bytes) out += String.fromCharCode(b); return btoa(out);
@@ -347,12 +355,12 @@ class BrowserAudioTests(LiveServerTestCase):
                         "browserContextId": context_id,
                     },
                 )
-                page.locator("[data-audio-start]").click()
+                recorder(page).locator("[data-audio-start]").click()
                 page.wait_for_function(
                     "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'error'"
                 )
                 self.released(page)
-                self.assertIn("لم يُمنح", page.locator("[data-audio-status]").inner_text())
+                self.assertIn("لم يُمنح", recorder(page).locator("[data-audio-status]").inner_text())
                 session.send(
                     "Browser.setPermission",
                     {
@@ -365,9 +373,9 @@ class BrowserAudioTests(LiveServerTestCase):
                 # Real fake device stream, held at the permission-promise boundary until after cancellation.
                 page.evaluate("""() => {const native=navigator.mediaDevices.getUserMedia;
                   navigator.mediaDevices.getUserMedia=async (...args)=>{const stream=await native(...args);await new Promise(r=>window.finishGrant=r);return stream;};} """)
-                page.locator("[data-audio-start]").click()
+                recorder(page).locator("[data-audio-start]").click()
                 page.wait_for_function("() => typeof finishGrant === 'function'")
-                page.locator("[data-audio-cancel]").click()
+                recorder(page).locator("[data-audio-cancel]").click()
                 page.evaluate("finishGrant()")
                 self.released(page)
                 self.assertEqual(
@@ -379,12 +387,12 @@ class BrowserAudioTests(LiveServerTestCase):
                 self.assertEqual(parsed.metadata["duration_seconds"], 10)
                 self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
                 self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), 320)
-                page.locator("[data-audio-cancel]").click()
+                recorder(page).locator("[data-audio-cancel]").click()
                 self.assertEqual(
                     page.locator('[type="file"]').first.evaluate("e=>e.files.length"), 0
                 )
                 self.assertEqual(page.evaluate("probe.urls.size"), 0)
-                page.locator("[data-audio-start]").click()
+                recorder(page).locator("[data-audio-start]").click()
                 page.wait_for_function(
                     "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'recording'"
                 )
@@ -403,7 +411,7 @@ class BrowserAudioTests(LiveServerTestCase):
             try:
                 page = self.requester(browser)
                 with override_settings(FATWA_BROWSER_AUDIO_ENABLED=False):
-                    page.locator("[data-audio-start]").click()
+                    recorder(page).locator("[data-audio-start]").click()
                     page.wait_for_function(
                         "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'error'"
                     )
@@ -424,7 +432,7 @@ class BrowserAudioTests(LiveServerTestCase):
                     }
                 )
                 form.locator('[name="synthetic_only"]').check()
-                page.locator("[data-audio-start]").click()
+                recorder(page).locator("[data-audio-start]").click()
                 page.wait_for_function(
                     "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'recording'"
                 )
@@ -434,14 +442,14 @@ class BrowserAudioTests(LiveServerTestCase):
                     lambda request: posts.append(request.url) if request.method == "POST" else None,
                 )
                 form.evaluate("form => form.requestSubmit()")
-                self.assertIn("قبل حفظ النموذج", page.locator("[data-audio-status]").inner_text())
+                self.assertIn("قبل حفظ النموذج", recorder(page).locator("[data-audio-status]").inner_text())
                 self.assertEqual(posts, [])
-                page.locator("[data-audio-cancel]").click()
+                recorder(page).locator("[data-audio-cancel]").click()
                 self.released(page)
                 self.assertEqual(
                     form.locator('[type="file"]').evaluate("e=>e.files[0].name"), "previous.wav"
                 )
-                page.locator("[data-audio-start]").click()
+                recorder(page).locator("[data-audio-start]").click()
                 page.wait_for_function(
                     "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'recording'"
                 )
@@ -450,7 +458,7 @@ class BrowserAudioTests(LiveServerTestCase):
                 )
                 self.released(page)
                 self.assertEqual(
-                    page.locator("[data-browser-audio]").get_attribute("data-audio-state"), "error"
+                    recorder(page).get_attribute("data-audio-state"), "error"
                 )
                 self.assertEqual(page.evaluate("probe.urls.size"), 0)
                 self.assertEqual(self.sync(lambda: CaseAttachment.objects.count()), 0)

@@ -33,6 +33,10 @@ class CaptureComposition:
             if position < 0:
                 continue
             end = body.index("</form>", position)
+            # The integrated native template already contains the real component.
+            # Keep this older isolated fixture usable without creating a duplicate.
+            if f'data-browser-audio data-input-name="{name}"' in body[position:end]:
+                continue
             body = (
                 body[:end]
                 + template.render(
@@ -48,9 +52,10 @@ class CaptureComposition:
         response.content = body.encode()
         if "data-browser-audio" in body:
             policy = response["Content-Security-Policy"]
-            response["Content-Security-Policy"] = (
-                policy.replace("media-src 'self'", "media-src 'self' blob:")
-                + "; script-src 'self'; worker-src 'self'"
-            )
+            if "script-src" not in policy:
+                response["Content-Security-Policy"] = (
+                    policy.replace("media-src 'self';", "media-src 'self' blob:;")
+                    + "; script-src 'self'; worker-src 'self'"
+                )
             response["Permissions-Policy"] = "microphone=(self), camera=()"
         return response
