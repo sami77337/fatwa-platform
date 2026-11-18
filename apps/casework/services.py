@@ -112,29 +112,15 @@ def _answer_timed(answer, *, actor=None, provider=None):
             raise CaseConflict("timed_approval_authority_changed")
     if provider is None:
         raise CaseConflict("timed_approval_authority_unavailable")
-    from apps.research_workspace.rights import Resource
-    from apps.source_rights.services import _projection_deadline
+    from apps.source_rights.services import projection_expiry_guard
     from apps.timed_citations.services import for_locked_answer
 
-    rows = for_locked_answer(answer=answer, actor=actor, provider=provider)
-    policy = settings.FATWA_RESEARCH_WORKSPACE_RIGHTS
-    deadlines = []
-    for row in rows:
-        source = row["source"]
-        for action in ("READ_MEDIA", "CITE"):
-            try:
-                deadline = policy.grant_deadline(
-                    provider_id=provider.provider_id, subject_id=actor.subject_id,
-                    auth_epoch=actor.auth_epoch, case_ref=answer.case.public_ref,
-                    action=action,
-                    resource=Resource(source["kind"], source["id"], source["sha256"]),
-                )
-                if deadline is None or timezone.is_naive(deadline) or deadline <= timezone.now():
-                    raise ValueError
-            except Exception as exc:
-                raise CaseConflict("timed_grant_expiry_required") from exc
-            deadlines.append(_projection_deadline(deadline))
-    earliest = min(deadlines, default=None)
+    # Collect the already-validated bounds inside the existing projection guard.
+    # A fresh policy callback after the hook's final identity check could revoke
+    # that identity while returning its former deadline, exposing private bytes.
+    with projection_expiry_guard() as deadlines:
+        for_locked_answer(answer=answer, actor=actor, provider=provider)
+        earliest = min(deadlines, default=None)
     for scope in _TIMED_USE_DEADLINES.get():
         if earliest is not None:
             scope[0] = earliest if scope[0] is None else min(scope[0], earliest)
