@@ -499,6 +499,38 @@ class PdfTests(Fixture, TransactionTestCase):
         self.assertEqual(len(PdfReader(io.BytesIO(self.pdf["raw"])).pages), 3)
         self.assertEqual(AnswerPart.objects.get(pk=self.part.pk).sha256, self.part.sha256)
 
+    def test_selected_page_conversion_rechecks_rights_and_never_falls_back_to_original(self):
+        from . import page_preview
+
+        row = self.propose()
+        self.confirm(row)
+        original = page_preview.selected_page
+
+        def revoke_during_derivation(raw, *, page_number, page_count):
+            one_page = original(raw, page_number=page_number, page_count=page_count)
+            self.rights.actions.discard("READ_MEDIA")
+            return one_page
+
+        with (
+            patch.object(page_preview, "selected_page", side_effect=revoke_during_derivation),
+            self.assertRaises(cases.CaseConflict),
+        ):
+            self.opened(row, page_only=True)
+        self.rights.actions.add("READ_MEDIA")
+        with (
+            patch.object(
+                page_preview,
+                "selected_page",
+                side_effect=page_preview.PdfPageUnavailable("synthetic_worker_failure"),
+            ),
+            self.assertRaisesMessage(cases.CaseConflict, "pdf_selected_page_unavailable"),
+        ):
+            self.opened(row, page_only=True)
+        self.assertEqual(self.opened(row)["raw"], self.pdf["raw"])
+        self.assertEqual(
+            len(PdfReader(io.BytesIO(self.opened(row, page_only=True)["raw"])).pages), 1
+        )
+
     def test_concurrent_correction_has_one_successor(self):
         from concurrent.futures import ThreadPoolExecutor
 
