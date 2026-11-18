@@ -1,6 +1,137 @@
-# V12 P0 independent security review — BLOCKED on 37c58a4
+# V12 P0 independent security review — PASS on 5aff9ba
 
-## Current integrated-head re-review (2026-11-17)
+## Final independent P0 re-review (2026-11-18)
+
+**Verdict: PASS for the requested P0 security review on exact commit
+`5aff9ba3cce35241b3ded27ed3428e0d4ecad768`.** No unresolved P0 blocker was found
+in the reviewed recovery/admission/source-rights/publication boundaries. The
+previously blocking multi-result expiry probe now passes on both PostgreSQL
+majors. This is a scoped engineering/security finding, not formal product
+acceptance, authorization for production, or a statement that arbitrary privileged
+database/Python access is controlled. Gate B NOT_PASSED, C/D/E HOLD, Phase01 BLOCKED,
+NOT_DEPLOYED and the owner's engineering reference remain unchanged. This lane
+has not started P1/P2; the coordinator owns the subsequent campaign decision.
+
+### Exact head, scope and evidence
+
+Verified remote integration branch and `refs/pull/231/head` both resolve to the
+SHA above. Used a clean detached worktree `/tmp/v12-security-rereview` at that
+commit. Read the full repair diff and updated integration evidence. This follow-up
+changes only this report on `codex/20261117-v12-security-review`; no product code,
+committed tests, CI, configuration or GitHub settings changed here. Historical
+failures below are retained verbatim as dated checkpoints, not current blockers.
+
+Independently verified [V12 CI run 44203281971](https://github.com/sami77337/fatwa-platform/actions/runs/44203281971)
+belongs to the exact commit and that jobs `134462617865` (PG17) and `134462617398`
+(PG18), including exact-head verification, succeeded. The verifier source includes
+the 14 original independent review tests and all 10 new collection regressions.
+The coordinator reports 183 functional/security + 8 strict recovery + 16 encrypted
+V11 + 22 isolated V10 tests per major. Those broader counts are CI evidence, not
+new local executions by this reviewer. Exact-commit workflow metadata also confirms
+successful V10 (`44203281782`) and V11 (`44203281992`) runs. No browser suite was
+rerun locally because this repair did not change a browser implementation.
+
+The earlier reviewed maintenance/recovery implementation, management boundaries,
+answer-media hooks, shared settings/workflows and original 14 independent tests
+are unchanged between `37c58a4` and `5aff9ba` (verified by git diff). The citation
+clone's existing admission hook remains before copying; the changed citation code
+adds guards around read compositions. Consequently the unchanged maintenance and
+recovery suites were not repeated locally in this pass. Their prior independent
+results and current exact-head CI remain separate evidence.
+
+### Independent focused results on 5aff9ba
+
+| Execution on fresh owned synthetic clusters | PG17.12 | PG18.7 |
+| --- | --- | --- |
+| Original unmodified `/tmp/v12_batch_probe.py` reproducer plus the 10 integrated affected regressions | **11 PASS**, 9.787s | **11 PASS**, 10.040s |
+| Two additional independently authored concurrent withdrawal probes | **2 PASS**, 1.486s | **2 PASS**, 1.416s |
+
+Thus **13 focused executions passed on each major**, including the original
+independent reproducer and two new independent methods. This count deliberately
+distinguishes reviewer-authored probes from the integrator's 10 tests. Runtime:
+Python 3.13.16; the same PG17.12 and PG18.7 binaries documented earlier. The PG18
+local build is not claimed to duplicate every CI build feature.
+
+The first batch verifies metadata/text-source search, category/material filters,
+pagination, GET/HEAD, staff results, expiry during final validation or filtering,
+and related/research/citation composition. The original two-item probe is unchanged
+from the failed `37c58a4` run: A's source grant expires during B's projection,
+A's detail is denied, B remains readable, and the catalog now contains only B,
+total 1 and only B's category.
+
+The new probes use actual separate PostgreSQL connections and canonical mutation
+services, not raw rights edits or a synthetic return-value mock. While the reader
+projects the second publication, another connection attempts either rights REVOKE
+or publication WITHDRAW on the first. `pg_blocking_pids(writer_pid)` positively
+identifies the reader as a blocker, and the writer cannot complete until the
+batch transaction exits. This proves serialization, not an expectation of
+retroactively invalidating a read that preceded a committed withdrawal. After the
+write commits, both probes assert: first detail denied; only B remains in anonymous
+and staff lists; source-title search total 0; category list contains only B;
+PAGE_SIZE=1 gives total 1, page 1 only B, page 2 empty, and no next-page flag.
+Both worker connections close and no worker exception remains.
+
+### Repair assessment and remaining limits
+
+- Anonymous collection revalidates all candidates before deriving search results,
+  facets or pages, filters against one final clock, and refuses the response if a
+  retained deadline expires while filtering. Canonical case locks remain held
+  throughout. The previous premature result collection is no longer observable
+  in the unchanged reproducer.
+- Staff publication collection now retains deterministic case locks for the batch,
+  revalidates exact source grants and staff identities, and applies equivalent
+  final expiry checks. There is no new grant or fallback permission.
+- The deadline hook validates the same exact source snapshot, case, current rights
+  revision and usage, returning the existing deadline only after permission is
+  established. The Boolean compatibility hook delegates to it.
+- Citation, knowledge and research compositions add an execution-local expiry
+  guard. Successful reference/transcript checks contribute to every enclosing
+  guard, which resets its context on success or exception. It does not create
+  source authority for source-free answers or replace source/case/publication
+  checks. Integrated affected tests pass for nested composition and state cleanup.
+
+No current blocker remains from SEC12-01 through SEC12-06 within this tested
+application perimeter. This conclusion does not erase their baseline failures or
+the earlier `37c58a4` collection leak. Direct privileged SQL, arbitrary Python/ORM
+outside supported boundaries, production deployment and real-user data remain
+outside the evidence. No main-protection setting was changed or asserted.
+
+### Reproduction and durable evidence
+
+All new probes were kept in `/tmp` to honor report-only ownership. The full original
+probe is preserved below; the new concurrency module is appended after it. Run
+from a checkout of `5aff9ba3cce35241b3ded27ed3428e0d4ecad768` with matching PG binaries:
+
+```sh
+PYTHON=/workspace/fatwa-platform/.venv/bin/python
+PG_BIN=/tmp/v9-pg/usr/lib/postgresql/17/bin
+PG_MAJOR=17
+PYTHONPATH="/tmp:$PWD" V12_PG_BIN="$PG_BIN" "$PYTHON" \
+  infra/dev/with_casework_postgres.py --pg-bin "$PG_BIN" --major "$PG_MAJOR" \
+  --settings config.settings.campaign_review -- "$PYTHON" manage.py test \
+  v12_batch_probe.BatchExpiryProbe.test_prior_item_expiry_during_later_projection \
+  tests.casework.test_v12_catalog_expiry --verbosity 2
+PYTHONPATH="/tmp:$PWD" V12_PG_BIN="$PG_BIN" "$PYTHON" \
+  infra/dev/with_casework_postgres.py --pg-bin "$PG_BIN" --major "$PG_MAJOR" \
+  --settings config.settings.campaign_review -- "$PYTHON" manage.py test \
+  v12_withdrawal_probe.WithdrawalProbe.test_rights_revocation_waits_for_batch_then_removes_all_metadata \
+  v12_withdrawal_probe.WithdrawalProbe.test_publication_withdrawal_waits_for_batch_then_removes_all_metadata \
+  --verbosity 2
+# Repeat with PG_MAJOR=18 and PG_BIN=/tmp/v12-pg18-built/bin.
+```
+
+Captured logs: `/tmp/v12-newhead-pg{17,18}.log` and
+`/tmp/v12-withdrawal-pg{17,18}.log`. All listed methods report `ok`; exact summaries:
+
+```text
+PG17.12: Ran 11 tests in 9.787s — OK
+PG18.7:  Ran 11 tests in 10.040s — OK
+PG17.12: Ran 2 tests in 1.486s — OK
+PG18.7:  Ran 2 tests in 1.416s — OK
+System check identified no issues (0 silenced).
+```
+
+## Previous integrated-head re-review — BLOCKED on 37c58a4 (2026-11-17)
 
 **Verdict: BLOCKED, not PASS**, on exact integration commit
 `37c58a4a420a961b1adf486d52c42672cc70c8eb` (Draft PR #231).
@@ -392,4 +523,101 @@ class BatchExpiryProbe(RightsP0Tests):
                 self.assertEqual(result["total"], 1, result)
                 self.assertEqual([item["id"] for item in result["items"]], [str(row.pk)])
                 self.assertEqual(result["categories"], [row.category])
+```
+
+## Independent concurrent withdrawal probe source
+
+Save as `/tmp/v12_withdrawal_probe.py`; run only the two explicit method labels above.
+
+```python
+"""Independent two-connection probes, exact reviewed head, synthetic data only."""
+from threading import Event, Thread
+from time import monotonic, sleep
+from unittest.mock import patch
+
+from django.db import connection, connections
+
+from apps.experimental_publication import services as publications
+from apps.library_preview import services as preview
+from apps.source_rights.models import RightsRevision
+from tests.casework.test_v12_catalog_expiry import CatalogExpiryTests
+
+
+class WithdrawalProbe(CatalogExpiryTests):
+    def _concurrent_withdrawal(self, action):
+        original = preview._projection
+        ready, done = Event(), Event()
+        worker_pid, errors, threads = [], [], []
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_backend_pid()")
+            reader_pid = cursor.fetchone()[0]
+
+        def writer():
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SET statement_timeout = '8s'")
+                    cursor.execute("SELECT pg_backend_pid()")
+                    worker_pid.append(cursor.fetchone()[0])
+                ready.set()
+                action()
+            except BaseException as exc:
+                errors.append(exc)
+            finally:
+                connections.close_all()
+                done.set()
+
+        def during_later(selected, edition):
+            result = original(selected, edition)
+            if edition.pk == self.second.pk and not threads:
+                thread = Thread(target=writer, daemon=True)
+                threads.append(thread)
+                thread.start()
+                self.assertTrue(ready.wait(3), errors)
+                deadline = monotonic() + 3
+                blocked = False
+                while monotonic() < deadline and not done.is_set():
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT pg_blocking_pids(%s)", [worker_pid[0]])
+                        blocked = reader_pid in cursor.fetchone()[0]
+                    if blocked:
+                        break
+                    sleep(0.01)
+                self.assertTrue(blocked, errors)
+                self.assertFalse(done.is_set())
+            return result
+
+        try:
+            with patch.object(preview, "_projection", side_effect=during_later):
+                before_commit = preview.browse()
+            # The write is serialized after this read, not silently committed
+            # between the first and second projections.
+            self.assertEqual(before_commit["total"], 2)
+        finally:
+            for thread in threads:
+                thread.join(10)
+        self.assertTrue(done.is_set())
+        self.assertEqual(errors, [])
+        with patch.object(preview, "PAGE_SIZE", 1):
+            for page in (1, 2):
+                result = preview.browse(page=page)
+                self.assertEqual(result["total"], 1)
+                self.assertEqual(result["categories"], [self.second.category])
+                self.assertEqual([item["id"] for item in result["items"]],
+                                 [str(self.second.pk)] if page == 1 else [])
+                self.assertFalse(result["has_next"])
+        with self.assertRaises(preview.PreviewUnavailable):
+            preview.read(str(self.first.pk))
+        self.assertEqual(preview.browse(query=self.heading.title_original)["total"], 0)
+        self.assertEqual([r["id"] for r in publications.library(**self.staff)],
+                         [str(self.second.pk)])
+
+    def test_rights_revocation_waits_for_batch_then_removes_all_metadata(self):
+        revision = RightsRevision.objects.get(source_id=self.source["id"],
+                                              case_id=self.common["case_id"])
+        self._concurrent_withdrawal(lambda: self.decision({"id": str(revision.pk)}, "REVOKE"))
+
+    def test_publication_withdrawal_waits_for_batch_then_removes_all_metadata(self):
+        self._concurrent_withdrawal(lambda: publications.act(
+            **{**self.common, "subject_id": "publisher"},
+            edition_id=str(self.first.pk), action="WITHDRAW"))
 ```
