@@ -6,6 +6,10 @@ was recorded. Earlier foundation9/9 passed before the additional provenance
 negative. Ruff check PASS; initial format check requested two file reformats,
 then formatting was corrected. No product/PostgreSQL/browser suite was rerun.
 
+A follow-up strengthens actual PostgreSQL version observation (not just a labelled
+receipt) and requires protected UI evidence for every verified V13 surface.
+The resulting11/11 documentary tests pass; no product evidence is credited yet.
+
 The negatives reject planned-only credit, missing negative tests, a wrong commit,
 a missing pass on either major, unprotected browser attribution, invented symbols,
 changed baseline sources, completion/percentage claims, mislabelling parent bytes

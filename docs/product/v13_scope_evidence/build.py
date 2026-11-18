@@ -87,6 +87,8 @@ def check_execution(group, refs):
         assert source["run_id"] == receipt["run_id"] and source["job_id"] == receipt["job_id"]
         lines = source["lines"]
         assert any("TESTED_SHA=" + receipt["head_sha"] in line for line in lines)
+        version = f"SYNTHETIC_POSTGRES=postgres (PostgreSQL) {receipt['postgres_major']}."
+        assert any(version in line for line in lines), "actual PostgreSQL major must be observed"
         for ref in refs:
             assert ref["symbol"], "test must name its executed method"
             method = ref["symbol"].split(".")[-1]
@@ -119,6 +121,9 @@ def groups_for(assessment):
             assert group["browser_test"] is None
             continue
         sha = group["product_sha"]
+        assert group["browser_test"], (
+            "V13 user-facing groups require protected connected UI evidence"
+        )
         assert group["credited_owner_points"]
         assert set(group["credited_owner_points"]) <= set(points)
         assert group["bounded_claim"] and all(

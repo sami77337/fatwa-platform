@@ -39,6 +39,7 @@ class ScopeTraceTests(unittest.TestCase):
                 "job_id": major,
                 "lines": [
                     "TESTED_SHA=" + sha,
+                    f"SYNTHETIC_POSTGRES=postgres (PostgreSQL) {major}.0; test fixture only",
                     "test_allow (tests.synthetic.test_boundary.Boundary.test_allow) ... ok",
                     "test_deny (tests.synthetic.test_boundary.Boundary.test_deny) ... ok",
                     "FATWA_BROWSER_SANDBOX: 1",
@@ -81,6 +82,9 @@ class ScopeTraceTests(unittest.TestCase):
             bounded_claim="fixture claim",
             code=["AGENTS.md"],
             positive_tests=["tests/synthetic/test_boundary.py#test_allow"],
+            negative_tests=[],
+            credited_owner_points=[25],
+            browser_test="tests/synthetic/test_boundary.py#test_browser",
         )
         with self.assertRaises(AssertionError):
             build.groups_for(assessment)
@@ -96,6 +100,16 @@ class ScopeTraceTests(unittest.TestCase):
         group, refs, sources = self.execution_fixture()
         sources["synthetic-pg18"]["lines"] = [
             line for line in sources["synthetic-pg18"]["lines"] if not line.startswith("test_deny")
+        ]
+        with patch.object(build, "read", side_effect=sources.__getitem__):
+            with self.assertRaises(AssertionError):
+                build.check_execution(group, refs)
+
+    def test_mislabeled_major_cannot_credit_pg17_log_as_pg18(self):
+        group, refs, sources = self.execution_fixture()
+        sources["synthetic-pg18"]["lines"] = [
+            line.replace("PostgreSQL) 18.", "PostgreSQL) 17.")
+            for line in sources["synthetic-pg18"]["lines"]
         ]
         with patch.object(build, "read", side_effect=sources.__getitem__):
             with self.assertRaises(AssertionError):
