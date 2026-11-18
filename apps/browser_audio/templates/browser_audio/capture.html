@@ -1,0 +1,14 @@
+{% if audio_capture_enabled %}
+<link rel="stylesheet" href="/casework/audio-capture.css">
+<script type="module" src="/casework/audio-capture.js"></script>
+<fieldset data-browser-audio data-input-name="{{ audio_input_name }}" dir="rtl">
+  <legend>تسجيل صوت اصطناعي للتجربة</legend>
+  <p>بعد موافقتك يبدأ تسجيل الميكروفون، لمدة أقصاها عشر ثوانٍ. استخدم مصدر صوت اصطناعي فقط. عاين التسجيل ثم اختر استخدامه؛ الحفظ يتم بزر النموذج الأصلي ويحتاج صلاحياته ومراجعته.</p>
+  <button type="button" data-audio-start>السماح بالميكروفون وبدء التسجيل</button>
+  <button type="button" data-audio-stop disabled>إيقاف ومعاينة</button>
+  <button type="button" data-audio-cancel disabled>إلغاء التسجيل</button>
+  <audio data-audio-preview controls preload="metadata" hidden></audio>
+  <p data-audio-status role="status" aria-live="polite">لم يُطلب إذن الميكروفون. لم يُرفع أي تسجيل.</p>
+  <button type="button" data-audio-accept disabled>استخدام التسجيل في هذا النموذج</button>
+</fieldset>
+{% endif %}

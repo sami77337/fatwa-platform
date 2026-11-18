@@ -1,0 +1,4 @@
+[data-browser-audio] { max-width: 100%; min-width: 0; margin-block: 1rem; }
+[data-browser-audio] audio { display: block; width: 100%; max-width: 28rem; }
+[data-browser-audio] audio[hidden] { display: none; }
+[data-browser-audio] button { white-space: normal; margin-block: .25rem; }
