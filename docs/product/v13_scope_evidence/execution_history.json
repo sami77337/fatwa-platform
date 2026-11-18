@@ -77,6 +77,25 @@
       "security_report_basis": "97dd5793e44118d8cd050607717a6acb555f0f1c",
       "independent_browser_result": "ENVIRONMENT_ERROR_BEFORE_PAGE_CREATION_NOT_PASS",
       "remaining": "Affected recovery path suspended until repair and independent re-review; no encryption/signature or unauthenticated SQL bypass claimed."
+    },
+    {
+      "sha": "feb4e521f3c2847403a0e0626ff34da6df7612cc",
+      "ci_status": "V13_CAMPAIGN_PASS",
+      "run_id": 44227205996,
+      "postgres_results": {
+        "17": "114_AFFECTED_AND_1_PROTECTED_BROWSER_PASS",
+        "18": "114_AFFECTED_AND_1_PROTECTED_BROWSER_PASS"
+      },
+      "receipts": [
+        "receipts/pg17-feb4e52.json",
+        "receipts/pg18-feb4e52.json"
+      ],
+      "evidence_basis": "JOB_METADATA_AND_DECODED_LOGS_FETCHED_INDEPENDENTLY",
+      "security_status": "SEC13_01_BOUNDED_PASS",
+      "blocked_groups": [],
+      "external_v13_security_review": "SEC13_01_BOUNDED_PASS_ONLY",
+      "security_report_basis": "3008192679e8ac8ba88bc0a82a715fad563adb86",
+      "remaining": "Restores only affected bounded credit at exact repaired SHA. Earlier blocked heads retain their verdicts; independent local microphone runtime NOT_RUN remains separate from hosted protected browser success."
     }
   ]
 }

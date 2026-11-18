@@ -33,7 +33,7 @@
 | 27 — للقضية رقم مرجعي دائم مثل: | SPEC-U01-005 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 28 — الرقم المرجعي العام منفصل عن الـDatabase ID الداخلي. | SPEC-U01-005 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 29 — القضية تحتوي السؤال الأصلي وكل ما يرتبط به لاحقًا. | SPEC-U01-010 | PARTIAL |  | لم يثبت في هذه الإضافة |
-| 30 — تشمل القضية: السؤال، المرفقات، التعقيبات، أجوبة الشيخ، حالة القضية، الشيخ أو الشيوخ المرتبطين بها، التصنيفات، الدروس، العلاقات، Delivery، Publication، وسجل التدقيق. | SPEC-U01-010, SPEC-U14-012, SPEC-U04-002, SPEC-U07-003, SPEC-U01-030 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 30 — تشمل القضية: السؤال، المرفقات، التعقيبات، أجوبة الشيخ، حالة القضية، الشيخ أو الشيوخ المرتبطين بها، التصنيفات، الدروس، العلاقات، Delivery، Publication، وسجل التدقيق. | SPEC-U01-010, SPEC-U14-012, SPEC-U04-002, SPEC-U07-003, SPEC-U01-030 | PARTIAL | connected-recovery | connected-recovery |
 | 31 — لا يتم تغيير رقم القضية إذا وصل تعقيب من السائل. | SPEC-U01-009 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 32 — السؤال الأصلي محفوظ كما وصل حرفيًا. | SPEC-U01-004 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 33 — لا تقوم Luna بإعادة صياغته للشيخ. | SPEC-U01-004 | PARTIAL |  | لم يثبت في هذه الإضافة |
@@ -46,10 +46,10 @@
 | 40 — عند وصول التوضيح، تعود القضية للعمل ويظهر للشيخ أن Evidence جديدة وصلت. | SPEC-U01-026 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 41 — إذا كان التعقيب في الواقع سؤالًا مستقلًا تمامًا، يمكن إنشاء قضية جديدة بدل ضمه بالقضية الأصلية. | SPEC-U08-016 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 42 — إذا لم يكن النظام متأكدًا من أن الرسالة الجديدة تتبع القضية نفسها، لا يربطها تلقائيًا بثقة زائفة، بل يضعها للمراجعة. | SPEC-U01-011 | PARTIAL |  | لم يثبت في هذه الإضافة |
-| 43 — للقضية مفهوم مستقل اسمه Evidence Version. | SPEC-U01-012 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
-| 44 — كل إضافة تغير الوقائع التي يعتمد عليها الشيخ ترفع Evidence Version. | SPEC-U01-012 | PARTIAL | browser-audio, connected-recovery | browser-audio |
+| 43 — للقضية مفهوم مستقل اسمه Evidence Version. | SPEC-U01-012 | PARTIAL | connected-recovery | connected-recovery |
+| 44 — كل إضافة تغير الوقائع التي يعتمد عليها الشيخ ترفع Evidence Version. | SPEC-U01-012 | PARTIAL | browser-audio, connected-recovery | browser-audio, connected-recovery |
 | 45 — إذا بدأ الشيخ الإجابة ثم وصلت معلومة جديدة من السائل، يُحذّر النظام الشيخ. | SPEC-U01-013, SPEC-U02-010 | PARTIAL |  | لم يثبت في هذه الإضافة |
-| 46 — لا يسمح النظام باعتماد جواب مبني على Evidence قديمة دون أن يقر الشيخ بأنه رأى التحديث الجديد. | SPEC-U01-013, SPEC-U02-010 | PARTIAL | browser-audio, connected-recovery | browser-audio |
+| 46 — لا يسمح النظام باعتماد جواب مبني على Evidence قديمة دون أن يقر الشيخ بأنه رأى التحديث الجديد. | SPEC-U01-013, SPEC-U02-010 | PARTIAL | browser-audio, connected-recovery | browser-audio, connected-recovery |
 | 47 — تعديل Metadata مثل Tag أو تصنيف لا يرفع Evidence Version لأنه لا يغير وقائع السؤال. | SPEC-U01-014 | NOT_IMPLEMENTED | human-classification | human-classification |
 | 48 — واجهة الإجابة الرسمية للشيخ هي Mufti Workspace داخل Staff Web App. | SPEC-U02-001, SPEC-U01-015 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 49 — الشيخ لا يحتاج إلى الإجابة من Telegram أو WhatsApp أو YouTube. | SPEC-U02-001, SPEC-U01-015 | PARTIAL |  | لم يثبت في هذه الإضافة |
@@ -78,14 +78,14 @@
 | 72 — يمكنه إرفاق PDF أو ملف. | SPEC-U02-011 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 73 — يمكنه إضافة رابط YouTube. | SPEC-U02-011 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 74 — يمكنه الإحالة إلى فتوى سابقة. | SPEC-U02-031 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
-| 75 — يمكن للجواب الواحد أن يحتوي عدة أجزاء بترتيب محدد. | SPEC-U02-012 | PARTIAL | browser-audio, connected-recovery | browser-audio |
-| 76 — كل الأجزاء تعتبر Logical Reply واحدة مع الحفاظ على ترتيبها. | SPEC-U02-012 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 75 — يمكن للجواب الواحد أن يحتوي عدة أجزاء بترتيب محدد. | SPEC-U02-012 | PARTIAL | browser-audio, connected-recovery | browser-audio, connected-recovery |
+| 76 — كل الأجزاء تعتبر Logical Reply واحدة مع الحفاظ على ترتيبها. | SPEC-U02-012 | PARTIAL | connected-recovery | connected-recovery |
 | 77 — يستطيع الشيخ بدء التسجيل وإيقافه واستكماله والاستماع إليه قبل الاعتماد. | SPEC-U02-013 | NOT_IMPLEMENTED | browser-audio | browser-audio |
 | 78 — التسجيل الأصلي للشيخ يبقى محفوظًا ولا يُستبدل بالتفريغ. | SPEC-U02-014 | PARTIAL | browser-audio | browser-audio |
 | 79 — التفريغ Transcript طبقة مشتقة. | SPEC-U02-014 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 80 — التفريغ ليس إجباريًا لكل تسجيل. | SPEC-U11-013 | PARTIAL | browser-audio | لم يثبت في هذه الإضافة |
 | 81 — يمكن للشيخ حفظ الجواب كمسودة. | SPEC-U01-017 | PARTIAL | browser-audio | browser-audio |
-| 82 — Saved لا تعني Approved. | SPEC-U02-016 | PARTIAL | browser-audio, connected-recovery | browser-audio |
+| 82 — Saved لا تعني Approved. | SPEC-U02-016 | PARTIAL | browser-audio, connected-recovery | browser-audio, connected-recovery |
 | 83 — اعتماد الجواب عملية مستقلة وصريحة. | SPEC-U01-018 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 84 — الصلاحية الشرعية لاعتماد الجواب تبقى للشيخ المخول فقط. | SPEC-U01-018 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 85 — المنظم لا يستطيع اعتماد فتوى نيابة عن الشيخ. | SPEC-U01-018 | DECISION |  | لم يثبت في هذه الإضافة |
@@ -409,26 +409,26 @@
 | 403 — لا يوجد Self-Escalation. | SPEC-U14-015 | DECISION |  | لم يثبت في هذه الإضافة |
 | 404 — كل تغيير صلاحيات يدخل Audit Log. | SPEC-U14-015 | DECISION |  | لم يثبت في هذه الإضافة |
 | 405 — MFA مطلوب للشيخ والإدارة الحساسة. | SPEC-U14-013 | PARTIAL |  | لم يثبت في هذه الإضافة |
-| 406 — Sessions قابلة للإلغاء. | SPEC-U14-014 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 406 — Sessions قابلة للإلغاء. | SPEC-U14-014 | PARTIAL | connected-recovery | connected-recovery |
 | 407 — العمليات الحساسة يمكن أن تطلب Re-authentication. | SPEC-U14-013 | PARTIAL |  | لم يثبت في هذه الإضافة |
-| 408 — السياسة Default Deny. | SPEC-U14-011 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 408 — السياسة Default Deny. | SPEC-U14-011 | PARTIAL | connected-recovery | connected-recovery |
 | 409 — Secrets لا تحفظ في الكود. | SPEC-U14-018 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 410 — Dev/Staging/Production منفصلة. | SPEC-U14-018 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 411 — Webhooks محمية والتحقق من التوقيعات مطلوب حيث تدعم المنصة ذلك. | SPEC-U13-025, SPEC-U14-018 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 412 — Rate Limiting موجود. | SPEC-U08-027 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
 | 413 — البيانات أثناء النقل مشفرة. | SPEC-U14-018 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
-| 414 — تخزين البيانات الحساسة يطبق الحماية المناسبة. | SPEC-U14-018 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
-| 415 — العمليات المهمة تسجل: من، ماذا، متى. | SPEC-U14-019 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 414 — تخزين البيانات الحساسة يطبق الحماية المناسبة. | SPEC-U14-018 | PARTIAL | connected-recovery | connected-recovery |
+| 415 — العمليات المهمة تسجل: من، ماذا، متى. | SPEC-U14-019 | PARTIAL | connected-recovery | connected-recovery |
 | 416 — اعتماد جواب الشيخ مسجل. | SPEC-U14-019 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 417 — تغيير التصنيف مسجل. | SPEC-U04-011, SPEC-U04-013 | NOT_IMPLEMENTED | human-classification | human-classification |
 | 418 — تعديل Transcript مسجل. | SPEC-U11-018, SPEC-U11-019 | PARTIAL |  | لم يثبت في هذه الإضافة |
-| 419 — النشر وإلغاء النشر مسجل. | SPEC-U14-019 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 419 — النشر وإلغاء النشر مسجل. | SPEC-U14-019 | PARTIAL | connected-recovery | connected-recovery |
 | 420 — التصدير الحساس مسجل. | SPEC-U14-019 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 421 — Merge/Split للهويات مسجل. | SPEC-U14-019 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 422 — تغييرات الصلاحيات مسجلة. | SPEC-U14-019 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 423 — PostgreSQL له Backup/PITR بحسب إعدادات الإنتاج النهائية. | SPEC-U15-020 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
 | 424 — Object Storage له Versioning/Backup مناسب. | SPEC-U15-020 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
-| 425 — توجد Restore Drills. | SPEC-U15-023 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 425 — توجد Restore Drills. | SPEC-U15-023 | PARTIAL | connected-recovery | connected-recovery |
 | 426 — Outbox/Queues تمنع فقد الأعمال عند الأعطال. | SPEC-U15-014 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 427 — توجد Reconciliation Jobs للتأكد من تطابق الحالة المحلية مع المنصات. | SPEC-U15-015 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 428 — توجد Runbooks للأعطال. | SPEC-U15-017 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
@@ -437,8 +437,8 @@
 | 431 — إذا تعطلت Vector Search يبقى البحث التقليدي. | SPEC-U15-013 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 432 — إذا تعطلت خدمة Transcription يبقى التسجيل الأصلي. | SPEC-U15-013 | PARTIAL | browser-audio | لم يثبت في هذه الإضافة |
 | 433 — إذا تعطلت منصة خارجية لا نفقد جواب الشيخ؛ يبقى Delivery Pending/Failed ويعاد لاحقًا. | SPEC-U15-013 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
-| 434 — Fatwa Case هي مركز النموذج. | SPEC-U01-005, SPEC-U01-010 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
-| 435 — Messages وMessage Parts مرتبة. | SPEC-U01-004, SPEC-U02-012 | PARTIAL | connected-recovery | لم يثبت في هذه الإضافة |
+| 434 — Fatwa Case هي مركز النموذج. | SPEC-U01-005, SPEC-U01-010 | PARTIAL | connected-recovery | connected-recovery |
+| 435 — Messages وMessage Parts مرتبة. | SPEC-U01-004, SPEC-U02-012 | PARTIAL | connected-recovery | connected-recovery |
 | 436 — Evidence Version منفصلة عن Metadata Version. | SPEC-U01-012, SPEC-U01-014 | PARTIAL |  | لم يثبت في هذه الإضافة |
 | 437 — Assignments تاريخية. | SPEC-U14-012, SPEC-U15-019 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |
 | 438 — يوجد Primary Mufti نشط واحد كحد أقصى للقضية وفق النموذج المعتمد. | SPEC-U14-012 | NOT_IMPLEMENTED |  | لم يثبت في هذه الإضافة |

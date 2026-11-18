@@ -299,17 +299,66 @@
         435
       ],
       "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
-      "state": "SUSPENDED_SECURITY",
+      "state": "VERIFIED_BOUNDED",
       "bounded_goal": "رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.",
-      "bounded_claim": null,
-      "remaining": "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR.",
-      "product_sha": null,
-      "code": [],
-      "positive_tests": [],
-      "negative_tests": [],
-      "receipts": [],
-      "browser_test": null,
-      "credited_owner_points": []
+      "bounded_claim": "رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.",
+      "remaining": "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط.",
+      "product_sha": "feb4e521f3c2847403a0e0626ff34da6df7612cc",
+      "code": [
+        "apps/platform_recovery/encrypted.py#snapshot",
+        "apps/platform_recovery/encrypted.py#restore",
+        "apps/platform_recovery/service.py#canonical_schema",
+        "tests/casework/v13_restored_browser.py#restore_and_verify",
+        "tests/casework/v13_restored_browser.py#TargetChecks.exercise"
+      ],
+      "positive_tests": [
+        "tests/casework/test_v13_recovery_schema.py#CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index"
+      ],
+      "negative_tests": [
+        "tests/casework/test_v13_recovery_schema.py#CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined",
+        "tests/v13_integration_security/test_boundaries.py#TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes",
+        "tests/v13_security_review/test_final_schema.py#SchemaLiteralReviewTests.test_partial_index_string_value_change_must_change_recovery_fingerprint",
+        "tests/v13_security_review/test_final_schema.py#EncryptedSchemaReview.test_changed_quoted_index_predicate_on_restored_target_is_quarantined",
+        "tests/casework/test_v13_schema_quarantine.py#SchemaQuarantineTests.test_changed_predicate_with_unproven_identity_preserves_target_for_manual_review"
+      ],
+      "receipts": [
+        {
+          "postgres_major": 17,
+          "head_sha": "feb4e521f3c2847403a0e0626ff34da6df7612cc",
+          "run_id": 44227205996,
+          "job_id": 134543204177,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg17-feb4e52.json"
+        },
+        {
+          "postgres_major": 18,
+          "head_sha": "feb4e521f3c2847403a0e0626ff34da6df7612cc",
+          "run_id": 44227205996,
+          "job_id": 134543204605,
+          "status": "completed",
+          "conclusion": "success",
+          "excerpt": "receipts/pg18-feb4e52.json"
+        }
+      ],
+      "browser_test": "tests/casework/test_v13_browser.py#V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http",
+      "credited_owner_points": [
+        30,
+        43,
+        44,
+        46,
+        75,
+        76,
+        82,
+        406,
+        408,
+        414,
+        415,
+        419,
+        425,
+        434,
+        435
+      ]
     }
   ]
 }

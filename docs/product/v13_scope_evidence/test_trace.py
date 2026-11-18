@@ -136,16 +136,46 @@ class ScopeTraceTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "known security blocker"):
             build.groups_for(assessment)
 
-    def test_suspension_removes_only_affected_group_credit_and_keeps_receipts(self):
+    def test_repaired_credit_keeps_old_suspension_and_unrelated_receipts(self):
         rows = json.loads(build.render()["matrix.json"])
-        self.assertEqual(rows[424]["v13"]["verified_group_ids"], [])
-        self.assertEqual(rows[424]["v13"]["suspended_group_ids"], ["connected-recovery"])
-        self.assertEqual(rows[424]["v13"]["assessment_effect"], "SUSPENDED_SECURITY")
+        self.assertEqual(rows[424]["v13"]["verified_group_ids"], ["connected-recovery"])
+        self.assertEqual(
+            rows[424]["v13"]["evidence_shas"], ["feb4e521f3c2847403a0e0626ff34da6df7612cc"]
+        )
         self.assertIn("browser-audio", rows[24]["v13"]["verified_group_ids"])
+        self.assertEqual(
+            rows[24]["v13"]["evidence_shas"], ["cd22cbd265db4b57124a1f091a041fd5200637b8"]
+        )
         history = build.read("suspended_recovery_evidence.json")["historical_assessment"]
         self.assertEqual(len(history["receipts"]), 2)
         for receipt in history["receipts"]:
             self.assertEqual(build.read(receipt["excerpt"])["conclusion"], "success")
+
+    def test_recovery_credit_requires_exact_independent_repair_review(self):
+        group = next(
+            g for g in build.read("assessment.json")["groups"] if g["id"] == "connected-recovery"
+        )
+        group["product_sha"] = "0" * 40
+        with self.assertRaisesRegex(AssertionError, "repair review must name exact product"):
+            build.check_repair_review(group)
+
+    def test_repair_report_cannot_be_changed_or_promote_local_microphone(self):
+        original = build.read
+        group = next(
+            g for g in original("assessment.json")["groups"] if g["id"] == "connected-recovery"
+        )
+        for key, value in (("report_sha256", "0" * 64), ("independent_browser", "PASS")):
+            damaged = copy.deepcopy(original("recovery_repair_review.json"))
+            damaged[key] = value
+            with patch.object(
+                build,
+                "read",
+                side_effect=lambda n: (
+                    damaged if n == "recovery_repair_review.json" else original(n)
+                ),
+            ):
+                with self.assertRaises(AssertionError):
+                    build.check_repair_review(group)
 
     def test_missing_negative_pass_on_one_major_is_rejected(self):
         group, refs, sources = self.execution_fixture()

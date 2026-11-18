@@ -1,6 +1,11 @@
 # V13 bounded functional evidence update
 
-**Current security suspension — SEC13-01.** The external review at
+**Historical update.** The suspension below remains true for its old heads.
+Recovery credit was subsequently restored only at repaired `feb4e521`, following
+independent bounded re-review and actual paired-major CI; see
+[V13_REPAIR_UPDATE.md](V13_REPAIR_UPDATE.md). No old result is relabeled PASS.
+
+**Historical security suspension — SEC13-01.** The external review at
 `97dd5793e44118d8cd050607717a6acb555f0f1c` is **BLOCKED** on product
 `38cd137db50cc95ae53fa275b5d90b8274096e5d`. Its affected recovery implementation
 is identical tocd22cbd (`git diff` of `apps/platform_recovery/service.py` is empty).

@@ -56,3 +56,13 @@ baseline statuses remain unchanged. Build and20/20 documentary tests PASS
 (2.541s), including rejection of green recovery receipts at the blocked head and
 preservation of unaffected credit/history. Ruff/diff PASS. No product rerun;
 reviewer's local browser attempt is ENVIRONMENT_ERROR, never attributed as PASS.
+
+SEC13-01 repaired evidence: report3008192 gives bounded PASS on exactfeb4e521,
+with13 independent methods per major and unchanged original reproductions.
+Decoded hosted logs/job metadata independently confirm114 affected tests and1
+protected connected browser per major atfeb4e521. Recovery attribution is restored
+only to that head; four other groups keep theircd22cbd receipts unchanged.
+Build and22/22 documentary tests PASS (2.861s), including exact-review/hash
+requirements and refusal to relabel the reviewer's local microphone NOT_RUN.
+The validator still blocks recovery evidence at vulnerable old heads. Ruff/diff
+PASS; no product tests rerun. Later documentation-head CI is a separate receipt.

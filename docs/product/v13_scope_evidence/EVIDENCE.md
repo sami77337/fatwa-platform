@@ -177,12 +177,43 @@
 
 ## connected-recovery
 
-الحالة: **SUSPENDED_SECURITY**
+الحالة: **VERIFIED_BOUNDED**
 
 الهدف المحدد: رحلة واحدة تربط الصوت والإحالة والبحث والجواب والنشر المستقل ثم استعادة مشفرة وHTTP لهدف جديد وسحب صلاحيات.
 
-الحدود: SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR.
+الحدود: مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط.
 
 النقاط المرشحة: 30, 43, 44, 46, 75, 76, 82, 406, 408, 412, 414, 415, 419, 423, 424, 425, 428, 434, 435
 
-النقاط التي أضيف لها دليل مثبت: لا شيء بعد
+النقاط التي أضيف لها دليل مثبت: 30, 43, 44, 46, 75, 76, 82, 406, 408, 414, 415, 419, 425, 434, 435
+
+المثبت فقط: رحلة واحدة تبدأ تسجيل سؤال في الموقع وتحتفظ بثلاثة مرفقات وخمسة إصدارات وقائع وستة إصدارات جواب وثلاثة أجزاء؛ استيضاح ورد ملف وبحث وإحالة زمنية وكتاب ومراجعة بشرية وإتاحة خاصة وتسليم محاكى جزئي ونشر مستقل وعلاقة معرفية؛ تجميد ونسخ مشفر ومفتاح مستقل ثم استعادة خادم جديد وHTTP وبايتات ورفض بعد السحب دون تغيير المصدر أو استئنافه.
+
+الرأس: `feb4e521f3c2847403a0e0626ff34da6df7612cc`
+
+### code
+
+- [apps/platform_recovery/encrypted.py — snapshot](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/apps/platform_recovery/encrypted.py#L54-L97)
+- [apps/platform_recovery/encrypted.py — restore](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/apps/platform_recovery/encrypted.py#L154-L169)
+- [apps/platform_recovery/service.py — canonical_schema](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/apps/platform_recovery/service.py#L216-L224)
+- [tests/casework/v13_restored_browser.py — restore_and_verify](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/casework/v13_restored_browser.py#L380-L456)
+- [tests/casework/v13_restored_browser.py — TargetChecks.exercise](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/casework/v13_restored_browser.py#L70-L299)
+
+### positive_tests
+
+- [tests/casework/test_v13_recovery_schema.py — CurrentSchemaRestoreTests.test_encrypted_roundtrip_preserves_new_tables_guards_and_partial_index](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/casework/test_v13_recovery_schema.py#L79-L108)
+
+### negative_tests
+
+- [tests/casework/test_v13_recovery_schema.py — CurrentSchemaRestoreTests.test_changed_partial_index_on_real_restored_target_is_quarantined](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/casework/test_v13_recovery_schema.py#L110-L137)
+- [tests/v13_integration_security/test_boundaries.py — TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/v13_integration_security/test_boundaries.py#L56-L77)
+- [tests/v13_security_review/test_final_schema.py — SchemaLiteralReviewTests.test_partial_index_string_value_change_must_change_recovery_fingerprint](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/v13_security_review/test_final_schema.py#L17-L59)
+- [tests/v13_security_review/test_final_schema.py — EncryptedSchemaReview.test_changed_quoted_index_predicate_on_restored_target_is_quarantined](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/v13_security_review/test_final_schema.py#L72-L111)
+- [tests/casework/test_v13_schema_quarantine.py — SchemaQuarantineTests.test_changed_predicate_with_unproven_identity_preserves_target_for_manual_review](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/casework/test_v13_schema_quarantine.py#L117-L118)
+
+### Protected connected browser
+
+- [tests/casework/test_v13_browser.py — V13ConnectedBrowserTests.test_one_v13_recorded_case_partial_delivery_encrypted_restore_and_target_http](https://github.com/sami77337/fatwa-platform/blob/feb4e521f3c2847403a0e0626ff34da6df7612cc/tests/casework/test_v13_browser.py#L407-L646)
+- The receipt must contain actual sandbox=true and exact tested SHA; an environment flag alone is insufficient.
+- [PG17 job134543204177](https://github.com/sami77337/fatwa-platform/actions/runs/44227205996/job/134543204177) — exact-head PASS
+- [PG18 job134543204605](https://github.com/sami77337/fatwa-platform/actions/runs/44227205996/job/134543204605) — exact-head PASS

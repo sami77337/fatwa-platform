@@ -127,6 +127,40 @@ def check_execution(group, refs):
                 assert recovery["wrong_key_and_hash_before_target"] == "DENIED"
 
 
+def check_repair_review(group):
+    """A successful recovery run cannot replace the exact independent repair review."""
+    review = read("recovery_repair_review.json")
+    assert review["finding"] == "SEC13-01" and review["disposition"] == "BOUNDED_PASS"
+    assert review["product_sha"] == group["product_sha"], "repair review must name exact product"
+    assert review["retroactive_clearance"] is False
+    assert review["independent_browser"] == "NOT_RUN_SANDBOX_ENVIRONMENT_ERROR_BEFORE_PAGE"
+    report = pinned(review["report_path"], review["report_commit"])
+    assert hashlib.sha256(report).hexdigest() == review["report_sha256"]
+    assert group["product_sha"] in report.decode()
+    assert (
+        "PASS, limited to SEC13-01 and its affected recovery integrity boundary" in report.decode()
+    )
+    assert pinned(
+        review["original_reproducer_path"], review["original_reproducer_commit"]
+    ) == pinned(review["original_reproducer_path"], group["product_sha"]), (
+        "unchanged external reproductions required"
+    )
+    assert {log["postgres_major"] for log in review["logs"]} == {17, 18}
+    for major in (17, 18):
+        logs = [log for log in review["logs"] if log["postgres_major"] == major]
+        assert sorted(log["passed_methods"] for log in logs) == [4, 9]
+        for log in logs:
+            raw = pinned(log["path"], review["report_commit"])
+            assert hashlib.sha256(raw).hexdigest() == log["sha256"]
+            text = raw.decode()
+            assert f"SYNTHETIC_POSTGRES=postgres (PostgreSQL) {major}." in text
+            assert f"Ran {log['passed_methods']} tests" in text and "\nOK\n" in text
+            assert (
+                len([line for line in text.splitlines() if line.endswith(" ... ok")])
+                == log["passed_methods"]
+            )
+
+
 def groups_for(assessment):
     assert assessment["base_sha"] == BASE_SHA
     assert assessment["acceptance"] == "HOLD" and assessment["percentage"] is None
@@ -173,6 +207,8 @@ def groups_for(assessment):
             group["browser_test"] = reference(group["browser_test"], sha)
             tests.append(group["browser_test"])
         check_execution(group, tests)
+        if group["id"] == "connected-recovery":
+            check_repair_review(group)
     return groups
 
 

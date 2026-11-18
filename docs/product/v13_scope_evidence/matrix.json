@@ -1444,14 +1444,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 34,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2125,14 +2127,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 47,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2187,18 +2191,18 @@
         "connected-recovery"
       ],
       "verified_group_ids": [
-        "browser-audio"
-      ],
-      "suspended_group_ids": [
+        "browser-audio",
         "connected-recovery"
       ],
+      "suspended_group_ids": [],
       "evidence_shas": [
-        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+        "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
       ],
       "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
         "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 48,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -2311,18 +2315,18 @@
         "connected-recovery"
       ],
       "verified_group_ids": [
-        "browser-audio"
-      ],
-      "suspended_group_ids": [
+        "browser-audio",
         "connected-recovery"
       ],
+      "suspended_group_ids": [],
       "evidence_shas": [
-        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+        "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
       ],
       "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
         "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 50,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3772,18 +3776,18 @@
         "connected-recovery"
       ],
       "verified_group_ids": [
-        "browser-audio"
-      ],
-      "suspended_group_ids": [
+        "browser-audio",
         "connected-recovery"
       ],
+      "suspended_group_ids": [],
       "evidence_shas": [
-        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+        "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
       ],
       "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
         "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 79,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -3841,14 +3845,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 80,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -4195,18 +4201,18 @@
         "connected-recovery"
       ],
       "verified_group_ids": [
-        "browser-audio"
-      ],
-      "suspended_group_ids": [
+        "browser-audio",
         "connected-recovery"
       ],
+      "suspended_group_ids": [],
       "evidence_shas": [
-        "cd22cbd265db4b57124a1f091a041fd5200637b8"
+        "cd22cbd265db4b57124a1f091a041fd5200637b8",
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
       ],
       "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
         "PCM16LE mono8000Hz حتى10ثوان/160044بايت؛ لا resume أو ضمان كل الأجهزة، ولا ASR/تفريغ أو ادعاء معالجة عطل Transcription. 533 وصول قضايا MUFTI المصرح بها فقط؛ لا U03. لا إكمال كامل لأي بند واسع.",
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 86,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20641,14 +20647,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 410,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20747,14 +20755,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 412,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -20950,13 +20960,11 @@
         "connected-recovery"
       ],
       "verified_group_ids": [],
-      "suspended_group_ids": [
-        "connected-recovery"
-      ],
+      "suspended_group_ids": [],
       "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 416,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21057,14 +21065,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 418,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21112,14 +21122,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 419,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21322,14 +21334,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 423,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21525,13 +21539,11 @@
         "connected-recovery"
       ],
       "verified_group_ids": [],
-      "suspended_group_ids": [
-        "connected-recovery"
-      ],
+      "suspended_group_ids": [],
       "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 427,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21587,13 +21599,11 @@
         "connected-recovery"
       ],
       "verified_group_ids": [],
-      "suspended_group_ids": [
-        "connected-recovery"
-      ],
+      "suspended_group_ids": [],
       "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 428,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21649,14 +21659,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 429,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -21803,13 +21815,11 @@
         "connected-recovery"
       ],
       "verified_group_ids": [],
-      "suspended_group_ids": [
-        "connected-recovery"
-      ],
+      "suspended_group_ids": [],
       "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "assessment_effect": "NOT_YET_ASSESSED",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 432,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -22103,14 +22113,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 438,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
@@ -22156,14 +22168,16 @@
       "candidate_group_ids": [
         "connected-recovery"
       ],
-      "verified_group_ids": [],
-      "suspended_group_ids": [
+      "verified_group_ids": [
         "connected-recovery"
       ],
-      "evidence_shas": [],
-      "assessment_effect": "SUSPENDED_SECURITY",
+      "suspended_group_ids": [],
+      "evidence_shas": [
+        "feb4e521f3c2847403a0e0626ff34da6df7612cc"
+      ],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE",
       "remaining": [
-        "SEC13-01 BLOCKED: تطبيع مخطط الاستعادة يغيّر نصوص SQL المقتبسة فيجعل predicates مختلفة متساوية البصمة ويقبل هدفًا متلاعبًا READY. الدليل السابق محفوظ في suspended_recovery_evidence.json، لكن تعليق إسناد المجموعة مستمر حتى الإصلاح والمراجعة المستقلة. لا نجاح متصفح مستقل من ENVIRONMENT_ERROR."
+        "مصدر السؤال هنا الموقع/تسجيل اصطناعي؛ source_bindings=0 وsource_review_notes=0 فلا تُنسب مراجعة ربط Telegram/YouTube لهذه الرحلة. لا اكتمال منتج أو PITR/KMS/Object Storage إنتاجي، ولا إرسال/قراءة حقيقيان أو إعادة تشغيل القديم. لا حظر SQL المتميز. المراجعة الخارجية PASS محدودة بحد SEC13-01 عند رأس الإصلاح، وليست قبولًا شاملًا؛ Gate B وباقي البوابات ثابتة. SEC13-01 أُصلح وثبتت مراجعته مستقلًا عندfeb4e521 فقط؛ لا تصحيح رجعي للرؤوس المحجوبة. الحزم الاصطناعية القديمة ذات بصمة التطبيع غير الآمن قد تفشل مغلقًا وتحتاج إعادة التقاط؛ لا تجاوز تحقق المخطط."
       ],
       "attested_original_excel_row": 439,
       "excel_row_basis": "PARENT_LOCAL_ATTESTATION"
