@@ -122,16 +122,39 @@ launch did not return a browser object; the journey was NOT_RUN. See
 fingerprints and comparison with the preceding pass. Its cause also remains
 UNKNOWN; no timeout increase, sandbox change or flake claim is made.
 
-Baseline security PASS concerns5aff9ba→5ec6373 only. Independent review of the
-actual V13 changes, combined PG17/18 checks and protected Chrome recovery remain
-pending until explicit exact-head evidence is attached. Do not infer a pass from
-application availability, lane-specific tests or this document's existence.
+Baseline security PASS concerns5aff9ba→5ec6373 only. The separate, independently
+performed integration review found two actual private-byte disclosure paths on
+`1ea53ead8e6166a64b766968efbb63ea00f4c7c1` despite its16 successful workflows.
+A late authority callback could revoke identity or timed rights after the last
+check. The first fix `8eb1d76` removed redundant callbacks but was insufficient:
+a retained final callback could still revoke timed rights. The second fix
+`4f71d2e` rechecks READ_MEDIA/CITE after both deadline callbacks. Historical failures
+and unchanged negative expectations are preserved in
+`docs/security/V13_INTEGRATION_REVIEW.md`. Its **bounded PASS** covers seven
+independent tests on PG17.12/18.7 plus two affected tests per major after explicit
+attack-executed assertions. The integrator's46 affected timed/library/rights checks
+also passed on both majors after the second fix. This is not the designated
+external comprehensive V13 review, whose verdict remains **PENDING**.
 
-The original XLSX bytes remain unavailable in this Cloud executor. Coordination
-verified them independently in its local environment; see the attributed receipt
+Historical hosted [V13 run44219214321](https://github.com/sami77337/fatwa-platform/actions/runs/44219214321)
+on exact `1ea53ead8e6166a64b766968efbb63ea00f4c7c1` passed84 affected checks and
+one full connected browser journey on each PG17.12/18.7, Chrome157.0.8103.50 with
+sandbox enabled. The browser independently restored encrypted database/assets,
+opened authorized case/answer/file/audio over target HTTP, and denied revoked
+rights. All16 workflows succeeded, but this head is **security BLOCKED**, not a
+final candidate. Repaired-head hosted results must be recorded separately; no
+historical run is attributed to a later documentation or repair commit.
+
+The restored reference XLSX workbook bytes remain unavailable in this Cloud
+executor. Coordination verified the specified workbook checksum independently
+in its local environment; see the attributed receipt
 in `docs/product/v13_scope_evidence/SOURCE_BYTES.md`. The17 date serialization
 differences and nine saved formula values are preserved, not represented as a
-whole-file string/byte equivalence or recalculation. Do not upload the workbook.
+whole-file string/byte equivalence or recalculation. A historical package identifies
+`542.docx` as the owner-authored original and XLSX as derived. Matching the restored
+reference workbook and V12 matrix establishes fidelity to that workbook, not
+authoring provenance or acceptance. Original Word bytes remain unverified pending
+coordination evidence. Do not upload the workbook.
 
 Recovery still requires stopping writers/GC, draining admitted operations and
 FROZEN state, a separate encryption key and independently pinned manifest. Unknown

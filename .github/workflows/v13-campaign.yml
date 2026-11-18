@@ -7,6 +7,7 @@ on:
       - 'templates/**'
       - 'tests/casework/**'
       - 'tests/v13_security_review/**'
+      - 'tests/v13_integration_security/**'
       - 'tests/v13_browser_startup/**'
       - 'tests/acceptance/fastbuild/**'
       - 'tests/research_bridge/**'
@@ -85,7 +86,9 @@ jobs:
             --label tests.casework.test_v13_audio_wiring \
             --label tests.casework.test_v13_timed_bindings \
             --label tests.casework.test_v13_search_ui \
-            --label tests.casework.test_v13_recovery_schema
+            --label tests.casework.test_v13_recovery_schema \
+            --label tests.v13_integration_security.test_boundaries \
+            --label tests.v13_integration_security.test_intake
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
