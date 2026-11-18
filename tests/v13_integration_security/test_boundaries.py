@@ -51,6 +51,7 @@ class TimedFinalCallbackTests(Fixture, TransactionTestCase):
                 media.staff_read(part_id=str(self.part.pk), subject_id="editor",
                                  provider=self.directory, synthetic_fixtures_only=True)
         self.assertIn("_rights", called)
+        self.assertFalse(self.directory.identities["editor"].active)
 
     def test_cite_revocation_in_final_deadline_callback_denies_requester_bytes(self):
         self.approved()
@@ -73,6 +74,7 @@ class TimedFinalCallbackTests(Fixture, TransactionTestCase):
                     token=self.receipt["token"], part_id=str(self.part.pk),
                     synthetic_fixtures_only=True,
                 )
+        self.assertEqual(self.rights.actions, set(), "the final retained callback must execute")
 
     def test_no_policy_deadline_callback_after_validated_hook_returns(self):
         from apps.timed_citations import services as timed
