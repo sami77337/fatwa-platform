@@ -41,3 +41,17 @@ an expired earlier item. The correction keeps strict media deadlines by default;
 only library preview delegates to its existing emitted-result deadline list and
 post-epoch clock. The original regression test is unchanged. V13 run 44257563012
 is retained as failure evidence, not a browser startup failure or a skipped test.
+
+## Protected layout measurement
+
+On `7d03f14561bc9612a1e7588c3b4a706170313063`, V7 run 44258774857
+passed 34 functional tests but the PG17 protected browser observed scrollWidth
+509 at viewport 320 on requester attachment preview. Available artifacts contain
+no DOM/trace/screenshot identifying the overflowing element. ROOT_CAUSE_UNKNOWN.
+The page loads external CSS, while the prior capture started after
+DOMContentLoaded without asserting stylesheet readiness. This is a test-contract
+risk, not proof of the historical cause. Capture now records initial readiness,
+width and CSS presence, waits for the same-origin stylesheet within the existing
+Playwright timeout, and retains the identical width assertions. Failures emit
+bounded element geometry/style diagnostics, not text or media. No retries,
+extra timeout, sandbox change, or product CSS hiding is introduced.
