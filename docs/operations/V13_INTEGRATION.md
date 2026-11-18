@@ -145,6 +145,14 @@ rights. All16 workflows succeeded, but this head is **security BLOCKED**, not a
 final candidate. Repaired-head hosted results must be recorded separately; no
 historical run is attributed to a later documentation or repair commit.
 
+Repaired-head run44221424598 at `09cc55aa021660f593bb1b70e850d0f448ddad3a`
+failed PG17 during the synthetic startup-lifecycle stage, before affected tests
+and the protected journey. The assertion required exactly zero remaining
+milliseconds, but the diagnostic reported one; see
+`V13_DIAGNOSTIC_ASSERTION.md` for the deterministic clock reproduction, bounded
+negative controls and test-only correction. This is separate from the historical
+D6/FAST9 unknown causes. No startup timeout, retry or sandbox setting changed.
+
 The restored reference XLSX workbook bytes remain unavailable in this Cloud
 executor. Coordination verified the specified workbook checksum independently
 in its local environment; see the attributed receipt
