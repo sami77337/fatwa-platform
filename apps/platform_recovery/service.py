@@ -210,27 +210,51 @@ class PostgresTools:
         if snapshot:
             args += ["--snapshot", snapshot]
         raw = self.run("pg_dump", database, *args).decode()
-        # pg_dump adds a random psql restriction nonce; it is not schema metadata.
-        # PostgreSQL reparses varchar literal arrays on restore, distributing the
-        # cast to text over each element. Canonicalize ONLY this exact literal
-        # form on CHECK constraint lines; retain all values, names and SQL bodies.
-        literal = r"'(?:[^']|'')*'::character varying"
-        array = re.compile(r"\(ARRAY\[((?:" + literal + r")(?:, " + literal + r")*)\]\)::text\[\]")
-        lines = []
-        for line in raw.splitlines():
-            if line.startswith(("\\restrict ", "\\unrestrict ")):
-                continue
-            if line.lstrip().startswith("CONSTRAINT ") and " CHECK " in line:
-                line = array.sub(
-                    lambda match: (
-                        "ARRAY["
-                        + re.sub(literal, lambda item: "(" + item[0] + ")::text", match[1])
-                        + "]"
-                    ),
-                    line,
-                )
+        return canonical_schema(raw)
+
+
+def canonical_schema(raw):
+    """Retain the schema except pg_dump nonces and equivalent literal-array casts.
+
+    PostgreSQL reparses varchar literal arrays on restore, distributing their text
+    cast over individual elements. This also occurs in partial-index predicates,
+    not only CHECK constraints. Preserve every value, order, index/constraint name,
+    and predicate. Never rewrite a function's quoted source body.
+    """
+    literal = r"'(?:[^']|'')*'::character varying"
+    array = re.compile(r"\(ARRAY\[((?:" + literal + r")(?:, " + literal + r")*)\]\)::text\[\]")
+    body_tag = None
+    lines = []
+    for line in raw.splitlines():
+        if body_tag is not None:
             lines.append(line)
-        return "\n".join(lines).encode()
+            if body_tag in line:
+                body_tag = None
+            continue
+        quoted_body = re.match(r"^\s+AS (\$(?:[A-Za-z_][A-Za-z_0-9]*)?\$)", line)
+        if quoted_body:
+            tag = quoted_body[1]
+            if line.count(tag) == 1:
+                body_tag = tag
+            lines.append(line)
+            continue
+        if line.startswith(("\\restrict ", "\\unrestrict ")):
+            continue
+        check = line.lstrip().startswith("CONSTRAINT ") and " CHECK " in line
+        partial_index = (
+            line.startswith(("CREATE INDEX ", "CREATE UNIQUE INDEX ")) and " WHERE " in line
+        )
+        if check or partial_index:
+            line = array.sub(
+                lambda match: (
+                    "ARRAY["
+                    + re.sub(literal, lambda item: "(" + item[0] + ")::text", match[1])
+                    + "]"
+                ),
+                line,
+            )
+        lines.append(line)
+    return "\n".join(lines).encode()
 
 
 def database_profile(db):
