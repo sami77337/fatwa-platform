@@ -8,6 +8,7 @@ from hashlib import sha256
 from unittest.mock import patch
 
 from pypdf import PdfReader, PdfWriter
+from pypdf.actions import JavaScript
 
 from .page_preview import PdfPageUnavailable, selected_page
 
@@ -50,7 +51,7 @@ class SelectedPageDerivativeTests(unittest.TestCase):
                 selected_page(raw, page_number=2, page_count=3)
         writer = PdfWriter()
         writer.add_blank_page(width=400, height=600)
-        writer.add_js("this.print();")
+        writer.add_open_action(JavaScript("this.print();"))
         output = io.BytesIO()
         writer.write(output)
         with self.assertRaises(PdfPageUnavailable):
