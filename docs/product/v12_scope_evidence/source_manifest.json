@@ -1,0 +1,25 @@
+{
+  "evidence_sha": "5aff9ba3cce35241b3ded27ed3428e0d4ecad768",
+  "observed_date": "2026-11-18",
+  "scope_library_file_id": "libfile_9f712fdb7cd4819196e96b8b653de4ce",
+  "scope_file_id": "file_000000005a9081f5806656498dcf4c40",
+  "original_xlsx_sha256": null,
+  "original_byte_download": "FAILED: download failed",
+  "source_text_read": "COMPLETE: lines 1..1817, 8 tabs",
+  "ci_lookup": "github fetch_commit_workflow_runs, repo=sami77337/fatwa-platform, commit_sha=5aff9ba3cce35241b3ded27ed3428e0d4ecad768; first page, pull_request only",
+  "independent_review": "P0 pass supplied by parent; no new independent review performed here",
+  "main_protection": "UNKNOWN_READ_UNAVAILABLE",
+  "extraction_sha256": {
+    "sources/decision_log.json": "c8649f7a258eeeb0a466a4c3a18b8cbfc5508579ce77e8566419e95f2a190d12",
+    "sources/jobs_44203281782.json": "dd5d76f6246e76ff524c8d225e50296aef3fcf271a96a1ff231a87da6a4f0056",
+    "sources/jobs_44203281930.json": "1992b500c91be86e57c7282929f764a177deb74a41c6cbc03615f40473d2dff6",
+    "sources/jobs_44203281971.json": "9dd9bc805e14966d77f608775878a957a27cda7ed171b74e6bcc94593c1b1bcd",
+    "sources/jobs_44203281992.json": "9c5219f1a426e0627cb1f04d7a4c6b805e75fbac65fb7511258f86c112b44ee6",
+    "sources/jobs_44203282032.json": "87619c1c6ac570f4fae3324acf28d709022a5fda0381b76ef6c60f6f3c06aaa0",
+    "sources/master.json": "2046ae88eab5e007e130b78e765d8f0fbe7294d1e1cddcae6e685d1a0cfbc881",
+    "sources/open_questions.json": "c1b44aeb053aabd71108610a1ca9dbec0775fb543a220e0dfc0652b7a9a259fd",
+    "sources/p0_workflows.json": "7036e1b5874f4a4661506f73f45e7b2dd6729673457120573906cac5db4f6089",
+    "sources/scope_read_1.json": "b205b5b7ca61f4686f63931c194e6b58286c04135f6d40636a90bacd82738181",
+    "sources/scope_read_2.json": "bad54361e8d5bd5e6a5203538278e6b2ddf0e368fb6ca5baee6ed5b5ed4679e4"
+  }
+}
