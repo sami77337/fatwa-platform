@@ -325,10 +325,22 @@ def act(
 
 @mutation_service
 def open_audio(
-    *, case_id, subject_id, provider, citation_id, review=False, synthetic_fixtures_only=False
+    *,
+    case_id,
+    subject_id,
+    provider,
+    citation_id,
+    review=False,
+    context_ms=0,
+    synthetic_fixtures_only=False,
 ):
     _enabled()
-    if type(review) is not bool:
+    if (
+        type(review) is not bool
+        or type(context_ms) is not int
+        or not 0 <= context_ms <= 5000
+        or (context_ms and not review)
+    ):
         raise cases.CaseConflict("timed_review_invalid")
     with (
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
@@ -358,6 +370,10 @@ def open_audio(
             "start_ms": row.start_ms,
             "end_ms": row.end_ms,
             "duration_ms": row.duration_ms,
+            "preview_start_ms": max(0, row.start_ms - context_ms),
+            "preview_end_ms": min(row.duration_ms, row.end_ms + context_ms),
+            "source_version": row.snapshot["version"],
+            "source_sha256": row.snapshot["sha256"],
         }
 
 

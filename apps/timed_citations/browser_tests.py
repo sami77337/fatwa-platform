@@ -53,11 +53,12 @@ class TimedBrowserTests(Fixture, LiveServerTestCase):
                 page.locator('[name="end_ms"]').fill("90")
                 page.locator('[name="reason"]').fill("Human synthetic locator")
                 page.get_by_role("button", name="حفظ اقتراح بشري", exact=True).click()
+                page.locator('[name="context_ms"]').select_option("1000")
                 page.get_by_role(
                     "button", name="استماع خاص للمراجعة قبل التأكيد", exact=True
                 ).click()
                 audio = page.locator("audio")
-                self.assertIn("review-audio/#t=0.01,0.09", audio.get_attribute("src"))
+                self.assertIn("review-audio/#t=0,0.1", audio.get_attribute("src"))
                 audio.evaluate("""el => new Promise((resolve, reject) => {
                     const timer = setTimeout(() => reject(new Error('audio metadata timeout')), 6000);
                     el.addEventListener('loadedmetadata', () => {clearTimeout(timer); resolve();}, {once:true});
@@ -89,3 +90,5 @@ class TimedBrowserTests(Fixture, LiveServerTestCase):
                 browser.close()
 
         self.assertEqual(TimedCitation.objects.count(), 1)
+        row = TimedCitation.objects.get()
+        self.assertEqual((row.start_ms, row.end_ms), (10, 90))
