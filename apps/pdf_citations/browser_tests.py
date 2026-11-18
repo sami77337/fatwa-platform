@@ -17,7 +17,7 @@ class PdfBrowserTests(Fixture, LiveServerTestCase):
 
         with sync_playwright() as p:
             browser = p.chromium.launch(
-                executable_path="/usr/bin/chromium",
+                executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER", "/usr/bin/chromium"),
                 headless=True,
                 chromium_sandbox=os.environ.get("FATWA_TEST_BROWSER_NO_SANDBOX") != "1",
             )
