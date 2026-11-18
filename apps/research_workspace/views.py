@@ -25,13 +25,21 @@ from apps.mufti_review.identity import IdentityUnavailable
 from . import services
 from .rights import Resource
 
-ACTIONS = {
+EVALUATION_ACTIONS = {
+    "research_evaluation_open",
+    "research_evaluation_propose",
+    "research_evaluation_APPROVE",
+    "research_evaluation_REJECT",
+}
+
+ACTIONS = EVALUATION_ACTIONS | {
     "research_open",
     "research_search",
     "research_view",
     "research_back",
     "research_add",
     "research_file",
+    "research_page",
 }
 SALT = "research-workspace.v11"
 FILTERS = {"query", "kind", "edition_id", "printed_part", "printed_page"}
@@ -100,7 +108,11 @@ def _load(raw, binding):
         ):
             raise ValueError()
         cases._mutation_versions(data["revision"], data["evidence_version"])
-        if set(data["filters"]) not in (FILTERS, FILTERS | {"ranking"}):
+        if set(data["filters"]) not in (
+            FILTERS,
+            FILTERS | {"ranking"},
+            FILTERS | {"ranking", "page"},
+        ):
             raise ValueError()
         if "ranking" in data["filters"] and data["filters"]["ranking"] != RANKING:
             raise ValueError()
@@ -115,12 +127,19 @@ def _page(request, *, code=200, **context):
     request._mufti_workspace_error = code >= 400
     get_token(request)
     context["ranked_search_available"] = _ranked_available()
+    context["evaluation_review_available"] = (
+        getattr(settings, "FATWA_ARABIC_SEARCH_REVIEW_ENABLED", False) is True
+    )
     return private(render(request, "research_workspace/desk.html", context, status=code))
 
 
 @sensitive_post_parameters("state", "note")
 @csrf_protect
 def workspace(request):
+    if request.POST.get("action") in EVALUATION_ACTIONS:
+        from apps.arabic_search_eval.views import desk
+
+        return desk(request)
     try:
         services._enabled()
         action = request.POST.get("action")
@@ -177,7 +196,7 @@ def workspace(request):
                     expected_evidence_version=state["evidence_version"],
                 ),
             ):
-                if action != "research_back":
+                if action not in {"research_back", "research_page"}:
                     selected_resource = Resource(**state["resource"])
                 if action == "research_add":
                     if fields["confirm"] != "yes":
@@ -221,9 +240,19 @@ def workspace(request):
                 opened = services.open_resource(**common, resource=selected_resource)
         for row in result["results"]:
             row["state"] = _token(binding, result, filters, row["resource"])
+        pagination = []
+        for key, label in (("previous_page", "الصفحة السابقة"), ("next_page", "الصفحة التالية")):
+            if result.get(key):
+                pagination.append(
+                    {
+                        "label": label,
+                        "state": _token(binding, result, {**filters, "page": result[key]}),
+                    }
+                )
         return _page(
             request,
             result=result,
+            pagination=pagination,
             filters=filters,
             notice=notice,
             opened=opened,
@@ -272,7 +301,7 @@ def landing(request):
 def styles(request):
     return private(
         HttpResponse(
-            "select{font:inherit;max-width:100%;width:100%;padding:.5rem}select:focus{outline:3px solid #9c6800;outline-offset:3px}",
+            "select{font:inherit;max-width:100%;width:100%;padding:.5rem}select:focus{outline:3px solid #9c6800;outline-offset:3px}.evaluation-workspace{min-width:0}.evaluation-workspace bdi{overflow-wrap:anywhere}.evaluation-workspace textarea{max-width:100%;box-sizing:border-box}",
             content_type="text/css",
         )
     )

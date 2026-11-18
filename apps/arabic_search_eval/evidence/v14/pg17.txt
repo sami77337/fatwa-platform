@@ -1,0 +1,10 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1); fresh owned cluster
+.........................
+----------------------------------------------------------------------
+Ran 25 tests in 11.131s
+
+OK
+Found 25 test(s).
+System check identified no issues (0 silenced).
+ARABIC_SEARCH_SAMPLE authorized=4 selected=1 sql=24 seconds=0.0481
+V14_BATCH candidates=24 sql=24 single_sql=24 seconds=0.0338

@@ -1,0 +1,2 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1); fresh owned cluster
+No changes detected in app 'arabic_search_eval'
