@@ -40,7 +40,7 @@ TIMED_MEDIA_ROUTE = re.compile(
 PDF_MEDIA_ROUTE = re.compile(
     r"/casework/staff/pdf-citations/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
-    r"(?:document|review-document)/"
+    r"(?:document|review-document|page|review-page)/"
 )
 LIMITS = {"read": 150, "intake": 10, "login": 10, "requester": 30, "staff": 60}
 
