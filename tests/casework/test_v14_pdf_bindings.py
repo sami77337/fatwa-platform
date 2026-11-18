@@ -1,5 +1,6 @@
 """Canonical PDF locator vetoes: actual services, private bytes and PostgreSQL."""
 
+import io
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -9,6 +10,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from django.core import signing
 from django.test import Client, TransactionTestCase, override_settings
 from django.utils import timezone
+from pypdf import PdfReader
 
 from apps.answer_media import services as media
 from apps.answer_media.models import AnswerPart, PrivateAnswerRelease
@@ -379,6 +381,15 @@ class PdfBindingsTests(Fixture, TransactionTestCase):
         response = client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content, self.pdf["raw"])
+        one_page_url = f"/casework/staff/pdf-citations/{row.pk}/page/"
+        one = client.get(one_page_url)
+        self.assertEqual(one.status_code, 200)
+        self.assertEqual(len(PdfReader(io.BytesIO(one.content), strict=True).pages), 1)
+        self.assertEqual(len(PdfReader(io.BytesIO(response.content), strict=True).pages), 3)
+        self.assertIn("sandbox", one["Content-Security-Policy"])
+        self.assertIn("no-store", one["Cache-Control"])
+        self.assertEqual(client.head(one_page_url)["Content-Length"], str(len(one.content)))
+        self.assertEqual(client.get(one_page_url + "?page=3").status_code, 400)
         self.assertIn("no-store", response["Cache-Control"])
         self.assertIn("sandbox", response["Content-Security-Policy"])
         self.assertEqual(client.head(url).status_code, 200)
@@ -390,5 +401,7 @@ class PdfBindingsTests(Fixture, TransactionTestCase):
             Client(REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1").get(url).status_code, 404
         )
         self.rights.actions.discard("CITE")
+        self.assertEqual(client.get(one_page_url).status_code, 404)
+        self.assertEqual(client.head(one_page_url).status_code, 404)
         self.assertEqual(client.get(url).status_code, 404)
         self.assertEqual(client.head(url).status_code, 404)
