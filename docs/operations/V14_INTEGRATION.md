@@ -168,3 +168,23 @@ Before the additional attack counter assertion, the focused test passed1/1 on
 PG17.12 (0.448s) and18.7 (0.458s); exact final CI must execute the final assertion.
 The historical hosted run is44235937030 (jobs134571960360 and134571961093).
 No product permission was relaxed to accommodate this expectation update.
+
+## Mixed-media blocker and repair candidate
+
+The combined `32cfcb7` hosted V14 run44235937149 passed101 checks plus the full
+protected Chrome157 journey on each PG17.12/18.7, including fresh encrypted target
+HTTP, one case,3 attachments,3 current answer parts, explicit locator corrections,
+2 independently approved editorial editions and no external requests/page errors.
+However, an internal new adversary proved late PDF callbacks could revoke an
+earlier timed-audio grant while approval/private release still succeeded. That
+head remains BLOCKED for this affected path despite its green journey. Original
+1 PASS /2 FAIL per major and safe logs are retained in
+`tests/v14_integration_security/evidence/`.
+
+The repair adds a separate atomic private-media policy epoch enrolled before
+callbacks and checked at every outer case/collection return boundary. Unversioned
+policies deny; a reference-only epoch cannot stand in for media authorization.
+Exact permissions/identity/hash/version/deadlines and case locking remain.
+[Contract and focused history](V14_MEDIA_BOUNDARY.md) records57 affected PASS per
+major plus focused final-boundary tests and corrected synthetic library fixtures.
+Independent re-review and new-head protected execution remain required.

@@ -262,7 +262,19 @@ def filters(*, query: str = "", category: str = "", material: str = "", page: in
     return {"query": query, "category": category, "material": material, "page": page}
 
 
+@contextmanager
+def _media_boundary():
+    from apps.casework.media_boundary import media_projection_boundary
+
+    try:
+        with media_projection_boundary():
+            yield
+    except cases.CaseConflict:
+        raise PreviewUnavailable() from None
+
+
 @mutation_service
+@_media_boundary()
 def browse(*, query: str = "", category: str = "", material: str = "", page: int = 1) -> dict:
     chosen = filters(query=query, category=category, material=material, page=page)
     selected = _start()
@@ -338,6 +350,7 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
 
 
 @mutation_service
+@_media_boundary()
 def read(publication_id: str) -> dict:
     selected = _start()
     with _current(selected, publication_id) as edition:
@@ -347,6 +360,7 @@ def read(publication_id: str) -> dict:
 
 
 @mutation_service
+@_media_boundary()
 def read_reference(publication_id: str, position: int) -> dict:
     if type(position) is not int or not 1 <= position <= 12:
         raise PreviewUnavailable()

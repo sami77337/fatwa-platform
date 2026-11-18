@@ -1,0 +1,35 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_current_mixed_answer_allows_human_approval_and_release_without_revocation (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_current_mixed_answer_allows_human_approval_and_release_without_revocation) ... ok
+test_pdf_callback_revoking_audio_blocks_canonical_approval (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_pdf_callback_revoking_audio_blocks_canonical_approval) ... FAIL
+test_pdf_callback_revoking_audio_blocks_new_private_release (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_pdf_callback_revoking_audio_blocks_new_private_release) ... FAIL
+
+======================================================================
+FAIL: test_pdf_callback_revoking_audio_blocks_canonical_approval (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_pdf_callback_revoking_audio_blocks_canonical_approval)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/v14-crosskind-review/tests/v14_integration_security/test_crosskind.py", line 107, in test_pdf_callback_revoking_audio_blocks_canonical_approval
+    self.denied_after_callback(self.approve)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/workspace/v14-crosskind-review/tests/v14_integration_security/test_crosskind.py", line 98, in denied_after_callback
+    self.assertTrue(denied, "Later PDF callback left revoked audio usable by the whole answer")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : Later PDF callback left revoked audio usable by the whole answer
+
+======================================================================
+FAIL: test_pdf_callback_revoking_audio_blocks_new_private_release (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_pdf_callback_revoking_audio_blocks_new_private_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/v14-crosskind-review/tests/v14_integration_security/test_crosskind.py", line 112, in test_pdf_callback_revoking_audio_blocks_new_private_release
+    self.denied_after_callback(self.release)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/workspace/v14-crosskind-review/tests/v14_integration_security/test_crosskind.py", line 98, in denied_after_callback
+    self.assertTrue(denied, "Later PDF callback left revoked audio usable by the whole answer")
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : Later PDF callback left revoked audio usable by the whole answer
+
+----------------------------------------------------------------------
+Ran 3 tests in 4.560s
+
+FAILED (failures=2)
+Found 3 test(s).
+System check identified no issues (0 silenced).

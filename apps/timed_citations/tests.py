@@ -46,6 +46,13 @@ class ExactMediaRights(TimedMediaRights):
         self.actions = {"READ_MEDIA", "CITE"}
         self.valid_until = timezone.now() + timedelta(minutes=1)
 
+    def media_projection_epoch(self):
+        # Complete mutable inputs of this exact synthetic media policy, no callbacks.
+        from hashlib import sha256
+
+        value = repr((self.ref, sorted(self.pins), sorted(self.actions), self.valid_until))
+        return sha256(value.encode()).hexdigest()
+
     def permits(self, **kw):
         r = kw["resource"]
         return (

@@ -111,3 +111,84 @@ class CrossKindPolicyTests(pdf_fixtures.Fixture, TransactionTestCase):
         self.approve()
         self.denied_after_callback(self.release)
         self.assertFalse(PrivateAnswerRelease.objects.exists())
+
+    def test_unversioned_or_malformed_media_policy_cannot_approve(self):
+        for epoch in (None, "", True, 1, "x" * 1001):
+            with (
+                self.subTest(epoch=epoch),
+                patch.object(self.rights, "media_projection_epoch", return_value=epoch),
+                self.assertRaisesMessage(cases.CaseConflict, "media_policy_snapshot_required"),
+            ):
+                self.approve()
+            self.assertFalse(CaseDecision.objects.exists())
+
+    def test_revocation_after_all_locator_checks_rolls_back_approval(self):
+        from apps.answer_media import services as media
+
+        validate = media.validate_for_approval
+        attacks = []
+
+        def revoke(answer):
+            result = validate(answer)
+            self.rights.pins.remove(self.audio_key)
+            attacks.append(1)
+            return result
+
+        with patch.object(media, "validate_for_approval", side_effect=revoke):
+            with self.assertRaisesMessage(cases.CaseConflict, "media_policy_changed"):
+                self.approve()
+        self.assertEqual(attacks, [1])
+        self.assertFalse(CaseDecision.objects.exists())
+
+    def test_policy_replacement_with_equal_epoch_cannot_approve(self):
+        from copy import copy
+
+        from django.conf import settings
+
+        from apps.answer_media import services as media
+
+        validate = media.validate_for_approval
+        replacement = copy(self.rights)
+        self.assertEqual(replacement.media_projection_epoch(), self.rights.media_projection_epoch())
+        attacks = []
+
+        def swap(answer):
+            result = validate(answer)
+            settings.FATWA_RESEARCH_WORKSPACE_RIGHTS = replacement
+            attacks.append(1)
+            return result
+
+        with patch.object(media, "validate_for_approval", side_effect=swap):
+            with self.assertRaisesMessage(cases.CaseConflict, "media_policy_changed"):
+                self.approve()
+        self.assertEqual(attacks, [1])
+        self.assertFalse(CaseDecision.objects.exists())
+
+    def test_library_return_boundary_rejects_revocation_after_all_item_checks(self):
+        from apps.experimental_publication.tests import Authority
+        from apps.library_preview import services as preview
+        from apps.source_rights.tests import Authority as RightsAuthority
+
+        self.approve()
+        authority = override_settings(
+            FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY=Authority(self.receipt["public_ref"]),
+            FATWA_SOURCE_RIGHTS_AUTHORITY=RightsAuthority(self.receipt["public_ref"]),
+        )
+        authority.enable()
+        self.addCleanup(authority.disable)
+        self.edition = lambda: shared.TimedBindingsTests.edition(self)
+        shared.TimedBindingsTests.published(self)
+        self.assertEqual(preview.browse()["total"], 1)
+        recheck = preview._recheck
+        attacks = []
+
+        def revoke(selected):
+            recheck(selected)
+            if not attacks:
+                self.rights.pins.remove(self.audio_key)
+                attacks.append(1)
+
+        with patch.object(preview, "_recheck", side_effect=revoke):
+            with self.assertRaises(preview.PreviewUnavailable):
+                preview.browse()
+        self.assertEqual(attacks, [1])

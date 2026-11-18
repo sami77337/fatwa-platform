@@ -87,6 +87,14 @@ class ExactRecordingRights(TimedMediaRights):
     def grant_deadline(self, **kw):
         return min(self.deadline, self.directory.valid_until) if self.permits(**kw) else None
 
+    def media_projection_epoch(self):
+        # Fixture-only exact media inputs; no resolve/permits callback or TOC grant.
+        value = repr((sorted(self.pins), self.enabled, self.deadline,
+                      sorted(self.directory.refs), self.directory.role,
+                      self.directory.epoch, self.directory.valid_until,
+                      self.directory.provider_id))
+        return sha256(value.encode()).hexdigest()
+
     def projection_epoch(self):
         """The fixture's TOC branch delegates only to the locked stock ledger.
 

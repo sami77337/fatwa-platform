@@ -134,8 +134,11 @@ def _answer_use_boundary():
     # One earliest bound per nesting scope, never a cached permission or media.
     earliest = [None]
     token = _TIMED_USE_DEADLINES.set((*_TIMED_USE_DEADLINES.get(), earliest))
+    from .media_boundary import media_projection_boundary
+
     try:
-        yield
+        with media_projection_boundary():
+            yield
         if earliest[0] is not None and earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
     finally:

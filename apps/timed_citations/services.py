@@ -53,6 +53,9 @@ def _rights(case, actor, provider, snapshot):
     policy = getattr(settings, "FATWA_RESEARCH_WORKSPACE_RIGHTS", None)
     if not isinstance(policy, TimedMediaRights):
         raise cases.CaseConflict("timed_explicit_media_rights_required")
+    from apps.casework.media_boundary import pin_media_policy
+
+    pin_media_policy(policy)
     # READ_MEDIA is not CITE. A configured policy must explicitly permit both.
     for action in ("READ_MEDIA", "CITE"):
         require(actor, provider, case, action, resource)
