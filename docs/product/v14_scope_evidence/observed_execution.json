@@ -1,0 +1,387 @@
+{
+  "schema": "fatwa.v14.bounded-observed-evidence.v1",
+  "product_sha": "6b4f77e29ccb1f21d48ad3d77f5e63d3be953fab",
+  "pr_number": 233,
+  "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44261673950",
+  "state": "OBSERVED_BOUNDED_NO_ACCEPTANCE",
+  "evidence_kind": "DOCUMENTING_EXISTING_EXECUTION_NOT_NEW_PRODUCT_TEST",
+  "status_upgrades": 0,
+  "acceptance": "HOLD",
+  "percentage": null,
+  "source_matrix_unchanged": true,
+  "baseline_status_counts": {
+    "PARTIAL": 303,
+    "DECISION": 52,
+    "NOT_IMPLEMENTED": 168,
+    "OUT_OF_SCOPE": 33
+  },
+  "method": "Selected existing candidate mappings were cross-checked against original-source test definitions and decoded GitHub job logs for the exact V14 SHA on PG17/18. The recorded lines are observations, not signatures or complete security or product acceptance.",
+  "groups": [
+    {
+      "candidate_group": "recording-controls",
+      "owner_points": [
+        {
+          "id": 70,
+          "original_text": "يمكنه تسجيل جواب صوتي مباشرة من الواجهة.",
+          "preserved_status": "NOT_IMPLEMENTED"
+        },
+        {
+          "id": 77,
+          "original_text": "يستطيع الشيخ بدء التسجيل وإيقافه واستكماله والاستماع إليه قبل الاعتماد.",
+          "preserved_status": "NOT_IMPLEMENTED"
+        },
+        {
+          "id": 78,
+          "original_text": "التسجيل الأصلي للشيخ يبقى محفوظًا ولا يُستبدل بالتفريغ.",
+          "preserved_status": "PARTIAL"
+        }
+      ],
+      "bounded_claim": "Private recording exposes elapsed time and size plus explicit preview/cancel; saving is subject to case and maintenance guards.",
+      "remaining": [
+        "10-second mono8kHz PCM16 and no verified recording-resume, ASR or real-device compatibility."
+      ],
+      "code": [
+        {
+          "path": "apps/browser_audio/static/browser_audio/capture.js",
+          "blob_sha": "e4558999a86ec9ce6db35c4339fb90a50227a42e"
+        },
+        {
+          "path": "apps/browser_audio/templates/browser_audio/capture.html",
+          "blob_sha": "556b32d74add87e6fec4935b50f897cad2454d87"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/browser_audio/test_browser.py",
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file",
+          "blob_sha": "0ae7dff0a86909dc01232911ebee0ebdaba0770d"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/browser_audio/test_browser.py",
+          "symbol": "apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume",
+          "blob_sha": "0ae7dff0a86909dc01232911ebee0ebdaba0770d"
+        },
+        {
+          "path": "apps/browser_audio/test_browser.py",
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup",
+          "blob_sha": "0ae7dff0a86909dc01232911ebee0ebdaba0770d"
+        }
+      ],
+      "proof_scope": "NAMED_TESTS_ON_EXACT_HEAD_NOT_FORMAL_ACCEPTANCE"
+    },
+    {
+      "candidate_group": "exact-pdf-and-time-preview",
+      "owner_points": [
+        {
+          "id": 545,
+          "original_text": "تشمل الإحالات الكتب والطبعات وملفات PDF والوثائق والمصادر الرقمية، مع التمييز بين الكتاب بوصفه عملًا علميًا، والطبعة أو النسخة المعينة، والملف الرقمي الذي يعرضها؛ ويمكن تحديد صفحة أو فقرة أو مقطع بحسب المتاح.",
+          "preserved_status": "PARTIAL"
+        },
+        {
+          "id": 546,
+          "original_text": "يُحفظ رقم الصفحة المطبوع ورقم الصفحة داخل ملف PDF على نحو مستقل عند توفر المطابقة الموثقة بينهما، ويمكن تحديد فقرة نصية أو منطقة في صفحة مصورة حيث تسمح التقنية بذلك، دون ادعاء دقة غير متاحة.",
+          "preserved_status": "PARTIAL"
+        },
+        {
+          "id": 553,
+          "original_text": "إذا تعذر فتح الفقرة أو الموضع الدقيق تقنيًا، يُفتح أقرب موضع موثق مع بيان حدود الدقة، ولا يُختلق رقم صفحة أو رابط أو مقتطف غير متحقق؛ ويمكن الاحتفاظ بمرجع وصفي عندما لا تتوفر نسخة رقمية.",
+          "preserved_status": "PARTIAL"
+        },
+        {
+          "id": 554,
+          "original_text": "تخضع الإحالات لحقوق المصدر وصلاحيات الوصول وقت الإنشاء والفتح والتوصيل والنشر والتصدير؛ لا يكشف الربط بمصدر داخلي محتواه أو ملفاته لجمهور غير مخوّل، ولا يحوّل القضية الخاصة إلى مادة عامة.",
+          "preserved_status": "PARTIAL"
+        }
+      ],
+      "bounded_claim": "Private PDF locator records exact file/version/hash and 1-based physical page separately from a human-mapped printed label with current READ_MEDIA/CITE checks.",
+      "remaining": [
+        "Chrome PDF plugin actually selecting/displaying #page is NOT_VERIFIED; no general public file rights."
+      ],
+      "code": [
+        {
+          "path": "apps/pdf_citations/services.py",
+          "blob_sha": "bdc2504bfdc1c0c1ff81df943b3abe8e67e39524"
+        },
+        {
+          "path": "apps/pdf_citations/views.py",
+          "blob_sha": "25a22868e898d304db2b89a8b9da1d468c8b4696"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/pdf_citations/tests.py",
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original",
+          "blob_sha": "b8b719109ade71bf7b38c98cbce54b7855c1a9ea"
+        },
+        {
+          "path": "apps/pdf_citations/browser_tests.py",
+          "symbol": "apps.pdf_citations.browser_tests.PdfBrowserTests.test_native_page_review_confirmation_and_withdrawal",
+          "blob_sha": "6238873b425d68ee4ff693b2210851107c86be32"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/pdf_citations/tests.py",
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny",
+          "blob_sha": "b8b719109ade71bf7b38c98cbce54b7855c1a9ea"
+        },
+        {
+          "path": "tests/casework/test_v14_pdf_bindings.py",
+          "symbol": "tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_each_read_and_cite_revocation_closes_all_downstream_surfaces",
+          "blob_sha": "84979c23472d040ba9c195d9ca0de2288fb82759"
+        }
+      ],
+      "proof_scope": "NAMED_TESTS_ON_EXACT_HEAD_NOT_FORMAL_ACCEPTANCE"
+    },
+    {
+      "candidate_group": "closed-classification-editorial",
+      "owner_points": [
+        {
+          "id": 121,
+          "original_text": "لا يتم هذا النشر تلقائيًا دون صلاحية أو قرار بشري.",
+          "preserved_status": "PARTIAL"
+        },
+        {
+          "id": 140,
+          "original_text": "يمكن Republish بنسخة جديدة مع تاريخ إصدارات.",
+          "preserved_status": "PARTIAL"
+        },
+        {
+          "id": 417,
+          "original_text": "تغيير التصنيف مسجل.",
+          "preserved_status": "NOT_IMPLEMENTED"
+        }
+      ],
+      "bounded_claim": "Human-reviewed classification may prepare a new editorial candidate but cannot publish without independent human review and permission.",
+      "remaining": [
+        "Closed synthetic simulation, not approved U03 or public taxonomy policy."
+      ],
+      "code": [
+        {
+          "path": "apps/classification_review/editorial.py",
+          "blob_sha": "0987dd00f474cee5031c5a3fe46360ac925f278f"
+        },
+        {
+          "path": "apps/classification_review/models.py",
+          "blob_sha": "815b0f93c697218432dba8a4931f8518799c2d03"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c"
+        },
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c"
+        },
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_pending_rejected_or_withdrawn_classifications_cannot_prepare",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c"
+        }
+      ],
+      "proof_scope": "NAMED_TESTS_ON_EXACT_HEAD_NOT_FORMAL_ACCEPTANCE"
+    },
+    {
+      "candidate_group": "batched-rights-performance",
+      "owner_points": [
+        {
+          "id": 216,
+          "original_text": "يبدأ Authorization أولًا قبل Retrieval؛ لا يجب أن يبحث المستخدم في بيانات لا يحق له رؤيتها.",
+          "preserved_status": "PARTIAL"
+        }
+      ],
+      "bounded_claim": "Batching source-rights checks reduces repeated DB lookups on authorized TOC titles while respecting final revocation/expiry and aggregate filters.",
+      "remaining": [
+        "Only bounded synthetic source-title performance; no expert-relevance benchmark or production capacity proof."
+      ],
+      "code": [
+        {
+          "path": "apps/source_rights/batch.py",
+          "blob_sha": "0336ab4444e99664e510aa885f194abfa6086c5a"
+        },
+        {
+          "path": "apps/arabic_search_eval/services.py",
+          "blob_sha": "a9bcd977b677a79d849663274842fbf40a383de2"
+        }
+      ],
+      "positive_tests": [
+        {
+          "path": "apps/arabic_search_eval/test_v14_batch.py",
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20",
+          "blob_sha": "261b5d133a1530508a06084b5a80f4d0344eee70"
+        }
+      ],
+      "negative_tests": [
+        {
+          "path": "apps/arabic_search_eval/test_v14_batch.py",
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_real_ledger_revocation_after_rank_reloads_before_aggregates",
+          "blob_sha": "261b5d133a1530508a06084b5a80f4d0344eee70"
+        },
+        {
+          "path": "apps/arabic_search_eval/test_v14_batch.py",
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets",
+          "blob_sha": "261b5d133a1530508a06084b5a80f4d0344eee70"
+        }
+      ],
+      "proof_scope": "NAMED_TESTS_ON_EXACT_HEAD_NOT_FORMAL_ACCEPTANCE"
+    }
+  ],
+  "executions": [
+    {
+      "postgres_major": 17,
+      "run_id": 44261673950,
+      "job_id": 134656248871,
+      "tested_sha": "6b4f77e29ccb1f21d48ad3d77f5e63d3be953fab",
+      "conclusion": "success",
+      "attribution": "DIRECT_GITHUB_DECODED_JOB_LOG_READ",
+      "test_count_observed": 124,
+      "browser_sandboxed": true,
+      "restored_target_http": "PASS",
+      "observed_tests": [
+        {
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file",
+          "observed_line": "test_v14_live_metrics_interruption_and_reset_preserve_selected_file (apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file) ... ok"
+        },
+        {
+          "symbol": "apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume",
+          "observed_line": "test_v14_native_capture_frozen_save_denied_then_explicit_resume (apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume) ... ok"
+        },
+        {
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup",
+          "observed_line": "test_permission_denial_cancel_late_grant_limits_and_cleanup (apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup) ... ok"
+        },
+        {
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original",
+          "observed_line": "test_actual_page_count_and_explicit_human_mapping_preserve_original (apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original) ... ok"
+        },
+        {
+          "symbol": "apps.pdf_citations.browser_tests.PdfBrowserTests.test_native_page_review_confirmation_and_withdrawal",
+          "observed_line": "test_native_page_review_confirmation_and_withdrawal (apps.pdf_citations.browser_tests.PdfBrowserTests.test_native_page_review_confirmation_and_withdrawal) ... ok"
+        },
+        {
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny",
+          "observed_line": "test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny (apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny) ... ok"
+        },
+        {
+          "symbol": "tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_each_read_and_cite_revocation_closes_all_downstream_surfaces",
+          "observed_line": "test_each_read_and_cite_revocation_closes_all_downstream_surfaces (tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_each_read_and_cite_revocation_closes_all_downstream_surfaces) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing",
+          "observed_line": "test_candidate_links_exact_approved_classification_without_publishing (apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver",
+          "observed_line": "test_two_manual_steps_and_independent_publication_approver (apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy",
+          "observed_line": "test_canonical_publication_actions_cannot_bypass_bound_policy (apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_pending_rejected_or_withdrawn_classifications_cannot_prepare",
+          "observed_line": "test_pending_rejected_or_withdrawn_classifications_cannot_prepare (apps.classification_review.editorial_tests.EditorialTests.test_pending_rejected_or_withdrawn_classifications_cannot_prepare) ... ok"
+        },
+        {
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20",
+          "observed_line": "test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20 (apps.arabic_search_eval.test_v14_batch.BatchTests.test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20) ... ok"
+        },
+        {
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_real_ledger_revocation_after_rank_reloads_before_aggregates",
+          "observed_line": "test_real_ledger_revocation_after_rank_reloads_before_aggregates (apps.arabic_search_eval.test_v14_batch.BatchTests.test_real_ledger_revocation_after_rank_reloads_before_aggregates) ... ok"
+        },
+        {
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets",
+          "observed_line": "test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets (apps.arabic_search_eval.test_v14_batch.BatchTests.test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets) ... ok"
+        }
+      ]
+    },
+    {
+      "postgres_major": 18,
+      "run_id": 44261673950,
+      "job_id": 134656248333,
+      "tested_sha": "6b4f77e29ccb1f21d48ad3d77f5e63d3be953fab",
+      "conclusion": "success",
+      "attribution": "DIRECT_GITHUB_DECODED_JOB_LOG_READ",
+      "test_count_observed": 124,
+      "browser_sandboxed": true,
+      "restored_target_http": "PASS",
+      "observed_tests": [
+        {
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file",
+          "observed_line": "test_v14_live_metrics_interruption_and_reset_preserve_selected_file (apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file) ... ok"
+        },
+        {
+          "symbol": "apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume",
+          "observed_line": "test_v14_native_capture_frozen_save_denied_then_explicit_resume (apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume) ... ok"
+        },
+        {
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup",
+          "observed_line": "test_permission_denial_cancel_late_grant_limits_and_cleanup (apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup) ... ok"
+        },
+        {
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original",
+          "observed_line": "test_actual_page_count_and_explicit_human_mapping_preserve_original (apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original) ... ok"
+        },
+        {
+          "symbol": "apps.pdf_citations.browser_tests.PdfBrowserTests.test_native_page_review_confirmation_and_withdrawal",
+          "observed_line": "test_native_page_review_confirmation_and_withdrawal (apps.pdf_citations.browser_tests.PdfBrowserTests.test_native_page_review_confirmation_and_withdrawal) ... ok"
+        },
+        {
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny",
+          "observed_line": "test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny (apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny) ... ok"
+        },
+        {
+          "symbol": "tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_each_read_and_cite_revocation_closes_all_downstream_surfaces",
+          "observed_line": "test_each_read_and_cite_revocation_closes_all_downstream_surfaces (tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_each_read_and_cite_revocation_closes_all_downstream_surfaces) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing",
+          "observed_line": "test_candidate_links_exact_approved_classification_without_publishing (apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver",
+          "observed_line": "test_two_manual_steps_and_independent_publication_approver (apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy",
+          "observed_line": "test_canonical_publication_actions_cannot_bypass_bound_policy (apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy) ... ok"
+        },
+        {
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_pending_rejected_or_withdrawn_classifications_cannot_prepare",
+          "observed_line": "test_pending_rejected_or_withdrawn_classifications_cannot_prepare (apps.classification_review.editorial_tests.EditorialTests.test_pending_rejected_or_withdrawn_classifications_cannot_prepare) ... ok"
+        },
+        {
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20",
+          "observed_line": "test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20 (apps.arabic_search_eval.test_v14_batch.BatchTests.test_batch_query_count_does_not_grow_with_24_sources_and_pages_reach_past_20) ... ok"
+        },
+        {
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_real_ledger_revocation_after_rank_reloads_before_aggregates",
+          "observed_line": "test_real_ledger_revocation_after_rank_reloads_before_aggregates (apps.arabic_search_eval.test_v14_batch.BatchTests.test_real_ledger_revocation_after_rank_reloads_before_aggregates) ... ok"
+        },
+        {
+          "symbol": "apps.arabic_search_eval.test_v14_batch.BatchTests.test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets",
+          "observed_line": "test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets (apps.arabic_search_eval.test_v14_batch.BatchTests.test_latest_pending_rejected_and_non_read_never_affect_counts_or_facets) ... ok"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Original V14 evidence.json and 556-point matrix remain pending; this bridge does not mark a single point COMPLETE.",
+    "Original/user files and secrets are not contained in this receipt.",
+    "Chrome PDF selected-page rendering, genuine scholar-reviewed ranking, U03/production permissions and arbitrary privileged SQL control remain outside this evidence."
+  ]
+}
