@@ -2,6 +2,8 @@
 
 from dataclasses import asdict
 
+from django.apps import apps as django_apps
+from django.conf import settings
 from django.core import signing
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
@@ -33,6 +35,29 @@ ACTIONS = {
 }
 SALT = "research-workspace.v11"
 FILTERS = {"query", "kind", "edition_id", "printed_part", "printed_page"}
+RANKING = "evaluated_titles"
+
+
+def _ranked_available():
+    return (
+        django_apps.is_installed("apps.arabic_search_eval")
+        and getattr(settings, "FATWA_ARABIC_SEARCH_EVAL_ENABLED", False) is True
+        and getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is True
+    )
+
+
+def _search(common, filters):
+    if "ranking" not in filters:
+        return services.search(**common, **filters)
+    if not _ranked_available() or filters["ranking"] != RANKING:
+        raise cases.CaseConflict("arabic_search_eval_disabled")
+    if filters["kind"] != "REFERENCE":
+        raise InvalidForm("ranked_reference_required")
+    from apps.arabic_search_eval.services import search_reference_titles
+
+    return search_reference_titles(
+        **common, **{key: value for key, value in filters.items() if key not in {"kind", "ranking"}}
+    )
 
 
 def _bind(request, identity, provider, case_ref):
@@ -75,7 +100,9 @@ def _load(raw, binding):
         ):
             raise ValueError()
         cases._mutation_versions(data["revision"], data["evidence_version"])
-        if set(data["filters"]) != FILTERS:
+        if set(data["filters"]) not in (FILTERS, FILTERS | {"ranking"}):
+            raise ValueError()
+        if "ranking" in data["filters"] and data["filters"]["ranking"] != RANKING:
             raise ValueError()
         return data
     except (ValueError, TypeError, KeyError, signing.BadSignature) as exc:
@@ -87,6 +114,7 @@ def _page(request, *, code=200, **context):
     # while rendering this denial through the shared Mufti shell.
     request._mufti_workspace_error = code >= 400
     get_token(request)
+    context["ranked_search_available"] = _ranked_available()
     return private(render(request, "research_workspace/desk.html", context, status=code))
 
 
@@ -101,6 +129,8 @@ def workspace(request):
         required = {"action", "case_ref"}
         if action == "research_search":
             required |= FILTERS
+            if "ranking" in request.POST:
+                required.add("ranking")
         elif action != "research_open":
             required.add("state")
         if action == "research_add":
@@ -129,6 +159,10 @@ def workspace(request):
             filters = {key: fields[key] for key in FILTERS}
             for key in ("edition_id", "printed_page"):
                 filters[key] = _integer(filters[key]) if filters[key] else None
+            if "ranking" in fields:
+                if fields["ranking"] != RANKING:
+                    raise InvalidForm("research_ranking_invalid")
+                filters["ranking"] = RANKING
         elif action != "research_open":
             state = _load(fields["state"], binding)
             filters = state["filters"]
@@ -169,7 +203,7 @@ def workspace(request):
                         return private(response)
                     if selected_resource.kind in {"ATTACHMENT", "ANSWER_MEDIA"}:
                         raise InvalidForm("research_media_action_required")
-        result = services.search(**common, **filters)
+        result = _search(common, filters)
         if action == "research_view":
             # Recheck the browser's original case version and exact source rights
             # after search as well: never render a previously read, now-revoked text.

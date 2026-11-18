@@ -26,7 +26,9 @@ INSTALLED_APPS = [
     "apps.browser_audio",
     "apps.classification_review",
     "apps.timed_citations",
+    "apps.arabic_search_eval",
 ]
+FATWA_ARABIC_SEARCH_EVAL_ENABLED = False
 FATWA_TIMED_CITATIONS_ENABLED = False
 FATWA_BROWSER_AUDIO_ENABLED = False
 FATWA_CLASSIFICATION_REVIEW_ENABLED = False
