@@ -73,17 +73,30 @@ def main():
            "FATWA_RECOVERY_PG_BIN": pg_bin, "FATWA_FASTBUILD_PYTHON": sys.executable}
     labels = list(dict.fromkeys([SECURITY_LABEL, *args.label]))
     stages = [
+        ("strict-profile", ["-c", (
+            "from config.settings import v14_review as s; "
+            "assert s.FATWA_SOURCE_RIGHTS_ENFORCED is True; "
+            "assert s.FATWA_RECOVERY_MAINTENANCE_REQUIRED is True; "
+            "assert s.FATWA_RECOVERY_ENCRYPTION_REQUIRED is True; "
+            "assert s.FATWA_RECOVERY_V10_TEST_COMPAT is False; "
+            "print('V14_STRICT_PROFILE=PASS; runtime authorities still explicit')"
+        )]),
         ("system", ["manage.py", "check"]),
         ("drift", ["manage.py", "makemigrations", "--check", "--dry-run"]),
         ("scope-evidence", ["docs/product/v14_scope_evidence/build.py", "--check"]),
         ("scope-validator", ["-m", "unittest", "discover", "-s",
                              "docs/product/v14_scope_evidence", "-p", "test_*.py", "-v"]),
+        ("startup-evidence", ["-m", "tests.v14_browser_startup.verify"]),
         ("affected", ["manage.py", "test", *labels, "--noinput", "--verbosity", "2"]),
     ]
     if args.browser:
         stages.append(("browser-recovery", ["manage.py", "test",
                        "tests.casework.test_v14_browser", "--noinput", "--verbosity", "2"]))
     stages = [(name, [sys.executable, *command]) for name, command in stages]
+    stages.insert(2, ("startup-observations", [
+        "node", "--test", "tests/v14_browser_startup/b6_observations.test.mjs",
+        "tests/v14_browser_startup/b6_wiring.test.mjs",
+    ]))
     for name, command in stages:
         path = logs / (name + ".log")
         if name == "browser-recovery":
