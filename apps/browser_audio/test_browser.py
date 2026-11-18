@@ -46,13 +46,20 @@ FEATURES = {
 
 # Observers retain test handles only. Native getUserMedia and AudioContext still run.
 OBSERVE = """() => {
- window.probe = {streams: [], contexts: [], calls: 0, urls: new Set()};
+ window.probe = {streams: [], contexts: [], nodes: [], calls: 0, urls: new Set()};
  const native = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
  navigator.mediaDevices.getUserMedia = async (...args) => {
    probe.calls++; const stream = await native(...args); probe.streams.push(stream); return stream;
  };
  const Audio = window.AudioContext;
  window.AudioContext = class extends Audio { constructor(...args) {super(...args); probe.contexts.push(this);} };
+ const Node = window.AudioWorkletNode;
+ window.AudioWorkletNode = class extends Node { constructor(...args) {
+   super(...args); const observed = {closed:false, disconnected:false}; probe.nodes.push(observed);
+   const close = this.port.close.bind(this.port), disconnect = this.disconnect.bind(this);
+   this.port.close = () => {observed.closed=true; return close();};
+   this.disconnect = (...values) => {observed.disconnected=true; return disconnect(...values);};
+ } };
  const create = URL.createObjectURL.bind(URL), revoke = URL.revokeObjectURL.bind(URL);
  URL.createObjectURL = value => {const url = create(value); probe.urls.add(url); return url;};
  URL.revokeObjectURL = url => {probe.urls.delete(url); return revoke(url);};
@@ -210,6 +217,11 @@ class BrowserAudioTests(LiveServerTestCase):
         self.assertLessEqual(len(raw), 160044)
         self.assertEqual(parsed.metadata["sample_rate"], 8000)
         self.assertEqual(parsed.metadata["channels"], 1)
+        self.assertEqual(recorder(page).locator("[data-audio-bytes]").inner_text(), str(len(raw)))
+        self.assertEqual(
+            float(recorder(page).locator("[data-audio-duration]").inner_text()),
+            round(parsed.metadata["duration_seconds"], 2),
+        )
         with wave.open(io.BytesIO(raw)) as audio:
             self.assertEqual(audio.getsampwidth(), 2)
             self.assertGreater(audio.getnframes(), 0)
@@ -218,7 +230,7 @@ class BrowserAudioTests(LiveServerTestCase):
 
     def released(self, page):
         page.wait_for_function(
-            "() => probe.contexts.every(c=>c.state==='closed') && probe.streams.every(s=>s.getTracks().every(t=>t.readyState==='ended'))"
+            "() => probe.contexts.every(c=>c.state==='closed') && probe.streams.every(s=>s.getTracks().every(t=>t.readyState==='ended')) && probe.nodes.every(n=>n.closed && n.disconnected)"
         )
 
     def approve_release(self):
@@ -442,7 +454,9 @@ class BrowserAudioTests(LiveServerTestCase):
                     lambda request: posts.append(request.url) if request.method == "POST" else None,
                 )
                 form.evaluate("form => form.requestSubmit()")
-                self.assertIn("قبل حفظ النموذج", recorder(page).locator("[data-audio-status]").inner_text())
+                self.assertIn(
+                    "قبل حفظ النموذج", recorder(page).locator("[data-audio-status]").inner_text()
+                )
                 self.assertEqual(posts, [])
                 recorder(page).locator("[data-audio-cancel]").click()
                 self.released(page)
@@ -457,11 +471,170 @@ class BrowserAudioTests(LiveServerTestCase):
                     "probe.streams.at(-1).getAudioTracks()[0].dispatchEvent(new Event('ended'))"
                 )
                 self.released(page)
-                self.assertEqual(
-                    recorder(page).get_attribute("data-audio-state"), "error"
-                )
+                self.assertEqual(recorder(page).get_attribute("data-audio-state"), "error")
                 self.assertEqual(page.evaluate("probe.urls.size"), 0)
                 self.assertEqual(self.sync(lambda: CaseAttachment.objects.count()), 0)
                 self.assertEqual(self.external, [])
             finally:
                 browser.close()
+
+    def test_v14_live_metrics_interruption_and_reset_preserve_selected_file(self):
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as playwright:
+            browser = self.browser(playwright)
+            try:
+                page = self.requester(browser)
+                widget = recorder(page)
+                self.assertEqual(widget.locator("[data-audio-duration]").inner_text(), "0.00")
+                self.assertEqual(widget.locator("[data-audio-bytes]").inner_text(), "0")
+                self.assertEqual(page.evaluate("probe.calls"), 0)
+                widget.locator("[data-audio-start]").click()
+                page.wait_for_function(
+                    "() => +document.querySelector('[data-audio-duration]').textContent >= 0.5"
+                )
+                live = widget.evaluate(
+                    "e=>({seconds:+e.querySelector('[data-audio-duration]').textContent,bytes:+e.querySelector('[data-audio-bytes]').textContent,progress:e.querySelector('progress').value})"
+                )
+                self.assertAlmostEqual(live["seconds"], (live["bytes"] - 44) / 16000, delta=0.005)
+                self.assertAlmostEqual(live["progress"], (live["bytes"] - 44) / 16000)
+                self.assertLess(live["bytes"], 160044)
+                self.assertEqual(
+                    widget.locator("[data-audio-metrics]").get_attribute("aria-live"), "off"
+                )
+                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), 320)
+                # Actual audio engine suspension, not a fake product state transition.
+                page.evaluate("probe.contexts.at(-1).suspend()")
+                self.released(page)
+                self.assertEqual(widget.get_attribute("data-audio-state"), "error")
+                self.assertEqual(widget.locator("[data-audio-bytes]").inner_text(), "0")
+                self.assertEqual(page.evaluate("probe.urls.size"), 0)
+                self.assertEqual(
+                    page.locator('[name="attachment"]').evaluate("e=>e.files.length"), 0
+                )
+                page.reload()
+                self.record(page)
+                widget = recorder(page)
+                self.assertEqual(page.evaluate("probe.urls.size"), 1)
+                page.locator('[name="attachment"]').set_input_files(
+                    {
+                        "name": "replacement.wav",
+                        "mimeType": "audio/wav",
+                        "buffer": audio_fixture()["raw"],
+                    }
+                )
+                self.assertEqual(widget.get_attribute("data-audio-state"), "idle")
+                self.assertEqual(widget.locator("[data-audio-bytes]").inner_text(), "0")
+                self.assertEqual(page.evaluate("probe.urls.size"), 0)
+                self.assertEqual(
+                    page.locator('[name="attachment"]').evaluate("e=>e.files[0].name"),
+                    "replacement.wav",
+                )
+                widget.locator("[data-audio-start]").click()
+                page.wait_for_function(
+                    "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'recording'"
+                )
+                widget.evaluate('e=>e.closest("form").reset()')
+                self.released(page)
+                self.assertEqual(widget.locator("[data-audio-duration]").inner_text(), "0.00")
+                self.assertEqual(self.sync(lambda: CaseAttachment.objects.count()), 0)
+                self.assertEqual(self.external, [])
+            finally:
+                browser.close()
+
+
+@override_settings(
+    **{
+        **FEATURES,
+        "ROOT_URLCONF": "config.campaign_urls",
+        "MIDDLEWARE": [
+            "apps.platform_recovery.middleware.MaintenanceGuard",
+            *WEB_SETTINGS["MIDDLEWARE"],
+        ],
+    }
+)
+class V14MaintenanceBrowserTests(LiveServerTestCase):
+    """Build the native middleware chain before the live HTTP server starts."""
+
+    host = "127.0.0.1"
+    setUp = BrowserAudioTests.setUp
+    sync = BrowserAudioTests.sync
+    browser = BrowserAudioTests.browser
+    context = BrowserAudioTests.context
+    click = BrowserAudioTests.click
+    requester = BrowserAudioTests.requester
+    record = BrowserAudioTests.record
+    released = BrowserAudioTests.released
+
+    def test_v14_native_capture_frozen_save_denied_then_explicit_resume(self):
+        from playwright.sync_api import sync_playwright
+
+        from apps.platform_recovery import maintenance
+
+        with TemporaryDirectory(prefix="v14-audio-maintenance-") as root:
+            maintenance.initialize(root=root, storage=self.storage, synthetic_fixtures_only=True)
+            # Exercise the real integrated template, routes, CSP and outer maintenance guard.
+            with (
+                override_settings(
+                    ROOT_URLCONF="config.campaign_urls",
+                    MIDDLEWARE=[
+                        "apps.platform_recovery.middleware.MaintenanceGuard",
+                        *WEB_SETTINGS["MIDDLEWARE"],
+                    ],
+                    FATWA_RECOVERY_MAINTENANCE_REQUIRED=True,
+                    FATWA_RECOVERY_MAINTENANCE_ROOT=root,
+                ),
+                sync_playwright() as playwright,
+            ):
+                browser = self.browser(playwright)
+                try:
+                    page = self.requester(browser)
+                    self.record(page)
+                    state = self.sync(
+                        lambda: maintenance.enter(root=root, synthetic_fixtures_only=True)
+                    )
+                    self.assertEqual(state["phase"], "FROZEN")
+                    form = page.locator('form:has([name="action"][value="attachment_upload"])')
+                    form.locator('[name="synthetic_only"]').check()
+                    self.click(page, form.locator('button:not([type="button"])'), code=503)
+                    self.assertEqual(self.sync(lambda: CaseAttachment.objects.count()), 0)
+                    self.assertEqual(self.sync(lambda: Case.objects.get().evidence_version), 1)
+                    self.assertEqual(list(Path(self.temp.name).rglob("*.blob")), [])
+                    self.assertIn("maintenance_unavailable", page.content())
+                    response = page.context.request.get(
+                        self.live_server_url + "/casework/audio-worklet.js"
+                    )
+                    self.assertEqual(response.status, 503)
+                    self.assertIn("no-store", response.headers["cache-control"])
+                    self.sync(
+                        lambda: maintenance.resume(
+                            root=root,
+                            expected_generation=state["generation"],
+                            confirmed=True,
+                            synthetic_fixtures_only=True,
+                        )
+                    )
+                    page.goto(self.live_server_url + "/casework/status/")
+                    raw, parsed = self.record(page)
+                    form = page.locator('form:has([name="action"][value="attachment_upload"])')
+                    form.locator('[name="synthetic_only"]').check()
+                    self.click(page, form.locator('button:not([type="button"])'))
+                    row = self.sync(lambda: CaseAttachment.objects.get())
+                    self.assertEqual(row.sha256, sha256(raw).hexdigest())
+                    self.assertEqual(row.validation_metadata, parsed.metadata)
+                    response = page.context.request.get(
+                        self.live_server_url + f"/casework/status/attachments/{row.pk}/"
+                    )
+                    self.assertEqual(response.body(), raw)
+                    self.assertIn("sandbox", response.headers["content-security-policy"])
+                    self.assertIn("no-store", response.headers["cache-control"])
+                    outsider = self.context(browser).new_page()
+                    self.assertEqual(
+                        outsider.goto(
+                            self.live_server_url + f"/casework/status/attachments/{row.pk}/"
+                        ).status,
+                        404,
+                    )
+                    self.assertEqual(self.external, [])
+                finally:
+                    browser.close()

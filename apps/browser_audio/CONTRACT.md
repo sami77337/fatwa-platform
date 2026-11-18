@@ -1,5 +1,8 @@
 # V13 browser audio — integration contract
 
+V14 additions and current shared-template handoff: [V14_RECORDING.md](V14_RECORDING.md).
+The original media type, storage and canonical identity contract below is unchanged.
+
 Base: PR #231, `5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8`, verified against
 `origin/codex/20261117-v12-integration`. Ownership: this new app only. No database
 models, upload endpoint, permission provider, media allowlist or shared settings
