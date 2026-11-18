@@ -38,14 +38,20 @@ class EditorialBrowserTests(EditorialFixture, LiveServerTestCase):
         )
         errors, external, observations = [], [], []
         sandbox = os.environ.get("FATWA_TEST_BROWSER_NO_SANDBOX") != "1"
-        artifacts = Path("/tmp/v14-classification-browser")
-        artifacts.mkdir(exist_ok=True)
+        artifacts = Path(
+            os.environ.get(
+                "FATWA_CLASSIFICATION_BROWSER_ARTIFACTS", "/tmp/v14-classification-browser"
+            )
+        )
+        artifacts.mkdir(parents=True, exist_ok=True)
         with (
             override_settings(FATWA_CASEWORK_IDENTITY_PROVIDER=self.directory),
             sync_playwright() as p,
         ):
             browser = p.chromium.launch(
-                executable_path="/usr/bin/chromium", headless=True, chromium_sandbox=sandbox
+                executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER", "/usr/bin/chromium"),
+                headless=True,
+                chromium_sandbox=sandbox,
             )
             try:
                 page = browser.new_page(viewport={"width": 320, "height": 900})

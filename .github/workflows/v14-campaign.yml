@@ -69,6 +69,8 @@ jobs:
         env:
           FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
           FATWA_BROWSER_SANDBOX: '1'
+          FATWA_TEST_BROWSER_NO_SANDBOX: '0'
+          FATWA_CLASSIFICATION_BROWSER_ARTIFACTS: .local/qa/v14/classification
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
@@ -78,6 +80,9 @@ jobs:
             python infra/dev/v14_verify.py --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" --browser \
             --label apps.source_rights.test_v14_batch \
             --label apps.browser_audio.test_browser \
+            --label apps.classification_review.editorial_tests \
+            --label apps.classification_review.editorial_http_tests \
+            --label apps.classification_review.editorial_browser_tests \
             --label tests.v14_security_review.test_search_boundary
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -86,5 +91,6 @@ jobs:
           path: |
             .local/qa/v14/pg${{ matrix.postgres }}
             .local/qa/v14/browser
+            .local/qa/v14/classification
           include-hidden-files: true
           if-no-files-found: error

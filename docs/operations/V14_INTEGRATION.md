@@ -59,3 +59,21 @@ The V14 verification runner rejects missing composition; it does not substitute
 the narrower V13 journey for V14. Source fidelity corrections are attributed to
 local coordinator checks, not independent Cloud verification. Historical startup
 failures retain ROOT_CAUSE_UNKNOWN unless new evidence proves a cause.
+
+## Classification simulation and startup wiring
+
+Classification lane `ae75b1dc54a87e3421c98bde7efc5b358925f840` is integrated with
+explicit disabled defaults for the additional editorial simulation policy. It
+creates a separate canonical editorial candidate; neither classification approval
+nor the previous edition's publication approval authorizes the new edition.
+The pending new candidate and already independently published edition have distinct
+withdrawal semantics. This is a closed drill, not an accepted transfer policy.
+Migrations0003/0004 and their additive bound-edition guards must survive the final
+encrypted schema/asset restoration; that integrated proof remains pending.
+
+Startup lane `8df3438cb19374c04a5870337e6c2d8a334a426d` and shared B6 observer
+wiring are integrated. Nine Node checks (including three actual-entrypoint synthetic
+startup failures) and12 offline evidence checks passed in the wiring worktree.
+Protected B6 must now prove the actual emitted READY observation schema and four
+phases through its existing mandatory Python gate. No timeout, retry or sandbox
+behavior changed. [Wiring history](V14_B6_WIRING.md) retains initial fixture errors.
