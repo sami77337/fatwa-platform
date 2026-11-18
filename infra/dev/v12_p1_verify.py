@@ -27,7 +27,7 @@ def main():
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if head != os.environ.get("EXPECTED_SHA", head):
         parser.error("checked-out SHA differs from EXPECTED_SHA")
-    subprocess.run(["git", "diff", "--exit-code", "--quiet"], check=True)
+    subprocess.run(["git", "diff", "HEAD", "--exit-code", "--quiet"], check=True)
     pg_bin = str(args.pg_bin.resolve(strict=True))
     version = subprocess.check_output([str(Path(pg_bin) / "postgres"), "--version"], text=True)
     major = version.split()[2].split(".")[0]
