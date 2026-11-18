@@ -163,3 +163,16 @@ Gate B **NOT_PASSED**, C/D/E **HOLD**, Phase01 **BLOCKED**, **NOT_DEPLOYED**.
 No main merge, production/real keys/data, real external send, unapproved U03,
 automated scholarly approval, Meta assumptions, GitHub configuration change,
 completion estimate or acceptance claim.
+
+## V14 bounded listening context
+
+The V14 change adds an optional `context_ms` (integer 0–5000, review only) to
+`open_audio`. Playback bounds are clamped to the measured original duration;
+original citation bounds, hash and version remain unchanged. Native review forms
+offer 0/1/3/5 seconds and show both ranges and the exact original fingerprint.
+Rights/scope/expiry/current-answer/withdrawal guards remain in force. This adds
+no publication permission or source substitution. The updated browser journey
+selects one second of context around a 0.1-second fixture and verifies that the
+stored 10–90ms locator did not change. V13 historical evidence above is retained.
+See `../pdf_citations/CONTRACT.md` and `../pdf_citations/EVIDENCE.md` for the shared
+V14 delivery contract, new focused evidence and environment limitations.

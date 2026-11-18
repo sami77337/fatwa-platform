@@ -63,6 +63,8 @@ def workspace(request):
             required |= {"citation_id"}
             if action in {"timed_confirm", "timed_withdraw"}:
                 required.add("confirm")
+        if action == "timed_preview" and "context_ms" in request.POST:
+            required.add("context_ms")
         fields = _form(request, required)
         actor, provider = _staff(request)
         common = dict(subject_id=actor.subject_id, provider=provider, synthetic_fixtures_only=True)
@@ -100,14 +102,20 @@ def workspace(request):
             source["token"] = signing.dumps(source, salt=SALT, compress=True)
         if action in {"timed_open", "timed_preview"}:
             opened = services.open_audio(
-                **common, citation_id=fields["citation_id"], review=action == "timed_preview"
+                **common,
+                citation_id=fields["citation_id"],
+                review=action == "timed_preview",
+                context_ms=0
+                if fields.get("context_ms", "0") == "0"
+                else _integer(fields["context_ms"]),
             )
+            projection["preview"] = {key: value for key, value in opened.items() if key != "raw"}
             projection["player_url"] = (
                 reverse(
                     "timed_review_audio" if action == "timed_preview" else "timed_audio",
                     args=[fields["citation_id"]],
                 )
-                + f"#t={opened['start_ms'] / 1000:g},{opened['end_ms'] / 1000:g}"
+                + f"#t={opened['preview_start_ms'] / 1000:g},{opened['preview_end_ms'] / 1000:g}"
             )
         get_token(request)
         return private(render(request, "timed_citations/desk.html", projection))
