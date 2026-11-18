@@ -90,6 +90,7 @@ jobs:
             --label tests.v13_integration_security.test_boundaries \
             --label tests.v13_integration_security.test_intake \
             --label tests.v13_security_review.test_final_schema \
+            --label tests.v13_security_review.test_sec13_repair \
             --label tests.v13_security_review.test_final_apps \
             --label tests.v13_security_review.test_final_csp \
             --label tests.v13_security_review.test_final_browser \

@@ -1,15 +1,21 @@
-# SEC13-01 repair candidate — external re-review required
+# SEC13-01 — independently verified repair at feb4e521
 
 External review `97dd5793e44118d8cd050607717a6acb555f0f1c` is **BLOCKED** on
 `38cd137db50cc95ae53fa275b5d90b8274096e5d`. Its unchanged failing tests/report and
 historical logs are integrated. The earlier16 green workflows and internal bounded
 review do not override the real predicate/fingerprint collision or accepted altered
-restoration. Recovery evidence remains SUSPENDED_SECURITY in the556-point trace.
+restoration. Recovery evidence was suspended in the556-point trace; the
+repaired-head disposition below permits bounded reinstatement without erasing
+that suspension or retroactively crediting the vulnerable head.
 
 Repair product: **`21fd10d3fae9540691f2e29531ddaafa4f60433b`**. Focused runs below
 executed the exact product/test content subsequently committed at that SHA, before
-this evidence-only commit. External re-review of this candidate is **PENDING**;
-no finding is marked closed by its implementer.
+the original evidence-only commit. The later external reviewer independently
+closed SEC13-01 with **bounded PASS** on
+`feb4e521f3c2847403a0e0626ff34da6df7612cc` in report commit
+`3008192679e8ac8ba88bc0a82a715fad563adb86`:13/13 per major, including unchanged
+original reproductions and four additional adversarial methods. This is the
+reviewer's recorded disposition, not closure asserted by the implementer.
 
 ## Changed integrity boundary
 
@@ -90,8 +96,11 @@ that historical attempt cannot be turned into PASS. Properly sandboxed hosted
 execution is separate evidence and must be attributed to its actual head.
 
 The prior protected CI at38cd137 is historical, security-blocked recovery evidence.
-Final repaired-head hosted results and the external independent re-review must be
-recorded separately in Draft PR232. Neither this repair note nor its20 passing
+The exact reviewed headfeb4e521 separately passed all16 hosted workflows, including
+run44227205996:114 affected tests plus one complete Chrome157 sandboxed connected
+restoration journey per PG17.12/18.7. The new recorder method passed there; the
+local reviewer's environment error remains NOT_RUN. Final later-head CI is
+recorded separately in Draft PR232, not attributed to this earlier execution. Neither this repair note nor its20 passing
 checks grants production, acceptance or a new percentage. Gate B NOT_PASSED;
 C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED. No main merge, external send, real data
 or keys, U03 grants, GitHub setting changes or unknown-target deletion.

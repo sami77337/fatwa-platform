@@ -1,13 +1,27 @@
 # V13 connected synthetic development integration
 
-**Current recovery status: SEC13-01 remains BLOCKED pending external re-review.**
-The external review97dd579 proved different quoted SQL predicates share the old
-fingerprint and an altered encrypted target reached READY at38cd137, despite
-its16 green workflows. Historical success receipts below do not close that gap.
-Token-aware repair21fd10d passed20 focused schema/restore/quarantine checks on
-PG17.12 and18.7; see `docs/security/SEC13_01_REPAIR.md`. Recovery scope credit is
-suspended, original evidence retained, and no repaired-head external PASS is claimed.
+**Current recovery disposition: bounded external PASS at
+`feb4e521f3c2847403a0e0626ff34da6df7612cc`.** Reviewer commit3008192 independently
+passed13 recovery/lexer/quarantine checks on each PG17.12/18.7, including the
+unchanged SEC13-01 reproductions. The earlier BLOCKED38cd137 verdict and failures
+remain historical evidence, not retroactive passes. See `docs/security/V13_REVIEW.md`
+and `docs/security/SEC13_01_REPAIR.md` for the exact review scope and limits.
 
+At that same repaired head, independently fetched hosted
+[V13 run44227205996](https://github.com/sami77337/fatwa-platform/actions/runs/44227205996)
+passed114 affected tests and one full protected Chrome journey per major:
+PG17 job134543204177 (82.225s +267.501s), PG18 job134543204605
+(74.668s +243.203s). Both report Chrome157.0.8103.50, sandbox=true, independent
+READY encrypted target HTTP, byte/permission/revocation checks, unchanged FROZEN
+source and zero external requests/page errors. All16 workflows succeeded onfeb4e521.
+The external recorder test also passed in those hosted jobs; the reviewer's local
+attempt remains NOT_RUN due to a sandbox setup error before page creation.
+
+The final documentation/test-wiring head is newer: its execution belongs to its
+own linked CI results in Draft PR232. No independent review or execution is
+silently transferred to that newer head. Only the bounded recovery evidence is
+reinstated against repaired, independently reviewed and hosted-tested evidence;
+all556 classifications and historical failures remain unchanged.
 
 Base: PR #231, `5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8`.
 Integration branch: `codex/20261118-v13-integration`. One integrator owns shared
@@ -143,7 +157,8 @@ and unchanged negative expectations are preserved in
 independent tests on PG17.12/18.7 plus two affected tests per major after explicit
 attack-executed assertions. The integrator's46 affected timed/library/rights checks
 also passed on both majors after the second fix. This is not the designated
-external comprehensive V13 review, whose verdict remains **PENDING**.
+external review: that later review found SEC13-01 and now records its bounded
+repair PASS atfeb4e521, as distinguished in the current disposition above.
 
 Historical hosted [V13 run44219214321](https://github.com/sami77337/fatwa-platform/actions/runs/44219214321)
 on exact `1ea53ead8e6166a64b766968efbb63ea00f4c7c1` passed84 affected checks and
@@ -188,18 +203,20 @@ The same exact head has **15/16 successful workflows**, not a globally green
 campaign: FAST9 run44222225041 failed before Chrome launch returned. Its145
 service/HTTP checks passed but browser journey was NOT_RUN. The repeated symptom
 and comparison with the successful prior head remain in `V13_FAST9_STARTUP.md`;
-ROOT_CAUSE_UNKNOWN is retained. The designated external V13 security verdict also
-remains pending. These bounded functional receipts neither close those gaps nor
+ROOT_CAUSE_UNKNOWN is retained. At that historical point the designated external V13 security verdict was
+still pending; its later SEC13-01 failure and repaired-head PASS are recorded above. These bounded functional receipts neither close those gaps nor
 constitute acceptance. Later documentation/test-diagnostic commits must not claim
 that this exact-head execution happened on them.
 
-The P2 update `docs/product/v13_scope_evidence/V13_UPDATE.md` binds five bounded
-evidence groups to38 explicitly selected original points at that tested head.
-All556 baseline classifications, SPEC/source/decision fields and historical
-P0/P1 evidence are preserved, with no COMPLETE promotion or percentage change.
-The documentary validator now checks actual sandbox/target-restore proof as well
-as exact test/SHA/PG-major excerpts; its18 focused tests passed in the evidence
-worktree. This does not substitute for a product run on a later documentation head.
+The P2 update `docs/product/v13_scope_evidence/V13_UPDATE.md` retains all556
+baseline classifications, SPEC/source/decision fields and historical P0/P1
+receipts, with no COMPLETE promotion or percentage change. Four unaffected group
+receipts retain their exact supported heads. The connected-recovery receipt at
+vulnerablecd22cbd remains suspended historical evidence; reinstatement is pinned
+to repairedfeb4e521, its independent SEC13-01 disposition and paired-major hosted
+proof. Documentary validation checks the actual sandbox/target-restore proof,
+exact test/SHA/PG-major excerpts and independent repair disposition. It does not
+substitute for a product run on a later documentation head.
 
 The restored reference XLSX workbook bytes remain unavailable in this Cloud
 executor. Coordination verified the specified workbook checksum independently
