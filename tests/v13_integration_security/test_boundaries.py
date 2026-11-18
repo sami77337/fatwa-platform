@@ -51,3 +51,24 @@ class TimedFinalCallbackTests(Fixture, TransactionTestCase):
                 media.staff_read(part_id=str(self.part.pk), subject_id="editor",
                                  provider=self.directory, synthetic_fixtures_only=True)
         self.assertIn("_answer_timed", called)
+
+    def test_cite_revocation_in_final_deadline_callback_denies_requester_bytes(self):
+        self.approved()
+        self.release()
+        original = self.rights.grant_deadline
+
+        def revoke(**kwargs):
+            import inspect
+
+            value = original(**kwargs)
+            if (inspect.currentframe().f_back.f_code.co_name == "_answer_timed"
+                    and kwargs["action"] == "CITE"):
+                self.rights.actions.clear()
+            return value
+
+        with patch.object(self.rights, "grant_deadline", new=revoke):
+            with self.assertRaises(cases.CaseConflict):
+                media.requester_read(
+                    token=self.receipt["token"], part_id=str(self.part.pk),
+                    synthetic_fixtures_only=True,
+                )
