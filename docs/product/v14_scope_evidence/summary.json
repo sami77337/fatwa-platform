@@ -1,0 +1,24 @@
+{
+  "base_sha": "1f08cbb7166f70ec340c495da33ccfc1eda9534e",
+  "owner_points": 556,
+  "specification_clauses": 479,
+  "decision_ids": 72,
+  "decision_occurrences": 77,
+  "preserved_status_counts": {
+    "PARTIAL": 303,
+    "DECISION": 52,
+    "NOT_IMPLEMENTED": 168,
+    "OUT_OF_SCOPE": 33
+  },
+  "v14_verified_points": 0,
+  "v14_runtime_state": "PENDING_INTEGRATED_RUNTIME_EVIDENCE",
+  "status_upgrades": 0,
+  "acceptance": "HOLD",
+  "new_percentage": null,
+  "gate_b": "NOT_PASSED",
+  "gates_c_d_e": "HOLD",
+  "phase01": "BLOCKED",
+  "production": "NOT_DEPLOYED",
+  "source_status": "PARENT_LOCAL_ATTESTATION",
+  "cloud_source_byte_verification": false
+}

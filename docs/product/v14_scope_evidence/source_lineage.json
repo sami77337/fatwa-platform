@@ -1,0 +1,83 @@
+{
+  "reported_date": "2026-11-18",
+  "attribution": "PARENT_LOCAL_VERIFICATION_NOT_CLOUD_REEXECUTION",
+  "reported_report": "V13_SOURCE_LINEAGE_ADDENDUM.md",
+  "report_file_received_here": false,
+  "receipt_bytes_inspected_here": false,
+  "parent_thread": "6afc631d-1d84-8191-b525-a90179fcd012",
+  "reported_result_sha256": "a930cf91421eb6ad232bbccc75a1c6ffa012bdcc39dcdeedb28fecfbdcf3531b",
+  "artifacts": {
+    "docx": {
+      "filename": "542.docx",
+      "bytes": 56895,
+      "sha256": "436751386501bf53c6a7f39bb21ee1eec85e6d34f3326fe528cf38e6bc6c80ff",
+      "status": "SOURCE_BYTES_VERIFIED_LOCALLY_BY_PARENT",
+      "url": "https://drive.google.com/file/d/1nFIFspA7OeIsccnwWGEMlfC2n_LPEdIQ/view"
+    },
+    "reference_xlsx": {
+      "filename": "Fatwa_Platform_Scope_556.xlsx",
+      "role": "DERIVED_REFERENCE_WORKBOOK",
+      "bytes": 211695,
+      "sheets": 8,
+      "sha256": "874326f71ded93a1a4ccb11a9038429a8f604d1e9e23acef7e8c52327b42969e",
+      "status": "SOURCE_BYTES_VERIFIED_LOCALLY_BY_PARENT"
+    },
+    "historical_xlsx": {
+      "bytes": 384127,
+      "sheets": 5,
+      "different_artifact_from_reference": true,
+      "transformation_chain": "NOT_REPRODUCED"
+    },
+    "registry479": {
+      "bytes": 530248,
+      "sha256": "48024cb9c1693d64c6e2c22928748f123c819ba37428016ca7cd8a26e2d175fb",
+      "status": "SOURCE_BYTES_VERIFIED_LOCALLY_BY_PARENT"
+    },
+    "pinned_text": {
+      "bytes": 316943,
+      "sha256": "5b810ace8c846fb1437165c36a2884f3b0134b3b3c51149290e125f95d28b8c7",
+      "status": "SOURCE_BYTES_VERIFIED_LOCALLY_BY_PARENT"
+    }
+  },
+  "reported_matches": {
+    "numbered_texts": 556,
+    "word_actual_positions": "MATCH_V12_MATRIX_THEN_REFERENCE_XLSX",
+    "registry_entries": 479,
+    "registry_fields": [
+      "IDs",
+      "paragraphs",
+      "titles",
+      "units",
+      "order"
+    ],
+    "pinned_text": "LINE_SPANS_AND_HASHES_MATCH",
+    "compared_matrix_sha": "5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8"
+  },
+  "serialization_differences": {
+    "count": 17,
+    "sheet": "المراجع والقرارات",
+    "cells": "C5:C21",
+    "original": "OOXML t=d ISO8601 with Z",
+    "extraction": "space separator, six fractional digits, UTC suffix omitted",
+    "time_components": "MATCH_REPORTED_LOCALLY",
+    "whole_string_equality": false
+  },
+  "formula_cells": {
+    "count": 9,
+    "comparison": "SAVED_VALUES_ONLY",
+    "recalculated": false
+  },
+  "boundaries": {
+    "cloud_source_bytes_verified": false,
+    "source_originals_uploaded": false,
+    "authoring_provenance_established": false,
+    "semantic_approval": false,
+    "acceptance": false,
+    "workbook_transformation_reproduced": false
+  },
+  "supersedes_current_status_only": [
+    "V13 SOURCE_BYTES.md: original DOCX bytes UNVERIFIED",
+    "V13 source_bytes.json: authoring_document.byte_validation UNVERIFIED"
+  ],
+  "historical_files_modified": false
+}
