@@ -87,6 +87,11 @@ jobs:
             --label apps.pdf_citations.browser_tests \
             --label apps.timed_citations.test_preview_context \
             --label tests.casework.test_v14_pdf_bindings \
+            --label apps.arabic_search_eval.test_ranking \
+            --label apps.arabic_search_eval.test_services \
+            --label apps.arabic_search_eval.test_v14_batch \
+            --label apps.arabic_search_eval.test_review \
+            --label apps.arabic_search_eval.test_browser \
             --label tests.v14_security_review.test_search_boundary
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

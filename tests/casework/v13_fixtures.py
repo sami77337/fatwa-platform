@@ -87,6 +87,17 @@ class ExactRecordingRights(TimedMediaRights):
     def grant_deadline(self, **kw):
         return min(self.deadline, self.directory.valid_until) if self.permits(**kw) else None
 
+    def projection_epoch(self):
+        """The fixture's TOC branch delegates only to the locked stock ledger.
+
+        Media pins/deadlines are not TOC grants. This marker is valid only for
+        this unchanged reference branch, never for a custom mutable predicate.
+        Instance overrides and subclasses changing permits fail closed.
+        """
+        if "permits" in vars(self) or type(self).permits is not ExactRecordingRights.permits:
+            raise RuntimeError("custom_reference_projection_epoch_required")
+        return "synthetic-reference-stock-ledger-v1"
+
 
 class ClassificationPolicy(ClassificationAuthority):
     def __init__(self, directory):
