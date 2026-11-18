@@ -71,6 +71,7 @@ def main():
     stages = [(name, [sys.executable, *command]) for name, command in stages]
     stages.insert(2, ("startup-lifecycle", [
         "node", "--test", "tests/v13_browser_startup/startup_contract.test.mjs",
+                "tests/acceptance/fastbuild/v13_diagnostics.test.mjs",
     ]))
     for name, command in stages:
         path = logs / (name + ".log")

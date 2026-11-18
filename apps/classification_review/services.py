@@ -290,6 +290,7 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False,
             )
         _permit(actor, provider, case, "VIEW")
         return {
+            "public_ref": case.public_ref,
             "publication_id": str(edition.pk),
             "existing_category": edition.category if not history else "",
             "candidates": candidates,

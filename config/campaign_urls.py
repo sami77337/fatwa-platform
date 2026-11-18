@@ -10,6 +10,7 @@ from apps.research_workspace.views import styles as research_styles
 from apps.team_workspace.urls import urlpatterns as team_patterns
 
 urlpatterns = [
+    path("", include("apps.browser_audio.assets")),
     path("research-workspace.css", research_styles, name="research_styles"),
     path("library-preview/", include("apps.library_preview.routes")),
     path(

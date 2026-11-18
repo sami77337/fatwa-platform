@@ -80,6 +80,7 @@ def workspace(request):
         context = services.desk(
             **common, history=action in {"classification_history", "classification_withdraw"}
         )
+        request.classification_authorized_case_ref = context["public_ref"]
         context["result"] = result
         return private(render(request, "classification_review/desk.html", context))
     except (InvalidForm, SuspiciousOperation):

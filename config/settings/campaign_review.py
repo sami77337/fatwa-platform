@@ -23,7 +23,12 @@ INSTALLED_APPS = [
     "apps.source_rights",
     "apps.research_workspace",
     "apps.pilot_workbench",
+    "apps.browser_audio",
+    "apps.classification_review",
 ]
+FATWA_BROWSER_AUDIO_ENABLED = False
+FATWA_CLASSIFICATION_REVIEW_ENABLED = False
+FATWA_CLASSIFICATION_REVIEW_AUTHORITY = None
 # Explicit, separate opt-ins for the closed synthetic V7 workflow.
 FATWA_CASE_ATTACHMENTS_ENABLED = False
 FATWA_CASE_CITATIONS_ENABLED = False
@@ -75,6 +80,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].append(
     "apps.requester_team_journey.context.connected_navigation"
 )
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.mufti_workspace.context.case_workspace")
+TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.browser_audio.context.capture")
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",
     Path(__file__).resolve().parents[2] / "apps/requester_team_journey/templates",
