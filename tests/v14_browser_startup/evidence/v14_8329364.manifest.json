@@ -1,0 +1,139 @@
+{
+  "schema": "fatwa.v14.b6.observed-failure.v1",
+  "retrieved_on": "2026-11-18",
+  "source": {
+    "repository": "sami77337/fatwa-platform",
+    "job_id": 134570116361,
+    "run_id": 44235373603,
+    "job_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44235373603/job/134570116361",
+    "normalization": "Decoded connector text, leading U+FEFF removed, CRLF normalized to LF; existing final newline preserved. Not original ZIP/log bytes.",
+    "normalized_utf8_bytes": 149631,
+    "normalized_utf8_sha256": "ccf0ad47751b63673cc6de1be69f9e01e50e79cf284b8fa42812d6aea16faf2c",
+    "excerpt": "v14_8329364.excerpt.log",
+    "source_line_numbers": [
+      218,
+      1110,
+      1111,
+      1121,
+      1124,
+      1126,
+      1130,
+      1191
+    ],
+    "excerpt_utf8_bytes": 3671,
+    "excerpt_sha256": "6164ddf2f2f6b5b977f8396f410c77bc07ea939a56c7301820fcc6f4df3effee"
+  },
+  "runs": [
+    {
+      "id": 44235373603,
+      "head_sha": "8329364173bde5e76d1a96931cd71dd31fb255d4",
+      "event": "push",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-11-18T04:09:38Z",
+      "html_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44235373603"
+    },
+    {
+      "id": 44235894394,
+      "head_sha": "32cfcb7f3a59b04e153dca2a627da21e9b29f739",
+      "event": "push",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-11-18T04:14:05Z",
+      "html_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44235894394"
+    }
+  ],
+  "projection": {
+    "sha": "8329364173bde5e76d1a96931cd71dd31fb255d4",
+    "postgres": "18.7",
+    "browser": "Google Chrome 157.0.8103.50",
+    "result": "BLOCKED",
+    "counts": {
+      "PASS": 0,
+      "FAIL": 0,
+      "NOT_RUN": 10,
+      "SKIP": 0
+    },
+    "blocker": "Timed out: DevTools launch",
+    "startup_observations": {
+      "schema": "fatwa.b6.startup-observations.v1",
+      "clock": "monotonic",
+      "scope": "startup-only",
+      "port_poll_limit_ms": 12000,
+      "root_cause": "ROOT_CAUSE_UNKNOWN",
+      "result": "BLOCKED",
+      "elapsed_ms": 12035,
+      "phases": [
+        {
+          "phase": "spawn",
+          "started_ms": 0,
+          "elapsed_ms": 3
+        },
+        {
+          "phase": "port-file",
+          "started_ms": 3,
+          "elapsed_ms": 12032
+        }
+      ],
+      "events": {
+        "spawned": {
+          "count": 1,
+          "first_ms": 4
+        },
+        "spawn-error": {
+          "count": 0,
+          "first_ms": null
+        },
+        "process-exit": {
+          "count": 0,
+          "first_ms": null
+        },
+        "port-missing": {
+          "count": 239,
+          "first_ms": 4
+        },
+        "port-incomplete": {
+          "count": 0,
+          "first_ms": null
+        },
+        "port-read-error": {
+          "count": 0,
+          "first_ms": null
+        },
+        "port-ready": {
+          "count": 0,
+          "first_ms": null
+        },
+        "target-response": {
+          "count": 0,
+          "first_ms": null
+        },
+        "websocket-open": {
+          "count": 0,
+          "first_ms": null
+        },
+        "websocket-error": {
+          "count": 0,
+          "first_ms": null
+        },
+        "websocket-close": {
+          "count": 0,
+          "first_ms": null
+        }
+      }
+    },
+    "python_gate": "FAILED (failures=1)",
+    "subprocess_returncode": 2,
+    "workflow_step_exit_code": 1
+  },
+  "limits": [
+    "ROOT_CAUSE_UNKNOWN",
+    "Subsequent success is a different SHA and independently triggered run, not a same-SHA retry.",
+    "Missing port and no pre-cleanup exit observations do not identify why Chrome had not provided a port.",
+    "Zero interaction requests/errors with ten NOT_RUN cases are not a product PASS.",
+    "Decoded log inspected; no artifact ZIP bytes fetched or inspected by this task.",
+    "No product tests rerun, timeout change, retry change or repository settings mutation."
+  ]
+}
