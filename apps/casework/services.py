@@ -9,6 +9,7 @@ import re
 import secrets
 import uuid
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import timedelta
 from hashlib import sha256
 
@@ -71,6 +72,88 @@ def _answer_citations(answer):
     from apps.case_citations.services import citations_for_locked_answer
 
     return citations_for_locked_answer(answer)
+
+
+_TIMED_USE_DEADLINES = ContextVar("casework_timed_use_deadlines", default=())
+
+
+def _answer_timed(answer, *, actor=None, provider=None):
+    """Validate persisted timed annotations; an editing flag never erases them.
+
+    Before approval the caller supplies its authorized actor. Downstream use
+    re-resolves the actual scholarly approver, not a requester/anonymous viewer
+    impersonation. Timed READ_MEDIA/CITE cannot authorize publication or release.
+    Return the conservative expiry for final collection-wide checks.
+    """
+    if answer is None:
+        return None
+    table = "timed_citations_timedcitation"
+    if not django_apps.is_installed("apps.timed_citations"):
+        # An omitted app cannot hide restored annotations. Legacy schemas and
+        # genuinely annotation-free answers retain their prior behavior.
+        if table in connection.introspection.table_names():
+            with connection.cursor() as cursor:
+                cursor.execute(f'SELECT 1 FROM "{table}" WHERE answer_id = %s LIMIT 1', [answer.pk])
+                if cursor.fetchone():
+                    raise CaseConflict("timed_citation_schema_unavailable")
+        return None
+    from apps.timed_citations.models import TimedCitation
+
+    if not TimedCitation.objects.filter(answer=answer).exists():
+        return None
+    if actor is None:
+        decision = getattr(answer, "decision", None)
+        provider = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
+        if (decision is None or decision.action != "APPROVE" or provider is None
+                or getattr(provider, "provider_id", None) != decision.provider_id):
+            raise CaseConflict("timed_approval_authority_unavailable")
+        actor = _identity(provider, decision.subject_id, answer.case)
+        if actor.auth_epoch != decision.auth_epoch:
+            raise CaseConflict("timed_approval_authority_changed")
+    if provider is None:
+        raise CaseConflict("timed_approval_authority_unavailable")
+    from apps.research_workspace.rights import Resource
+    from apps.source_rights.services import _projection_deadline
+    from apps.timed_citations.services import for_locked_answer
+
+    rows = for_locked_answer(answer=answer, actor=actor, provider=provider)
+    policy = settings.FATWA_RESEARCH_WORKSPACE_RIGHTS
+    deadlines = []
+    for row in rows:
+        source = row["source"]
+        for action in ("READ_MEDIA", "CITE"):
+            try:
+                deadline = policy.grant_deadline(
+                    provider_id=provider.provider_id, subject_id=actor.subject_id,
+                    auth_epoch=actor.auth_epoch, case_ref=answer.case.public_ref,
+                    action=action,
+                    resource=Resource(source["kind"], source["id"], source["sha256"]),
+                )
+                if deadline is None or timezone.is_naive(deadline) or deadline <= timezone.now():
+                    raise ValueError
+            except Exception as exc:
+                raise CaseConflict("timed_grant_expiry_required") from exc
+            deadlines.append(_projection_deadline(deadline))
+    earliest = min(deadlines, default=None)
+    for scope in _TIMED_USE_DEADLINES.get():
+        if earliest is not None:
+            scope[0] = earliest if scope[0] is None else min(scope[0], earliest)
+    return earliest
+
+
+@contextmanager
+def _answer_use_boundary():
+    # Only timed uses contribute here. Existing book collections keep their
+    # own filtered-result expiry semantics; no annotation means no new denial.
+    # One earliest bound per nesting scope, never a cached permission or media.
+    earliest = [None]
+    token = _TIMED_USE_DEADLINES.set((*_TIMED_USE_DEADLINES.get(), earliest))
+    try:
+        yield
+        if earliest[0] is not None and earliest[0] <= timezone.now():
+            raise CaseConflict("timed_grant_expired")
+    finally:
+        _TIMED_USE_DEADLINES.reset(token)
 
 
 def _delivery_origin_for_locked_case(case):
@@ -440,7 +523,8 @@ def _staff_case(
         _verify(case)
         if expected_revision is not None:
             _versions(case, expected_revision, expected_evidence_version)
-        yield case, identity
+        with _answer_use_boundary():
+            yield case, identity
 
 
 @mutation_service
@@ -577,6 +661,7 @@ def record_decision(
             from apps.answer_media.services import validate_for_approval
 
             _answer_citations(answer)
+            _answer_timed(answer, actor=identity, provider=provider)
             validate_for_approval(answer)
         current_identity = _identity(provider, subject_id, case)
         if (current_identity.subject_id, current_identity.auth_epoch, provider.provider_id) != (
@@ -623,7 +708,8 @@ def _token_case(token, ack):
         ):
             raise CaseConflict("case_token_invalid_or_expired")
         _verify(case)
-        yield case
+        with _answer_use_boundary():
+            yield case
 
 
 @mutation_service

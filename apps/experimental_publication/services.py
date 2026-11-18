@@ -63,6 +63,7 @@ def _approved(case, edition=None):
         )
     ):
         raise cases.CaseConflict("publication_source_changed")
+    cases._answer_timed(answer)
     return answer, decision
 
 
@@ -109,12 +110,13 @@ def _require_publication_sources(case, citations):
     """
     from apps.source_rights.enforcement import required
 
+    timed_deadline = cases._answer_timed(case.approved_answer)
     if not required():
-        return
+        return timed_deadline
     from apps.case_citations.services import _rights_services
 
     rights = _rights_services()  # Missing/disabled registry cannot become an empty grant.
-    deadlines = []
+    deadlines = [timed_deadline] if timed_deadline is not None else []
     for item in citations:
         for usage in ("READ", "CITE", "PREVIEW_METADATA"):
             deadline = rights.reference_permission_deadline_for_locked_case(
