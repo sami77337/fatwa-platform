@@ -8,6 +8,7 @@
 {% if notice %}<p role="status">{{ notice }}</p>{% endif %}
 {% if result %}
 <p>القضية <bdi>{{ result.public_ref }}</bdi> · إصدار الوقائع {{ result.evidence_version }}</p>
+{% if evaluation_review_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_evaluation_open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>إصدارات تقييم البحث والمراجعة البشرية</button></form>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
 {% if opened %}
 <section aria-label="المصدر المفتوح">
@@ -35,8 +36,8 @@
 <label for="kind">نوع المادة</label><select id="kind" name="kind"><option value="all" {% if filters.kind == 'all' %}selected{% endif %}>المواد المصرح بها</option><option value="REFERENCE" {% if filters.kind == 'REFERENCE' %}selected{% endif %}>فهارس الكتب</option><option value="TRANSCRIPT" {% if filters.kind == 'TRANSCRIPT' %}selected{% endif %}>الدروس والتفريغات المرتبطة</option><option value="KNOWLEDGE" {% if filters.kind == 'KNOWLEDGE' %}selected{% endif %}>العلاقات المعتمدة</option><option value="MEDIA" {% if filters.kind == 'MEDIA' %}selected{% endif %}>وسائط القضية</option></select>
 <label for="edition">الطبعة الدقيقة للبحث في الفهرس</label><select id="edition" name="edition_id"><option value="">اختر طبعة مصرحًا بها</option>{% if result.ranking_version %}<option value="{{ filters.edition_id }}" selected>الطبعة المحددة للبحث الحالي</option>{% endif %}{% for edition in result.editions %}<option value="{{ edition.id }}" {% if filters.edition_id == edition.id %}selected{% endif %}>{{ edition.book }} — {{ edition.title }}</option>{% endfor %}</select>
 <label for="part">الجزء المطبوع</label><input id="part" name="printed_part" value="{{ filters.printed_part }}" maxlength="100"><label for="page">الصفحة المطبوعة</label><input id="page" name="printed_page" value="{{ filters.printed_page|default_if_none:'' }}" inputmode="numeric"><button>البحث في المصادر المصرح بها</button>
-{% if ranked_search_available %}<p>تجربة ترتيب العناوين: اختر «فهارس الكتب» وطبعة محددة. تفحص أول 20 مرشحًا مصرحًا بها فقط، ولا تبحث متن الكتاب.</p><button id="research-ranked-search" name="ranking" value="evaluated_titles">تجربة بحث العناوين بالكلمات الكاملة</button>{% endif %}</form>
-{% if result.ranking_version %}<aside id="research-ranking-scope" aria-label="حدود تجربة البحث"><p>ترتيب تجريبي لعناوين الفهرس ضمن نافذة {{ result.candidate_pool_limit }} مرشحًا مصرحًا بها. خلو النتائج لا يعني غياب المادة من كامل المصادر.</p><p>المراجعة البشرية لمعيار التقييم معلقة. ليس بحثًا دلاليًا أو ترشيحًا علميًا معتمدًا.</p></aside>{% endif %}
+{% if ranked_search_available %}<p>اختر «فهارس الكتب» وطبعة محددة. يبحث الترتيب التجريبي في العناوين المسجلة والمصرح بها لهذه القضية، ولا يبحث متن الكتاب.</p><button id="research-ranked-search" name="ranking" value="evaluated_titles">تجربة بحث العناوين بالكلمات الكاملة</button>{% endif %}</form>
+{% if result.ranking_version %}<aside id="research-ranking-scope" aria-label="حدود تجربة البحث"><p>النتائج المصرح بها حاليًا: {{ result.total }}{% if result.pages %} · الصفحة {{ result.page }} من {{ result.pages }}{% endif %}. النطاق هو عناوين الطبعة المسجلة لهذه القضية فقط، حتى {{ result.candidate_pool_limit }} مصدرًا. خلو النتائج لا يعني غياب المادة من كامل المكتبة.</p><p>المعيار الاصطناعي الأساسي ينتظر مراجعة بشرية. ليس بحثًا دلاليًا أو ترشيحًا علميًا معتمدًا.</p>{% for facet in result.facets %}<p>الجزء {{ facet.printed_part }}: {{ facet.count }}</p>{% endfor %}</aside>{% endif %}
 {% if result.limited %}<p>النتائج محدودة؛ ضيّق العبارة أو المرشحات.</p>{% endif %}
 <section aria-label="نتائج البحث">{% for row in result.results %}<article data-resource-id="{{ row.resource.identifier }}"><h3>{{ row.title }}</h3><p>{{ row.label }}</p>
 {% if row.source %}<p>{{ row.source.edition_title }} · جزء {{ row.source.printed_part }} · صفحة {{ row.source.printed_page }}</p>{% endif %}
@@ -46,5 +47,6 @@
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ row.state }}">
 {% if row.kind == 'ATTACHMENT' or row.kind == 'ANSWER_MEDIA' %}<input type="hidden" name="action" value="research_file"><button>تنزيل الوسيط المصرح: {{ row.title }}</button>{% else %}<input type="hidden" name="action" value="research_view"><button>فتح المصدر: {{ row.title }}</button>{% endif %}
 </form></article>{% empty %}<p>لا توجد نتائج مطابقة ضمن الحقوق الحالية. اختيار الطبعة مطلوب لبحث الفهرس.</p>{% endfor %}</section>
+<nav aria-label="صفحات نتائج البحث">{% for item in pagination %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_page"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ item.state }}"><button>{{ item.label }}</button></form>{% endfor %}</nav>
 {% endif %}{% endif %}
 {% endblock %}

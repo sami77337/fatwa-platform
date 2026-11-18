@@ -1,0 +1,18 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2); isolated disposable loopback Docker
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import django; django.setup(); from apps.intake_workflow.guards import initialize_synthetic_database; initialize_synthetic_database(synthetic_fixtures_only=True); from django.core.management import call_command; call_command('migrate',interactive=False,verbosity=0)
+                                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/fatwa-platform/apps/platform_recovery/integration.py", line 142, in guarded
+    value = function(*args, **kwargs)
+  File "/workspace/fatwa-platform/apps/intake_workflow/guards.py", line 192, in initialize_synthetic_database
+    raise SyntheticWriteDenied('DATABASE_UNAVAILABLE_OR_UNTRUSTED') from None
+apps.intake_workflow.guards.SyntheticWriteDenied: DATABASE_UNAVAILABLE_OR_UNTRUSTED
+Traceback (most recent call last):
+  File "/tmp/v14_pg18.py", line 16, in <module>
+    subprocess.run([sys.executable,'-c',"import django; django.setup(); from apps.intake_workflow.guards import initialize_synthetic_database; initialize_synthetic_database(synthetic_fixtures_only=True); from django.core.management import call_command; call_command('migrate',interactive=False,verbosity=0)"],env=env,check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/workspace/fatwa-platform/.venv/bin/python', '-c', "import django; django.setup(); from apps.intake_workflow.guards import initialize_synthetic_database; initialize_synthetic_database(synthetic_fixtures_only=True); from django.core.management import call_command; call_command('migrate',interactive=False,verbosity=0)"]' returned non-zero exit status 1.

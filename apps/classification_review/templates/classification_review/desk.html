@@ -20,6 +20,11 @@
 {% for row in history %}<article>
 <h3>مراجعة {{ row.number }} — {{ row.state }}</h3>
 <p>معرّف المراجعة: {{ row.id }} — {{ row.created_at }} — {{ row.subject_id }}</p>
+{% if row.editorial_audit %}<details><summary>سجل ربط النسخة التحريرية — بيانات تاريخية فقط</summary><p>النسخة {{ row.editorial_audit.number }} — <bdi>{{ row.editorial_audit.edition_id }}</bdi> — {{ row.editorial_audit.created_at }}</p><p>سياسة المحاكاة: <bdi>{{ row.editorial_audit.policy_id }}</bdi></p><ul>{% for event in row.editorial_audit.actions %}<li>{{ event.action }} — {{ event.subject_id }} — {{ event.created_at }}</li>{% empty %}<li>لا قرارات تحرير أو نشر مسجلة.</li>{% endfor %}</ul><p>هذا تاريخ مستقل، وليس إثباتًا لصلاحية المصدر أو إتاحة النشر الآن.</p></details>{% endif %}
+{% if editorial_simulation_enabled %}
+{% if row.binding_id %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="binding_id" value="{{ row.binding_id }}"><button name="action" value="classification_editorial_inspect">فحص النسخة التحريرية المرتبطة في المحاكاة</button></form>
+{% elif row.effective %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="revision_id" value="{{ row.id }}"><input type="hidden" name="expected_revision" value="{{ case_revision }}"><input type="hidden" name="expected_evidence_version" value="{{ evidence_version }}"><label><input type="checkbox" name="confirm" value="yes" required>أطلب إعداد مرشح تحريري جديد للتصنيف؛ لا نشر أو اعتماد آلي</label><button name="action" value="classification_editorial_prepare">محاكاة إعداد نسخة تحريرية جديدة</button></form>{% endif %}
+{% endif %}
 {% if not row.current %}<p>حلّت مراجعة أحدث محل هذا الاقتراح.</p>{% endif %}
 {% if row.effective %}<p>تصنيف تجريبي راجعه إنسان؛ لا نشر تلقائي.</p>{% endif %}
 {% if row.available %}<p>التصنيف المقترح: {{ row.label }}</p><p>سبب موثق: {{ row.reason }}</p>

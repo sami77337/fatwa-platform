@@ -7,6 +7,11 @@
   <button type="button" data-audio-start>السماح بالميكروفون وبدء التسجيل</button>
   <button type="button" data-audio-stop disabled>إيقاف ومعاينة</button>
   <button type="button" data-audio-cancel disabled>إلغاء التسجيل</button>
+  <div data-audio-metrics aria-live="off">
+    <p>مدة التسجيل: <bdi data-audio-duration>0.00</bdi> ثانية من 10 ثوانٍ.</p>
+    <p>حجم ملف WAV: <bdi data-audio-bytes>0</bdi> بايت من 160044 بايت.</p>
+    <progress data-audio-progress max="10" value="0" aria-label="مدة التسجيل من عشر ثوانٍ"></progress>
+  </div>
   <audio data-audio-preview controls preload="metadata" hidden></audio>
   <p data-audio-status role="status" aria-live="polite">لم يُطلب إذن الميكروفون. لم يُرفع أي تسجيل.</p>
   <button type="button" data-audio-accept disabled>استخدام التسجيل في هذا النموذج</button>

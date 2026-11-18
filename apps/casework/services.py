@@ -129,17 +129,51 @@ def _answer_timed(answer, *, actor=None, provider=None):
 
 @contextmanager
 def _answer_use_boundary():
-    # Only timed uses contribute here. Existing book collections keep their
+    # Private audio/PDF annotation uses contribute here. Book collections keep their
     # own filtered-result expiry semantics; no annotation means no new denial.
     # One earliest bound per nesting scope, never a cached permission or media.
     earliest = [None]
     token = _TIMED_USE_DEADLINES.set((*_TIMED_USE_DEADLINES.get(), earliest))
+    from .media_boundary import media_projection_boundary
+
     try:
-        yield
+        with media_projection_boundary():
+            yield
         if earliest[0] is not None and earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
     finally:
         _TIMED_USE_DEADLINES.reset(token)
+
+
+def _answer_annotations(answer, *, actor=None, provider=None):
+    """Additional exact private-locator vetoes, never release/publication grants.
+
+    The same authenticated scholarly approver is used for both annotation kinds.
+    Every caller already holds the canonical case lock and outer use boundary.
+    Editing flags cannot erase restored annotations from this check.
+    """
+    timed_deadline = _answer_timed(answer, actor=actor, provider=provider)
+    if answer is None:
+        return timed_deadline
+    if not django_apps.is_installed("apps.pdf_citations"):
+        # Legacy compositions must not import uninstalled source model classes.
+        # A restored annotation table, however, cannot be silently bypassed.
+        if "pdf_citations_pdfcitation" in connection.introspection.table_names():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    'SELECT 1 FROM "pdf_citations_pdfcitation" WHERE answer_id = %s LIMIT 1',
+                    [answer.pk],
+                )
+                if cursor.fetchone():
+                    raise CaseConflict("pdf_citation_schema_unavailable")
+        return timed_deadline
+    from apps.pdf_citations.integration import require_for_answer
+
+    pdf_deadline = require_for_answer(answer, actor=actor, provider=provider)
+    for scope in _TIMED_USE_DEADLINES.get():
+        if pdf_deadline is not None:
+            scope[0] = pdf_deadline if scope[0] is None else min(scope[0], pdf_deadline)
+    return min((end for end in (timed_deadline, pdf_deadline) if end is not None), default=None)
 
 
 def _delivery_origin_for_locked_case(case):
@@ -647,7 +681,7 @@ def record_decision(
             from apps.answer_media.services import validate_for_approval
 
             _answer_citations(answer)
-            _answer_timed(answer, actor=identity, provider=provider)
+            _answer_annotations(answer, actor=identity, provider=provider)
             validate_for_approval(answer)
         current_identity = _identity(provider, subject_id, case)
         if (current_identity.subject_id, current_identity.auth_epoch, provider.provider_id) != (

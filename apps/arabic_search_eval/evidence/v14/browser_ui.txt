@@ -1,0 +1,8 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1); fresh owned cluster
+.
+----------------------------------------------------------------------
+Ran 1 test in 5.634s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).

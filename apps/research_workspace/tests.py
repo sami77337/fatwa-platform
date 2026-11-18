@@ -47,6 +47,11 @@ class SyntheticRights(ResearchRights):
             and (kw["resource"].kind, kw["action"]) not in self.denied
         )
 
+    def projection_epoch(self):
+        # Synthetic in-memory policy only; production adapters must supply an
+        # atomic revision covering every external authorization input.
+        return repr((self.ref, sorted(self.denied)))
+
 
 class ResearchFixture(fixtures.Fixture):
     def setUp(self):

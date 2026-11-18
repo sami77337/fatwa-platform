@@ -1,0 +1,220 @@
+{
+  "schema": "fatwa.v14.b6-evidence.v1",
+  "source": "GitHub connector decoded job logs fetched 2026-11-18 UTC",
+  "normalization": "UTF-8 without initial BOM, CRLF to LF, exactly one terminal LF; decoded text hashes, not ZIP hashes",
+  "jobs": [
+    {
+      "job_id": 134547992648,
+      "run_id": 44228655470,
+      "event": "push",
+      "attempt": 1,
+      "head_sha": "1f08cbb7166f70ec340c495da33ccfc1eda9534e",
+      "outcome": "failure",
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/44228655470/job/134547992648",
+      "excerpt": "134547992648.excerpt.log",
+      "excerpt_sha256": "60df5e5efa86aa0f091b52cbaad22b6e2aae9a6d72d9bd2082fc375d40cbbd2c",
+      "source_line_numbers": [
+        1,
+        4,
+        8,
+        17,
+        18,
+        220,
+        221,
+        253,
+        1076,
+        1113,
+        1114,
+        1124
+      ],
+      "decoded_full_log_lines": 1331,
+      "projection": {
+        "decoded_log_normalized_sha256": "651293517c08d6b75fc42d86d8e6984b78c4471ea303ab37892accf291f4cd4e",
+        "checkout_sha": "1f08cbb7166f70ec340c495da33ccfc1eda9534e",
+        "result": "BLOCKED",
+        "counts": {
+          "PASS": 0,
+          "FAIL": 0,
+          "NOT_RUN": 10,
+          "SKIP": 0
+        },
+        "observed_boundary": "PORT_FILE_POLL",
+        "browser_version_probe": "Google Chrome 157.0.8103.50",
+        "browser_session_version": null,
+        "node": "v24.22.2",
+        "startup_elapsed_ms": null,
+        "root_cause": "ROOT_CAUSE_UNKNOWN"
+      }
+    },
+    {
+      "job_id": 134548019306,
+      "run_id": 44228663469,
+      "event": "pull_request",
+      "attempt": 1,
+      "head_sha": "1f08cbb7166f70ec340c495da33ccfc1eda9534e",
+      "outcome": "success",
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/44228663469/job/134548019306",
+      "excerpt": "134548019306.excerpt.log",
+      "excerpt_sha256": "5b135d3fd16e2ad456a03f932193aa2d1fb078aafa6f22494182d0ac376143bb",
+      "source_line_numbers": [
+        1,
+        4,
+        8,
+        17,
+        18,
+        220,
+        221,
+        253,
+        1076,
+        1123,
+        1124
+      ],
+      "decoded_full_log_lines": 1337,
+      "projection": {
+        "decoded_log_normalized_sha256": "45301fbf90beaadde36d5a91da6ef4fceb9f91144f0af0c2ba0a362691b1cb52",
+        "checkout_sha": "1f08cbb7166f70ec340c495da33ccfc1eda9534e",
+        "result": "PASS",
+        "counts": {
+          "PASS": 10,
+          "FAIL": 0,
+          "NOT_RUN": 0,
+          "SKIP": 0
+        },
+        "observed_boundary": "JOURNEY_COMPLETED",
+        "browser_version_probe": "Google Chrome 157.0.8103.50",
+        "browser_session_version": "Chrome/157.0.8103.50",
+        "node": "v24.22.2",
+        "startup_elapsed_ms": null,
+        "root_cause": "ROOT_CAUSE_UNKNOWN"
+      }
+    },
+    {
+      "job_id": 121539817683,
+      "run_id": 40313379288,
+      "event": "pull_request",
+      "attempt": 1,
+      "head_sha": "2eda8b9ed464cced7dfd54644403c3b346d01e0a",
+      "outcome": "failure",
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/40313379288/job/121539817683",
+      "excerpt": "121539817683.excerpt.log",
+      "excerpt_sha256": "51f1f640f02a7db39687f233b7ee2ea11627d07f41ee0b7bf4ba4e8b806d030d",
+      "source_line_numbers": [
+        1,
+        4,
+        8,
+        17,
+        18,
+        223,
+        224,
+        256,
+        1024,
+        1061,
+        1062,
+        1072
+      ],
+      "decoded_full_log_lines": 1279,
+      "projection": {
+        "decoded_log_normalized_sha256": "d954ca76ae2a080877b3c3c5cba0694fcaa123cb175a94d6d2f701c96a81baf9",
+        "checkout_sha": "2eda8b9ed464cced7dfd54644403c3b346d01e0a",
+        "result": "BLOCKED",
+        "counts": {
+          "PASS": 0,
+          "FAIL": 0,
+          "NOT_RUN": 10,
+          "SKIP": 0
+        },
+        "observed_boundary": "PORT_FILE_POLL",
+        "browser_version_probe": "Google Chrome 155.0.8059.39",
+        "browser_session_version": null,
+        "node": "v24.21.0",
+        "startup_elapsed_ms": null,
+        "root_cause": "ROOT_CAUSE_UNKNOWN"
+      }
+    },
+    {
+      "job_id": 121540916296,
+      "run_id": 40313379288,
+      "event": "pull_request",
+      "attempt": 2,
+      "head_sha": "2eda8b9ed464cced7dfd54644403c3b346d01e0a",
+      "outcome": "success",
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/40313379288/job/121540916296",
+      "excerpt": "121540916296.excerpt.log",
+      "excerpt_sha256": "6e747cf834d629d26dbd9fa3958397b364065e0db8d9d0938f31d2dcec0f8fe0",
+      "source_line_numbers": [
+        1,
+        4,
+        8,
+        17,
+        18,
+        220,
+        221,
+        253,
+        1021,
+        1069,
+        1070
+      ],
+      "decoded_full_log_lines": 1283,
+      "projection": {
+        "decoded_log_normalized_sha256": "d20d7213811e798b4e20dbeaacdcb5d2ac6b5a6915863c4083f8f2f4c8d8f0d4",
+        "checkout_sha": "2eda8b9ed464cced7dfd54644403c3b346d01e0a",
+        "result": "PASS",
+        "counts": {
+          "PASS": 10,
+          "FAIL": 0,
+          "NOT_RUN": 0,
+          "SKIP": 0
+        },
+        "observed_boundary": "JOURNEY_COMPLETED",
+        "browser_version_probe": "Google Chrome 155.0.8059.39",
+        "browser_session_version": "Chrome/155.0.8059.39",
+        "node": "v24.21.0",
+        "startup_elapsed_ms": null,
+        "root_cause": "ROOT_CAUSE_UNKNOWN"
+      }
+    },
+    {
+      "job_id": 134531410766,
+      "run_id": 44223649042,
+      "event": "push",
+      "attempt": 1,
+      "head_sha": "38cd137db50cc95ae53fa275b5d90b8274096e5d",
+      "outcome": "failure",
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/44223649042/job/134531410766",
+      "excerpt": "134531410766.excerpt.log",
+      "excerpt_sha256": "1885af64418db8dec8ae8e765521a29f84ae613bc18beb565ec20f578ebb3b9b",
+      "source_line_numbers": [
+        1,
+        4,
+        8,
+        17,
+        18,
+        220,
+        221,
+        253,
+        1076,
+        1113,
+        1114,
+        1124
+      ],
+      "decoded_full_log_lines": 1331,
+      "projection": {
+        "decoded_log_normalized_sha256": "666049e99c57d5d7448e6eb8cf7def08222b9322fca40cd41eacaf72ed7ccad7",
+        "checkout_sha": "38cd137db50cc95ae53fa275b5d90b8274096e5d",
+        "result": "BLOCKED",
+        "counts": {
+          "PASS": 0,
+          "FAIL": 0,
+          "NOT_RUN": 10,
+          "SKIP": 0
+        },
+        "observed_boundary": "PORT_FILE_POLL",
+        "browser_version_probe": "Google Chrome 157.0.8103.50",
+        "browser_session_version": null,
+        "node": "v24.22.2",
+        "startup_elapsed_ms": null,
+        "root_cause": "ROOT_CAUSE_UNKNOWN"
+      }
+    }
+  ]
+}

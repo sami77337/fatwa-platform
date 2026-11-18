@@ -88,7 +88,7 @@ def _edition_resource(edition):
     )
 
 
-def _bridge(source):
+def _bridge(source, *, catalog=None):
     """Recheck verified canonical catalog evidence with the existing strict bridge.
 
     The upstream citation resolver supplied these pins; no fixture triage, guessed
@@ -126,7 +126,8 @@ def _bridge(source):
             source_start=None,
             source_end=None,
             source_sha256=sha256(original.encode()).hexdigest(),
-        )
+        ),
+        catalog=catalog,
     )
     if result.status != "verified":
         raise cases.CaseConflict("research_catalog_identity_changed")

@@ -53,6 +53,9 @@ def _rights(case, actor, provider, snapshot):
     policy = getattr(settings, "FATWA_RESEARCH_WORKSPACE_RIGHTS", None)
     if not isinstance(policy, TimedMediaRights):
         raise cases.CaseConflict("timed_explicit_media_rights_required")
+    from apps.casework.media_boundary import pin_media_deadline, pin_media_policy
+
+    pin_media_policy(policy)
     # READ_MEDIA is not CITE. A configured policy must explicitly permit both.
     for action in ("READ_MEDIA", "CITE"):
         require(actor, provider, case, action, resource)
@@ -74,6 +77,7 @@ def _rights(case, actor, provider, snapshot):
         except Exception as exc:
             raise cases.CaseConflict("timed_grant_expiry_required") from exc
         _projection_deadline(deadline)
+        pin_media_deadline(deadline)
     # Deadline lookup is a configured authority call, not a cached grant. It
     # may observe a concurrent/serialized withdrawal after its first lookup.
     # Recheck both permissions after all deadline callbacks, before any caller
@@ -325,10 +329,22 @@ def act(
 
 @mutation_service
 def open_audio(
-    *, case_id, subject_id, provider, citation_id, review=False, synthetic_fixtures_only=False
+    *,
+    case_id,
+    subject_id,
+    provider,
+    citation_id,
+    review=False,
+    context_ms=0,
+    synthetic_fixtures_only=False,
 ):
     _enabled()
-    if type(review) is not bool:
+    if (
+        type(review) is not bool
+        or type(context_ms) is not int
+        or not 0 <= context_ms <= 5000
+        or (context_ms and not review)
+    ):
         raise cases.CaseConflict("timed_review_invalid")
     with (
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
@@ -358,6 +374,10 @@ def open_audio(
             "start_ms": row.start_ms,
             "end_ms": row.end_ms,
             "duration_ms": row.duration_ms,
+            "preview_start_ms": max(0, row.start_ms - context_ms),
+            "preview_end_ms": min(row.duration_ms, row.end_ms + context_ms),
+            "source_version": row.snapshot["version"],
+            "source_sha256": row.snapshot["sha256"],
         }
 
 

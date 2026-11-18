@@ -3,26 +3,26 @@
 from datetime import timedelta
 from unittest.mock import patch
 
-from apps.arabic_search_eval import services as search
-from apps.arabic_search_eval import test_services as search_fixtures
-from apps.classification_review import services as classification
-from apps.classification_review import tests as classification_fixtures
-from apps.classification_review.models import ClassificationAction
-from apps.timed_citations import services as timed
-from apps.timed_citations import tests as timed_fixtures
-from apps.timed_citations.models import TimedCitation, TimedCitationAction
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from apps.answer_media import services as media
+from apps.arabic_search_eval import services as search
+from apps.arabic_search_eval import test_services as search_fixtures
 from apps.casework import services as cases
 from apps.casework.models import Case, CaseDecision
+from apps.classification_review import services as classification
+from apps.classification_review import tests as classification_fixtures
+from apps.classification_review.models import ClassificationAction
 from apps.composite_delivery import services as delivery
 from apps.experimental_publication.models import PublicationEdition
 from apps.platform_recovery.integration import MaintenanceUnavailable
 from apps.research_workspace import tests as research_fixtures
 from apps.source_rights import services as ledger
 from apps.source_rights.tests import Authority as RightsAuthority
+from apps.timed_citations import services as timed
+from apps.timed_citations import tests as timed_fixtures
+from apps.timed_citations.models import TimedCitation, TimedCitationAction
 from tests.casework import test_v13_timed_bindings as bindings
 from tests.v12_security_review import test_maintenance as maintenance_fixtures
 
@@ -214,15 +214,17 @@ class SearchExternalReview(research_fixtures.ResearchFixture, TransactionTestCas
         baseline = self.ranked()
         self.assertEqual(
             (baseline["coverage"], baseline["human_review"], baseline["material"]),
-            ("BOUNDED_CANDIDATE_WINDOW", "PENDING", "TOC_METADATA_ONLY"),
+            ("CURRENT_CASE_REGISTERED_TOC", "PENDING", "TOC_METADATA_ONLY"),
         )
-        self.assertEqual(baseline["candidate_pool_limit"], 20)
+        self.assertEqual(baseline["candidate_pool_limit"], 64)
         rank = search.rank_titles
         for query in ("رقم ١٢", "لا نتيجة اصطناعية"):
             clock = [timezone.now()]
+            attacks = []
 
-            def expire(*args):
-                result = rank(*args)
+            def expire(*args, **kwargs):
+                result = rank(*args, **kwargs)
+                attacks.append(1)
                 clock[0] += timedelta(minutes=2)
                 return result
 
@@ -233,6 +235,7 @@ class SearchExternalReview(research_fixtures.ResearchFixture, TransactionTestCas
             ):
                 with self.assertRaises(cases.CaseConflict):
                     self.ranked(query)
+            self.assertEqual(attacks, [1])
 
 
 @override_settings(FATWA_RECOVERY_MAINTENANCE_REQUIRED=False)

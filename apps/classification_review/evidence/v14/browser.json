@@ -1,0 +1,21 @@
+{
+  "browser": "154.0.8037.57",
+  "sandbox": false,
+  "results": [
+    {
+      "width": 320,
+      "rtl": true,
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "rtl": true,
+      "overflow": false
+    }
+  ],
+  "native_prepare_review_approve": true,
+  "strict_rights": true,
+  "maintenance_required": true,
+  "page_errors": [],
+  "external_requests": []
+}

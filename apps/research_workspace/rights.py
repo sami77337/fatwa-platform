@@ -22,6 +22,16 @@ class Resource:
 
 
 class ResearchRights(ABC):
+    def projection_epoch(self):
+        """Opaque revision of ALL external policy inputs for batched projection.
+
+        Opt-in contract: return a nonempty string that changes on every policy
+        authorization change, including those made by permits callbacks. It must
+        be read atomically and without side effects. Unversioned policies cannot
+        authorize batch results/counts/facets/pages. Existing scalar APIs remain.
+        """
+        raise CaseConflict("research_policy_snapshot_required")
+
     @abstractmethod
     def permits(self, *, provider_id, subject_id, auth_epoch, case_ref, action, resource):
         """Literal True only for the current identity, exact resource and action.

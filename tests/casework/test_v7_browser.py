@@ -90,10 +90,45 @@ class V7ConnectedBrowserTests(LiveServerTestCase):
         self.assertIn("no-store", navigation.value.headers.get("cache-control", ""))
 
     def capture(self, page, name):
+        # DOMContentLoaded alone does not guarantee the external CSS is loaded.
+        # Measure the rendered contract, without retries or a larger timeout.
+        initial = page.evaluate("""() => ({ready: document.readyState,
+            width: innerWidth, actual: document.documentElement.scrollWidth,
+            css: [...document.styleSheets].some(s => s.href &&
+                new URL(s.href).pathname === '/casework/casework.css' && s.cssRules.length > 0)
+        })""")
+        print("V7_LAYOUT_INITIAL=" + json.dumps({"capture": name, **initial}, sort_keys=True))
+        page.wait_for_function("""() => [...document.styleSheets].some(sheet =>
+            sheet.href && new URL(sheet.href).pathname === '/casework/casework.css'
+            && sheet.cssRules.length > 0)""")
         for width in (320, 1280):
             page.set_viewport_size({"width": width, "height": 900})
             self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
-            self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), width)
+            actual = page.evaluate("document.documentElement.scrollWidth")
+            if actual > width:
+                diagnostics = page.evaluate("""() => ({
+                    ready: document.readyState,
+                    styles: [...document.styleSheets].map(s => ({
+                        href: new URL(s.href || location.href).pathname,
+                        rules: s.cssRules.length
+                    })),
+                    overflow: [...document.querySelectorAll('body *')].filter(e => {
+                        const r = e.getBoundingClientRect();
+                        return r.right > innerWidth || r.left < 0;
+                    }).slice(0, 30).map(e => ({
+                        tag: e.tagName, id: e.id, width: e.getBoundingClientRect().width,
+                        wrap: getComputedStyle(e).overflowWrap,
+                        whitespace: getComputedStyle(e).whiteSpace
+                    }))
+                })""")
+                print(
+                    "V7_LAYOUT_FAILURE="
+                    + json.dumps(
+                        {"capture": name, "width": width, "actual": actual, **diagnostics},
+                        sort_keys=True,
+                    )
+                )
+            self.assertLessEqual(actual, width)
             page.screenshot(path=str(OUT / f"{name}-{width}.png"), full_page=True)
 
     def test_question_attachment_cited_approval_private_answer_and_independent_publication(self):

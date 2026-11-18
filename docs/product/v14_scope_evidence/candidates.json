@@ -1,0 +1,946 @@
+{
+  "campaign": "V14",
+  "state": "CANDIDATE_ONLY_NO_RUNTIME_CREDIT",
+  "base_sha": "1f08cbb7166f70ec340c495da33ccfc1eda9534e",
+  "inspected_integration_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+  "ownership": "docs/product/v14_scope_evidence/candidates.json only in this update",
+  "status_upgrades": 0,
+  "acceptance": "HOLD",
+  "new_percentage": null,
+  "groups": [
+    {
+      "id": "recording-controls",
+      "state": "CANDIDATE_STATIC_MAPPING_ONLY",
+      "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
+      "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+      "bounded_goal": "Inspect live duration/size controls and resource cleanup through native private forms.",
+      "point_mappings": [
+        {
+          "original_id": 70,
+          "original_text": "يمكنه تسجيل جواب صوتي مباشرة من الواجهة.",
+          "direct_spec_ids": [
+            "SPEC-U02-013"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U01-016"
+          ],
+          "decision_ids": [
+            "D-008"
+          ],
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Direct UI recording controls are enhanced; recording was already present in V13.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 77,
+          "original_text": "يستطيع الشيخ بدء التسجيل وإيقافه واستكماله والاستماع إليه قبل الاعتماد.",
+          "direct_spec_ids": [
+            "SPEC-U02-013"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U08-017",
+            "SPEC-U16-010"
+          ],
+          "decision_ids": [
+            "D-047"
+          ],
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Elapsed samples/size, preview, stop and cancel are bounded additions; resume is still not implemented.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 78,
+          "original_text": "التسجيل الأصلي للشيخ يبقى محفوظًا ولا يُستبدل بالتفريغ.",
+          "direct_spec_ids": [
+            "SPEC-U02-014"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U07-008",
+            "SPEC-U08-017",
+            "SPEC-U16-010"
+          ],
+          "decision_ids": [
+            "D-016"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Controls retain the existing immutable original path; no transcript substitutes it.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 408,
+          "original_text": "السياسة Default Deny.",
+          "direct_spec_ids": [
+            "SPEC-U14-011"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U13-024",
+            "SPEC-U14-026",
+            "SPEC-U14-028",
+            "SPEC-U16-024"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Frozen form saves remain denied through the existing native maintenance boundary.",
+          "runtime_credit": false
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/browser_audio/static/browser_audio/capture.js",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "95b9068ad07de9fdb8a0d5137351cffaad43fdfa94e1c4755bea1e31f1445147",
+          "symbol": null,
+          "inspection": "STATIC_ONLY_NOT_EXECUTION"
+        },
+        {
+          "path": "apps/browser_audio/static/browser_audio/worklet.js",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "4adb772256f454e2a476be23974887784262749c685c42e1a25b1b9c2cf84283",
+          "symbol": null,
+          "inspection": "STATIC_ONLY_NOT_EXECUTION"
+        },
+        {
+          "path": "apps/browser_audio/templates/browser_audio/capture.html",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "4421b3c363eff58a29bba55e50438082c5e9244fc9e639695e1d6b8d3355ec9f",
+          "symbol": null,
+          "inspection": "STATIC_ONLY_NOT_EXECUTION"
+        }
+      ],
+      "proposed_positive_tests": [
+        {
+          "path": "apps/browser_audio/test_browser.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "dbd641995223765c9a17e2a1dbeaeb4ee5f92a2af56320f0864a7c252a1a1795",
+          "symbol": "BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 481,
+          "end_line": 543
+        }
+      ],
+      "proposed_negative_tests": [
+        {
+          "path": "apps/browser_audio/test_browser.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "dbd641995223765c9a17e2a1dbeaeb4ee5f92a2af56320f0864a7c252a1a1795",
+          "symbol": "V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 569,
+          "end_line": 640
+        },
+        {
+          "path": "apps/browser_audio/test_browser.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "dbd641995223765c9a17e2a1dbeaeb4ee5f92a2af56320f0864a7c252a1a1795",
+          "symbol": "BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 351,
+          "end_line": 416
+        }
+      ],
+      "test_execution_claim": "NONE_IN_THIS_CANDIDATE_MAP",
+      "receipts": [],
+      "credited_owner_points": [],
+      "remaining": [
+        "Still mono8kHz PCM16 WAV,10seconds/160044bytes; no duration expansion.",
+        "No ASR, resume, real microphone, universal-device support or server-driven microphone shutdown claim.",
+        "Hosted protected microphone and full integrated journey receipts remain required."
+      ],
+      "blockers": []
+    },
+    {
+      "id": "exact-pdf-and-time-preview",
+      "state": "CANDIDATE_STATIC_MAPPING_ONLY",
+      "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
+      "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+      "bounded_goal": "Inspect private PDF actual-page locators, explicit printed-page assertions and bounded original-audio context.",
+      "point_mappings": [
+        {
+          "original_id": 543,
+          "original_text": "يوجد نظام استدلال وإحالات دقيقة يمكّن الشيخ أو الباحث من ربط عبارة في الفتوى أو مادة علمية بأصل محدد وموضع معين قابل للفتح مباشرة، لا بمجرد عنوان كتاب أو نتيجة بحث عامة.",
+          "direct_spec_ids": [
+            "SPEC-U06-001"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U02-023",
+            "SPEC-U02-028",
+            "SPEC-U04-017",
+            "SPEC-U05-028",
+            "SPEC-U10-012",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "An exact private PDF page becomes a selectable source position, not merely a search title.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 544,
+          "original_text": "يستطيع الشيخ تحديد عبارة في جوابه أو إضافة بطاقة مصدر مستقلة، ثم اختيار المصدر والنسخة والموضع ومعاينة ما سيفتحه الرابط قبل تثبيت الإحالة، دون فقد مسودة جوابه.",
+          "direct_spec_ids": [
+            "SPEC-U06-006",
+            "SPEC-U06-008"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U02-023",
+            "SPEC-U02-029",
+            "SPEC-U05-020",
+            "SPEC-U10-012",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Native preview/confirmation can precede adding the locator to the current draft; arbitrary phrase selection is not proved.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 545,
+          "original_text": "تشمل الإحالات الكتب والطبعات وملفات PDF والوثائق والمصادر الرقمية، مع التمييز بين الكتاب بوصفه عملًا علميًا، والطبعة أو النسخة المعينة، والملف الرقمي الذي يعرضها؛ ويمكن تحديد صفحة أو فقرة أو مقطع بحسب المتاح.",
+          "direct_spec_ids": [
+            "SPEC-U06-002",
+            "SPEC-U06-005",
+            "SPEC-U06-011"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U02-024",
+            "SPEC-U02-028",
+            "SPEC-U04-017",
+            "SPEC-U06-012",
+            "SPEC-U10-012",
+            "SPEC-U11-002",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Private PDF attachment/answer-part identity is distinct from general bibliographic identity.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 546,
+          "original_text": "يُحفظ رقم الصفحة المطبوع ورقم الصفحة داخل ملف PDF على نحو مستقل عند توفر المطابقة الموثقة بينهما، ويمكن تحديد فقرة نصية أو منطقة في صفحة مصورة حيث تسمح التقنية بذلك، دون ادعاء دقة غير متاحة.",
+          "direct_spec_ids": [
+            "SPEC-U06-010",
+            "SPEC-U06-011"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U04-017",
+            "SPEC-U06-012",
+            "SPEC-U10-012",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Physical 1-based page and optional human-asserted printed label are stored separately; no automatic page-offset inference.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 549,
+          "original_text": "يمكن توجيه الإحالة إلى درس أو تسجيل صوتي أو فيديو بموضع زمني محدد، كدقيقة وثانية أو بداية ونهاية مقطع، ويرتبط التوقيت بنسخة التسجيل نفسها ولا ينتقل تلقائيًا إلى نسخة أخرى.",
+          "direct_spec_ids": [
+            "SPEC-U06-016"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U02-027",
+            "SPEC-U04-017",
+            "SPEC-U11-021",
+            "SPEC-U16-002",
+            "SPEC-U16-010",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Audio context preview is clamped to verified recording duration without migrating the existing timed locator.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 551,
+          "original_text": "تستند الإحالة إلى معرف ثابت للمصدر ونسخته وموضعه، لا إلى ترتيب مؤقت في نتائج البحث أو وصف غامض مثل «الكتاب الثاني»؛ وعند الغموض يُطلب تحديد المقصود بدل تخمينه.",
+          "direct_spec_ids": [
+            "SPEC-U06-007"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Source UUID/version/hash and parser metadata pin a stable immutable original.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 552,
+          "original_text": "إذا أضيفت طبعة أو ملف أو تسجيل جديد فلا تنتقل الإحالة القديمة إليه بصمت؛ تظل مرتبطة بالنسخة التي اختارها صاحب الاستدلال مع حفظ التوثيق وتاريخ التصحيحات.",
+          "direct_spec_ids": [
+            "SPEC-U06-022",
+            "SPEC-U06-026"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Corrections append a successor; new answers/sources do not silently acquire old locators.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 553,
+          "original_text": "إذا تعذر فتح الفقرة أو الموضع الدقيق تقنيًا، يُفتح أقرب موضع موثق مع بيان حدود الدقة، ولا يُختلق رقم صفحة أو رابط أو مقتطف غير متحقق؛ ويمكن الاحتفاظ بمرجع وصفي عندما لا تتوفر نسخة رقمية.",
+          "direct_spec_ids": [
+            "SPEC-U06-004",
+            "SPEC-U06-018",
+            "SPEC-U06-028"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U04-017",
+            "SPEC-U10-012",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Native PDF #page is a navigation hint; full-file READ is required and precise region/OCR is absent.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 554,
+          "original_text": "تخضع الإحالات لحقوق المصدر وصلاحيات الوصول وقت الإنشاء والفتح والتوصيل والنشر والتصدير؛ لا يكشف الربط بمصدر داخلي محتواه أو ملفاته لجمهور غير مخوّل، ولا يحوّل القضية الخاصة إلى مادة عامة.",
+          "direct_spec_ids": [
+            "SPEC-U06-019",
+            "SPEC-U06-020",
+            "SPEC-U06-021",
+            "SPEC-U06-027"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U02-030",
+            "SPEC-U03-035",
+            "SPEC-U04-022",
+            "SPEC-U07-006",
+            "SPEC-U08-018",
+            "SPEC-U12-010",
+            "SPEC-U12-021",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Separate exact READ_MEDIA/CITE and expiry checks guard creation/open/use; publication permission is not conferred.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 556,
+          "original_text": "يسجل النظام من أضاف الإحالة وراجعها وصححها وموضعها وإصدارها؛ ويظهر في الطباعة والتصدير مرجع مقروء يتضمن المصدر والنسخة والموضع المتاح، ولا يسمح التصحيح التقني بتبديل الحجة أو المصدر المقصود دون مراجعة الشيخ.",
+          "direct_spec_ids": [
+            "SPEC-U06-023",
+            "SPEC-U06-026",
+            "SPEC-U06-027"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U03-035",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Locator actor/review/correction history is retained; print/export of a human-readable reference is not established.",
+          "runtime_credit": false
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/pdf_citations/services.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "b9d5909dcb0506554594a3946ffcf016eece74ad99323a4ff824cda69e5aaf58",
+          "symbol": "propose",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 127,
+          "end_line": 218
+        },
+        {
+          "path": "apps/pdf_citations/services.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "b9d5909dcb0506554594a3946ffcf016eece74ad99323a4ff824cda69e5aaf58",
+          "symbol": "open_pdf",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 259,
+          "end_line": 293
+        },
+        {
+          "path": "apps/pdf_citations/services.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "b9d5909dcb0506554594a3946ffcf016eece74ad99323a4ff824cda69e5aaf58",
+          "symbol": "for_locked_answer",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 297,
+          "end_line": 329
+        },
+        {
+          "path": "apps/timed_citations/services.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "0fecd8e16232065e32d30f9419e026b2bf7e5739175fc1574481700d10c9f6e4",
+          "symbol": "open_audio",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 327,
+          "end_line": 377
+        }
+      ],
+      "proposed_positive_tests": [
+        {
+          "path": "apps/pdf_citations/tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1685a5847397a8d8e88837770528c9b73dc52e20068c204384651cd251c9b87e",
+          "symbol": "PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 136,
+          "end_line": 153
+        },
+        {
+          "path": "apps/timed_citations/test_preview_context.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "56a2f5d98bdd453d4c8edd8b297d57eb3932eb3cf8104eb7d3819b12844cf36e",
+          "symbol": "PreviewContextTests.test_context_is_clamped_to_verified_duration_and_original_stays_immutable",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 13,
+          "end_line": 28
+        }
+      ],
+      "proposed_negative_tests": [
+        {
+          "path": "apps/pdf_citations/tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1685a5847397a8d8e88837770528c9b73dc52e20068c204384651cd251c9b87e",
+          "symbol": "PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 155,
+          "end_line": 180
+        },
+        {
+          "path": "apps/pdf_citations/tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1685a5847397a8d8e88837770528c9b73dc52e20068c204384651cd251c9b87e",
+          "symbol": "PdfTests.test_read_cite_expiry_and_withdrawal_redact_source_label_and_reason",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 223,
+          "end_line": 247
+        },
+        {
+          "path": "apps/timed_citations/test_preview_context.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "56a2f5d98bdd453d4c8edd8b297d57eb3932eb3cf8104eb7d3819b12844cf36e",
+          "symbol": "PreviewContextTests.test_context_does_not_bypass_scope_rights_confirmation_or_withdrawal",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 30,
+          "end_line": 45
+        }
+      ],
+      "test_execution_claim": "NONE_IN_THIS_CANDIDATE_MAP",
+      "receipts": [],
+      "credited_owner_points": [],
+      "remaining": [
+        "PDF bounded1–10pages/192000bytes; no OCR, text-region selection, real license or virus-scan claim.",
+        "Human printed-label assertion is recorded, not independently verified as true.",
+        "No public/requester PDF locator route, no permission inherited from book622TOC, no Quran/hadith linkage or export completeness.",
+        "Integrated rights withdrawal/expiry, downstream approval/use and encrypted restored-schema receipts remain required."
+      ],
+      "blockers": []
+    },
+    {
+      "id": "closed-classification-editorial",
+      "state": "CANDIDATE_STATIC_MAPPING_ONLY",
+      "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
+      "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+      "bounded_goal": "Inspect explicit closed simulation linking exact approved classification to a new editorial candidate with independent publication review.",
+      "point_mappings": [
+        {
+          "original_id": 47,
+          "original_text": "تعديل Metadata مثل Tag أو تصنيف لا يرفع Evidence Version لأنه لا يغير وقائع السؤال.",
+          "direct_spec_ids": [
+            "SPEC-U01-014"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U04-021"
+          ],
+          "decision_ids": [
+            "D-048"
+          ],
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "New editorial classification copies remain separate from canonical case evidence.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 121,
+          "original_text": "لا يتم هذا النشر تلقائيًا دون صلاحية أو قرار بشري.",
+          "direct_spec_ids": [
+            "SPEC-U01-024",
+            "SPEC-U07-010"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U07-011",
+            "SPEC-U07-028",
+            "SPEC-U12-022"
+          ],
+          "decision_ids": [
+            "D-060"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "A classification approval is not a publication approval; separate review and independent approval are mandatory.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 140,
+          "original_text": "يمكن Republish بنسخة جديدة مع تاريخ إصدارات.",
+          "direct_spec_ids": [
+            "SPEC-U03-025",
+            "SPEC-U07-024"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U07-028",
+            "SPEC-U08-026",
+            "SPEC-U09-013"
+          ],
+          "decision_ids": [
+            "D-035"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "A new editorial candidate has its own number/history; this is closed simulation, not accepted U03 republish policy.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 169,
+          "original_text": "الإنسان يستطيع قبولها أو رفضها أو تعديلها.",
+          "direct_spec_ids": [
+            "SPEC-U04-011"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U03-013",
+            "SPEC-U04-023",
+            "SPEC-U04-024"
+          ],
+          "decision_ids": [
+            "D-044"
+          ],
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Previously human-approved classification is a prerequisite; rejected/pending/withdrawn proposals cannot prepare a candidate.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 417,
+          "original_text": "تغيير التصنيف مسجل.",
+          "direct_spec_ids": [
+            "SPEC-U04-011",
+            "SPEC-U04-013"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U03-043",
+            "SPEC-U15-016"
+          ],
+          "decision_ids": [
+            "D-044"
+          ],
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Immutable binding ties an exact classification revision to a separate editorial revision and actor history.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 419,
+          "original_text": "النشر وإلغاء النشر مسجل.",
+          "direct_spec_ids": [
+            "SPEC-U14-019"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U03-043",
+            "SPEC-U15-016"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Independent review/approval records remain canonical publication actions under extra binding admission.",
+          "runtime_credit": false
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/classification_review/editorial.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "da006482c99c3776901724628aa3fc7a1ce5d2d5b79e28b757d66647f754ef7e",
+          "symbol": "prepare_edition",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 135,
+          "end_line": 199
+        },
+        {
+          "path": "apps/classification_review/editorial.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "da006482c99c3776901724628aa3fc7a1ce5d2d5b79e28b757d66647f754ef7e",
+          "symbol": "act",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 241,
+          "end_line": 292
+        },
+        {
+          "path": "apps/classification_review/editorial.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "da006482c99c3776901724628aa3fc7a1ce5d2d5b79e28b757d66647f754ef7e",
+          "symbol": "inspect",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 296,
+          "end_line": 351
+        }
+      ],
+      "proposed_positive_tests": [
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1e53d3f89a0c6f46161a678899ed44309196e0134fb3766b02fd189f36c4d20b",
+          "symbol": "EditorialTests.test_candidate_links_exact_approved_classification_without_publishing",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 143,
+          "end_line": 159
+        },
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1e53d3f89a0c6f46161a678899ed44309196e0134fb3766b02fd189f36c4d20b",
+          "symbol": "EditorialTests.test_two_manual_steps_and_independent_publication_approver",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 161,
+          "end_line": 177
+        }
+      ],
+      "proposed_negative_tests": [
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1e53d3f89a0c6f46161a678899ed44309196e0134fb3766b02fd189f36c4d20b",
+          "symbol": "EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 233,
+          "end_line": 257
+        },
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1e53d3f89a0c6f46161a678899ed44309196e0134fb3766b02fd189f36c4d20b",
+          "symbol": "EditorialTests.test_rights_expiry_revoke_and_late_policy_revocation_deny",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 291,
+          "end_line": 311
+        },
+        {
+          "path": "apps/classification_review/editorial_tests.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "1e53d3f89a0c6f46161a678899ed44309196e0134fb3766b02fd189f36c4d20b",
+          "symbol": "EditorialTests.test_freeze_blocks_prepare_inspect_and_decision_without_changes",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 380,
+          "end_line": 394
+        }
+      ],
+      "test_execution_claim": "NONE_IN_THIS_CANDIDATE_MAP",
+      "receipts": [],
+      "credited_owner_points": [],
+      "remaining": [
+        "No accepted classification-to-publication product policy; disabled by default and requires separate synthetic EditorialSimulationPolicy.",
+        "No official primary/additional taxonomy or tags, U03 permission, AI approval or scientific relation inferred from similarity.",
+        "Withdrawing classification blocks pending/current binding access; it does not automatically withdraw already independently published editions.",
+        "Full recovery must verify added table/functions/trigger without relaxing schema identity."
+      ],
+      "blockers": []
+    },
+    {
+      "id": "batched-rights-performance",
+      "state": "CANDIDATE_STATIC_MAPPING_ONLY",
+      "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
+      "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+      "bounded_goal": "Inspect bounded case-locked exact reference-ledger batching, canonical parity and fresh final projection checks.",
+      "point_mappings": [
+        {
+          "original_id": 216,
+          "original_text": "يبدأ Authorization أولًا قبل Retrieval؛ لا يجب أن يبحث المستخدم في بيانات لا يحق له رؤيتها.",
+          "direct_spec_ids": [
+            "SPEC-U05-003"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U04-022",
+            "SPEC-U05-026",
+            "SPEC-U05-028",
+            "SPEC-U11-022",
+            "SPEC-U12-010",
+            "SPEC-U14-025",
+            "SPEC-U16-024"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Batched exact ledger checks can preserve authorization-before-retrieval; endpoint custom-policy/identity boundaries remain independently necessary.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 408,
+          "original_text": "السياسة Default Deny.",
+          "direct_spec_ids": [
+            "SPEC-U14-011"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U13-024",
+            "SPEC-U14-026",
+            "SPEC-U14-028",
+            "SPEC-U16-024"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Default-deny registration/review/use checks and whole-projection invalidation remain mandatory.",
+          "runtime_credit": false
+        },
+        {
+          "original_id": 554,
+          "original_text": "تخضع الإحالات لحقوق المصدر وصلاحيات الوصول وقت الإنشاء والفتح والتوصيل والنشر والتصدير؛ لا يكشف الربط بمصدر داخلي محتواه أو ملفاته لجمهور غير مخوّل، ولا يحوّل القضية الخاصة إلى مادة عامة.",
+          "direct_spec_ids": [
+            "SPEC-U06-019",
+            "SPEC-U06-020",
+            "SPEC-U06-021",
+            "SPEC-U06-027"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U02-030",
+            "SPEC-U03-035",
+            "SPEC-U04-022",
+            "SPEC-U07-006",
+            "SPEC-U08-018",
+            "SPEC-U12-010",
+            "SPEC-U12-021",
+            "SPEC-U16-002",
+            "SPEC-U16-023"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Fresh case-scoped source/version/edition checks avoid transferring revoked or expired rights to metadata/counts/facets.",
+          "runtime_credit": false
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/source_rights/batch.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "0d711dc460ce56ff1e56447b16fc99544da09e8a99c119ae4a1cd6730af58203",
+          "symbol": "reference_projection_for_locked_case",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 181,
+          "end_line": 204
+        }
+      ],
+      "proposed_positive_tests": [
+        {
+          "path": "apps/source_rights/test_v14_batch.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "bdfb73a95fb20b02312116e210791df0ff7119dce3c96e5cc830567c3c6838e5",
+          "symbol": "BatchReferenceTests.test_bulk_query_bound_and_parity_multiple_positions",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 133,
+          "end_line": 148
+        },
+        {
+          "path": "apps/source_rights/test_v14_batch.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "bdfb73a95fb20b02312116e210791df0ff7119dce3c96e5cc830567c3c6838e5",
+          "symbol": "BatchReferenceTests.test_mixed_editions_have_exact_parity_without_inherited_grants",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 172,
+          "end_line": 193
+        }
+      ],
+      "proposed_negative_tests": [
+        {
+          "path": "apps/source_rights/test_v14_batch.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "bdfb73a95fb20b02312116e210791df0ff7119dce3c96e5cc830567c3c6838e5",
+          "symbol": "BatchReferenceTests.test_revoked_during_composition_invalidates_entire_projection",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 40,
+          "end_line": 52
+        },
+        {
+          "path": "apps/source_rights/test_v14_batch.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "bdfb73a95fb20b02312116e210791df0ff7119dce3c96e5cc830567c3c6838e5",
+          "symbol": "BatchReferenceTests.test_expiry_during_composition_invalidates_metadata_counts_and_facets",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 54,
+          "end_line": 65
+        }
+      ],
+      "test_execution_claim": "NONE_IN_THIS_CANDIDATE_MAP",
+      "receipts": [],
+      "credited_owner_points": [],
+      "remaining": [
+        "No persistent cache or endpoint authority, no full-text/PUBLISH grant, no bypass of custom research/publication/preview policy.",
+        "Service query-bound checks are not endpoint latency or integrated search performance evidence.",
+        "558SQL/4candidate baseline must not be advertised improved until exact search endpoint measurement arrives.",
+        "Human evaluation version workflow remains owned by search lane and uncredited here."
+      ],
+      "blockers": [
+        "SEC14-01 search/custom-policy collection boundary is pending; no search-lane closure or independent security PASS inferred."
+      ]
+    },
+    {
+      "id": "startup-diagnostics",
+      "state": "CANDIDATE_STATIC_MAPPING_ONLY",
+      "selection": "EXPLICIT_REVIEW_OF_ORIGINAL_TEXT_NOT_KEYWORD_CREDIT",
+      "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+      "bounded_goal": "Preserve startup failures and collect bounded observations without longer deadline, retries or weaker sandbox.",
+      "point_mappings": [
+        {
+          "original_id": 428,
+          "original_text": "توجد Runbooks للأعطال.",
+          "direct_spec_ids": [
+            "SPEC-U15-017"
+          ],
+          "additional_reverse_spec_ids": [
+            "SPEC-U15-001"
+          ],
+          "decision_ids": [
+            "D-038"
+          ],
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Bounded B6/D6/FAST9 failure observations support an operational diagnostic record, not resolution of root cause.",
+          "runtime_credit": false
+        }
+      ],
+      "code": [
+        {
+          "path": "tests/v14_browser_startup/b6_observations.mjs",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "2b7b9a8f980bc71d8c89344c80585768e80c3d25284477f7d126b02d7278c55f",
+          "symbol": null,
+          "inspection": "STATIC_ONLY_NOT_EXECUTION"
+        },
+        {
+          "path": "tests/acceptance/wave6/browser.mjs",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "32e75ddc721854e5ed18d3b3941d46cebc9729ccfe9e7b27b56ca6f1e431269e",
+          "symbol": null,
+          "inspection": "STATIC_ONLY_NOT_EXECUTION"
+        },
+        {
+          "path": "docs/operations/V14_STARTUP.md",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "8ce22c0b8621d08d25d2000f11b3df026cc5dd44469e0561ce5222e03d4ddb02",
+          "symbol": null,
+          "inspection": "STATIC_ONLY_NOT_EXECUTION"
+        }
+      ],
+      "proposed_positive_tests": [
+        {
+          "path": "tests/v14_browser_startup/test_evidence.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "fbbb42ac3dae8bbd28a64a1efe1a2cf2243579f3ef8500835f8bf095be3b333f",
+          "symbol": "B6EvidenceTests.test_later_pass_preserves_failure_and_unknown_cause",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 45,
+          "end_line": 52
+        }
+      ],
+      "proposed_negative_tests": [
+        {
+          "path": "tests/v14_browser_startup/test_evidence.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "fbbb42ac3dae8bbd28a64a1efe1a2cf2243579f3ef8500835f8bf095be3b333f",
+          "symbol": "B6EvidenceTests.test_checkout_and_report_sha_must_both_match",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 54,
+          "end_line": 56
+        },
+        {
+          "path": "tests/v14_browser_startup/test_evidence.py",
+          "inspected_sha": "c77d1c9c2f232738d88761ffb7eab4e715830130",
+          "file_sha256": "fbbb42ac3dae8bbd28a64a1efe1a2cf2243579f3ef8500835f8bf095be3b333f",
+          "symbol": "B6EvidenceTests.test_case_results_and_counts_cannot_upgrade_a_failure",
+          "inspection": "STATIC_ONLY_NOT_EXECUTION",
+          "line": 66,
+          "end_line": 70
+        }
+      ],
+      "test_execution_claim": "NONE_IN_THIS_CANDIDATE_MAP",
+      "receipts": [],
+      "credited_owner_points": [],
+      "remaining": [
+        "ROOT_CAUSE_UNKNOWN; later10PASS is not cause/fix/flake proof.",
+        "B6 observations are a narrow harness result, not the complete V14 product/restoration journey.",
+        "Historical failed push checks and unavailable artifact bytes remain documented."
+      ],
+      "blockers": []
+    }
+  ],
+  "separate_coordinator_reported_b6_observation": {
+    "attribution": "COORDINATOR_READ_HOSTED_LOGS_NOT_REEXECUTED_OR_LOG_BYTES_INSPECTED_BY_THIS_LANE",
+    "head_sha": "d1ac1a33a1bcdba032e23e55b6a618def2d1af26",
+    "run_id": 44233080034,
+    "jobs": [
+      {
+        "postgres_major": 17,
+        "job_id": 134562585220,
+        "reported_passes": 10,
+        "reported_startup_ms": 647
+      },
+      {
+        "postgres_major": 18,
+        "job_id": 134562585202,
+        "reported_passes": 10,
+        "reported_startup_ms": 6655
+      }
+    ],
+    "root_cause": "UNKNOWN",
+    "scope_credit": false,
+    "full_product_journey_proved": false
+  },
+  "next_required": [
+    "Exact final integrated product SHA and positive/negative PG17/18 execution receipts for each credited mapping.",
+    "Chrome sandbox proof covering the affected connected UI, fake microphone and actual new functions.",
+    "Independent changing-head security review with blockers resolved, not inherited prior PASS.",
+    "Encrypted recovery onto independent target DB/assets, restored HTTP original bytes and permission withdrawal.",
+    "Measured search endpoint baseline/after and truthful human evaluation status after search delivery."
+  ]
+}

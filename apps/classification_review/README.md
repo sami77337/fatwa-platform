@@ -1,3 +1,8 @@
+> V14 extension: [closed classification-to-editorial simulation contract](V14_CONTRACT.md)
+> and [executed V14 evidence](V14_EVIDENCE.md). The V13 ledger behavior and evidence
+> below are preserved; transfer is a separate default-off operation requiring a
+> new candidate and independent publication approval.
+
 # V13 P1-D — experimental classification review
 
 Base: verified remote PR #231 `5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8`.
@@ -103,12 +108,18 @@ Successful HTML is `private, no-store`; failure pages do not echo private inputs
 Python API (`services.py`):
 
 ```python
-common = dict(publication_id=edition_id, subject_id=trusted_subject,
-              provider=trusted_provider, synthetic_fixtures_only=True)
-propose(**common, knowledge_id=reviewed_reference_id, label=label,
-        reason=reason, replaces_id=None)  # {id, number, state: PROPOSED}
-act(**common, revision_id=revision_id, action="APPROVE", note=note,
-    confirmed=True)  # {id, state}; also REJECT / WITHDRAW
+common = dict(
+    publication_id=edition_id,
+    subject_id=trusted_subject,
+    provider=trusted_provider,
+    synthetic_fixtures_only=True,
+)
+propose(
+    **common, knowledge_id=reviewed_reference_id, label=label, reason=reason, replaces_id=None
+)  # {id, number, state: PROPOSED}
+act(
+    **common, revision_id=revision_id, action="APPROVE", note=note, confirmed=True
+)  # {id, state}; also REJECT / WITHDRAW
 ```
 
 `desk(**common, history=False)` returns `publication_id`, `existing_category`,

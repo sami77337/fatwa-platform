@@ -1,0 +1,21 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_encrypted_restore_preserves_v14_schema_guards_and_original_private_bytes (tests.v14_security_review.test_final_recovery.V14SchemaRecovery.test_encrypted_restore_preserves_v14_schema_guards_and_original_private_bytes) ... ok
+test_changed_quoted_index_predicate_on_restored_target_is_quarantined (tests.v13_security_review.test_final_schema.EncryptedSchemaReview.test_changed_quoted_index_predicate_on_restored_target_is_quarantined) ... ok
+test_two_manual_steps_and_independent_publication_approver (apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver) ... ok
+test_canonical_publication_actions_cannot_bypass_bound_policy (apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy) ... ok
+test_freeze_blocks_prepare_inspect_and_decision_without_changes (apps.classification_review.editorial_tests.EditorialTests.test_freeze_blocks_prepare_inspect_and_decision_without_changes) ... ok
+test_late_rights_revocation_rolls_back_and_does_not_leak_inspection (apps.classification_review.editorial_tests.EditorialTests.test_late_rights_revocation_rolls_back_and_does_not_leak_inspection) ... ok
+test_concurrent_publication_approval_records_one_decision (apps.classification_review.editorial_tests.EditorialTests.test_concurrent_publication_approval_records_one_decision) ... ok
+test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny (apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny) ... ok
+test_scope_and_identity_change_during_read_deny (apps.pdf_citations.tests.PdfTests.test_scope_and_identity_change_during_read_deny) ... ok
+test_disabled_feature_or_omitted_app_cannot_hide_persisted_pdf (tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_disabled_feature_or_omitted_app_cannot_hide_persisted_pdf) ... ok
+test_each_read_and_cite_revocation_closes_all_downstream_surfaces (tests.casework.test_v14_pdf_bindings.PdfBindingsTests.test_each_read_and_cite_revocation_closes_all_downstream_surfaces) ... ok
+test_mixed_editions_have_exact_parity_without_inherited_grants (apps.source_rights.test_v14_batch.BatchReferenceTests.test_mixed_editions_have_exact_parity_without_inherited_grants) ... ok
+test_mutating_yielded_mapping_does_not_mutate_validation_receipt (apps.source_rights.test_v14_batch.BatchReferenceTests.test_mutating_yielded_mapping_does_not_mutate_validation_receipt) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 17.478s
+
+OK
+Found 13 test(s).
+System check identified no issues (0 silenced).

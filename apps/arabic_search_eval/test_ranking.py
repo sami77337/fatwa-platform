@@ -50,7 +50,7 @@ class RankingTests(unittest.TestCase):
         self.assertEqual([h.tier for h in hits], [0, 1, 2, 3])
 
     def test_rejects_duplicate_ids_large_windows_and_invalid_queries(self):
-        for rows in ([Candidate("a", "باب")] * 2, [Candidate(str(i), "باب") for i in range(41)]):
+        for rows in ([Candidate("a", "باب")] * 2, [Candidate(str(i), "باب") for i in range(65)]):
             with self.assertRaises(ValueError):
                 rank_titles("باب", rows)
         for query in (None, "", "َُ", "?!", "a" * 81, "a " * 11, "a\nb", "باب\ud800"):

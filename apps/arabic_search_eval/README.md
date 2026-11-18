@@ -1,3 +1,5 @@
+> Historical V13 receipt. Current V14 implementation, security boundary and integration contract: [V14.md](V14.md). Original measurements below are retained, not current claims.
+
 # V13 P1-C — Arabic title search evaluation
 
 Synthetic development only. **Human review PENDING**. No semantic search,

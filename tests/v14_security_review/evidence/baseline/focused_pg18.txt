@@ -1,0 +1,18 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_later_result_policy_callback_cannot_leave_revoked_earlier_title (tests.v14_security_review.test_search_boundary.SearchProjectionBoundary.test_later_result_policy_callback_cannot_leave_revoked_earlier_title) ... FAIL
+
+======================================================================
+FAIL: test_later_result_policy_callback_cannot_leave_revoked_earlier_title (tests.v14_security_review.test_search_boundary.SearchProjectionBoundary.test_later_result_policy_callback_cannot_leave_revoked_earlier_title)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v14_security_review/test_search_boundary.py", line 85, in test_later_result_policy_callback_cannot_leave_revoked_earlier_title
+    self.assertNotIn(first, exposed, "An earlier revoked title survived the later callback")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '1:2' unexpectedly found in ['1:2', '1:3'] : An earlier revoked title survived the later callback
+
+----------------------------------------------------------------------
+Ran 1 test in 1.146s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).

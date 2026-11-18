@@ -66,7 +66,7 @@ def _current(case):
     ):
         raise cases.CaseConflict("current_mufti_approval_required")
     cases._answer_citations(answer)
-    cases._answer_timed(answer)
+    cases._answer_annotations(answer)
     # Pin exact immutable identities as well as content. An identical answer
     # approved for different facts or by a later decision is a different scope.
     evidence = CurrentEvidence(
@@ -359,7 +359,7 @@ def _requester_delivery_locked(case, verifier):
         result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
         return result
     cases._answer_citations(case.approved_answer)
-    cases._answer_timed(case.approved_answer)
+    cases._answer_annotations(case.approved_answer)
     manifest = cases._answer_manifest(case.approved_answer)
     if manifest and manifest["requires_human_delivery"]:
         result["delivery_status"] = "UNSUPPORTED_MEDIA_REQUIRES_HUMAN_ACTION"

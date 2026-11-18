@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from apps.reference.normalization import normalize_title
 
-VERSION = "arabic-title-words-v1"
+VERSION = "arabic-title-words-v2-capacity64"
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 _TOKEN = re.compile(r"\d+(?:[.,٫]\d+)*|[^\W\d_]+", re.UNICODE)
 
@@ -49,7 +49,7 @@ def rank_titles(query: str, candidates: list[Candidate], *, limit: int = 20) -> 
     decimal stays one token, so query 12 does not match 112 or 12.5.
     """
     wanted = query_tokens(query)
-    if type(limit) is not int or not 1 <= limit <= 40 or len(candidates) > 40:
+    if type(limit) is not int or not 1 <= limit <= 64 or len(candidates) > 64:
         raise ValueError("invalid_candidate_window")
     seen, ranked = set(), []
     for index, candidate in enumerate(candidates):

@@ -306,7 +306,7 @@ def _current(case, manifest):
     ):
         raise cases.CaseConflict("current_multipart_approval_required")
     cases._answer_citations(answer)
-    cases._answer_timed(answer)
+    cases._answer_annotations(answer)
     _verified(manifest)
     return decision
 
@@ -558,7 +558,7 @@ def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
     with cases._staff_case(
         row.manifest.answer.case_id, subject_id, provider, synthetic_fixtures_only
     ) as (case, actor):
-        cases._answer_timed(row.manifest.answer, actor=actor, provider=provider)
+        cases._answer_annotations(row.manifest.answer, actor=actor, provider=provider)
         cases._answer_citations(row.manifest.answer)
         _verified(row.manifest)
         if row.ordinal == 1:

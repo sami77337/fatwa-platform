@@ -25,8 +25,15 @@ function mount(root) {
   const start = root.querySelector("[data-audio-start]"), stop = root.querySelector("[data-audio-stop]");
   const cancel = root.querySelector("[data-audio-cancel]"), accept = root.querySelector("[data-audio-accept]");
   const preview = root.querySelector("audio"), status = root.querySelector("[data-audio-status]");
+  const duration = root.querySelector("[data-audio-duration]"), bytes = root.querySelector("[data-audio-bytes]");
+  const progress = root.querySelector("[data-audio-progress]");
   let epoch = 0, session = null, file = null, assigned = null, url = null;
   let state = "idle";
+  const metrics = frames => {
+    duration.textContent = (frames / RATE).toFixed(2);
+    bytes.textContent = String(frames ? 44 + frames * 2 : 0);
+    progress.value = frames / RATE;
+  };
   const show = (next, message) => {
     state = next; root.dataset.audioState = next; status.textContent = message;
     start.disabled = !["idle", "error"].includes(next);
@@ -40,12 +47,14 @@ function mount(root) {
     s.stream?.getTracks().forEach(t => { t.onended = null; t.stop(); });
     if (s.node) { s.node.onprocessorerror = null; s.node.port.onmessage = null; s.node.port.close(); s.node.disconnect(); }
     s.source?.disconnect();
+    if (s.context) s.context.onstatechange = null;
     if (s.context && s.context.state !== "closed") s.context.close().catch(() => {});
     s.chunks = [];
   };
   const reset = () => {
     epoch++; dispose(session); session = null; file = null;
     root.dataset.audioFrames = "0";
+    metrics(0);
     preview.pause(); preview.removeAttribute("src"); preview.load(); preview.hidden = true;
     if (url) URL.revokeObjectURL(url);
     url = null;
@@ -58,9 +67,11 @@ function mount(root) {
     const s = session;
     if (!s.frames) { fail("لم يلتقط صوتًا صالحًا؛ أعد المحاولة."); return; }
     file = wav(s.chunks, s.frames);
+    metrics(s.frames);
     dispose(s); session = null;
     url = URL.createObjectURL(file); preview.src = url; preview.hidden = false;
-    show("preview", `معاينة محلية: ${(s.frames / RATE).toFixed(2)} ثانية، ${file.size} بايت، audio/wav. لم يُرفع الملف بعد.`);
+    const reason = s.frames === MAX_FRAMES ? "بلغ التسجيل حد عشر ثوانٍ وأُوقف الميكروفون. " : "أُوقف الميكروفون. ";
+    show("preview", `${reason}معاينة محلية: ${(s.frames / RATE).toFixed(2)} ثانية، ${file.size} بايت، audio/wav. لم يُرفع الملف بعد.`);
   };
   if (!input || !window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.AudioWorkletNode || !window.DataTransfer) {
     start.disabled = true;
@@ -71,7 +82,7 @@ function mount(root) {
   start.addEventListener("click", async () => {
     if (!["idle", "error"].includes(state)) return;
     reset(); const mine = epoch;
-    const s = {chunks: [], frames: 0}; session = s;
+    const s = {chunks: [], frames: 0, displayedFrames: 0}; session = s;
     show("permission", "بانتظار إذنك بالميكروفون. يمكنك الإلغاء.");
     try {
       // Called synchronously from the explicit button interaction only.
@@ -96,12 +107,19 @@ function mount(root) {
         }
         s.chunks.push(pcm); s.frames += pcm.length;
         root.dataset.audioFrames = String(s.frames);
+        // Visible progress at most four times a second; status announcements remain discrete.
+        if (s.frames - s.displayedFrames >= RATE / 4) { metrics(s.frames); s.displayedFrames = s.frames; }
         if (s.frames >= MAX_FRAMES) finish();
       };
       s.stream.getTracks().forEach(t => { t.onended = () => { if (mine === epoch) fail("انقطع الميكروفون؛ أُلغي التسجيل."); }; });
+      s.context.onstatechange = () => {
+        if (mine === epoch && state === "recording" && s.context.state !== "running") fail("انقطع التقاط الصوت؛ أُلغي التسجيل وأُوقف الميكروفون.");
+      };
       show("recording", "جارٍ التسجيل — توقف تلقائي عند عشر ثوانٍ. يمكنك الإيقاف أو الإلغاء.");
       s.source.connect(s.node); s.node.connect(s.context.destination);
-      s.timer = setTimeout(finish, 11000); // Wall-clock fallback if rendering stalls.
+      s.timer = setTimeout(() => {
+        if (mine === epoch && state === "recording") fail("توقف تدفق الصوت؛ أُلغي التسجيل. أعد المحاولة.");
+      }, 11000); // Never label an interrupted/stalled capture as a successful full recording.
     } catch (error) {
       dispose(s);
       if (mine === epoch) fail(error.name === "NotAllowedError" ? "لم يُمنح إذن الميكروفون. لم يُحفظ تسجيل." : "التسجيل غير متاح بهذا المتصفح أو الجهاز؛ اختر ملف WAV صالحًا.");

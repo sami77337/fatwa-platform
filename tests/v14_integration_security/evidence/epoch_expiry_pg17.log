@@ -1,0 +1,18 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_library_epoch_read_spanning_deadline_cannot_return_stale_metadata (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_library_epoch_read_spanning_deadline_cannot_return_stale_metadata) ... FAIL
+
+======================================================================
+FAIL: test_library_epoch_read_spanning_deadline_cannot_return_stale_metadata (tests.v14_integration_security.test_crosskind.CrossKindPolicyTests.test_library_epoch_read_spanning_deadline_cannot_return_stale_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v14_integration_security/test_crosskind.py", line 234, in test_library_epoch_read_spanning_deadline_cannot_return_stale_metadata
+    with self.assertRaises(preview.PreviewUnavailable):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: PreviewUnavailable not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 3.370s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
