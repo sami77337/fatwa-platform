@@ -602,15 +602,18 @@ def desk(
                 edition_id=item["source"]["edition_id"],
                 source_row_id=item["source"]["source_row_id"],
             ).pk
-        record_ids = set(
+        registered_ids = set(
             SourceRegistration.objects.filter(case=case).values_list("source_id", flat=True)
         )
+        record_ids = set(registered_ids)
         record_ids.update(
             SourceVersion.objects.filter(heading_id__in=heading_ids).values_list("pk", flat=True)
         )
         record_ids.update(
             SourceVersion.objects.filter(transcript__case=case).values_list("pk", flat=True)
         )
+        from .registry import decorate_record
+
         records = []
         for source in SourceVersion.objects.filter(pk__in=record_ids).order_by("created_at"):
             revisions = list(
@@ -624,6 +627,7 @@ def desk(
             records.append(
                 {
                     "id": str(source.pk),
+                    "registered": source.pk in registered_ids,
                     "kind": source.kind,
                     "snapshot": source.snapshot,
                     "sha256": source.sha256,
@@ -647,6 +651,7 @@ def desk(
                     ],
                 }
             )
+            decorate_record(records[-1], source, revisions, case=case, actor=actor, provider=provider)
         published = list(
             PublicationEdition.objects.filter(case=case, actions__action="APPROVE").order_by(
                 "-number"

@@ -189,3 +189,11 @@ python infra/dev/with_casework_postgres.py --pg-bin /path/to/postgresql/17/bin \
 
 The browser executor needs Playwright1.58.0 and Chromium; shared dependencies were
 not edited. No child PR is created; the integration owner collects the pushed commit.
+
+## V12 P1 private inspection
+
+The current desk adds a native exact-source inspection, per-use availability and
+immutable revision comparison with retained search navigation. See
+[V12_P1.md](V12_P1.md) for the action/selector contract, focused PostgreSQL evidence
+and explicit unsupported full-text, quotation and source-publication boundaries.
+The new regression label is `apps.source_rights.v12_tests`.

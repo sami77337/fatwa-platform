@@ -1,0 +1,3 @@
+<div id="rights-usage-matrix" aria-label="تمييز استخدامات المصدر">
+{% for use in usage_matrix %}<section data-rights-use="{{ use.code }}" data-rights-state="{{ use.status }}"><h3>{{ use.label }}</h3><p><strong>{{ use.code }}</strong> — {% if use.status == 'ALLOWED' %}معتمد ضمن النطاق{% elif use.status == 'UNSUPPORTED' %}غير متاح لهذا النوع{% else %}غير ممنوح حاليًا{% endif %}</p><p>{{ use.reason }}</p></section>{% endfor %}
+</div>
