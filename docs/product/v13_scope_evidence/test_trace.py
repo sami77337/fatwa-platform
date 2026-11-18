@@ -96,6 +96,14 @@ class ScopeTraceTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 build.check_execution(group, refs)
 
+    def test_successful_ci_on_known_blocked_head_cannot_credit_affected_scope(self):
+        assessment = copy.deepcopy(build.read("assessment.json"))
+        blocked = build.read("execution_history.json")["entries"][0]
+        group = next(g for g in assessment["groups"] if g["id"] == "timed-citations")
+        group.update(state="VERIFIED_BOUNDED", product_sha=blocked["sha"])
+        with self.assertRaisesRegex(AssertionError, "known security blocker"):
+            build.groups_for(assessment)
+
     def test_missing_negative_pass_on_one_major_is_rejected(self):
         group, refs, sources = self.execution_fixture()
         sources["synthetic-pg18"]["lines"] = [
@@ -139,7 +147,7 @@ class ScopeTraceTests(unittest.TestCase):
     def test_parent_reported_hash_is_not_local_original_verification(self):
         original = build.read
         damaged = copy.deepcopy(original("source_bytes.json"))
-        damaged["local_original_byte_verification"] = True
+        damaged["local_reference_workbook_byte_verification"] = True
         with patch.object(
             build,
             "read",
@@ -147,6 +155,22 @@ class ScopeTraceTests(unittest.TestCase):
         ):
             with self.assertRaises(AssertionError):
                 build.render()
+
+    def test_workbook_matching_does_not_establish_authoring_provenance(self):
+        original = build.read
+        for key, value in (
+            ("byte_validation", "VERIFIED"),
+            ("byte_identity_proved_by_workbook_match", True),
+        ):
+            damaged = copy.deepcopy(original("source_bytes.json"))
+            damaged["authoring_document"][key] = value
+            with patch.object(
+                build,
+                "read",
+                side_effect=lambda n: damaged if n == "source_bytes.json" else original(n),
+            ):
+                with self.assertRaises(AssertionError):
+                    build.render()
 
     def test_missing_or_ambiguous_code_symbol_cannot_be_cited(self):
         with self.assertRaises(AssertionError):

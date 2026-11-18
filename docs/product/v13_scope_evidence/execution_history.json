@@ -1,0 +1,20 @@
+{
+  "entries": [
+    {
+      "sha": "1ea53ead8e6166a64b766968efbb63ea00f4c7c1",
+      "ci_status": "PASS_OBSERVED",
+      "run_id": 44219214321,
+      "postgres_majors": [17, 18],
+      "affected_tests_per_major": 84,
+      "protected_connected_browser_per_major": 1,
+      "receipts": ["receipts/pg17-1ea53ea.json", "receipts/pg18-1ea53ea.json"],
+      "evidence_basis": "JOB_METADATA_AND_DECODED_LOGS_FETCHED_INDEPENDENTLY",
+      "security_status": "BLOCKED",
+      "blocked_groups": ["timed-citations", "connected-recovery"],
+      "security_report_basis": "INTEGRATOR_REPORTED_INDEPENDENT_REPRODUCER_NOT_REEXECUTED_HERE",
+      "finding": "A grant_deadline callback after the final timed-source identity check can revoke the same-call identity while staff_read still returns bytes. Integrator reported a reproducer on PG17 and is fixing it.",
+      "external_v13_security_review": "PENDING",
+      "remaining": "Preserve successful historical CI, but do not treat it as completion or credit affected groups at this SHA. Await fixed code, independent review and both-major affected/protected-browser receipts."
+    }
+  ]
+}

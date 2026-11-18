@@ -8,7 +8,7 @@ not an executed PASS, independent security review or credited scope point. All o
 name its own actual SHA and both PostgreSQL majors plus protected Chrome.
 
 Source-byte attribution remains in [SOURCE_BYTES.md](SOURCE_BYTES.md): parent-local
-attestation, not original XLSX byte verification in this Cloud environment.
+attestation, not reference-workbook byte verification in this Cloud environment.
 
 ## browser-audio
 

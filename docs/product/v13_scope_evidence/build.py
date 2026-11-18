@@ -121,6 +121,12 @@ def groups_for(assessment):
             assert group["browser_test"] is None
             continue
         sha = group["product_sha"]
+        for attempt in read("execution_history.json")["entries"]:
+            assert not (
+                attempt["sha"] == sha
+                and attempt["security_status"] == "BLOCKED"
+                and group["id"] in attempt["blocked_groups"]
+            ), "known security blocker prevents affected scope credit despite successful CI"
         assert group["browser_test"], (
             "V13 user-facing groups require protected connected UI evidence"
         )
@@ -170,8 +176,13 @@ def render():
     for old_row, new_row in zip(old["matrix.json"], rows, strict=True):
         assert {k: new_row[k] for k in old_row} == old_row
     assert source["local_status"] == "SOURCE_BYTES_UNAVAILABLE"
-    assert source["local_original_byte_verification"] is False
-    assert source["original_uploaded_to_repository"] is False
+    assert source["local_reference_workbook_byte_verification"] is False
+    assert source["reference_workbook_uploaded_to_repository"] is False
+    assert source["artifact_role"] == "DERIVED_REFERENCE_WORKBOOK_NOT_AUTHORING_DOCUMENT"
+    authoring = source["authoring_document"]
+    assert authoring["filename"] == "542.docx" and authoring["byte_validation"] == "UNVERIFIED"
+    assert authoring["byte_identity_proved_by_workbook_match"] is False
+    assert authoring["acceptance_inferred"] is False
     # A supplied independent report may be added later without rewriting local status.
     if source["independent_attestation"] is not None:
         report = source["independent_attestation"]
@@ -326,7 +337,7 @@ def draft_anchors_document(draft=None):
         "name its own actual SHA and both PostgreSQL majors plus protected Chrome.",
         "",
         "Source-byte attribution remains in [SOURCE_BYTES.md](SOURCE_BYTES.md): parent-local",
-        "attestation, not original XLSX byte verification in this Cloud environment.",
+        "attestation, not reference-workbook byte verification in this Cloud environment.",
     ]
     for group in draft["groups"]:
         lines += ["", "## " + group["id"], "", group["bounded_scope_to_verify"], ""]
