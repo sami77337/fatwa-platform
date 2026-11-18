@@ -12,6 +12,7 @@ const supervisorPath = fileURLToPath(new URL("./browser_supervisor.py", import.m
 const flags = ["--headless=new", "--no-first-run", "--no-default-browser-check",
   "--disable-background-networking", "--disable-component-update", "--disable-sync",
   "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0"];
+const measuredPhases = ["profile", "spawn", "port-file", "target-discovery", "websocket"];
 
 export function failureResult(phase, cleanupFailed = false) {
   return !cleanupFailed && ["browser-startup", "not-run"].includes(phase) ? "NOT_RUN" : "FAIL";
@@ -42,25 +43,64 @@ export class ProtectedBrowser {
 
   error(code, causeCode) { return new BrowserStartupError(code, this.stage, causeCode); }
 
+  startupOffset(now = performance.now()) { return Math.max(0, Math.round(now - this.startupStarted)); }
+
+  finishStartupPhase(now) {
+    const {name, started} = this.startupPhase;
+    this.startupTimings[name] = {
+      phase:name, started_ms:this.startupOffset(started),
+      elapsed_ms:Math.max(0, Math.round(now - started)),
+      remaining_ms:Math.max(0, Math.round(this.timeoutMs - (now - this.startupStarted))),
+    };
+  }
+
+  nextStartupPhase(name) {
+    const now = performance.now();
+    this.finishStartupPhase(now);
+    this.startupPhase = {name, started:now};
+  }
+
   async start() {
     const started = performance.now();
     const abort = () => this.controller.abort(this.error("RUN_DEADLINE_EXCEEDED"));
     this.parentSignal?.addEventListener("abort", abort, {once:true});
     if (this.parentSignal?.aborted) abort();
     const timer = setTimeout(() => this.controller.abort(this.error("BROWSER_STARTUP_TIMEOUT")), this.timeoutMs);
+    // These bounded observations measure the existing single deadline. They
+    // neither schedule timers nor record URLs, paths, PIDs or stderr content.
+    this.startupStarted = started;
+    this.startupPhase = {name:"profile", started};
+    this.startupTimings = {};
+    this.startupSocket = {open_ms:null, error_ms:null, close_ms:null};
+    this.startupSupervisor = {state:"not-created", spawned_ms:null, exited_ms:null, termination:null};
+    this.recordingStartup = true;
     try {
       this.controller.signal.throwIfAborted();
       this.profile = await mkdtemp(path.join(os.tmpdir(), "fatwa-fastbuild-profile-"));
       this.controller.signal.throwIfAborted();
       this.stage = "port-file";
+      // "spawn" covers the launch request/listener setup, not a claim that
+      // the child has started. spawned_ms separately records that event.
+      this.nextStartupPhase("spawn");
       this.child = spawn(this.python, ["-u", supervisorPath, this.executable, ...this.args,
         ...flags, "--user-data-dir=" + this.profile, "about:blank"], {
         windowsHide:true, detached:process.platform !== "win32", stdio:["pipe", "pipe", "pipe"],
       });
+      this.startupSupervisor.state = "created";
+      this.child.once("spawn", () => {
+        this.startupSupervisor.state = "running";
+        this.startupSupervisor.spawned_ms = this.startupOffset();
+      });
       this.closed = new Promise(resolve => this.child.once("close", resolve));
       this.child.stdin.on("error", () => {}); // EPIPE during termination is expected.
-      this.child.on("error", error => this.controller.abort(this.error("SUPERVISOR_SPAWN_FAILED", error.code)));
-      this.child.on("exit", () => {
+      this.child.on("error", error => {
+        this.startupSupervisor.state = "spawn-failed";
+        this.controller.abort(this.error("SUPERVISOR_SPAWN_FAILED", error.code));
+      });
+      this.child.on("exit", (code, signal) => {
+        this.startupSupervisor.state = "exited";
+        this.startupSupervisor.exited_ms = this.startupOffset();
+        this.startupSupervisor.termination = signal ? "signal" : code === 0 ? "zero" : code === null ? "unknown" : "nonzero";
         if (!this.stopping) this.controller.abort(this.error("SUPERVISOR_EXITED"));
       });
       this.child.stderr.on("data", data => { this.stderr = (this.stderr + data).slice(-1500); });
@@ -76,15 +116,27 @@ export class ProtectedBrowser {
         } catch { this.controller.abort(this.error("SUPERVISOR_PROTOCOL_INVALID")); }
       });
 
+      this.nextStartupPhase("port-file");
       const port = await this.port();
       this.stage = "target-discovery";
+      this.nextStartupPhase("target-discovery");
       const endpoint = await this.target(port);
       this.stage = "websocket";
+      this.nextStartupPhase("websocket");
       this.socket = new WebSocket(endpoint);
       await this.bounded(new Promise((resolve, reject) => {
-        this.socket.addEventListener("open", resolve, {once:true});
-        this.socket.addEventListener("error", () => reject(this.error("DEVTOOLS_WEBSOCKET_FAILED")), {once:true});
-        this.socket.addEventListener("close", () => reject(this.error("DEVTOOLS_WEBSOCKET_CLOSED")), {once:true});
+        this.socket.addEventListener("open", event => {
+          if (this.recordingStartup) this.startupSocket.open_ms = this.startupOffset();
+          resolve(event);
+        }, {once:true});
+        this.socket.addEventListener("error", () => {
+          if (this.recordingStartup) this.startupSocket.error_ms = this.startupOffset();
+          reject(this.error("DEVTOOLS_WEBSOCKET_FAILED"));
+        }, {once:true});
+        this.socket.addEventListener("close", () => {
+          if (this.recordingStartup) this.startupSocket.close_ms = this.startupOffset();
+          reject(this.error("DEVTOOLS_WEBSOCKET_CLOSED"));
+        }, {once:true});
       }));
       this.controller.signal.throwIfAborted();
       this.stage = "ready";
@@ -94,7 +146,17 @@ export class ProtectedBrowser {
     } finally {
       clearTimeout(timer);
       this.parentSignal?.removeEventListener("abort", abort);
-      this.elapsedMs = Math.round(performance.now() - started);
+      const finished = performance.now();
+      this.elapsedMs = Math.round(finished - started);
+      this.finishStartupPhase(finished);
+      this.recordingStartup = false;
+      // Snapshot before interactions/cleanup. Later socket-close/supervisor
+      // events cannot be mistaken for the cause of startup failure.
+      this.startupDiagnostics = {
+        clock:"monotonic", scope:"startup-only",
+        phases:measuredPhases.filter(name => this.startupTimings[name]).map(name => this.startupTimings[name]),
+        websocket_events:{...this.startupSocket}, supervisor:{...this.startupSupervisor},
+      };
     }
   }
 
