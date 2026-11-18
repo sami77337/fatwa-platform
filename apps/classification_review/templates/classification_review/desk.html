@@ -1,0 +1,43 @@
+{% extends "casework/base.html" %}
+{% block title %}مراجعة التصنيف التجريبي{% endblock %}
+{% block content %}
+<h1>مراجعة التصنيف التجريبي</h1>
+<p>مواد اصطناعية فقط. الاقتراح غير معتمد حتى قرار بشري مستقل؛ القرار لا ينشر فتوى ولا يغيّر التصنيف المنشور.</p>
+<p>التشابه لا يثبت علاقة علمية. هيكل كتاب 622 فهرس مرجعي وليس متنًا أو التصنيف العام.</p>
+{% if result %}<p role="status">تم حفظ العملية: {{ result.state }} — الإصدار: {{ result.id }}</p>{% endif %}
+{% if existing_category %}<p>التصنيف التجريبي الموجود في إصدار النشر: {{ existing_category }}</p>{% endif %}
+{% if audit_only %}<p>سجل خاص مختصر. النصوص والمصادر مخفية في هذا المسار؛ حالة القرار التاريخية لا تعني توفر المصدر الآن.</p>{% endif %}
+{% if candidates and can_propose %}
+<section aria-labelledby="proposal-title"><h2 id="proposal-title">اقتراح جديد غير معتمد</h2>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="classification_propose"><input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="replaces_id" value="">
+<label for="new-source">العلاقة المرجعية البشرية الموثقة</label><select id="new-source" name="knowledge_id" required>{% for item in candidates %}<option value="{{ item.id }}">{{ item.source.heading_title }} — {{ item.source.edition_title }} — {{ item.source.printed_page }}</option>{% endfor %}</select>
+<label for="new-label">التصنيف العام المقترح (تجريبي)</label><input id="new-label" name="label" maxlength="80" required value="{{ existing_category }}">
+<label for="new-reason">سبب الاقتراح وحدود الاستدلال من الفهرس</label><textarea id="new-reason" name="reason" maxlength="1000" required></textarea>
+<button>حفظ اقتراح غير معتمد</button></form></section>
+{% elif not audit_only %}<p>يلزم مصدر مرجعي معتمد وصلاحية اقتراح لبدء مراجعة جديدة.</p>{% endif %}
+<h2>تاريخ الاقتراحات والقرارات</h2>
+{% for row in history %}<article>
+<h3>مراجعة {{ row.number }} — {{ row.state }}</h3>
+<p>معرّف المراجعة: {{ row.id }} — {{ row.created_at }} — {{ row.subject_id }}</p>
+{% if not row.current %}<p>حلّت مراجعة أحدث محل هذا الاقتراح.</p>{% endif %}
+{% if row.effective %}<p>تصنيف تجريبي راجعه إنسان؛ لا نشر تلقائي.</p>{% endif %}
+{% if row.available %}<p>التصنيف المقترح: {{ row.label }}</p><p>سبب موثق: {{ row.reason }}</p>
+<details><summary>المصدر المرجعي — فهرس فقط</summary>{% include "knowledge_links/source.html" with source=row.source %}</details>
+{% else %}<p>المصدر غير متاح في هذا العرض؛ النصوص محجوبة.</p>{% endif %}
+<ul>{% for event in row.actions %}<li>{{ event.action }} — {{ event.subject_id }} — {{ event.created_at }}{% if event.note %} — {{ event.note }}{% endif %}</li>{% empty %}<li>لا قرار بشري حتى الآن؛ الاقتراح غير معتمد.</li>{% endfor %}</ul>
+{% if row.current and row.state != "WITHDRAWN" %}
+{% if row.can_decide %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="revision_id" value="{{ row.id }}">
+<label for="note-{{ row.id }}">سبب القرار البشري</label><textarea id="note-{{ row.id }}" name="note" maxlength="1000" required></textarea>
+<label><input type="checkbox" name="confirm" value="yes" required>راجعت هذا الإصدار ومصدره وأؤكد القرار يدويًا</label>
+{% if row.can_approve %}<button name="action" value="classification_approve">اعتماد التصنيف التجريبي</button>{% endif %}{% if row.can_reject %}<button name="action" value="classification_reject">رفض الاقتراح</button>{% endif %}
+{% if row.can_withdraw %}<button name="action" value="classification_withdraw">سحب الاقتراح أو القرار</button>{% endif %}</form>{% endif %}
+{% if candidates and can_propose %}<details><summary>تصحيح باقتراح جديد غير معتمد</summary>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="classification_propose"><input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="replaces_id" value="{{ row.id }}">
+<label for="source-{{ row.id }}">مصدر التصحيح</label><select id="source-{{ row.id }}" name="knowledge_id" required>{% for item in candidates %}<option value="{{ item.id }}">{{ item.source.heading_title }} — {{ item.source.edition_title }}</option>{% endfor %}</select>
+<label for="label-{{ row.id }}">التصنيف المصحح</label><input id="label-{{ row.id }}" name="label" maxlength="80" required>
+<label for="reason-{{ row.id }}">سبب التصحيح</label><textarea id="reason-{{ row.id }}" name="reason" maxlength="1000" required></textarea><button>حفظ تصحيح غير معتمد</button></form></details>{% endif %}
+{% endif %}</article>{% empty %}<p>لا اقتراحات تصنيف محفوظة.</p>{% endfor %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><button name="action" value="classification_desk">تحديث مكتب المراجعة</button><button name="action" value="classification_history">التاريخ المختصر الخاص</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="publication_id" value="{{ publication_id }}"><input type="hidden" name="query" value=""><button name="action" value="knowledge_desk">العودة إلى علاقات المعرفة</button></form>
+{% endblock %}
