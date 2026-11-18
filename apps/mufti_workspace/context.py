@@ -11,6 +11,7 @@ from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.views import _provider
 from apps.team_workspace import presentation
 
+from .journey import connected_actions, evidence_history
 from .workflow import describe_work
 
 REFERENCE = re.compile(r"FT-[0-9]{4}-[A-F0-9]{20}")
@@ -46,7 +47,7 @@ def _active(action):
         return "answer"
     if action.startswith("composite_") or action in {"prepare", "stage", "quarantine", "export"}:
         return "delivery"
-    if action.startswith("pub_"):
+    if action.startswith(("pub_", "knowledge_")):
         return "publication"
     return "overview"
 
@@ -153,20 +154,33 @@ def case_workspace(request):
         or (
             "case_ref" not in request.POST
             and not getattr(request, "publication_authorized_case_ref", None)
+            and not getattr(request, "knowledge_authorized_case_ref", None)
         )
     ):
         return {}
+    if len(request.POST.getlist("action")) != 1:
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
+    action = request.POST["action"]
     references = request.POST.getlist("case_ref")
-    resolved = getattr(request, "publication_authorized_case_ref", None)
-    # The native publication view sets this only after canonical desk authorization.
-    # It is never a browser field or a replacement for the fresh scope check below.
-    if not references and request.POST.get("action") == "pub_open" and resolved:
+    publication_ref = getattr(request, "publication_authorized_case_ref", None)
+    knowledge_ref = getattr(request, "knowledge_authorized_case_ref", None)
+    if publication_ref and not action.startswith("pub_"):
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
+    if knowledge_ref and not action.startswith("knowledge_"):
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
+    resolved_refs = {ref for ref in (publication_ref, knowledge_ref) if ref}
+    if len(resolved_refs) > 1:
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
+    resolved = next(iter(resolved_refs), None)
+    # Only an authorized native handler can attach this server-side context.
+    # A naked edition ID/browser case_ref never supplies or overrides its scope.
+    if not references and resolved:
+        if publication_ref and action not in {"pub_open", "pub_read"}:
+            raise cases.CaseConflict("mufti_workspace_selection_invalid")
         references = [resolved]
     elif resolved and references != [resolved]:
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if len(references) != 1 or REFERENCE.fullmatch(references[0]) is None:
-        raise cases.CaseConflict("mufti_workspace_selection_invalid")
-    if len(request.POST.getlist("action")) != 1:
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
     directory = _provider()
     provider_id = directory.provider_id
@@ -205,8 +219,13 @@ def case_workspace(request):
         "mufti_workspace": {
             "case": snapshot,
             "origins": origins,
+            "evidence_history": evidence_history(snapshot, attachments, origins),
+            "journey": connected_actions(
+                tabs, manifest=manifest, waiting=snapshot["status"] == "NEEDS_CLARIFICATION"
+            ),
             "attachments": attachments,
             "manifest": manifest,
+            "multipart_editor_available": any(tab["key"] == "answer" for tab in tabs),
             "tabs": tabs,
             "active": active,
             "answer_revision": latest["revision"] if latest else 0,
