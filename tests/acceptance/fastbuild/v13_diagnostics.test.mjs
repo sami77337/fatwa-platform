@@ -42,6 +42,37 @@ function validateTrace(report) {
   return trace;
 }
 
+
+function assertTerminalBudget(report, websocket) {
+  // The timer clock is millisecond-granular; performance.now() is fractional.
+  // Integer rounding can leave one reported millisecond at the timeout callback.
+  // This is an observation tolerance, never additional runtime budget.
+  assert.ok(websocket.remaining_ms <= 1, "startup must consume its shared deadline within one reported ms");
+  assert.ok(report.startup.elapsed_ms >= report.startup.timeout_ms - 1 && report.startup.elapsed_ms < 4000);
+}
+
+test("fractional timer boundary preserves truthful telemetry and rejects larger budget gaps", () => {
+  const browser = new ProtectedBrowser({startupTimeoutMs:1600});
+  browser.startupStarted = 5000.75;
+  browser.startupPhase = {name:"websocket", started:5500.75};
+  browser.startupTimings = {};
+  // Deterministic reproduction of the old assertion failure: the production
+  // measurement method reports remaining=1 / elapsed=1599 at this boundary.
+  const finished = 6600.0;
+  browser.finishStartupPhase(finished);
+  const report = {startup:{timeout_ms:1600,
+    elapsed_ms:Math.round(finished - browser.startupStarted)}};
+  assert.equal(browser.startupTimings.websocket.remaining_ms, 1);
+  assert.equal(report.startup.elapsed_ms, 1599);
+  assertTerminalBudget(report, browser.startupTimings.websocket);
+  // Do not turn the one-unit representation allowance into a broad timing pass.
+  browser.finishStartupPhase(finished - 1);
+  assert.equal(browser.startupTimings.websocket.remaining_ms, 2);
+  assert.throws(() => assertTerminalBudget(report, browser.startupTimings.websocket), assert.AssertionError);
+  assert.throws(() => assertTerminalBudget({startup:{timeout_ms:1600, elapsed_ms:1598}},
+    {remaining_ms:0}), assert.AssertionError);
+});
+
 test("successful startup records phases without treating cleanup as startup events", async () => {
   let calls = 0;
   const report = await runResearchBrowser(async socket => {
@@ -64,7 +95,13 @@ test("successful startup records phases without treating cleanup as startup even
   assert.equal(JSON.stringify(trace), frozen, "late close/exit cannot rewrite startup evidence");
 });
 
-test("earlier port delay consumes the same deadline before websocket timeout; no journey retry", async () => {
+test("earlier port delay consumes the same deadline before websocket timeout; no journey retry", async t => {
+  const schedule = globalThis.setTimeout;
+  let startupSchedules = 0;
+  t.mock.method(globalThis, "setTimeout", (callback, ms, ...args) => {
+    if (ms === 1600) startupSchedules++;
+    return schedule(callback, ms, ...args);
+  });
   const temp = await mkdtemp(path.join(os.tmpdir(), "fatwa-v13-diagnostics-"));
   try {
     const peer = path.join(temp, "delayed-peer.mjs");
@@ -87,8 +124,8 @@ await import(${JSON.stringify(fixtureURL.href)});
     assert.ok(port.elapsed_ms >= 400);
     assert.ok(websocket.started_ms >= port.elapsed_ms);
     assert.ok(websocket.elapsed_ms < report.startup.elapsed_ms - 350);
-    assert.equal(websocket.remaining_ms, 0);
-    assert.ok(report.startup.elapsed_ms >= 1600 && report.startup.elapsed_ms < 4000);
+    assertTerminalBudget(report, websocket);
+    assert.equal(startupSchedules, 1, "no phase resets or retry may schedule a second startup budget");
     assert.deepEqual(trace.websocket_events, {open_ms:null, error_ms:null, close_ms:null});
     assert.equal(JSON.stringify(report).includes(temp), false);
   } finally { await rm(temp, {recursive:true, force:true}); }
