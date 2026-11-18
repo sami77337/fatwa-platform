@@ -1,4 +1,4 @@
-# شواهد محددة عند P0
+# شواهد محددة عند P0 وطبقة P1
 
 كل مجموعة تثبت الجزء المكتوب فقط؛ اشتراك نقاط في شاهد لا يجعلها متكافئة.
 
@@ -338,3 +338,97 @@ REMOTE_WORKFLOW_AND_JOB_SUCCESS; test-selector linkage inspected; no per-asserti
 
 REMOTE_WORKFLOW_AND_JOB_SUCCESS; test-selector linkage inspected; no per-assertion log imported
 [تشغيل SHA المثبت](https://github.com/sami77337/fatwa-platform/actions/runs/44203282032) · [محدد التشغيل](https://github.com/sami77337/fatwa-platform/blob/5aff9ba3cce35241b3ded27ed3428e0d4ecad768/.github/workflows/v6-casework.yml#L1-L180)
+
+## p1-case-journey
+
+تجميع الأصل والملفات والتعقيبات بحسب Evidence Version مع أساس الأجوبة في إطار القضية؛ تنقل أصلي إلى الخدمات دون إنشاء سجل مواز أو تنفيذ اعتماد ضمن التنقل.
+
+**الحد:** عينة قضية اصطناعية، ليست كل قوائم التعيين أو كل الأجهزة؛ لا تسجيل ميكروفون أو تفعيل U03 أو تغيير سياسة موافقة.
+
+نقاط: 29, 30, 38, 43, 44, 45, 46, 48, 49, 50, 51, 52, 53, 54, 487, 488, 489, 490, 533
+
+- code: [apps/mufti_workspace/journey.py — evidence_history](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/journey.py#L4-L22)
+- code: [apps/mufti_workspace/journey.py — connected_actions](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/journey.py#L25-L85)
+- code: [apps/mufti_workspace/context.py — case_workspace](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/context.py#L142-L247)
+- tests: [apps/mufti_workspace/journey_tests.py — test_evidence_history_groups_original_files_and_answer_basis_without_new_records](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/journey_tests.py#L44-L65)
+- tests: [apps/mufti_workspace/journey_tests.py — test_actual_image_pdf_audio_previews_require_current_scope](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/journey_tests.py#L67-L86)
+- tests: [apps/mufti_workspace/journey_tests.py — test_navigation_is_same_case_read_only_and_waiting_has_no_edit_shortcut](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/journey_tests.py#L177-L203)
+
+EXACT_HEAD_JOB_LOG_TEST_PASS_BOTH_MAJORS; source/test assertions inspected; artifact JSON not imported
+[تشغيل SHA المثبت](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581) · [محدد التشغيل](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/infra/dev/v12_p1_verify.py#L1-L64)
+
+## p1-multipart-edit
+
+فتح المحرر المركب من القضية وحفظ تعديل نصي بنموذج native ذي ملف اختياري فارغ مع بقاء الملفات والبصمات والجواب السابق؛ إصدار جديد غير معتمد، ورفض stale/CSRF/حقول ملف مزورة.
+
+**الحد:** لا تسجيل صوت مباشر أو تحرير كل أنواع الوسائط؛ الإتاحة والاعتماد مستقلان، ونجاح إعادة التحرير لا يثبت كامل نطاق Composer.
+
+نقاط: 69, 75, 76, 78, 81, 82, 83, 86, 87, 490, 533
+
+- code: [apps/answer_media/views.py — _multipart](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/answer_media/views.py#L55-L83)
+- code: [apps/answer_media/services.py — save_multipart_answer](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/answer_media/services.py#L158-L289)
+- code: [apps/mufti_workspace/journey.py — connected_actions](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/mufti_workspace/journey.py#L25-L85)
+- tests: [tests/casework/test_v12_answer_edit.py — test_returned_multipart_edit_without_new_file_preserves_originals_and_history](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_answer_edit.py#L35-L60)
+- tests: [tests/casework/test_v12_answer_edit.py — test_unknown_duplicate_nonempty_and_mixed_file_fields_never_save](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_answer_edit.py#L62-L72)
+- tests: [tests/casework/test_v12_answer_edit.py — test_empty_upload_edit_still_requires_csrf_and_current_scope](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_answer_edit.py#L74-L79)
+
+EXACT_HEAD_JOB_LOG_TEST_PASS_BOTH_MAJORS; source/test assertions inspected; artifact JSON not imported
+[تشغيل SHA المثبت](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581) · [محدد التشغيل](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/infra/dev/v12_p1_verify.py#L1-L64)
+
+## p1-rights-inspector
+
+فحص مرجع/طبعة/موضع وبصمات النسخ، مقارنة قرار حقوق بسابقه مع فصل التاريخ عن الحق الحالي؛ استعمالات READ/CITE/RELATE/PREVIEW منفصلة وFULL_TEXT/QUOTE/PUBLISH غير مدعومة ومرفوضة.
+
+**الحد:** فحص VIEW ليس حق فتح أو اقتباس أو نشر الأصل؛ 622 فهرس فقط. لا رخص حقيقية أو مصدر قرآن/حديث مستحدث، ولا استكمال كامل البند 554 في التصدير وكل القنوات.
+
+نقاط: 216, 334, 395, 543, 544, 545, 546, 551, 552, 554, 556
+
+- code: [apps/source_rights/registry.py — inspect_source](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/registry.py#L163-L245)
+- code: [apps/source_rights/registry.py — usage_matrix](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/registry.py#L84-L114)
+- code: [apps/source_rights/registry.py — material](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/registry.py#L37-L81)
+- tests: [apps/source_rights/v12_tests.py — test_toc_identity_is_exact_and_cannot_imply_text_quote_or_publication](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/v12_tests.py#L25-L51)
+- tests: [apps/source_rights/v12_tests.py — test_revision_comparison_preserves_predecessor_and_never_revives_old_grant](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/v12_tests.py#L53-L74)
+- tests: [apps/source_rights/v12_tests.py — test_private_transcript_has_text_identity_but_never_exposes_text_or_public_uses](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/v12_tests.py#L76-L89)
+- tests: [apps/source_rights/v12_tests.py — test_identity_revocation_during_projection_denies_the_inspector](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/source_rights/v12_tests.py#L175-L186)
+
+EXACT_HEAD_JOB_LOG_TEST_PASS_BOTH_MAJORS; source/test assertions inspected; artifact JSON not imported
+[تشغيل SHA المثبت](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581) · [محدد التشغيل](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/infra/dev/v12_p1_verify.py#L1-L64)
+
+## p1-library-roundtrip
+
+بحث المكتبة scoped في نص التحرير وبيانات المصدر والطبعة والموضع؛ مجموعة ذات حقوق حالية واحدة للنتائج والفئات والعدد والصفحات، وعودة native تحفظ المرشحات والقضية بعد إعادة تفويضها.
+
+**الحد:** مكتبة تجريبية لا نشر إنتاجي؛ لا بحث semantic أو شبكة معرفة كاملة. سياق العودة لا يمنح صلاحية، وانتهاء الحق أثناء التصفية يغلق الاستجابة.
+
+نقاط: 4, 216, 219, 221, 223, 228, 230, 240, 264, 274, 275, 276, 329, 335, 343, 347, 491, 492, 536, 539, 543, 554
+
+- code: [apps/experimental_publication/services.py — library_catalog](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/experimental_publication/services.py#L451-L457)
+- code: [apps/experimental_publication/services.py — _library](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/experimental_publication/services.py#L460-L546)
+- code: [apps/knowledge_links/views.py — file](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/knowledge_links/views.py#L1-L132)
+- code: [apps/experimental_publication/views.py — file](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/experimental_publication/views.py#L1-L240)
+- tests: [tests/casework/test_v12_library_navigation.py — test_source_metadata_search_and_collection_facets_use_current_rights](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_library_navigation.py#L40-L49)
+- tests: [tests/casework/test_v12_library_navigation.py — test_one_catalog_call_and_native_material_roundtrip_keep_filters](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_library_navigation.py#L61-L86)
+- tests: [tests/casework/test_v12_library_navigation.py — test_return_context_is_not_authority_and_rechecks_revoked_source](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_library_navigation.py#L88-L106)
+- tests: [tests/casework/test_v12_library_navigation.py — test_clock_expiry_during_catalog_filtering_never_keeps_counts_or_facets](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_library_navigation.py#L108-L129)
+
+EXACT_HEAD_JOB_LOG_TEST_PASS_BOTH_MAJORS; source/test assertions inspected; artifact JSON not imported
+[تشغيل SHA المثبت](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581) · [محدد التشغيل](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/infra/dev/v12_p1_verify.py#L1-L64)
+
+## p1-browser-restored
+
+رحلة Chrome sandbox على PG17.12/18.7 من مراجعة الأصل والتوضيح والملفات إلى البحث/الحقوق/جواب text-PDF-WAV وموافقة وإتاحة مستقلة، وتسليم محاكى جزئي؛ ثم نسخ مشفر واستعادة لخادم PG ثان وعملية HTTP مستقلة تتحقق من الهدف والأصول والصلاحيات وسحبها.
+
+**الحد:** قضية واحدة ببيانات اصطناعية. DELIVERED/FAILED_REQUIRES_REVIEW/SENT_UNCONFIRMED لا تعني تسليمًا كاملًا أو قراءة. لا إرسال خارجي أو U03 أو PITR/KMS إنتاجي أو قبول رسمي. لا ننقل عدد HTTP المحلي إلى CI دون قراءة artifact.
+
+نقاط: 25, 29, 30, 36, 37, 38, 39, 40, 51, 54, 75, 76, 129, 130, 145, 148, 149, 150, 151, 152, 249, 251, 254, 366, 383, 414, 423, 424, 425, 428, 434, 440, 442, 501, 503, 504, 532, 533, 535, 536, 541, 542, 554
+
+- code: [apps/platform_recovery/encrypted.py — snapshot](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/platform_recovery/encrypted.py#L54-L97)
+- code: [apps/platform_recovery/encrypted.py — restore](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/platform_recovery/encrypted.py#L154-L169)
+- code: [apps/composite_delivery/services.py — composite_status](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/composite_delivery/services.py#L333-L385)
+- code: [apps/requester_portal/services.py — snapshot](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/apps/requester_portal/services.py#L49-L171)
+- code: [tests/casework/v12_restored_browser.py — TargetProofMiddleware](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/v12_restored_browser.py#L43-L59)
+- code: [tests/casework/v12_restored_browser.py — restore_and_verify](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/v12_restored_browser.py#L327-L403)
+- tests: [tests/casework/test_v12_browser.py — test_one_v12_case_partial_delivery_encrypted_restore_and_target_http](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/tests/casework/test_v12_browser.py#L284-L501)
+
+EXACT_HEAD_JOB_LOG_TEST_PASS_BOTH_MAJORS; source/test assertions inspected; artifact JSON not imported
+[تشغيل SHA المثبت](https://github.com/sami77337/fatwa-platform/actions/runs/44208238581) · [محدد التشغيل](https://github.com/sami77337/fatwa-platform/blob/0055a5ab05c6dbe6d41a528666666f9db07f2fee/infra/dev/v12_p1_verify.py#L1-L64)

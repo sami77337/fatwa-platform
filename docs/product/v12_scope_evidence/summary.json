@@ -12,6 +12,9 @@
     "OUT_OF_SCOPE": 33
   },
   "acceptance": "HOLD",
-  "p1_evidence_included": false,
+  "p1_evidence_included": true,
+  "p1_evidence_sha": "0055a5ab05c6dbe6d41a528666666f9db07f2fee",
+  "p1_assessed_points": 91,
+  "status_upgrades": 0,
   "percentage": null
 }

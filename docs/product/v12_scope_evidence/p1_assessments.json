@@ -1,0 +1,247 @@
+{
+  "head_sha": "0055a5ab05c6dbe6d41a528666666f9db07f2fee",
+  "base_sha": "5aff9ba3cce35241b3ded27ed3428e0d4ecad768",
+  "baseline_package_commit": "cd8ecfd8b78de3884f7f54226385f228f817fdac",
+  "evidence_groups": [
+    {
+      "id": "p1-case-journey",
+      "owner_points": [
+        29,
+        30,
+        38,
+        43,
+        44,
+        45,
+        46,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        487,
+        488,
+        489,
+        490,
+        533
+      ],
+      "bounded_claim": "تجميع الأصل والملفات والتعقيبات بحسب Evidence Version مع أساس الأجوبة في إطار القضية؛ تنقل أصلي إلى الخدمات دون إنشاء سجل مواز أو تنفيذ اعتماد ضمن التنقل.",
+      "remaining": "عينة قضية اصطناعية، ليست كل قوائم التعيين أو كل الأجهزة؛ لا تسجيل ميكروفون أو تفعيل U03 أو تغيير سياسة موافقة.",
+      "code": [
+        "apps/mufti_workspace/journey.py#evidence_history",
+        "apps/mufti_workspace/journey.py#connected_actions",
+        "apps/mufti_workspace/context.py#case_workspace"
+      ],
+      "tests": [
+        "apps/mufti_workspace/journey_tests.py#test_evidence_history_groups_original_files_and_answer_basis_without_new_records",
+        "apps/mufti_workspace/journey_tests.py#test_actual_image_pdf_audio_previews_require_current_scope",
+        "apps/mufti_workspace/journey_tests.py#test_navigation_is_same_case_read_only_and_waiting_has_no_edit_shortcut"
+      ],
+      "workflow_run_id": 44208238581,
+      "launcher": "infra/dev/v12_p1_verify.py",
+      "extends_evidence_ids": [
+        "case-original",
+        "mufti-desk"
+      ],
+      "supersedes_evidence_ids": [],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE"
+    },
+    {
+      "id": "p1-multipart-edit",
+      "owner_points": [
+        69,
+        75,
+        76,
+        78,
+        81,
+        82,
+        83,
+        86,
+        87,
+        490,
+        533
+      ],
+      "bounded_claim": "فتح المحرر المركب من القضية وحفظ تعديل نصي بنموذج native ذي ملف اختياري فارغ مع بقاء الملفات والبصمات والجواب السابق؛ إصدار جديد غير معتمد، ورفض stale/CSRF/حقول ملف مزورة.",
+      "remaining": "لا تسجيل صوت مباشر أو تحرير كل أنواع الوسائط؛ الإتاحة والاعتماد مستقلان، ونجاح إعادة التحرير لا يثبت كامل نطاق Composer.",
+      "code": [
+        "apps/answer_media/views.py#_multipart",
+        "apps/answer_media/services.py#save_multipart_answer",
+        "apps/mufti_workspace/journey.py#connected_actions"
+      ],
+      "tests": [
+        "tests/casework/test_v12_answer_edit.py#test_returned_multipart_edit_without_new_file_preserves_originals_and_history",
+        "tests/casework/test_v12_answer_edit.py#test_unknown_duplicate_nonempty_and_mixed_file_fields_never_save",
+        "tests/casework/test_v12_answer_edit.py#test_empty_upload_edit_still_requires_csrf_and_current_scope"
+      ],
+      "workflow_run_id": 44208238581,
+      "launcher": "infra/dev/v12_p1_verify.py",
+      "extends_evidence_ids": [
+        "answer-parts",
+        "mufti-desk"
+      ],
+      "supersedes_evidence_ids": [],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE"
+    },
+    {
+      "id": "p1-rights-inspector",
+      "owner_points": [
+        216,
+        334,
+        395,
+        543,
+        544,
+        545,
+        546,
+        551,
+        552,
+        554,
+        556
+      ],
+      "bounded_claim": "فحص مرجع/طبعة/موضع وبصمات النسخ، مقارنة قرار حقوق بسابقه مع فصل التاريخ عن الحق الحالي؛ استعمالات READ/CITE/RELATE/PREVIEW منفصلة وFULL_TEXT/QUOTE/PUBLISH غير مدعومة ومرفوضة.",
+      "remaining": "فحص VIEW ليس حق فتح أو اقتباس أو نشر الأصل؛ 622 فهرس فقط. لا رخص حقيقية أو مصدر قرآن/حديث مستحدث، ولا استكمال كامل البند 554 في التصدير وكل القنوات.",
+      "code": [
+        "apps/source_rights/registry.py#inspect_source",
+        "apps/source_rights/registry.py#usage_matrix",
+        "apps/source_rights/registry.py#material"
+      ],
+      "tests": [
+        "apps/source_rights/v12_tests.py#test_toc_identity_is_exact_and_cannot_imply_text_quote_or_publication",
+        "apps/source_rights/v12_tests.py#test_revision_comparison_preserves_predecessor_and_never_revives_old_grant",
+        "apps/source_rights/v12_tests.py#test_private_transcript_has_text_identity_but_never_exposes_text_or_public_uses",
+        "apps/source_rights/v12_tests.py#test_identity_revocation_during_projection_denies_the_inspector"
+      ],
+      "workflow_run_id": 44208238581,
+      "launcher": "infra/dev/v12_p1_verify.py",
+      "extends_evidence_ids": [
+        "rights",
+        "citation-history"
+      ],
+      "supersedes_evidence_ids": [],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE"
+    },
+    {
+      "id": "p1-library-roundtrip",
+      "owner_points": [
+        4,
+        216,
+        219,
+        221,
+        223,
+        228,
+        230,
+        240,
+        264,
+        274,
+        275,
+        276,
+        329,
+        335,
+        343,
+        347,
+        491,
+        492,
+        536,
+        539,
+        543,
+        554
+      ],
+      "bounded_claim": "بحث المكتبة scoped في نص التحرير وبيانات المصدر والطبعة والموضع؛ مجموعة ذات حقوق حالية واحدة للنتائج والفئات والعدد والصفحات، وعودة native تحفظ المرشحات والقضية بعد إعادة تفويضها.",
+      "remaining": "مكتبة تجريبية لا نشر إنتاجي؛ لا بحث semantic أو شبكة معرفة كاملة. سياق العودة لا يمنح صلاحية، وانتهاء الحق أثناء التصفية يغلق الاستجابة.",
+      "code": [
+        "apps/experimental_publication/services.py#library_catalog",
+        "apps/experimental_publication/services.py#_library",
+        "apps/knowledge_links/views.py",
+        "apps/experimental_publication/views.py"
+      ],
+      "tests": [
+        "tests/casework/test_v12_library_navigation.py#test_source_metadata_search_and_collection_facets_use_current_rights",
+        "tests/casework/test_v12_library_navigation.py#test_one_catalog_call_and_native_material_roundtrip_keep_filters",
+        "tests/casework/test_v12_library_navigation.py#test_return_context_is_not_authority_and_rechecks_revoked_source",
+        "tests/casework/test_v12_library_navigation.py#test_clock_expiry_during_catalog_filtering_never_keeps_counts_or_facets"
+      ],
+      "workflow_run_id": 44208238581,
+      "launcher": "infra/dev/v12_p1_verify.py",
+      "extends_evidence_ids": [
+        "research",
+        "publication",
+        "knowledge-links",
+        "rights"
+      ],
+      "supersedes_evidence_ids": [],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE"
+    },
+    {
+      "id": "p1-browser-restored",
+      "owner_points": [
+        25,
+        29,
+        30,
+        36,
+        37,
+        38,
+        39,
+        40,
+        51,
+        54,
+        75,
+        76,
+        129,
+        130,
+        145,
+        148,
+        149,
+        150,
+        151,
+        152,
+        249,
+        251,
+        254,
+        366,
+        383,
+        414,
+        423,
+        424,
+        425,
+        428,
+        434,
+        440,
+        442,
+        501,
+        503,
+        504,
+        532,
+        533,
+        535,
+        536,
+        541,
+        542,
+        554
+      ],
+      "bounded_claim": "رحلة Chrome sandbox على PG17.12/18.7 من مراجعة الأصل والتوضيح والملفات إلى البحث/الحقوق/جواب text-PDF-WAV وموافقة وإتاحة مستقلة، وتسليم محاكى جزئي؛ ثم نسخ مشفر واستعادة لخادم PG ثان وعملية HTTP مستقلة تتحقق من الهدف والأصول والصلاحيات وسحبها.",
+      "remaining": "قضية واحدة ببيانات اصطناعية. DELIVERED/FAILED_REQUIRES_REVIEW/SENT_UNCONFIRMED لا تعني تسليمًا كاملًا أو قراءة. لا إرسال خارجي أو U03 أو PITR/KMS إنتاجي أو قبول رسمي. لا ننقل عدد HTTP المحلي إلى CI دون قراءة artifact.",
+      "code": [
+        "apps/platform_recovery/encrypted.py#snapshot",
+        "apps/platform_recovery/encrypted.py#restore",
+        "apps/composite_delivery/services.py#composite_status",
+        "apps/requester_portal/services.py#snapshot",
+        "tests/casework/v12_restored_browser.py#TargetProofMiddleware",
+        "tests/casework/v12_restored_browser.py#restore_and_verify"
+      ],
+      "tests": [
+        "tests/casework/test_v12_browser.py#test_one_v12_case_partial_delivery_encrypted_restore_and_target_http"
+      ],
+      "workflow_run_id": 44208238581,
+      "launcher": "infra/dev/v12_p1_verify.py",
+      "extends_evidence_ids": [
+        "requester",
+        "delivery",
+        "private-files",
+        "recovery",
+        "maintenance"
+      ],
+      "supersedes_evidence_ids": [],
+      "assessment_effect": "EVIDENCE_ADDED_NO_STATUS_UPGRADE"
+    }
+  ]
+}

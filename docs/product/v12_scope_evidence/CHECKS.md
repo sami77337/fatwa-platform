@@ -32,3 +32,14 @@ Retained preparation failures:
 P1 remains outside this evidence snapshot. Historical product failures in V6–V12
 receipts remain untouched. No owner acceptance, new percentage, permission grant,
 production claim or independent re-review is asserted by this check result.
+
+## Later P1 addition — separate from the historical P0 receipt above
+
+The previously pending P1 snapshot is now reviewed at
+`0055a5ab05c6dbe6d41a528666666f9db07f2fee`. See [P1_UPDATE.md](P1_UPDATE.md)
+for the exact-head remote log evidence; the original P0 checks above remain history.
+The updated local documentary suite passed **9/9** in 2.810s, with source/derived
+validation and both-head code/test anchors passing. Three additions cover P0
+preservation, wrong-head rejection and missing test pass on one major. Ruff fixed
+one import order issue; final lint/format passed. No product checks were rerun.
+These nine tests are not attributed to the earlier CI's six-test baseline result.

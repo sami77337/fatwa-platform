@@ -1,10 +1,12 @@
 """Negative checks protect source IDs, truthful evidence and reproducible output."""
 
 import copy
+import json
 import unittest
 from unittest.mock import patch
 
 import build
+import p1
 import validate
 
 
@@ -58,6 +60,46 @@ class EvidenceTests(unittest.TestCase):
         damaged["evidence_groups"][0]["workflow_run_id"] = 1
         with patch.object(
             build, "read", side_effect=lambda n: damaged if n == "assessments.json" else original(n)
+        ):
+            with self.assertRaises(AssertionError):
+                build.build()
+
+    def test_p0_source_fields_groups_and_classifications_are_preserved(self):
+        products = build.build()
+        prefix = "docs/product/v12_scope_evidence/"
+        baseline = json.loads(build.pinned(prefix + "matrix.json", sha=p1.P1_SHA))
+        current = json.loads(products["matrix.json"])
+        for old, new in zip(baseline, current, strict=True):
+            for key, value in old.items():
+                if key not in {"evidence_ids", "rationale", "assessed_p1"}:
+                    self.assertEqual(new[key], value, (old["original_id"], key))
+            self.assertTrue(new["rationale"].startswith(old["rationale"]))
+            self.assertEqual(new["evidence_ids"][: len(old["evidence_ids"])], old["evidence_ids"])
+        old_groups = json.loads(build.pinned(prefix + "evidence.json", sha=p1.P1_SHA))
+        self.assertEqual(json.loads(products["evidence.json"])[: len(old_groups)], old_groups)
+
+    def test_p1_wrong_head_cannot_credit_a_test(self):
+        original = build.read
+        name = "sources/p1_job_134479648225_excerpt.json"
+        damaged = copy.deepcopy(original(name))
+        damaged["head_sha"] = build.SHA
+        with patch.object(
+            build, "read", side_effect=lambda n: damaged if n == name else original(n)
+        ):
+            with self.assertRaises(AssertionError):
+                build.build()
+
+    def test_p1_missing_test_pass_on_one_major_cannot_credit_both(self):
+        original = build.read
+        name = "sources/p1_job_134479647759_excerpt.json"
+        damaged = copy.deepcopy(original(name))
+        damaged["lines"] = [
+            line
+            for line in damaged["lines"]
+            if "test_actual_image_pdf_audio_previews_require_current_scope" not in line
+        ]
+        with patch.object(
+            build, "read", side_effect=lambda n: damaged if n == name else original(n)
         ):
             with self.assertRaises(AssertionError):
                 build.build()
