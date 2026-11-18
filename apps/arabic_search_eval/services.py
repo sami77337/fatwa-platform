@@ -59,6 +59,9 @@ def search_reference_titles(
         queue.synthetic_queue_atomic(),
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
         citations._projection_expiry_guard(),
+        reference_batch.ledger_boundary(
+            case=case, actor=actor, provider=provider, edition_id=edition_id
+        ),
         reference_batch.policy_boundary(),
     ):
         batch_args = dict(case=case, actor=actor, provider=provider, edition_id=edition_id)

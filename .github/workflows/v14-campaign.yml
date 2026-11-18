@@ -92,7 +92,7 @@ jobs:
             --label apps.arabic_search_eval.test_v14_batch \
             --label apps.arabic_search_eval.test_review \
             --label apps.arabic_search_eval.test_browser \
-            --label tests.v14_security_review.test_search_boundary
+            --label tests.v14_security_review.test_search_repair
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

@@ -128,7 +128,7 @@ def _policy(policy, actor, provider, case, action, resource):
         raise cases.CaseConflict("research_rights_unavailable") from exc
 
 
-def read_locked(*, case, actor, provider, edition_id):
+def _read_locked(*, case, actor, provider, edition_id, policy_checks):
     """Four bounded SQL reads; only current reviewed READ grants reach matching.
 
     No rights data leaves this internal boundary. Bad provenance fails closed.
@@ -141,7 +141,7 @@ def read_locked(*, case, actor, provider, edition_id):
     citations._enabled()
     ledger._enabled()
     policy = getattr(settings, "FATWA_RESEARCH_WORKSPACE_RIGHTS", None)
-    if not isinstance(policy, ResearchRights):
+    if policy_checks and not isinstance(policy, ResearchRights):
         raise cases.CaseConflict("research_resource_not_authorized")
     ids = list(SourceRegistration.objects.filter(case=case).values_list("source_id", flat=True))
     if len(ids) > CAPACITY:
@@ -185,7 +185,7 @@ def read_locked(*, case, actor, provider, edition_id):
         }:
             raise cases.CaseConflict("source_rights_source_changed")
         resource = workspace._source_resource(snapshot["source"], snapshot["source_sha256"])
-        if edition_allowed is None:
+        if policy_checks and edition_allowed is None:
             edition_allowed = _policy(
                 policy,
                 actor,
@@ -194,7 +194,7 @@ def read_locked(*, case, actor, provider, edition_id):
                 "DISCOVER",
                 workspace._edition_resource(version.heading.edition),
             )
-        if (
+        if policy_checks and (
             not edition_allowed
             or not _policy(policy, actor, provider, case, "DISCOVER", resource)
             or not _policy(policy, actor, provider, case, "READ_METADATA", resource)
@@ -215,6 +215,30 @@ def read_locked(*, case, actor, provider, edition_id):
     if not rows:
         raise cases.CaseConflict("research_edition_unavailable")
     return rows
+
+
+def read_locked(*, case, actor, provider, edition_id):
+    """Authorized batch hook; the ledger-only reader is never an access grant."""
+    return _read_locked(
+        case=case, actor=actor, provider=provider, edition_id=edition_id, policy_checks=True
+    )
+
+
+@contextmanager
+def ledger_boundary(*, case, actor, provider, edition_id):
+    """Pin the complete ledger set and re-read it AFTER every policy callback.
+
+    Enter outside policy_boundary, inside the canonical case lock and expiry
+    guard. The final pass invokes no permission, identity or epoch callbacks:
+    another callback after it would recreate SEC14-01B. Denied custom-policy
+    rows remain internal; this context confers no policy or case permission.
+    """
+    arguments = dict(case=case, actor=actor, provider=provider, edition_id=edition_id)
+    before = _read_locked(**arguments, policy_checks=False)
+    yield
+    after = _read_locked(**arguments, policy_checks=False)
+    if after != before:
+        raise cases.CaseConflict("research_rights_changed")
 
 
 def recheck_locked(*, expected, **kwargs):
