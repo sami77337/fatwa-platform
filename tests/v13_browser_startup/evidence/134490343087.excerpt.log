@@ -1,0 +1,64 @@
+2026-11-18T00:52:40.8532337Z Current runner version: '2.338.2'
+2026-11-18T00:52:40.8549561Z ##[group]Runner Image Provisioner
+2026-11-18T00:52:40.8550062Z Hosted Compute Agent
+2026-11-18T00:52:40.8550387Z Version: 20261103.629
+2026-11-18T00:52:40.8550827Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-18T00:52:40.8551235Z Build Date: 2026-11-03T17:26:59Z
+2026-11-18T00:52:40.8551650Z Worker ID: {ed8769cb-f5f0-40d5-809f-a501ce3abe64}
+2026-11-18T00:52:40.8552058Z Region: centralus
+2026-11-18T00:52:40.8552421Z Cloud: Azure
+2026-11-18T00:52:40.8552770Z ##[endgroup]
+2026-11-18T00:52:40.8553730Z ##[group]Operating System
+2026-11-18T00:52:40.8554109Z Ubuntu
+2026-11-18T00:52:40.8554415Z 26.04.1
+2026-11-18T00:52:40.8554740Z LTS
+2026-11-18T00:52:40.8555063Z ##[endgroup]
+2026-11-18T00:52:40.8555379Z ##[group]Runner Image
+2026-11-18T00:52:40.8555701Z Image: ubuntu-26.04
+2026-11-18T00:52:40.8556064Z Version: 20261111.196.1
+2026-11-18T00:52:40.8556790Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-18T00:52:40.8557677Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.196
+2026-11-18T00:52:42.8336160Z [command]/usr/bin/git log -1 --format=%H
+2026-11-18T00:52:42.8355587Z 5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8
+2026-11-18T00:52:43.0385344Z Successfully set up CPython (3.13.18)
+2026-11-18T00:52:43.4685247Z node: v24.22.2
+2026-11-18T00:53:05.6514707Z Google Chrome 157.0.8103.50
+2026-11-18T00:53:05.6705543Z ##[group]Run python -B manage.py test tests.fast6_journey.test_browser --settings=config.settings.test --noinput --verbosity=2
+2026-11-18T00:53:05.6706042Z [36;1mpython -B manage.py test tests.fast6_journey.test_browser --settings=config.settings.test --noinput --verbosity=2[0m
+2026-11-18T00:53:05.6748788Z shell: /usr/bin/bash -e {0}
+2026-11-18T00:53:05.6748934Z env:
+2026-11-18T00:53:05.6749110Z   PYTHONPATH: /home/runner/work/fatwa-platform/fatwa-platform
+2026-11-18T00:53:05.6749307Z   PYTHONUTF8: 1
+2026-11-18T00:53:05.6749434Z   PYTHONDONTWRITEBYTECODE: 1
+2026-11-18T00:53:05.6749606Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:53:05.6749841Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib/pkgconfig
+2026-11-18T00:53:05.6750076Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:53:05.6750288Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:53:05.6750657Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:53:05.6750874Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib
+2026-11-18T00:53:05.6751077Z   FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+2026-11-18T00:53:05.6751244Z ##[endgroup]
+2026-11-18T00:53:08.2174089Z test_existing_research_triage_workbench_browser_journey (tests.fast6_journey.test_browser.ConnectedJourneyBrowserTests.test_existing_research_triage_workbench_browser_journey) ... ok
+2026-11-18T00:53:28.2475145Z test_research_browser_startup_and_failure_contracts (tests.fast6_journey.test_browser.ConnectedJourneyBrowserTests.test_research_browser_startup_and_failure_contracts) ... ok
+2026-11-18T00:53:28.2475873Z
+2026-11-18T00:53:28.2475997Z Found 2 test(s).
+2026-11-18T00:53:28.2476397Z ----------------------------------------------------------------------
+2026-11-18T00:53:28.2476779Z Skipping setup of unused database(s): default.
+2026-11-18T00:53:28.2477127Z Ran 2 tests in 22.080s
+2026-11-18T00:53:28.2477238Z
+2026-11-18T00:53:28.2477321Z OK
+2026-11-18T00:53:28.2477572Z System check identified no issues (0 silenced).
+2026-11-18T00:53:28.2479411Z {"result":"PASS","catalog":"fixed synthetic test double; no database","checks":["desktop RTL","keyboard skip and previous/next","320/375px no overflow","exact Arabic CRLF","verified catalog href","closed unverified","triage/workbench anchors","query recovery","GET/HEAD local only"],"screenshot":"/tmp/fatwa-research-bridge-mobile.png","cleanup":{"result":"PASS","errors":[]},"startup":{"stage":"ready","elapsed_ms":642,"timeout_ms":30000},"diagnostics":{"stderr_present":true,"stderr_hints":[]}}
+2026-11-18T00:53:28.2482067Z test:pass: research Linux liveness handles an open proc handle reaped before read
+2026-11-18T00:53:28.2482594Z test:pass: legacy entrypoint reports missing Chrome as NOT_RUN with successful cleanup
+2026-11-18T00:53:28.2483142Z test:pass: port readiness after ten seconds runs the journey once with protected flags
+2026-11-18T00:53:28.2483820Z test:pass: stderr-exit is classified without running assertions and cleans its tree/profile
+2026-11-18T00:53:28.2484392Z test:pass: missing-port-tree is classified without running assertions and cleans its tree/profile
+2026-11-18T00:53:28.2484973Z test:pass: invalid-port is classified without running assertions and cleans its tree/profile
+2026-11-18T00:53:28.2485522Z test:pass: http-hang is classified without running assertions and cleans its tree/profile
+2026-11-18T00:53:28.2486074Z test:pass: foreign-socket is classified without running assertions and cleans its tree/profile
+2026-11-18T00:53:28.2486629Z test:pass: socket-hang is classified without running assertions and cleans its tree/profile
+2026-11-18T00:53:28.2487147Z test:pass: an original journey assertion failure stays FAIL after successful cleanup
+2026-11-18T00:53:28.2487609Z test:pass: the run watchdog interrupts a stalled journey and cleans up
+2026-11-18T00:53:28.2488033Z test:pass: cleanup failure overrides successful journey assertions
+2026-11-18T00:53:28.2488330Z D6_REGISTERED_TESTS=12
