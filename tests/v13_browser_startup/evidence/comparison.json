@@ -1,0 +1,58 @@
+{
+  "schema": "fatwa.v13.d6-log-comparison.v1",
+  "failure": {
+    "decoded_log_normalized_sha256": "e55f41b6247dfa4c8e59cc686768f3395583d72746bab7f7abd1cb1496b038cc",
+    "sha": "5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8",
+    "result": "NOT_RUN",
+    "startup": {
+      "stage": "websocket",
+      "elapsed_ms": 30001,
+      "timeout_ms": 30000
+    },
+    "cleanup": "PASS",
+    "diagnostics": {
+      "stderr_present": true,
+      "stderr_hints": []
+    },
+    "runner_image": "ubuntu-26.04",
+    "runner_image_version": "20261111.196.1",
+    "region": "westus",
+    "chrome": "157.0.8103.50",
+    "node": "v24.22.2",
+    "python": "3.13.18"
+  },
+  "success": {
+    "decoded_log_normalized_sha256": "371aa1a1066d67ada478152b010280596899eb3ea0f7c34db6c1c9f204c2a98d",
+    "sha": "5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8",
+    "result": "PASS",
+    "startup": {
+      "stage": "ready",
+      "elapsed_ms": 642,
+      "timeout_ms": 30000
+    },
+    "cleanup": "PASS",
+    "diagnostics": {
+      "stderr_present": true,
+      "stderr_hints": []
+    },
+    "runner_image": "ubuntu-26.04",
+    "runner_image_version": "20261111.196.1",
+    "region": "centralus",
+    "chrome": "157.0.8103.50",
+    "node": "v24.22.2",
+    "python": "3.13.18"
+  },
+  "matching_observed_environment": {
+    "sha": true,
+    "runner_image": true,
+    "runner_image_version": true,
+    "chrome": true,
+    "node": true,
+    "python": true
+  },
+  "same_region": false,
+  "root_cause": "ROOT_CAUSE_UNKNOWN",
+  "historical_failure_retained": true,
+  "startup_duration_is_total_not_websocket_duration": true,
+  "real_source_acceptance": "NOT_RUN"
+}
