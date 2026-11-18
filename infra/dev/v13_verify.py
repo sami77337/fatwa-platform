@@ -6,6 +6,7 @@ a V13 completion claim. This command runs beneath with_casework_postgres.py.
 """
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -75,6 +76,8 @@ def main():
     ]))
     for name, command in stages:
         path = logs / (name + ".log")
+        if name == "browser-recovery":
+            Path(".local/qa/v13/browser/result.json").unlink(missing_ok=True)
         with path.open("w", encoding="utf-8") as output:
             result = subprocess.run(command, env=env,
                                     stdout=output, stderr=subprocess.STDOUT)
@@ -82,6 +85,20 @@ def main():
         print(path.read_text(), flush=True)
         if result.returncode:
             return result.returncode
+        if name == "browser-recovery":
+            proof = json.loads(Path(".local/qa/v13/browser/result.json").read_text())
+            if proof.get("status") != "PASS" or (
+                env.get("FATWA_BROWSER_SANDBOX", "1") == "1"
+                and proof.get("sandbox") is not True
+            ):
+                raise RuntimeError("V13 protected browser proof missing")
+            print("V13_BROWSER_PROOF=" + json.dumps({
+                "tested_sha": head, "browser": proof["browser"],
+                "sandbox": proof["sandbox"], "widths": proof["widths"],
+                "canonical": proof["canonical"], "recovery": proof["recovery"],
+                "external_requests": len(proof["external_requests"]),
+                "page_errors": len(proof["page_errors"]),
+            }, sort_keys=True), flush=True)
     return 0
 
 
