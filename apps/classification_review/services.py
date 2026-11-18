@@ -12,7 +12,7 @@ from apps.knowledge_links.models import KnowledgeRevision
 from apps.platform_recovery.integration import mutation_service
 
 from .authority import ClassificationAuthority
-from .models import ClassificationAction, ClassificationRevision
+from .models import ClassificationAction, ClassificationRevision, EditorialBinding
 
 
 def _enabled():
@@ -212,6 +212,24 @@ def act(
         return {"id": str(row.pk), "state": _state(row)}
 
 
+def _editorial_audit(row):
+    binding = EditorialBinding.objects.filter(revision=row).select_related("edition").first()
+    if binding is None:
+        return None
+    return {
+        "id": str(binding.pk),
+        "edition_id": str(binding.edition_id),
+        "number": binding.edition.number,
+        "policy_id": binding.policy_id,
+        "created_at": binding.created_at,
+        "actions": list(
+            binding.edition.actions.order_by("created_at", "id").values(
+                "action", "subject_id", "created_at"
+            )
+        ),
+    }
+
+
 @mutation_service
 def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False, history=False):
     _enabled()
@@ -264,9 +282,12 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False,
             can_withdraw = current and state != "WITHDRAWN" and grants["WITHDRAW"]
             # Audit after upstream withdrawal keeps IDs/state/time only. No stale source,
             # candidate label, rationale or decision text escapes through history.
+            editorial_audit = _editorial_audit(row)
             rows.append(
                 dict(
                     id=str(row.pk),
+                    binding_id=editorial_audit["id"] if editorial_audit else "",
+                    editorial_audit=editorial_audit,
                     number=row.number,
                     state=state,
                     can_approve=can_approve,
@@ -297,4 +318,10 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False,
             "history": rows,
             "audit_only": history,
             "can_propose": can_propose,
+            "case_revision": case.revision,
+            "evidence_version": case.evidence_version,
+            "editorial_simulation_enabled": getattr(
+                settings, "FATWA_CLASSIFICATION_EDITORIAL_SIMULATION_ENABLED", False
+            )
+            is True,
         }
