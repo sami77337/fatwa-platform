@@ -1,4 +1,123 @@
-# V13 external security review — BLOCKED on 38cd137
+# V13 external security review — SEC13-01 bounded PASS on feb4e521
+
+## Independent repair re-review (2026-11-18)
+
+**PASS, limited to SEC13-01 and its affected recovery integrity boundary**, on
+`feb4e521f3c2847403a0e0626ff34da6df7612cc`. The remote integration branch
+`codex/20261118-v13-integration` and Draft PR #232 both matched this exact SHA
+before and after execution. No product code or GitHub settings were changed.
+The historical BLOCKED verdict and failed evidence on `38cd137` remain below;
+this result supersedes that finding only for the repaired target.
+
+The original two independently authored reproductions were rerun unchanged
+(`git diff --exit-code 97dd5793e44118d8cd050607717a6acb555f0f1c HEAD --
+tests/v13_security_review/test_final_schema.py` returned zero at the target).
+Both now pass on real PostgreSQL 17.12 and 18.7. The two index predicates still
+have different actual uniqueness behavior and now have different canonical
+fingerprints. Altering the predicate on the actual encrypted restored target
+is rejected with `restored_schema_mismatch`, rather than accepted as READY.
+There are no expected-failure decorators or relaxed assertions.
+
+### Independent challenges and safe recovery
+
+Read `docs/security/SEC13_01_REPAIR.md` and the complete changed recovery scanner.
+The repair retains original token spans, does not decode quoted data, and limits
+array-cast equivalence to recognized CHECK / partial-index expressions. Original
+literal bytes are copied into the equivalent cast. Comments inside a candidate
+prevent folding. Quoted function bodies remain opaque. Schema comparison and
+READY/rollback enforcement remain in place; no unsafe old-fingerprint fallback
+was introduced.
+
+Added four independent test methods in `test_sec13_repair.py`:
+
+- Ordinary, escape, Unicode and dollar-quoted content adjacent to a real array
+  cast keeps quote/backslash/comment/semicolon/nonce lookalikes and CRLF intact,
+  while the actual equivalent array expression normalizes. Changing the opaque
+  value remains distinguishable.
+- Nested block comments and line comments ending CR or CRLF prevent candidate
+  folding. Unsupported SELECT/view contexts and misleading quoted identifiers
+  remain byte-exact.
+- Unterminated opaque tokens fail closed with the fixed
+  `schema_lexical_unsupported` code, without echoing synthetic private input.
+- Actual PostgreSQL CHECK constraints containing quotes, backslashes, comments,
+  dollar tags, nonce lookalikes and CRLF are dumped using the matching pg_dump.
+  Changing either the adversarial data value or its embedded CRLF to LF yields
+  three distinct real constraint definitions and three distinct fingerprints.
+
+Independently executed and inspected the existing positive encrypted roundtrip,
+partial-index tamper and quarantine assertions as well. They verify new V13
+schema objects survive a valid restore, a modified target never enters READY,
+private asset bytes remain preserved, and the source remains FROZEN. A proven
+owned target rolls back to `ROLLED_BACK_FILES_PRESERVED`. A changed target nonce
+leaves FAILED/manual quarantine, refuses further application rollback with
+`rollback_identity_mismatch`, and preserves the unknown database. Isolated test
+cluster teardown is separate from application deletion authority.
+
+### Exact executions and evidence
+
+Tests ran against the detached exact target, with only the new reviewer test file
+overlaid. The reviewer branch retains its earlier base and owns tests/report only.
+No unaffected application suites or local browser attempt were repeated.
+
+| Independently executed batch | PG17.12 | PG18.7 |
+| --- | --- | --- |
+| Original external reproductions 2 + existing recovery 5 + quarantine 2 | 9 PASS, 5.016s | 9 PASS, 4.898s |
+| Newly authored external lexer / actual CHECK dump challenges | 4 PASS, 0.197s | 4 PASS, 0.177s |
+| Total for this re-review | **13 PASS** | **13 PASS** |
+
+The seven reused recovery/quarantine methods are integrator-authored; executing
+and inspecting them independently does not make them newly authored reviewer
+tests. The implementer's reported 20-test batch is separate evidence and is not
+counted as this reviewer's execution. Both original reproductions and all four
+new tests executed without skips. Ruff check/format and whitespace checks pass.
+
+Durable logs and SHA-256 manifest:
+`tests/v13_security_review/evidence/sec13_recheck/`. Matching tool paths were
+`/tmp/v9-pg/usr/lib/postgresql/17/bin` (17.12 Debian build) and
+`/tmp/v12-pg18-built/bin` (18.7 locally built). This does not claim identical
+packaging to hosted CI. Each batch used a fresh owned synthetic cluster:
+
+```sh
+FATWA_TEST_PG_BIN="$TEST_PG_BIN" V12_PG_BIN="$TEST_PG_BIN" \
+  python infra/dev/with_casework_postgres.py --pg-bin "$TEST_PG_BIN" \
+  --major "$TEST_PG_MAJOR" --settings config.settings.campaign_review -- \
+  python manage.py test tests.v13_security_review.test_final_schema \
+  tests.casework.test_v13_recovery_schema \
+  tests.casework.test_v13_schema_quarantine --verbosity 2
+
+FATWA_TEST_PG_BIN="$TEST_PG_BIN" V12_PG_BIN="$TEST_PG_BIN" \
+  python infra/dev/with_casework_postgres.py --pg-bin "$TEST_PG_BIN" \
+  --major "$TEST_PG_MAJOR" --settings config.settings.campaign_review -- \
+  python manage.py test tests.v13_security_review.test_sec13_repair --verbosity 2
+```
+
+### Scope and handoff
+
+SEC13-01 no longer blocks the tested recovery path at this exact SHA. The
+integrator can record this independent disposition alongside the affected recovery
+evidence; historic `38cd137` failures must remain and must not be relabeled PASS.
+No general proof of arbitrary SQL grammar/equivalence or production-bundle
+migration is claimed. Old synthetic bundles whose fingerprint used the unsafe
+normalizer may fail closed; recapture from the owned source rather than bypass
+verification. Privileged external SQL remains outside application admission.
+
+At the recorded GitHub read, run `44227205996` for `feb4e521` remained IN_PROGRESS,
+with no conclusion. Hosted completion is a separate integration obligation; this
+verdict relies on the executions above, not a claimed green CI. Integrate the new
+test module into the final affected checks through the shared-file owner.
+
+**Local microphone runtime remains NOT_RUN (sandbox environment error before page
+creation), unchanged from the historical review.** No sandbox disabling or system
+permission changes were used. Prior application/rights/CSP evidence remains tied
+to its recorded SHA; this repair re-review does not pretend those suites were
+rerun at `feb4e521`. A final campaign/browser decision must retain those limits.
+
+No owner acceptance, production authorization or percentage follows from this
+bounded PASS. Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED.
+
+---
+
+# Historical V13 external security review — BLOCKED on 38cd137
 
 ## Actual V13 product review (2026-11-18)
 
