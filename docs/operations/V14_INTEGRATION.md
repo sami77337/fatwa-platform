@@ -188,3 +188,9 @@ Exact permissions/identity/hash/version/deadlines and case locking remain.
 [Contract and focused history](V14_MEDIA_BOUNDARY.md) records57 affected PASS per
 major plus focused final-boundary tests and corrected synthetic library fixtures.
 Independent re-review and new-head protected execution remain required.
+
+A further final-epoch-read expiry edge at `d4a2af3` was reproduced1 FAIL per major
+and repaired before clearance. Anonymous preview now checks deadlines for its final
+eligible source/media collection and preview policy after the media epoch read;
+13 affected checks passed on each PG major without weakening the prior expiry/drop
+semantics. See the appended media-boundary record and retained negative logs.

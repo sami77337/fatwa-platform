@@ -59,3 +59,25 @@ library-return adversary then passed on PG17.12 (3.080s) and18.7 (3.156s).
 The exact original three reproducer assertions remain unchanged. Added checks
 require actual revocation execution and transaction rollback, reject an equal-epoch
 replacement policy object, and reject a missing/malformed media epoch.
+
+## Final epoch-read expiry correction
+
+The first pushed mixed-media repair `d4a2af39a2964ad8b589448b5a42deaf915dc5f6`
+passed8 focused checks per PG17/18 at that exact head (11.595s /11.591s), including
+the original mixed-media regressions. A subsequent read-only review found that the
+anonymous library's last clock preceded the final media epoch read. A deterministic
+elapsed-time test reproduced stale metadata on both majors:1 FAIL each (3.370s /
+3.287s). The epoch remains unchanged; this models time passing during a pure atomic
+read, not a policy mutation or concurrent SQL. Those failures are retained.
+
+The library now retains exact deadlines from the **final eligible** source/media
+checks and its preview policy, then checks one clock after the outer epoch read.
+Browse replaces temporary item bounds with its final eligible collection, preserving
+the earlier contract that already-expired rows are removed before counts/facets/pages.
+Detail/reference reads retain their final current-edition bounds. No authority
+callback follows this last clock. No expired row is restored or policy relaxed.
+
+The unchanged expiry adversary and12 affected collection/boundary checks passed:
+PG17.12 **13/13,20.802s**; PG18.7 **13/13,20.675s**. These focused implementation
+runs precede the commit recording this correction. Final exact-head hosted tests
+and independent review are still required; earlier green heads are not relabeled.

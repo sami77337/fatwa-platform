@@ -7,6 +7,7 @@ canonical services validate their current approval and bindings under the case l
 
 import os
 from contextlib import contextmanager
+from contextvars import ContextVar
 
 from django.conf import settings
 from django.db import transaction
@@ -36,6 +37,17 @@ SOURCE_FIELDS = (
     "printed_page",
     "path",
 )
+
+
+_RETURN_DEADLINES = ContextVar("library_preview_return_deadlines", default=None)
+
+
+def _retain_deadlines(values, *, replace=False):
+    bounds = _RETURN_DEADLINES.get()
+    if bounds is not None:
+        if replace:
+            bounds.clear()
+        bounds.extend(value for value in values if value is not None)
 
 
 class PreviewUnavailable(Exception):
@@ -129,7 +141,8 @@ def _current(selected: PreviewPolicy, publication_id: str):
         # the case lock serializes explicit revocation. Policy and source grants
         # must both remain valid at the projection's return boundary.
         try:
-            publication._require_publication_sources(case, edition.citations)
+            deadline = publication._require_publication_sources(case, edition.citations)
+            _retain_deadlines((selected.valid_until, deadline))
         except cases.CaseConflict:
             raise PreviewUnavailable() from None
 
@@ -266,11 +279,21 @@ def filters(*, query: str = "", category: str = "", material: str = "", page: in
 def _media_boundary():
     from apps.casework.media_boundary import media_projection_boundary
 
+    bounds = []
+    token = _RETURN_DEADLINES.set(bounds)
     try:
         with media_projection_boundary():
             yield
+        # The atomic media epoch read can itself span a deadline. No authority
+        # callbacks follow this final clock. Browse retains only emitted grants,
+        # preserving its established removal of already-expired earlier rows.
+        now = timezone.now()
+        if any(deadline <= now for deadline in bounds):
+            raise PreviewUnavailable()
     except cases.CaseConflict:
         raise PreviewUnavailable() from None
+    finally:
+        _RETURN_DEADLINES.reset(token)
 
 
 @mutation_service
@@ -346,6 +369,7 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
         now = timezone.now()
         if any(end is not None and end <= now for _, end in checked):
             raise PreviewUnavailable()
+        _retain_deadlines((selected.valid_until, *(end for _, end in checked)), replace=True)
         return result
 
 

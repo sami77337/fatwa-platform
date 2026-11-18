@@ -192,3 +192,46 @@ class CrossKindPolicyTests(pdf_fixtures.Fixture, TransactionTestCase):
             with self.assertRaises(preview.PreviewUnavailable):
                 preview.browse()
         self.assertEqual(attacks, [1])
+
+    def test_library_epoch_read_spanning_deadline_cannot_return_stale_metadata(self):
+        from datetime import timedelta
+
+        from apps.casework import media_boundary
+        from apps.experimental_publication.tests import Authority
+        from apps.library_preview import services as preview
+        from apps.source_rights.tests import Authority as RightsAuthority
+
+        self.approve()
+        authority = override_settings(
+            FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY=Authority(self.receipt["public_ref"]),
+            FATWA_SOURCE_RIGHTS_AUTHORITY=RightsAuthority(self.receipt["public_ref"]),
+        )
+        authority.enable()
+        self.addCleanup(authority.disable)
+        self.edition = lambda: shared.TimedBindingsTests.edition(self)
+        shared.TimedBindingsTests.published(self)
+        self.assertEqual(preview.browse()["total"], 1)
+        clock, visits, elapsed = [timezone.now()], [], []
+        recheck, epoch = preview._recheck, media_boundary._epoch
+
+        def last_check(selected):
+            recheck(selected)
+            visits.append(1)
+
+        def slow_epoch(policy):
+            value = epoch(policy)
+            if len(visits) == 3:
+                # Deterministic elapsed-time model, no grant/policy mutation.
+                clock[0] = self.rights.valid_until + timedelta(seconds=1)
+                elapsed.append(1)
+            return value
+
+        with (
+            patch.object(preview, "_recheck", side_effect=last_check),
+            patch.object(media_boundary, "_epoch", side_effect=slow_epoch),
+            patch("django.utils.timezone.now", side_effect=lambda: clock[0]),
+        ):
+            with self.assertRaises(preview.PreviewUnavailable):
+                preview.browse()
+        self.assertEqual(visits, [1, 1, 1])
+        self.assertEqual(elapsed, [1])

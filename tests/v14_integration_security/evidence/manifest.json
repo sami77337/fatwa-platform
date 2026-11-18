@@ -5,5 +5,14 @@
   "logs": {
     "blocked_pg17.log": "9830850b6b90fce8e3371bfa977edbe575df2021e4e5f3a98ee5391570cb997e",
     "blocked_pg18.log": "25139ec538ea9a4a346dedd031ebed9e2013be105d3bb13cb41b12e8adcd86e1"
+  },
+  "epoch_expiry": {
+    "product_sha": "d4a2af39a2964ad8b589448b5a42deaf915dc5f6",
+    "status": "BLOCKED",
+    "kind": "deterministic elapsed-time model during pure final epoch read; not policy mutation or SQL concurrency",
+    "logs": {
+      "epoch_expiry_pg17.log": "c4d20c1fde5aec6b90506e2939011d1a67622fb1b4016aaafdf07212d0d441a6",
+      "epoch_expiry_pg18.log": "9b3c3b72dcfdcdb54862d5fe9b6746bdfeffd9cfb93bf372fe06e51219c4f007"
+    }
   }
 }
