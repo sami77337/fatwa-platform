@@ -112,6 +112,13 @@ def workspace(request):
                 )
                 + f"#page={opened['page_number']}"
             )
+            # This one-page derivative is a deterministic source-page selection.
+            # The original #page fragment remains only a PDF viewer hint.
+            projection["selected_page_url"] = reverse(
+                "pdf_review_selected_page" if action == "pdf_preview" else "pdf_selected_page",
+                args=[fields["citation_id"]],
+            )
+            projection["selected_page_number"] = opened["page_number"]
         get_token(request)
         return private(render(request, "pdf_citations/desk.html", projection))
     except (InvalidForm, SuspiciousOperation, ValueError) as exc:
@@ -123,7 +130,7 @@ def workspace(request):
         return denied("pdf_unavailable", 503)
 
 
-def document(request, citation_id, *, review=False):
+def document(request, citation_id, *, review=False, page_only=False):
     refused = boundary(request)
     if refused:
         return refused
@@ -138,6 +145,7 @@ def document(request, citation_id, *, review=False):
             provider=provider,
             citation_id=citation_id,
             review=review,
+            page_only=page_only,
             synthetic_fixtures_only=True,
         )
         # Reuse the existing private-original response, including its sandbox CSP.
@@ -158,3 +166,11 @@ def document(request, citation_id, *, review=False):
 
 def review_document(request, citation_id):
     return document(request, citation_id, review=True)
+
+
+def selected_page(request, citation_id):
+    return document(request, citation_id, page_only=True)
+
+
+def review_selected_page(request, citation_id):
+    return document(request, citation_id, review=True, page_only=True)
