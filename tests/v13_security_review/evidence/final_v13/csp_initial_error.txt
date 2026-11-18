@@ -1,0 +1,25 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code (tests.v13_security_review.test_final_csp.RecorderCSPExternalReview.test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code) ... ERROR
+
+======================================================================
+ERROR: test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code (tests.v13_security_review.test_final_csp.RecorderCSPExternalReview.test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v13-final-review/tests/v13_security_review/test_final_csp.py", line 15, in test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code
+    self.assertEqual(regular["Permissions-Policy"], "microphone=(), camera=()")
+                     ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/http/response.py", line 204, in __getitem__
+    return self.headers[header]
+           ~~~~~~~~~~~~^^^^^^^^
+  File "/workspace/fatwa-platform/.venv/lib/python3.13/site-packages/django/utils/datastructures.py", line 308, in __getitem__
+    return self._store[key.lower()][1]
+           ~~~~~~~~~~~^^^^^^^^^^^^^
+KeyError: 'permissions-policy'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (errors=1)
+Found 1 test(s).
+Skipping setup of unused database(s): default.
+System check identified no issues (0 silenced).

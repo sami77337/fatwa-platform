@@ -1,0 +1,46 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_independence_and_late_expiry_cannot_commit_classification_approval (tests.v13_security_review.test_final_apps.ClassificationExternalReview.test_independence_and_late_expiry_cannot_commit_classification_approval) ... ok
+test_revocation_redacts_audit_and_keeps_human_withdrawal_without_reclassification (tests.v13_security_review.test_final_apps.ClassificationExternalReview.test_revocation_redacts_audit_and_keeps_human_withdrawal_without_reclassification) ... ok
+test_new_app_entrypoints_do_not_reach_authority_or_source_when_frozen (tests.v13_security_review.test_final_apps.NewAppMaintenanceReview.test_new_app_entrypoints_do_not_reach_authority_or_source_when_frozen) ... ok
+test_early_grant_expiry_during_ranking_returns_no_metadata_even_for_no_match (tests.v13_security_review.test_final_apps.SearchExternalReview.test_early_grant_expiry_during_ranking_returns_no_metadata_even_for_no_match) ... ERROR
+test_exact_pin_time_human_review_and_new_evidence_deny_downstream_use (tests.v13_security_review.test_final_apps.TimedExternalReview.test_exact_pin_time_human_review_and_new_evidence_deny_downstream_use) ... ok
+test_expiry_after_confirmation_insert_rolls_back_human_action (tests.v13_security_review.test_final_apps.TimedExternalReview.test_expiry_after_confirmation_insert_rolls_back_human_action) ... ok
+test_cite_revocation_in_final_deadline_callback_denies_requester_bytes (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes) ... ok
+test_deadline_expiring_after_bytes_assembled_still_denies_requester_read (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_deadline_expiring_after_bytes_assembled_still_denies_requester_read) ... ok
+test_no_policy_deadline_callback_after_validated_hook_returns (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_no_policy_deadline_callback_after_validated_hook_returns) ... ok
+test_retained_final_cite_callback_cannot_revoke_then_open_audio_or_inspect (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_retained_final_cite_callback_cannot_revoke_then_open_audio_or_inspect) ... ok
+test_staff_revocation_in_final_deadline_callback_denies_private_bytes (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_staff_revocation_in_final_deadline_callback_denies_private_bytes) ... ok
+
+======================================================================
+ERROR: test_early_grant_expiry_during_ranking_returns_no_metadata_even_for_no_match (tests.v13_security_review.test_final_apps.SearchExternalReview.test_early_grant_expiry_during_ranking_returns_no_metadata_even_for_no_match)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v13-final-review/tests/v13_security_review/test_final_apps.py", line 161, in test_early_grant_expiry_during_ranking_returns_no_metadata_even_for_no_match
+    baseline = self.ranked()
+  File "/tmp/v13-final-review/apps/arabic_search_eval/test_services.py", line 81, in ranked
+    return services.search_reference_titles(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        **{**self.common, "edition_id": self.catalog_id, "query": query, **kwargs}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/tmp/v13-final-review/apps/platform_recovery/integration.py", line 142, in guarded
+    value = function(*args, **kwargs)
+  File "/tmp/v13-final-review/apps/arabic_search_eval/services.py", line 53, in search_reference_titles
+    found = workspace.search(
+        **common,
+    ...<4 lines>...
+        printed_page=printed_page,
+    )
+  File "/tmp/v13-final-review/apps/platform_recovery/integration.py", line 142, in guarded
+    value = function(*args, **kwargs)
+  File "/tmp/v13-final-review/apps/research_workspace/services.py", line 285, in search
+    raise cases.CaseConflict("research_edition_unavailable")
+apps.casework.services.CaseConflict: research_edition_unavailable
+
+----------------------------------------------------------------------
+Ran 11 tests in 4.934s
+
+FAILED (errors=1)
+Found 11 test(s).
+System check identified no issues (0 silenced).

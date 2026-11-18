@@ -1,0 +1,24 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_partial_index_string_value_change_must_change_recovery_fingerprint (tests.v13_security_review.test_final_schema.SchemaLiteralReviewTests.test_partial_index_string_value_change_must_change_recovery_fingerprint) ... FAIL
+
+======================================================================
+FAIL: test_partial_index_string_value_change_must_change_recovery_fingerprint (tests.v13_security_review.test_final_schema.SchemaLiteralReviewTests.test_partial_index_string_value_change_must_change_recovery_fingerprint)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v13-final-review/tests/v13_security_review/test_final_schema.py", line 45, in test_partial_index_string_value_change_must_change_recovery_fingerprint
+    self.assertNotEqual(
+    ~~~~~~~~~~~~~~~~~~~^
+        sha256(schemas[0][1]).hexdigest(), sha256(schemas[1][1]).hexdigest(),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "Different real index predicates collapsed to the same recovery schema",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: 'f93ca1ea99860b209b7ed4d865a3beef5cbef19a5303873739a66c8cfe1b7909' == 'f93ca1ea99860b209b7ed4d865a3beef5cbef19a5303873739a66c8cfe1b7909' : Different real index predicates collapsed to the same recovery schema
+
+----------------------------------------------------------------------
+Ran 1 test in 0.264s
+
+FAILED (failures=1)
+Found 1 test(s).
+System check identified no issues (0 silenced).
