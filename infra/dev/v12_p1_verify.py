@@ -10,6 +10,7 @@ LABELS = (
     "apps.mufti_workspace.journey_tests",
     "apps.source_rights.v12_tests",
     "tests.casework.test_v12_library_navigation",
+    "tests.casework.test_v12_answer_edit",
     # Publication collection changed: retain independently motivated P0 regressions.
     "tests.casework.test_v12_catalog_expiry",
     "tests.casework.test_v11_publication_frame",
@@ -28,7 +29,11 @@ def main():
         parser.error("checked-out SHA differs from EXPECTED_SHA")
     subprocess.run(["git", "diff", "--exit-code", "--quiet"], check=True)
     pg_bin = str(args.pg_bin.resolve(strict=True))
-    logs = Path(".local/qa/v12/p1")
+    version = subprocess.check_output([str(Path(pg_bin) / "postgres"), "--version"], text=True)
+    major = version.split()[2].split(".")[0]
+    if major not in {"17", "18"}:
+        parser.error("P1 verification requires PostgreSQL 17 or 18")
+    logs = Path(".local/qa/v12/p1-pg" + major)
     logs.mkdir(parents=True, exist_ok=True)
     (logs / "tested-sha.txt").write_text(head + "\n")
     print("TESTED_SHA=" + head, flush=True)

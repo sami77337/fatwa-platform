@@ -120,7 +120,7 @@ jobs:
           name: v12-p0-pg${{ matrix.postgres }}
           path: |
             .local/qa/v12/p0-pg${{ matrix.postgres }}
-            .local/qa/v12/p1
+            .local/qa/v12/p1-pg${{ matrix.postgres }}
             .local/qa/v12/browser
           include-hidden-files: true
           if-no-files-found: error
