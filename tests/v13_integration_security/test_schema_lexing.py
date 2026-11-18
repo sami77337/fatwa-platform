@@ -133,6 +133,15 @@ class OpaqueSchemaLexingTests(SimpleTestCase):
             service.canonical_schema(first.replace("comment_nonce", "different_comment")),
         )
 
+    def test_cr_and_crlf_end_line_comment_without_rewriting_comment_bytes(self):
+        comment = "-- opaque 'quote' E'\\' $$ /* " + INDEX.format(LITERAL)
+        for ending in ("\r", "\r\n"):
+            with self.subTest(ending=repr(ending)):
+                first = comment + ending + INDEX.format(LITERAL)
+                second = comment + ending + INDEX.format(DISTRIBUTED)
+                self.assertIn((comment + ending).encode(), service.canonical_schema(first))
+                self.assertEqual(service.canonical_schema(first), service.canonical_schema(second))
+
     def test_different_dollar_tags_and_inner_quotes_do_not_close_outer_body(self):
         body = (
             "$outer$\nSELECT $$inner$$;\nSELECT $other$other$other$;\n"
