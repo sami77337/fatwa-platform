@@ -92,6 +92,7 @@ jobs:
             --label apps.arabic_search_eval.test_v14_batch \
             --label apps.arabic_search_eval.test_review \
             --label apps.arabic_search_eval.test_browser \
+            --label tests.casework.test_v14_search_final \
             --label tests.v14_security_review.test_search_repair
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
@@ -101,5 +102,6 @@ jobs:
             .local/qa/v14/pg${{ matrix.postgres }}
             .local/qa/v14/browser
             .local/qa/v14/classification
+            .local/qa/v14/search
           include-hidden-files: true
           if-no-files-found: error

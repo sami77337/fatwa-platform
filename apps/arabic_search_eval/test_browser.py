@@ -42,19 +42,23 @@ class SearchReviewBrowser(ReviewFixture, LiveServerTestCase):
     def test_pages_roundtrip_and_pending_independent_review_on_mobile_keyboard(self):
         from playwright.sync_api import sync_playwright
 
-        out = Path("apps/arabic_search_eval/evidence/browser")
+        out = Path(os.environ.get("FATWA_SEARCH_BROWSER_ARTIFACTS", ".local/qa/v14/search"))
         out.mkdir(parents=True, exist_ok=True)
+        sandbox = os.environ.get("FATWA_BROWSER_SANDBOX", "1") != "0"
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER", "/usr/bin/chromium"),
                 headless=True,
-                chromium_sandbox=os.environ.get("FATWA_BROWSER_SANDBOX", "1") != "0",
+                chromium_sandbox=sandbox,
                 args=["--disable-dev-shm-usage"],
             )
-            external = []
+            external, errors = [], []
 
             def context():
                 ctx = browser.new_context(viewport={"width": 320, "height": 900})
+                ctx.on(
+                    "page", lambda page: page.on("pageerror", lambda _: errors.append("pageerror"))
+                )
 
                 def route(r):
                     if urlsplit(r.request.url).netloc != urlsplit(self.live_server_url).netloc:
@@ -120,5 +124,17 @@ class SearchReviewBrowser(ReviewFixture, LiveServerTestCase):
                     page.screenshot(path=str(out / f"review-{width}.png"))
                 self.assertEqual(self.sync(lambda: EvaluationDecision.objects.count()), 1)
                 self.assertEqual(external, [])
+                self.assertEqual(errors, [])
+                proof = dict(
+                    browser=browser.version,
+                    sandbox=sandbox,
+                    widths=[320, 1280],
+                    external_requests=len(external),
+                    page_errors=len(errors),
+                    synthetic_review_workflow="PASS",
+                    actual_human_review="PENDING",
+                )
+                (out / "result.json").write_text(json.dumps(proof, indent=2) + "\n")
+                print("V14_SEARCH_BROWSER=" + json.dumps(proof, sort_keys=True))
             finally:
                 browser.close()

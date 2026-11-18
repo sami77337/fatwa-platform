@@ -111,3 +111,46 @@ guard's existing400. That HTTP test plus the added collection adversary then pas
 PDF parser page count, authorized bytes and `#page` navigation are distinct from
 visual page selection in Chrome's PDF engine. The latter remains NOT_VERIFIED.
 No private locator or its source becomes a public PDF publication permission.
+
+## SEC14-01B repair and exact-head focused evidence
+
+The external re-review at search lane `e5c504bb` passed the original adversary but
+found SEC14-01B: a real ledger REVOKE inside the last policy callback retained the
+first title, total, facet and next-page metadata. Reviewer commit
+`3204bbfd801faaf3da9ce4a6a4eadd5872d50b60` is integrated unchanged. Its historical
+5 PASS / 1 FAIL per major remains; this is callback mutation in the same transaction,
+not concurrent SQL. The earlier86/86 integration checks on `570f352` did not include
+that new adversary and do not clear it retrospectively.
+
+Product repair `8329364173bde5e76d1a96931cd71dd31fb255d4` adds a pure authoritative
+ledger boundary outside both final policy-epoch and identity callbacks. The final
+pass invokes no policy callback; it compares current source/grant/version/expiry
+projection under the existing case lock before returning any results, counts,
+facets or pagination. A final expiry boundary remains outside that ledger check.
+The original reviewer test is unchanged; two additional integration adversaries
+cover final identity and deliberately side-effecting epoch callbacks.
+
+At that exact pushed head,21 affected checks passed on PostgreSQL17.12 (11.411s)
+and18.7 (11.131s): reviewer repair suite, final-boundary tests, search batching and
+search services. Search now costs32 SQL statements for both4 and24 candidates
+(and the one-candidate comparison); the lane's24-query measurement belongs to the
+blocked earlier implementation. The recorded pre-batch baseline was558 SQL.
+Independent re-review of this repair and remaining V14 deltas is still PENDING.
+
+## Connected journey integration
+
+Owned journey commit `e64d97b3876c3691e327e8c06916bc4d5a29bdcb` adds one canonical
+case through actual synthetic microphone capture, PDF/time locator correction,
+versioned evaluation review, multipart answer, partial simulated delivery,
+classification and a new independently published editorial edition. A new human
+knowledge proposal/approval is required for that edition. It then freezes writers,
+encrypts database/assets and opens a separately restored target over HTTP, checking
+bytes, scopes, revoked/expired media rights and revoked source rights. Source stays
+FROZEN and unchanged; no sender or old verifier is restarted.
+
+Local journey debugging passed1/1 in328.512s on PG17.12, Chromium154 with sandbox
+DISABLED, widths320/1280 and no external requests/page errors. The independent
+restored target handled104 HTTP checks. This run preceded `8329364` and is only a
+harness-debug receipt, not final-head/security/protected evidence. Hosted PG17/18
+Chrome sandbox execution on the merged head remains pending. Real expert search
+review remains PENDING; PDF engine-selected page rendering remains NOT_VERIFIED.

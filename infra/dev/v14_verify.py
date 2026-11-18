@@ -20,7 +20,7 @@ APPLICATIONS = (
     "arabic_search_eval",
     "classification_review",
 )
-SECURITY_LABEL = "tests.v14_security_review.test_search_boundary"
+SECURITY_LABEL = "tests.v14_security_review.test_search_repair"
 
 
 def main():
@@ -31,6 +31,8 @@ def main():
     args = parser.parse_args()
     if args.browser and os.environ.get("FATWA_BROWSER_SANDBOX") != "1":
         parser.error("V14 browser evidence requires explicit FATWA_BROWSER_SANDBOX=1")
+    if args.browser and os.environ.get("FATWA_TEST_BROWSER_NO_SANDBOX") == "1":
+        parser.error("V14 browser evidence refuses a component sandbox bypass")
     if any(re.fullmatch(r"(?:apps|tests)\.[A-Za-z0-9_.]+", label) is None for label in args.label):
         parser.error("explicit Python application/test module labels required")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
