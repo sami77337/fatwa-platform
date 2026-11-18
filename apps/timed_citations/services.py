@@ -74,6 +74,12 @@ def _rights(case, actor, provider, snapshot):
         except Exception as exc:
             raise cases.CaseConflict("timed_grant_expiry_required") from exc
         _projection_deadline(deadline)
+    # Deadline lookup is a configured authority call, not a cached grant. It
+    # may observe a concurrent/serialized withdrawal after its first lookup.
+    # Recheck both permissions after all deadline callbacks, before any caller
+    # completes its final identity check or exposes source metadata/bytes.
+    for action in ("READ_MEDIA", "CITE"):
+        require(actor, provider, case, action, resource)
 
 
 def _source(case, actor, provider, kind, identifier):
