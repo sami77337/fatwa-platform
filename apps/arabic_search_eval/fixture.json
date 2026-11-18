@@ -1,0 +1,695 @@
+{
+  "schema_version": 1,
+  "synthetic_only": true,
+  "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING",
+  "clock": "2026-11-18T00:00:00+00:00",
+  "records": [
+    {
+      "id": "intro",
+      "title": "مقدمة أبواب البحث",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "hamza",
+      "title": "أبواب البحث",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "plain",
+      "title": "ابواب البحث",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "diacritic",
+      "title": "فَرْعٌ تَجْرِيبِيّ",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "long",
+      "title": "شرح فرع تجريبي",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "num112",
+      "title": "عنوان رقم 112",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "num12",
+      "title": "عنوان رقم 12",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "decimal",
+      "title": "عنوان رقم 12.5",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "num13",
+      "title": "عنوان رقم ١٣",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "phrase",
+      "title": "مدخل فهرس المصادر",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "reverse",
+      "title": "المصادر فهرس",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "taa",
+      "title": "دراسة",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "haa",
+      "title": "دراسه",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "seat",
+      "title": "مسؤول",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "noseat",
+      "title": "مسوول",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "yaa",
+      "title": "على",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "maqsura",
+      "title": "علي",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "repeat",
+      "title": "باب باب",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "single",
+      "title": "باب",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "foreign",
+      "title": "مصدر خفي",
+      "scope": "case-b",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "expired",
+      "title": "مصدر منتهي",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2026-11-17T00:00:00+00:00"
+    },
+    {
+      "id": "denied",
+      "title": "مصدر ممنوع",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": false,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "otheredition",
+      "title": "مصدر آخر",
+      "scope": "case-a",
+      "edition": "edition-b",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "punct",
+      "title": "فهرس، المصادر",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "kashida",
+      "title": "كتـاب تجريبي",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "hamzaya",
+      "title": "بيئة",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "hamzayaless",
+      "title": "بيية",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    },
+    {
+      "id": "zero",
+      "title": "عنوان رقم 012",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "read": true,
+      "expires": "2030-01-01T00:00:00+00:00"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q01",
+      "query": "أبواب البحث",
+      "expected": [
+        "hamza",
+        "plain",
+        "intro"
+      ],
+      "rationale": "literal before normalized before phrase",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q02",
+      "query": "ابواب البحث",
+      "expected": [
+        "plain",
+        "hamza",
+        "intro"
+      ],
+      "rationale": "literal ordering in normalized collision",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q03",
+      "query": "إبواب البحث",
+      "expected": [
+        "hamza",
+        "plain",
+        "intro"
+      ],
+      "rationale": "shared hamza normalization",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q04",
+      "query": "آبواب البحث",
+      "expected": [
+        "hamza",
+        "plain",
+        "intro"
+      ],
+      "rationale": "shared madda normalization",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q05",
+      "query": "ٱبواب البحث",
+      "expected": [
+        "hamza",
+        "plain",
+        "intro"
+      ],
+      "rationale": "shared wasla normalization",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q06",
+      "query": "فَرْعٌ تَجْرِيبِيّ",
+      "expected": [
+        "diacritic",
+        "long"
+      ],
+      "rationale": "original vocalized title",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q07",
+      "query": "فرع تجريبي",
+      "expected": [
+        "diacritic",
+        "long"
+      ],
+      "rationale": "strip marks in copy only",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q08",
+      "query": "رقم ١٢",
+      "expected": [
+        "num12"
+      ],
+      "rationale": "Arabic Indic digits and integer boundary",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q09",
+      "query": "رقم ۱۲",
+      "expected": [
+        "num12"
+      ],
+      "rationale": "Persian digits and integer boundary",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q10",
+      "query": "رقم 12",
+      "expected": [
+        "num12"
+      ],
+      "rationale": "no substring in 112, 012 or decimal 12.5",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q11",
+      "query": "رقم ١٣",
+      "expected": [
+        "num13"
+      ],
+      "rationale": "original Arabic numeral",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q12",
+      "query": "رقم 13",
+      "expected": [
+        "num13"
+      ],
+      "rationale": "cross-script numeral",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q13",
+      "query": "رقم 12.5",
+      "expected": [
+        "decimal"
+      ],
+      "rationale": "decimal kept whole",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q14",
+      "query": "رقم 012",
+      "expected": [
+        "zero"
+      ],
+      "rationale": "leading zero remains meaningful",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q15",
+      "query": "رقم 12٫5",
+      "expected": [],
+      "rationale": "decimal punctuation not silently equated",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q16",
+      "query": "فهرس المصادر",
+      "expected": [
+        "punct",
+        "phrase",
+        "reverse"
+      ],
+      "rationale": "normalized phrase before containing phrase before all words",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q17",
+      "query": "المصادر فهرس",
+      "expected": [
+        "reverse",
+        "phrase",
+        "punct"
+      ],
+      "rationale": "literal reverse phrase first",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q18",
+      "query": "دراسة",
+      "expected": [
+        "taa"
+      ],
+      "rationale": "taa marbuta distinct from haa",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q19",
+      "query": "دراسه",
+      "expected": [
+        "haa"
+      ],
+      "rationale": "haa remains distinct",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q20",
+      "query": "مسؤول",
+      "expected": [
+        "seat"
+      ],
+      "rationale": "hamza seat preserved",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q21",
+      "query": "مسوول",
+      "expected": [
+        "noseat"
+      ],
+      "rationale": "do not fold waw hamza",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q22",
+      "query": "بيئة",
+      "expected": [
+        "hamzaya"
+      ],
+      "rationale": "yaa hamza preserved",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q23",
+      "query": "بيية",
+      "expected": [
+        "hamzayaless"
+      ],
+      "rationale": "do not fold yaa hamza",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q24",
+      "query": "على",
+      "expected": [
+        "yaa",
+        "maqsura"
+      ],
+      "rationale": "shared maqsura fold with literal preferred",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q25",
+      "query": "علي",
+      "expected": [
+        "maqsura",
+        "yaa"
+      ],
+      "rationale": "literal despite shared maqsura fold",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q26",
+      "query": "باب باب",
+      "expected": [
+        "repeat"
+      ],
+      "rationale": "repeated query words require multiplicity",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q27",
+      "query": "باب",
+      "expected": [
+        "single",
+        "repeat"
+      ],
+      "rationale": "exact title before repeated title",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q28",
+      "query": "كتاب تجريبي",
+      "expected": [
+        "kashida"
+      ],
+      "rationale": "tatweel ignored only in normalized copy",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q29",
+      "query": "مصدر خفي",
+      "expected": [],
+      "rationale": "different case scope hidden",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q30",
+      "query": "مصدر منتهي",
+      "expected": [],
+      "rationale": "expired read permission hidden",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q31",
+      "query": "مصدر ممنوع",
+      "expected": [],
+      "rationale": "read permission denied",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q32",
+      "query": "مصدر آخر",
+      "expected": [],
+      "rationale": "different edition hidden",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q33",
+      "query": "عنوان غير موجود",
+      "expected": [],
+      "rationale": "negative unknown title",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q34",
+      "query": "فر",
+      "expected": [],
+      "rationale": "whole word prevents substring",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q35",
+      "query": "مصدر خفي",
+      "expected": [
+        "foreign"
+      ],
+      "rationale": "explicit different case",
+      "scope": "case-b",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q36",
+      "query": "مصدر آخر",
+      "expected": [
+        "otheredition"
+      ],
+      "rationale": "explicit different edition",
+      "scope": "case-a",
+      "edition": "edition-b",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q37",
+      "query": "",
+      "expected": [],
+      "expected_error": "invalid_search_query",
+      "rationale": "reject empty/marks/punctuation/oversize/control query before retrieval",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q38",
+      "query": "َُّ",
+      "expected": [],
+      "expected_error": "invalid_search_query",
+      "rationale": "reject empty/marks/punctuation/oversize/control query before retrieval",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q39",
+      "query": "!!!",
+      "expected": [],
+      "expected_error": "invalid_search_query",
+      "rationale": "reject empty/marks/punctuation/oversize/control query before retrieval",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q40",
+      "query": "أأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأأ",
+      "expected": [],
+      "expected_error": "invalid_search_query",
+      "rationale": "reject empty/marks/punctuation/oversize/control query before retrieval",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q41",
+      "query": "a a a a a a a a a a a ",
+      "expected": [],
+      "expected_error": "invalid_search_query",
+      "rationale": "reject empty/marks/punctuation/oversize/control query before retrieval",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    },
+    {
+      "id": "q42",
+      "query": "فهرس\nالمصادر",
+      "expected": [],
+      "expected_error": "invalid_search_query",
+      "rationale": "reject empty/marks/punctuation/oversize/control query before retrieval",
+      "scope": "case-a",
+      "edition": "edition-a",
+      "review_status": "AUTHOR_PROPOSED_REVIEW_PENDING"
+    }
+  ]
+}

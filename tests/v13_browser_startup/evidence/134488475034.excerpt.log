@@ -1,0 +1,74 @@
+2026-11-18T00:48:39.2939615Z Current runner version: '2.338.2'
+2026-11-18T00:48:39.2964257Z ##[group]Runner Image Provisioner
+2026-11-18T00:48:39.2965135Z Hosted Compute Agent
+2026-11-18T00:48:39.2965862Z Version: 20261103.629
+2026-11-18T00:48:39.2966568Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-18T00:48:39.2967382Z Build Date: 2026-11-03T17:26:59Z
+2026-11-18T00:48:39.2968098Z Worker ID: {b58898e5-501d-4a70-a29f-06e52bcbb4ee}
+2026-11-18T00:48:39.2968851Z Region: westus
+2026-11-18T00:48:39.2969468Z Cloud: Azure
+2026-11-18T00:48:39.2970060Z ##[endgroup]
+2026-11-18T00:48:39.2971598Z ##[group]Operating System
+2026-11-18T00:48:39.2972302Z Ubuntu
+2026-11-18T00:48:39.2972846Z 26.04.1
+2026-11-18T00:48:39.2973435Z LTS
+2026-11-18T00:48:39.2974403Z ##[endgroup]
+2026-11-18T00:48:39.2975031Z ##[group]Runner Image
+2026-11-18T00:48:39.2975748Z Image: ubuntu-26.04
+2026-11-18T00:48:39.2976382Z Version: 20261111.196.1
+2026-11-18T00:48:39.2977696Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-18T00:48:39.2979333Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.196
+2026-11-18T00:48:41.6048946Z [command]/usr/bin/git log -1 --format=%H
+2026-11-18T00:48:41.6078323Z 5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8
+2026-11-18T00:48:41.9005031Z Successfully set up CPython (3.13.18)
+2026-11-18T00:48:45.5372147Z node: v24.22.2
+2026-11-18T00:49:23.0892736Z Google Chrome 157.0.8103.50
+2026-11-18T00:49:23.2391780Z ##[group]Run python -B manage.py test tests.fast6_journey.test_browser --settings=config.settings.test --noinput --verbosity=2
+2026-11-18T00:49:23.2392963Z [36;1mpython -B manage.py test tests.fast6_journey.test_browser --settings=config.settings.test --noinput --verbosity=2[0m
+2026-11-18T00:49:23.2442524Z shell: /usr/bin/bash -e {0}
+2026-11-18T00:49:23.2457622Z env:
+2026-11-18T00:49:23.2457982Z   PYTHONPATH: /home/runner/work/fatwa-platform/fatwa-platform
+2026-11-18T00:49:23.2458463Z   PYTHONUTF8: 1
+2026-11-18T00:49:23.2458751Z   PYTHONDONTWRITEBYTECODE: 1
+2026-11-18T00:49:23.2459127Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:49:23.2459669Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib/pkgconfig
+2026-11-18T00:49:23.2460222Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:49:23.2460699Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:49:23.2461426Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.18/x64
+2026-11-18T00:49:23.2461915Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.18/x64/lib
+2026-11-18T00:49:23.2462366Z   FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+2026-11-18T00:49:23.2462726Z ##[endgroup]
+2026-11-18T00:49:54.5533430Z test_existing_research_triage_workbench_browser_journey (tests.fast6_journey.test_browser.ConnectedJourneyBrowserTests.test_existing_research_triage_workbench_browser_journey) ... FAIL
+2026-11-18T00:50:14.9541688Z test_research_browser_startup_and_failure_contracts (tests.fast6_journey.test_browser.ConnectedJourneyBrowserTests.test_research_browser_startup_and_failure_contracts) ... ok
+2026-11-18T00:50:14.9544124Z
+2026-11-18T00:50:14.9544658Z ======================================================================
+2026-11-18T00:50:14.9546830Z FAIL: test_existing_research_triage_workbench_browser_journey (tests.fast6_journey.test_browser.ConnectedJourneyBrowserTests.test_existing_research_triage_workbench_browser_journey)
+2026-11-18T00:50:14.9548785Z ----------------------------------------------------------------------
+2026-11-18T00:50:14.9549450Z Traceback (most recent call last):
+2026-11-18T00:50:14.9550887Z   File "/home/runner/work/fatwa-platform/fatwa-platform/tests/fast6_journey/test_browser.py", line 66, in test_existing_research_triage_workbench_browser_journey
+2026-11-18T00:50:14.9552370Z     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+2026-11-18T00:50:14.9553165Z     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-11-18T00:50:14.9556207Z AssertionError: 2 != 0 : {"result":"NOT_RUN","catalog":"fixed synthetic test double; no database","failure":{"code":"BROWSER_STARTUP_TIMEOUT","stage":"websocket","cause_code":null},"cleanup":{"result":"PASS","errors":[]},"startup":{"stage":"websocket","elapsed_ms":30001,"timeout_ms":30000},"diagnostics":{"stderr_present":true,"stderr_hints":[]}}
+2026-11-18T00:50:14.9558128Z
+2026-11-18T00:50:14.9558138Z
+2026-11-18T00:50:14.9558522Z ----------------------------------------------------------------------
+2026-11-18T00:50:14.9559092Z Ran 2 tests in 50.939s
+2026-11-18T00:50:14.9559313Z
+2026-11-18T00:50:14.9559479Z FAILED (failures=1)
+2026-11-18T00:50:14.9559855Z Found 2 test(s).
+2026-11-18T00:50:14.9560358Z Skipping setup of unused database(s): default.
+2026-11-18T00:50:14.9560980Z System check identified no issues (0 silenced).
+2026-11-18T00:50:14.9561818Z test:pass: research Linux liveness handles an open proc handle reaped before read
+2026-11-18T00:50:14.9562877Z test:pass: legacy entrypoint reports missing Chrome as NOT_RUN with successful cleanup
+2026-11-18T00:50:14.9564097Z test:pass: port readiness after ten seconds runs the journey once with protected flags
+2026-11-18T00:50:14.9565248Z test:pass: stderr-exit is classified without running assertions and cleans its tree/profile
+2026-11-18T00:50:14.9566469Z test:pass: missing-port-tree is classified without running assertions and cleans its tree/profile
+2026-11-18T00:50:14.9568139Z test:pass: invalid-port is classified without running assertions and cleans its tree/profile
+2026-11-18T00:50:14.9569288Z test:pass: http-hang is classified without running assertions and cleans its tree/profile
+2026-11-18T00:50:14.9570462Z test:pass: foreign-socket is classified without running assertions and cleans its tree/profile
+2026-11-18T00:50:14.9571646Z test:pass: socket-hang is classified without running assertions and cleans its tree/profile
+2026-11-18T00:50:14.9572720Z test:pass: an original journey assertion failure stays FAIL after successful cleanup
+2026-11-18T00:50:14.9573663Z test:pass: the run watchdog interrupts a stalled journey and cleans up
+2026-11-18T00:50:14.9574699Z test:pass: cleanup failure overrides successful journey assertions
+2026-11-18T00:50:14.9575292Z D6_REGISTERED_TESTS=12
+2026-11-18T00:50:15.0342441Z ##[error]Process completed with exit code 1.

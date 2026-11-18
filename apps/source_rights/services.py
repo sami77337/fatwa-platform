@@ -44,11 +44,13 @@ def projection_expiry_guard():
     predicates record only their successful checks. Caller retains its case lock;
     explicit revocation is serialized there, while time expiry needs this final
     check. Nested compositions contribute to every enclosing read boundary.
+    The yielded deadline list is read-only integration evidence from checks
+    already performed; callers must not re-invoke policy callbacks to derive it.
     """
     deadlines = []
     token = _PROJECTION_DEADLINES.set((*_PROJECTION_DEADLINES.get(), deadlines))
     try:
-        yield
+        yield deadlines
         now = timezone.now()
         if any(deadline <= now for deadline in deadlines):
             raise cases.CaseConflict("current_source_rights_required")

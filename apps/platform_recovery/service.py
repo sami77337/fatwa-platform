@@ -210,27 +210,18 @@ class PostgresTools:
         if snapshot:
             args += ["--snapshot", snapshot]
         raw = self.run("pg_dump", database, *args).decode()
-        # pg_dump adds a random psql restriction nonce; it is not schema metadata.
-        # PostgreSQL reparses varchar literal arrays on restore, distributing the
-        # cast to text over each element. Canonicalize ONLY this exact literal
-        # form on CHECK constraint lines; retain all values, names and SQL bodies.
-        literal = r"'(?:[^']|'')*'::character varying"
-        array = re.compile(r"\(ARRAY\[((?:" + literal + r")(?:, " + literal + r")*)\]\)::text\[\]")
-        lines = []
-        for line in raw.splitlines():
-            if line.startswith(("\\restrict ", "\\unrestrict ")):
-                continue
-            if line.lstrip().startswith("CONSTRAINT ") and " CHECK " in line:
-                line = array.sub(
-                    lambda match: (
-                        "ARRAY["
-                        + re.sub(literal, lambda item: "(" + item[0] + ")::text", match[1])
-                        + "]"
-                    ),
-                    line,
-                )
-            lines.append(line)
-        return "\n".join(lines).encode()
+        return canonical_schema(raw)
+
+
+def canonical_schema(raw):
+    """Recognize the narrow deparser equivalence without rewriting quoted SQL."""
+    from .sql_schema import SchemaLexicalError
+    from .sql_schema import canonical_schema as fingerprint_schema
+
+    try:
+        return fingerprint_schema(raw)
+    except SchemaLexicalError:
+        raise RecoveryError("schema_lexical_unsupported") from None
 
 
 def database_profile(db):

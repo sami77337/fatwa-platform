@@ -1,0 +1,20 @@
+{
+  "browser": "154.0.8037.57",
+  "sandbox": false,
+  "results": [
+    {
+      "width": 320,
+      "rtl": true,
+      "overflow": false,
+      "native_propose_review_withdraw": true
+    },
+    {
+      "width": 1280,
+      "rtl": true,
+      "overflow": false,
+      "native_propose_review_withdraw": true
+    }
+  ],
+  "external_requests": [],
+  "page_errors": []
+}

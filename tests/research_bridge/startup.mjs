@@ -46,7 +46,8 @@ export async function runResearchBrowser(interact, {
   } finally {
     clearTimeout(watchdog);
     report.cleanup = await browser.close();
-    report.startup = {stage:browser.stage, elapsed_ms:browser.elapsedMs, timeout_ms:browser.timeoutMs};
+    report.startup = {stage:browser.stage, elapsed_ms:browser.elapsedMs, timeout_ms:browser.timeoutMs,
+      observations:browser.startupDiagnostics};
     report.diagnostics = diagnostics(browser.stderr);
     if (report.cleanup.result !== "PASS") report.result = "FAIL";
   }

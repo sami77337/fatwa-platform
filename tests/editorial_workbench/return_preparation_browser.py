@@ -32,6 +32,7 @@ from apps.fast9_case_source_join.source_journal import (
     record_draft_note,
     save_answer_draft,
 )
+from tests.editorial_workbench.launch_diagnostics import launch_browser, observations
 
 SETTINGS = "apps.editorial_workbench.reviewer_settings"
 URL = "/review/author/return-preparation/"
@@ -348,10 +349,8 @@ def run(receipt):
         receipt["stage"] = "server_startup"
         origin = stack.enter_context(local_server())
         receipt["stage"] = "browser_startup"
-        driver = stack.enter_context(sync_playwright())
-        browser = driver.chromium.launch(
-            executable_path=executable, chromium_sandbox=True, timeout=TIMEOUT
-        )
+        receipt["startup_diagnostics"] = observations()
+        browser = launch_browser(stack, sync_playwright, executable, receipt["startup_diagnostics"])
         stack.callback(browser.close)
         receipt["browser"] = browser.version
         contexts = {}
@@ -526,6 +525,7 @@ def main():
                 "stage": receipt["stage"],
                 "evidence": str(EVIDENCE),
                 "browser": receipt["browser"],
+                "startup_diagnostics": receipt.get("startup_diagnostics"),
                 "views": receipt["views"],
                 "login_observations": receipt["login_observations"],
                 "unexpected_network_requests": receipt["unexpected_network_requests"],

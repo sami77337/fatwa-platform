@@ -1,0 +1,15 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_cite_revocation_in_final_deadline_callback_denies_requester_bytes (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_cite_revocation_in_final_deadline_callback_denies_requester_bytes) ... ok
+test_deadline_expiring_after_bytes_assembled_still_denies_requester_read (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_deadline_expiring_after_bytes_assembled_still_denies_requester_read) ... ok
+test_no_policy_deadline_callback_after_validated_hook_returns (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_no_policy_deadline_callback_after_validated_hook_returns) ... ok
+test_retained_final_cite_callback_cannot_revoke_then_open_audio_or_inspect (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_retained_final_cite_callback_cannot_revoke_then_open_audio_or_inspect) ... ok
+test_staff_revocation_in_final_deadline_callback_denies_private_bytes (tests.v13_integration_security.test_boundaries.TimedFinalCallbackTests.test_staff_revocation_in_final_deadline_callback_denies_private_bytes) ... ok
+test_late_database_failure_preserves_no_capability_and_retry_reuses_immutable_blob (tests.v13_integration_security.test_intake.IntakeFailureTests.test_late_database_failure_preserves_no_capability_and_retry_reuses_immutable_blob) ... ok
+test_other_requester_cannot_replay_same_intake_event_or_get_first_capability (tests.v13_integration_security.test_intake.IntakeFailureTests.test_other_requester_cannot_replay_same_intake_event_or_get_first_capability) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 2.860s
+
+OK
+Found 7 test(s).
+System check identified no issues (0 silenced).

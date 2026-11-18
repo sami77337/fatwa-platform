@@ -23,6 +23,7 @@ TABS = (
     ("rights", "rights_desk", "حقوق المصادر ومراجعتها", "FATWA_SOURCE_RIGHTS_ENABLED"),
     ("research", "research_open", "البحث في مصادر القضية", "FATWA_RESEARCH_WORKSPACE_ENABLED"),
     ("citations", "citations", "الإحالات العلمية", "FATWA_CASE_CITATIONS_ENABLED"),
+    ("timed", "timed_desk", "الإحالات الزمنية الخاصة", "FATWA_TIMED_CITATIONS_ENABLED"),
     ("answer", "answer_media", "أجزاء الجواب والإتاحة", "FATWA_ANSWER_MEDIA_ENABLED"),
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
     ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
@@ -31,6 +32,8 @@ TABS = (
 
 
 def _active(action):
+    if action.startswith("timed_"):
+        return "timed"
     if action.startswith("research_"):
         return "research"
     if action.startswith("pilot_"):
@@ -47,7 +50,7 @@ def _active(action):
         return "answer"
     if action.startswith("composite_") or action in {"prepare", "stage", "quarantine", "export"}:
         return "delivery"
-    if action.startswith(("pub_", "knowledge_")):
+    if action.startswith(("pub_", "knowledge_", "classification_")):
         return "publication"
     return "overview"
 
@@ -155,6 +158,7 @@ def case_workspace(request):
             "case_ref" not in request.POST
             and not getattr(request, "publication_authorized_case_ref", None)
             and not getattr(request, "knowledge_authorized_case_ref", None)
+            and not getattr(request, "classification_authorized_case_ref", None)
         )
     ):
         return {}
@@ -164,11 +168,14 @@ def case_workspace(request):
     references = request.POST.getlist("case_ref")
     publication_ref = getattr(request, "publication_authorized_case_ref", None)
     knowledge_ref = getattr(request, "knowledge_authorized_case_ref", None)
+    classification_ref = getattr(request, "classification_authorized_case_ref", None)
+    if classification_ref and not action.startswith("classification_"):
+        raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if publication_ref and not action.startswith("pub_"):
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
     if knowledge_ref and not action.startswith("knowledge_"):
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
-    resolved_refs = {ref for ref in (publication_ref, knowledge_ref) if ref}
+    resolved_refs = {ref for ref in (publication_ref, knowledge_ref, classification_ref) if ref}
     if len(resolved_refs) > 1:
         raise cases.CaseConflict("mufti_workspace_selection_invalid")
     resolved = next(iter(resolved_refs), None)

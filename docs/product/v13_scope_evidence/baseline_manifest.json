@@ -1,0 +1,12 @@
+{
+  "base_sha": "5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8",
+  "scope_base": "docs/product/v12_scope_evidence",
+  "files": {
+    "matrix.json": "5d76c2cad175a3f76341ba24b9fc563d6597ad72e0854b69cb5754e29defd0ee",
+    "specifications.json": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
+    "decisions.json": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
+    "evidence.json": "7107a3e4ed66cfd99e4771137b512f7ec4b47bd096c5493af57996c958164da6",
+    "source_manifest.json": "59d01464a8e0f46ba37cee9d6689eeff209c7a9a2cdd857e76c6f6739bd34c52",
+    "p1_manifest.json": "97190a80b95f31f3f074ac3a2df7f507e35947682436e42781a07c9810a32fd8"
+  }
+}

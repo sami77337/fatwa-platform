@@ -1,0 +1,25 @@
+{
+  "head_sha": "09cc55aa021660f593bb1b70e850d0f448ddad3a",
+  "run_id": 44221424598,
+  "job_id": 134523957084,
+  "source": "GitHub decoded job logs fetched independently",
+  "status": "completed",
+  "conclusion": "failure",
+  "lines": [
+    "2026-11-18T02:12:05.9950758Z   FATWA_BROWSER_SANDBOX: 1",
+    "2026-11-18T02:12:07.0399173Z SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Ubuntu 17.12-1.pgdg26.04+1); fresh owned cluster",
+    "2026-11-18T02:12:09.4540892Z TESTED_SHA=09cc55aa021660f593bb1b70e850d0f448ddad3a",
+    "2026-11-18T02:12:10.0591609Z SYSTEM EXIT=0",
+    "2026-11-18T02:12:10.5581023Z DRIFT EXIT=0",
+    "2026-11-18T02:12:14.7137724Z STARTUP-LIFECYCLE EXIT=1",
+    "2026-11-18T02:12:14.7139282Z ✖ earlier port delay consumes the same deadline before websocket timeout; no journey retry (1608.021668ms)",
+    "2026-11-18T02:12:14.7145560Z ℹ pass 8",
+    "2026-11-18T02:12:14.7145729Z ℹ fail 1",
+    "2026-11-18T02:12:14.7148081Z ✖ earlier port delay consumes the same deadline before websocket timeout; no journey retry (1608.021668ms)",
+    "2026-11-18T02:12:14.7148575Z   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+    "2026-11-18T02:12:14.7149045Z   1 !== 0",
+    "2026-11-18T02:12:14.7149719Z       at TestContext.<anonymous> (file:///home/runner/work/fatwa-platform/fatwa-platform/tests/acceptance/fastbuild/v13_diagnostics.test.mjs:90:12)",
+    "2026-11-18T02:12:15.7105809Z SHA256 digest of uploaded artifact zip is 51a8a06324fc86e07cf7570ae9fb9f41d9bd46a7ee2aa83d800f4ded6d3150d8",
+    "2026-11-18T02:12:16.1090748Z Artifact v13-pg17.zip successfully finalized. Artifact ID 14391176380"
+  ]
+}

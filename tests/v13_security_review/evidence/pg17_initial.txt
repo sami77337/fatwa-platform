@@ -1,0 +1,39 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_conflicting_server_frames_and_duplicate_browser_references_are_denied (tests.v13_security_review.test_delta.FrameDeltaTests.test_conflicting_server_frames_and_duplicate_browser_references_are_denied) ... ERROR
+test_empty_upload_cannot_reuse_old_evidence_or_keep_private_release (tests.v13_security_review.test_delta.NativeEvidenceDeltaTests.test_empty_upload_cannot_reuse_old_evidence_or_keep_private_release) ... ok
+test_new_inspector_and_catalog_are_rejected_before_projection_while_frozen (tests.v13_security_review.test_delta.NewEntryMaintenanceTests.test_new_inspector_and_catalog_are_rejected_before_projection_while_frozen) ... ok
+test_catalog_drops_early_expiry_before_metadata_search_facets_and_pages (tests.v13_security_review.test_delta.RightsDeltaTests.test_catalog_drops_early_expiry_before_metadata_search_facets_and_pages) ... ok
+test_catalog_rechecks_scope_after_later_projection_before_returning_any_case (tests.v13_security_review.test_delta.RightsDeltaTests.test_catalog_rechecks_scope_after_later_projection_before_returning_any_case) ... ok
+test_inspected_historic_grant_cannot_restore_current_publication_rights (tests.v13_security_review.test_delta.RightsDeltaTests.test_inspected_historic_grant_cannot_restore_current_publication_rights) ... ok
+test_inspector_registration_boundary_survives_authority_allowing_both_cases (tests.v13_security_review.test_delta.RightsDeltaTests.test_inspector_registration_boundary_survives_authority_allowing_both_cases) ... ok
+
+======================================================================
+ERROR: test_conflicting_server_frames_and_duplicate_browser_references_are_denied (tests.v13_security_review.test_delta.FrameDeltaTests.test_conflicting_server_frames_and_duplicate_browser_references_are_denied)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/apps/casework_web/access.py", line 93, in current_staff
+    identity = resolve_identity(provider, values["subject"], case_key=case_key)
+  File "/workspace/fatwa-platform/apps/mufti_review/identity.py", line 70, in resolve_identity
+    return validate_identity(identity, subject_id=subject_id, case_key=case_key)
+  File "/workspace/fatwa-platform/apps/mufti_review/identity.py", line 58, in validate_identity
+    raise IdentityUnavailable('active_scoped_mufti_identity_required')
+apps.mufti_review.identity.IdentityUnavailable: active_scoped_mufti_identity_required
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v13_security_review/test_delta.py", line 248, in test_conflicting_server_frames_and_duplicate_browser_references_are_denied
+    context.case_workspace(request)["mufti_workspace"]["case"]["case_id"],
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/workspace/fatwa-platform/apps/mufti_workspace/context.py", line 187, in case_workspace
+    identity = current_staff(request, directory, case_key=references[0])
+  File "/workspace/fatwa-platform/apps/casework_web/access.py", line 103, in current_staff
+    raise IdentityUnavailable("casework_session_not_authorized") from exc
+apps.mufti_review.identity.IdentityUnavailable: casework_session_not_authorized
+
+----------------------------------------------------------------------
+Ran 7 tests in 3.083s
+
+FAILED (errors=1)
+Found 7 test(s).
+System check identified no issues (0 silenced).

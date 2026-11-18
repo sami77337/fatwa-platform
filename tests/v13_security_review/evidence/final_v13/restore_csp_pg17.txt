@@ -1,0 +1,19 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_changed_quoted_index_predicate_on_restored_target_is_quarantined (tests.v13_security_review.test_final_schema.EncryptedSchemaReview.test_changed_quoted_index_predicate_on_restored_target_is_quarantined) ... FAIL
+test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code (tests.v13_security_review.test_final_csp.RecorderCSPExternalReview.test_recorder_policy_preserves_byte_sandbox_and_disallows_inline_and_remote_code) ... ok
+
+======================================================================
+FAIL: test_changed_quoted_index_predicate_on_restored_target_is_quarantined (tests.v13_security_review.test_final_schema.EncryptedSchemaReview.test_changed_quoted_index_predicate_on_restored_target_is_quarantined)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/v13-final-review/tests/v13_security_review/test_final_schema.py", line 104, in test_changed_quoted_index_predicate_on_restored_target_is_quarantined
+    with self.assertRaisesRegex(service.RecoveryError, "restored_schema_mismatch"):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: RecoveryError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.028s
+
+FAILED (failures=1)
+Found 2 test(s).
+System check identified no issues (0 silenced).

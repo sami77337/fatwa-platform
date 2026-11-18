@@ -1,0 +1,41 @@
+{
+  "finding": "SEC13-01",
+  "disposition": "BOUNDED_PASS",
+  "product_sha": "feb4e521f3c2847403a0e0626ff34da6df7612cc",
+  "report_commit": "3008192679e8ac8ba88bc0a82a715fad563adb86",
+  "report_path": "docs/security/V13_REVIEW.md",
+  "report_sha256": "898dc1c68f5fb3fa9753a3718339cf337669494da348097080b7be09990f23a4",
+  "report_scope": "SEC13-01 and its affected recovery integrity boundary only",
+  "original_reproducer_commit": "97dd5793e44118d8cd050607717a6acb555f0f1c",
+  "original_reproducer_path": "tests/v13_security_review/test_final_schema.py",
+  "logs": [
+    {
+      "path": "tests/v13_security_review/evidence/sec13_recheck/reproducer_recovery_pg17.txt",
+      "postgres_major": 17,
+      "passed_methods": 9,
+      "sha256": "0bb50f6ee2c23f925c93894dd0ad2ef1ff96af603965d2c6491e2297eeeffb0b"
+    },
+    {
+      "path": "tests/v13_security_review/evidence/sec13_recheck/external_lexer_pg17.txt",
+      "postgres_major": 17,
+      "passed_methods": 4,
+      "sha256": "415a763f4dc7c281b6111be0c5f1ca5c8c8589ca1d808128a74106d2c16e3cee"
+    },
+    {
+      "path": "tests/v13_security_review/evidence/sec13_recheck/reproducer_recovery_pg18.txt",
+      "postgres_major": 18,
+      "passed_methods": 9,
+      "sha256": "408714da4380d91c0a79ac9e888a41cadf7e82ba8e08c5144d7c82c2b1f64c90"
+    },
+    {
+      "path": "tests/v13_security_review/evidence/sec13_recheck/external_lexer_pg18.txt",
+      "postgres_major": 18,
+      "passed_methods": 4,
+      "sha256": "e1902ee70f07eec18ab87df1b15d421e80ea57d82501adc3ad13c930b77b106e"
+    }
+  ],
+  "independent_browser": "NOT_RUN_SANDBOX_ENVIRONMENT_ERROR_BEFORE_PAGE",
+  "hosted_browser": "SEPARATE_EXACT_HEAD_RECEIPTS",
+  "authoring_document_bytes": "UNVERIFIED",
+  "retroactive_clearance": false
+}

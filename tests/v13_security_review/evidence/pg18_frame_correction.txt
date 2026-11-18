@@ -1,0 +1,9 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_conflicting_server_frames_and_duplicate_browser_references_are_denied (tests.v13_security_review.test_delta.FrameDeltaTests.test_conflicting_server_frames_and_duplicate_browser_references_are_denied) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.192s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).
