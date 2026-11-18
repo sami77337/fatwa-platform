@@ -153,6 +153,45 @@ milliseconds, but the diagnostic reported one; see
 negative controls and test-only correction. This is separate from the historical
 D6/FAST9 unknown causes. No startup timeout, retry or sandbox setting changed.
 
+## Repaired functional candidate receipt
+
+Exact tested product/test head: `cd22cbd265db4b57124a1f091a041fd5200637b8`.
+[V13 run44222224904](https://github.com/sami77337/fatwa-platform/actions/runs/44222224904)
+completed successfully on both supported majors:
+
+| Hosted job | PostgreSQL | Affected checks | Protected connected browser |
+| --- | --- | --- | --- |
+|134526633973|17.12|91 PASS,61.910s|1 PASS,264.227s|
+|134526634232|18.7|91 PASS,49.869s|1 PASS,220.447s|
+
+Both report exact TESTED_SHA, Chrome157.0.8103.50, sandbox=true, widths320/1280,
+zero external requests and zero page errors. Each retained one canonical case,
+five Evidence and six answer versions, three attachments/answer parts, two timed
+reference revisions/confirmations and separate classification/publication review
+history. The source is the real native synthetic website/audio intake;
+source_bindings=0, so this run does not claim a Telegram ambiguous-source review.
+Both encrypted restorations used independent PostgreSQL servers/databases/assets,
+reached READY, passed target HTTP with original bytes and revocation checks,
+rejected wrong keys/hashes before target creation, preserved partial delivery and
+left the source unchanged/FROZEN. No old sender was resumed.
+
+The same exact head has **15/16 successful workflows**, not a globally green
+campaign: FAST9 run44222225041 failed before Chrome launch returned. Its145
+service/HTTP checks passed but browser journey was NOT_RUN. The repeated symptom
+and comparison with the successful prior head remain in `V13_FAST9_STARTUP.md`;
+ROOT_CAUSE_UNKNOWN is retained. The designated external V13 security verdict also
+remains pending. These bounded functional receipts neither close those gaps nor
+constitute acceptance. Later documentation/test-diagnostic commits must not claim
+that this exact-head execution happened on them.
+
+The P2 update `docs/product/v13_scope_evidence/V13_UPDATE.md` binds five bounded
+evidence groups to38 explicitly selected original points at that tested head.
+All556 baseline classifications, SPEC/source/decision fields and historical
+P0/P1 evidence are preserved, with no COMPLETE promotion or percentage change.
+The documentary validator now checks actual sandbox/target-restore proof as well
+as exact test/SHA/PG-major excerpts; its18 focused tests passed in the evidence
+worktree. This does not substitute for a product run on a later documentation head.
+
 The restored reference XLSX workbook bytes remain unavailable in this Cloud
 executor. Coordination verified the specified workbook checksum independently
 in its local environment; see the attributed receipt
