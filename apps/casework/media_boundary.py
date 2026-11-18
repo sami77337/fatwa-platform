@@ -55,21 +55,23 @@ def pin_media_deadline(deadline):
     if not isinstance(deadline, datetime) or timezone.is_naive(deadline):
         raise CaseConflict("timed_grant_expiry_required")
     scopes = _DEADLINES.get()
-    if not scopes:
+    if not _SCOPES.get():
         raise CaseConflict("media_projection_boundary_required")
     for scope in scopes:
         scope[0] = deadline if scope[0] is None else min(scope[0], deadline)
 
 
 @contextmanager
-def media_projection_boundary():
+def media_projection_boundary(*, retain_deadlines=True):
     """Check once at each enclosing return boundary, without another permits loop."""
     from .services import CaseConflict
 
     scope = []
     token = _SCOPES.set((*_SCOPES.get(), scope))
     earliest = [None]
-    deadline_token = _DEADLINES.set((*_DEADLINES.get(), earliest))
+    deadline_token = _DEADLINES.set(
+        (*_DEADLINES.get(), earliest) if retain_deadlines else _DEADLINES.get()
+    )
     try:
         yield
         if scope:

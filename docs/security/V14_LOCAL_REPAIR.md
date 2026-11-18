@@ -10,7 +10,7 @@ are repaired here; runtime clearance remains pending exact-head CI and review.
   callback, then revalidate the actor after that callback and before atomic
   commit/return. Late identity loss therefore rolls back writes.
 * Direct audio/PDF READ_MEDIA/CITE deadlines propagate conservatively into
-  every enclosing media boundary. The clock is checked after the final epoch
+  every enclosing strict media boundary. The clock is checked after the final epoch
   read, inside the case transaction, without another permission callback.
   Nested scopes reset on errors; deadlines are not cached permissions.
 * Existing independent boundary/recovery tests and ten additional independent
@@ -31,3 +31,13 @@ limits remain. No acceptance percentage or scope completion is inferred.
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED.
 No main merge, deployment, real data, external delivery, or automatic approval.
 V14 only; no V15.
+
+## Compatibility correction
+
+The first rescue candidate f1eed92 failed one of 120 V13 tests per PG major: 
+`test_collection_rechecks_timed_expiry_after_later_legacy_result_projection`.
+Its global deadline retention rejected the whole library instead of filtering
+an expired earlier item. The correction keeps strict media deadlines by default;
+only library preview delegates to its existing emitted-result deadline list and
+post-epoch clock. The original regression test is unchanged. V13 run 44257563012
+is retained as failure evidence, not a browser startup failure or a skipped test.

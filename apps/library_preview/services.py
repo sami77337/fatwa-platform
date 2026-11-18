@@ -282,7 +282,9 @@ def _media_boundary():
     bounds = []
     token = _RETURN_DEADLINES.set(bounds)
     try:
-        with media_projection_boundary():
+        # This collection owns filtered, emitted-only deadline tracking below.
+        # Do not retain deadlines for candidates subsequently removed by browse.
+        with media_projection_boundary(retain_deadlines=False):
             yield
         # The atomic media epoch read can itself span a deadline. No authority
         # callbacks follow this final clock. Browse retains only emitted grants,
