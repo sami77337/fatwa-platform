@@ -108,8 +108,8 @@ class AdapterTests(ResearchFixture, TransactionTestCase):
         self.assertEqual(row["title"], "عنوان رقم 12")
         opened = workspace.open_resource(**self.common, resource=Resource(**row["resource"]))
         self.assertTrue(opened)
-        self.assertEqual(result["coverage"], "BOUNDED_CANDIDATE_WINDOW")
-        self.assertEqual(result["candidate_pool_limit"], 20)
+        self.assertEqual(result["coverage"], "CURRENT_CASE_REGISTERED_TOC")
+        self.assertEqual(result["candidate_pool_limit"], 64)
         self.assertEqual(self.ranked("ابواب البحث")["results"][0]["source"]["source_row_id"], 5)
         self.assertEqual(before, list(ReferenceHeading.objects.values()))
 
