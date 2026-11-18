@@ -4,19 +4,19 @@ from dataclasses import replace
 from datetime import timedelta
 from unittest.mock import patch
 
-from apps.arabic_search_eval.models import EvaluationDecision, EvaluationRevision
-from apps.pdf_citations.models import PdfCitation
-from apps.timed_citations.models import TimedCitation
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 
 from apps.arabic_search_eval import review
 from apps.arabic_search_eval import test_review as evaluation_fixtures
+from apps.arabic_search_eval.models import EvaluationDecision, EvaluationRevision
 from apps.casework import services as cases
 from apps.pdf_citations import services as pdf
 from apps.pdf_citations import tests as pdf_fixtures
+from apps.pdf_citations.models import PdfCitation
 from apps.timed_citations import services as audio
 from apps.timed_citations import tests as audio_fixtures
+from apps.timed_citations.models import TimedCitation
 from tests.v14_security_review.test_final_boundaries import assert_final_epoch_expiry_denies
 
 

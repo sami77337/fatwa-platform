@@ -6,18 +6,18 @@ from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal, InvalidOperation
 from hashlib import sha256
 
-from apps.answer_media.models import AnswerPart
-from apps.case_attachments import services as attachments
-from apps.case_attachments.models import CaseAttachment
-from apps.private_media.validation import MediaValidationError, validate
-from apps.research_workspace.rights import Resource, require
 from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 
 from apps.answer_media import services as media
+from apps.answer_media.models import AnswerPart
+from apps.case_attachments import services as attachments
+from apps.case_attachments.models import CaseAttachment
 from apps.casework import services as cases
 from apps.platform_recovery.integration import mutation_service
+from apps.private_media.validation import MediaValidationError, validate
+from apps.research_workspace.rights import Resource, require
 from apps.source_rights.services import _projection_deadline, projection_expiry_guard
 
 from .models import TimedCitation, TimedCitationAction
