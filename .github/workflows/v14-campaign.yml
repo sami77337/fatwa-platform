@@ -30,7 +30,7 @@ jobs:
     env:
       FATWA_PRODUCTION: '0'
       FATWA_WAVE7_SYNTHETIC_WRITES: '1'
-      DJANGO_SETTINGS_MODULE: config.settings.v14_review
+      DJANGO_SETTINGS_MODULE: config.settings.campaign_review
       EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       PG_EXPECTED_MAJOR: ${{ matrix.postgres }}
     steps:
@@ -74,9 +74,10 @@ jobs:
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           python infra/dev/with_casework_postgres.py \
             --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" \
-            --major "$PG_EXPECTED_MAJOR" --settings config.settings.v14_review -- \
+            --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
             python infra/dev/v14_verify.py --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" --browser \
             --label apps.source_rights.test_v14_batch \
+            --label apps.browser_audio.test_browser \
             --label tests.v14_security_review.test_search_boundary
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

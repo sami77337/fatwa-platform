@@ -29,6 +29,8 @@ def main():
     parser.add_argument("--label", action="append", required=True)
     parser.add_argument("--browser", action="store_true")
     args = parser.parse_args()
+    if args.browser and os.environ.get("FATWA_BROWSER_SANDBOX") != "1":
+        parser.error("V14 browser evidence requires explicit FATWA_BROWSER_SANDBOX=1")
     if any(re.fullmatch(r"(?:apps|tests)\.[A-Za-z0-9_.]+", label) is None for label in args.label):
         parser.error("explicit Python application/test module labels required")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
@@ -54,8 +56,19 @@ def main():
     logs = Path(".local/qa/v14/pg" + major)
     logs.mkdir(parents=True, exist_ok=True)
     (logs / "tested-sha.txt").write_text(head + "\n")
+    receipt = {
+        "tested_sha": head,
+        "postgres": version.strip(),
+        "bootstrap_settings": "config.settings.campaign_review",
+        "runtime_guards": "explicit fixture initialization; strict V14 profile remains closed",
+        "browser_requested": args.browser,
+        "stages": [],
+        "status": "RUNNING",
+    }
+    receipt_path = logs / "execution.json"
+    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
     print("TESTED_SHA=" + head, flush=True)
-    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings.v14_review",
+    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings.campaign_review",
            "V12_PG_BIN": pg_bin, "FATWA_TEST_PG_BIN": pg_bin,
            "FATWA_RECOVERY_PG_BIN": pg_bin, "FATWA_FASTBUILD_PYTHON": sys.executable}
     labels = list(dict.fromkeys([SECURITY_LABEL, *args.label]))
@@ -80,6 +93,9 @@ def main():
                                     stdout=output, stderr=subprocess.STDOUT)
         print(name.upper() + " EXIT=" + str(result.returncode), flush=True)
         print(path.read_text(), flush=True)
+        receipt["stages"].append({"name": name, "exit_code": result.returncode})
+        receipt["status"] = "FAILED" if result.returncode else "RUNNING"
+        receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
         if result.returncode:
             return result.returncode
         if name == "browser-recovery":
@@ -96,6 +112,8 @@ def main():
                 "external_requests": len(proof["external_requests"]),
                 "page_errors": len(proof["page_errors"]),
             }, sort_keys=True), flush=True)
+    receipt["status"] = "PASS" if args.browser else "AFFECTED_CHECKS_ONLY"
+    receipt_path.write_text(json.dumps(receipt, indent=2) + "\n")
     return 0
 
 
