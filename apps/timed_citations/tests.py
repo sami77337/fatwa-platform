@@ -299,6 +299,7 @@ class TimedTests(Fixture, TransactionTestCase):
 
     def test_approved_answer_cannot_acquire_or_change_timed_citations(self):
         row = self.propose()
+        self.confirm(row)  # Canonical approval now requires confirmed current locators.
         case = Case.objects.get(pk=self.receipt["case_id"])
         cases.record_decision(
             **self.common,
