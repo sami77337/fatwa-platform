@@ -110,3 +110,72 @@ Artifacts were logged as uploaded
 their ZIP bytes were not downloaded or inspected in this bounded investigation.
 No GitHub configuration or production action occurred. Gate B `NOT_PASSED`,
 C/D/E `HOLD`, Phase01 `BLOCKED`, `NOT_DEPLOYED` remain unchanged.
+
+## Subsequent natural runs: another launch timeout, no established cause
+
+The following evidence was fetched separately on 2026-11-18. Both runs were
+attempt 1; this investigation neither requested nor executed a rerun.
+
+| Observation | Previous PASS | New FAIL |
+| --- | --- | --- |
+| Run / workflow number | [44221424455 / 129](https://github.com/sami77337/fatwa-platform/actions/runs/44221424455) | [44222225041 / 130](https://github.com/sami77337/fatwa-platform/actions/runs/44222225041) |
+| Job | [134523955880](https://github.com/sami77337/fatwa-platform/actions/runs/44221424455/job/134523955880) | [134526634674](https://github.com/sami77337/fatwa-platform/actions/runs/44222225041/job/134526634674) |
+| Run head | `09cc55aa021660f593bb1b70e850d0f448ddad3a` | `cd22cbd265db4b57124a1f091a041fd5200637b8` |
+| Tested merge checkout/receipt | `00692f27bd0c455edb7a3ce63bb2e47d9482da2a` | `a3753f89039ce51e4ddd6485e12ee2bd406862e2` |
+| Merge base | `5ec6373f5eaf3cd5ea2b14d7b3e7119826ceb4c8` | same |
+| Service / HTTP tests | 114 / 31 PASS | 114 / 31 PASS |
+| Runner image | `ubuntu-26.04`, `20261111.196.1` | `ubuntu-26.04`, `20261111.82.6` |
+| Hosted cloud / region | Azure / `westcentralus` | AWS / `us-east-1` |
+| Browser receipt time, UTC | `02:12:21.7538533` | `02:18:47.6807031` |
+
+Both logs report runner `2.338.2`, provisioner `20261103.629`, Ubuntu `26.04.1`,
+CPython `3.13.18`, Playwright `1.62.0`, pyee `13.0.1`, and greenlet `3.5.5`.
+The passing receipt identifies Chrome `157.0.8103.50`, four author/reviewer
+320px/1280px views, three successful role logins, no unexpected requests/page
+errors and `journal_unchanged=true`. The failing receipt again records
+`browser_startup`, `TimeoutError`, `playwright_timeout`, harness line **352**,
+`browser=null`, empty views/logins, zero initial counters and
+`journal_unchanged=false`. The latter is still an unchecked post-journey invariant,
+not proof that a journal changed. No actual failing browser version or process
+exit/stderr/phase evidence is recorded.
+
+The FAST9 harness, workflow and requirements are byte-identical between these
+two heads, with the same three SHA-256 values already listed above. The only
+changed paths between the heads are three documentation files and the separate
+Node diagnostics test. That Node test is not invoked by FAST9. This rules out a
+change to the inspected FAST9 launch call, its **10,000ms** limit, or that test's
+runtime settings as a code delta between these two executions. It does not
+establish why the unchanged launch call timed out. The different cloud, image
+revision and region are observed differences, not controlled causal evidence.
+
+The repeated failure has the same **observable symptom and boundary** as run
+44218120292. It is not evidence that the hidden cause is identical, a proven
+flake, or the same cause as historical D6. Status remains **ROOT_CAUSE_UNKNOWN**.
+Passing intervening runs preserve their own evidence without erasing either
+failure. A later normal run, whether pass or fail, will not retroactively supply
+the missing launch diagnostics.
+
+Additional exact decoded-log UTF-8 fingerprints (including leading BOM, not ZIP):
+
+| Job | UTF-8 bytes | SHA-256 |
+| --- | ---: | --- |
+| Passing `134523955880` | 70537 | `b1a7973f672a64bed5b8eeabd583fa357bbc606461d0c339c485e8a5eff5c7b8` |
+| Failed `134526634674` | 68429 | `34e12d0861ff45f612cc5dd7315712d7cfeaca787fb9750dfaa8b38733090766` |
+
+The logs record uploaded artifacts `14390073303` (passing, 971 bytes) and
+`14391381325` (failing, 681 bytes). Their ZIP bytes were not inspected here.
+No product tests or browser runs were repeated for this document update.
+
+A further **unimplemented** proposal was sent to integration: measure monotonic
+driver-entry/launch durations around the existing calls; on launch errors only,
+scan a bounded in-memory message for reviewed fixed call-log milestone and
+exit/known-stderr categories. Export no raw message, stack, URL, path, PID or
+stderr. Keep missing markers `NOT_OBSERVED`; a logged exit may be timeout cleanup
+rather than its cause. Playwright's public [Error](https://playwright.dev/python/docs/api/class-error)
+and [TimeoutError](https://playwright.dev/python/docs/api/class-timeouterror)
+contracts expose a message and optional name/stack, not structured launch phases
+or durations. Thus this proposal can only classify markers actually present;
+it cannot promise to diagnose every future timeout. It would retain the existing
+launch timeout, sandbox and single launch, add no version-probe process/timer,
+and keep failed browser version unknown. Implementation requires separate
+authorization and focused privacy/contract tests against the pinned runtime.
