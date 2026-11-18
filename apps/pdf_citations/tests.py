@@ -9,7 +9,7 @@ from django.core import signing
 from django.db import IntegrityError, transaction
 from django.test import Client, TransactionTestCase, override_settings
 from django.utils import timezone
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 
 from apps.answer_media import services as media
 from apps.answer_media.models import AnswerPart
@@ -435,6 +435,101 @@ class PdfTests(Fixture, TransactionTestCase):
         self.rights.actions.clear()
         self.assertEqual(client.get(url).status_code, 404)
         self.assertEqual(client.head(url).status_code, 404)
+
+    def test_private_selected_page_derivative_and_exact_revocation(self):
+        row = self.propose()
+        selected_url = f"/casework/staff/pdf-citations/{row['id']}/page/"
+        review_url = f"/casework/staff/pdf-citations/{row['id']}/review-page/"
+        original = PdfReader(io.BytesIO(self.pdf["raw"]), strict=True)
+        self.assertEqual(len(original.pages), 3)
+        self.assertEqual(self.opened(row, review=True, page_only=False)["raw"], self.pdf["raw"])
+
+        client = Client(
+            enforce_csrf_checks=True, REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1"
+        )
+        self.assertEqual(client.get(review_url).status_code, 404)
+        login = client.get("/casework/staff/login/")
+        post(
+            client,
+            "/casework/staff/login/",
+            {"credential": "synthetic-editor-credential-32-characters"},
+            login,
+        )
+        self.assertEqual(client.get(selected_url).status_code, 404)
+        preview = client.get(review_url)
+        self.assertEqual(preview.status_code, 200)
+        page_pdf = PdfReader(io.BytesIO(preview.content), strict=True)
+        self.assertEqual(len(page_pdf.pages), 1)
+        self.assertEqual(
+            page_pdf.pages[0].mediabox,
+            original.pages[1].mediabox,
+        )
+        self.assertNotEqual(preview.content, self.pdf["raw"])
+        self.assertIn("sandbox", preview["Content-Security-Policy"])
+        self.assertIn("no-store", preview["Cache-Control"])
+        self.assertIn("selected-page-2.pdf", preview["Content-Disposition"])
+        length = len(preview.content)
+        head = client.head(review_url)
+        self.assertEqual(head.status_code, 200)
+        self.assertEqual(head.content, b"")
+        self.assertEqual(head["Content-Length"], str(length))
+        self.assertEqual(client.get(review_url + "?page=3").status_code, 405)
+        self.assertEqual(client.post(review_url).status_code, 405)
+
+        self.confirm(row)
+        published = client.get(selected_url)
+        self.assertEqual(published.status_code, 200)
+        self.assertEqual(len(PdfReader(io.BytesIO(published.content)).pages), 1)
+        # A confirmed locator remains reviewable while the answer is still a
+        # draft. It stops being usable after a rights withdrawal.
+        reviewed = client.get(review_url)
+        self.assertEqual(reviewed.status_code, 200)
+        self.assertEqual(len(PdfReader(io.BytesIO(reviewed.content)).pages), 1)
+        self.assertEqual(
+            Client(REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1")
+            .get(selected_url)
+            .status_code,
+            404,
+        )
+        self.rights.actions.remove("READ_MEDIA")
+        self.assertEqual(client.get(review_url).status_code, 404)
+        self.assertEqual(client.get(selected_url).status_code, 404)
+        self.assertEqual(client.head(selected_url).status_code, 404)
+        # The selected-page derivative never replaces the immutable original.
+        self.assertEqual(len(PdfReader(io.BytesIO(self.pdf["raw"])).pages), 3)
+        self.assertEqual(AnswerPart.objects.get(pk=self.part.pk).sha256, self.part.sha256)
+
+    def test_selected_page_conversion_rechecks_rights_and_never_falls_back_to_original(self):
+        from . import page_preview
+
+        row = self.propose()
+        self.confirm(row)
+        original = page_preview.selected_page
+
+        def revoke_during_derivation(raw, *, page_number, page_count):
+            one_page = original(raw, page_number=page_number, page_count=page_count)
+            self.rights.actions.discard("READ_MEDIA")
+            return one_page
+
+        with (
+            patch.object(page_preview, "selected_page", side_effect=revoke_during_derivation),
+            self.assertRaises(cases.CaseConflict),
+        ):
+            self.opened(row, page_only=True)
+        self.rights.actions.add("READ_MEDIA")
+        with (
+            patch.object(
+                page_preview,
+                "selected_page",
+                side_effect=page_preview.PdfPageUnavailable("synthetic_worker_failure"),
+            ),
+            self.assertRaisesMessage(cases.CaseConflict, "pdf_selected_page_unavailable"),
+        ):
+            self.opened(row, page_only=True)
+        self.assertEqual(self.opened(row)["raw"], self.pdf["raw"])
+        self.assertEqual(
+            len(PdfReader(io.BytesIO(self.opened(row, page_only=True)["raw"])).pages), 1
+        )
 
     def test_concurrent_correction_has_one_successor(self):
         from concurrent.futures import ThreadPoolExecutor

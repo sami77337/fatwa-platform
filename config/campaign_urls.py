@@ -14,6 +14,8 @@ from apps.timed_citations import views as timed_citations
 urlpatterns = [
     path("casework/staff/pdf-citations/<uuid:citation_id>/document/", pdf_citations.document, name="pdf_document"),
     path("casework/staff/pdf-citations/<uuid:citation_id>/review-document/", pdf_citations.review_document, name="pdf_review_document"),
+    path("casework/staff/pdf-citations/<uuid:citation_id>/page/", pdf_citations.selected_page, name="pdf_selected_page"),
+    path("casework/staff/pdf-citations/<uuid:citation_id>/review-page/", pdf_citations.review_selected_page, name="pdf_review_selected_page"),
     path("", include("apps.browser_audio.assets")),
     path("casework/staff/timed-citations/<uuid:citation_id>/audio/", timed_citations.audio, name="timed_audio"),
     path("casework/staff/timed-citations/<uuid:citation_id>/review-audio/", timed_citations.review_audio, name="timed_review_audio"),

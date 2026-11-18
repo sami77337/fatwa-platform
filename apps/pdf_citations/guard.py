@@ -11,7 +11,10 @@ from apps.library_preview.guard import PreviewCompositionGuard
 
 from . import services
 
-PDF_ROUTE = re.compile(r"/casework/staff/pdf-citations/[0-9a-f-]{36}/(?:document|review-document)/")
+PDF_ROUTE = re.compile(
+    r"/casework/staff/pdf-citations/[0-9a-f-]{36}/"
+    r"(?:document|review-document|page|review-page)/"
+)
 
 
 def boundary(request):

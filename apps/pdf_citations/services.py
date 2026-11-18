@@ -257,10 +257,17 @@ def act(
 
 @mutation_service
 def open_pdf(
-    *, case_id, subject_id, provider, citation_id, review=False, synthetic_fixtures_only=False
+    *,
+    case_id,
+    subject_id,
+    provider,
+    citation_id,
+    review=False,
+    page_only=False,
+    synthetic_fixtures_only=False,
 ):
     _enabled()
-    if type(review) is not bool:
+    if type(review) is not bool or type(page_only) is not bool:
         raise cases.CaseConflict("pdf_review_invalid")
     with (
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
@@ -281,15 +288,31 @@ def open_pdf(
         if review and _draft(case).pk != row.answer_id:
             raise cases.CaseConflict("pdf_answer_changed")
         raw = _validate(row, case, actor, provider)
+        if page_only:
+            # Convert inside the scoped case transaction. Late rights or identity
+            # changes must be rechecked AFTER the isolated parser has finished.
+            from .page_preview import PdfPageUnavailable, selected_page
+
+            try:
+                raw = selected_page(
+                    raw, page_number=row.page_number, page_count=row.page_count
+                )
+            except PdfPageUnavailable as exc:
+                raise cases.CaseConflict("pdf_selected_page_unavailable") from exc
         _rights(case, actor, provider, row.snapshot)
         _identity(case, actor, provider)
         return {
             "raw": raw,
             "media_type": row.snapshot["media_type"],
-            "filename": row.snapshot["filename"],
+            "filename": (
+                f"selected-page-{row.page_number}.pdf"
+                if page_only
+                else row.snapshot["filename"]
+            ),
             "page_number": row.page_number,
             "printed_label": row.printed_label,
             "page_count": row.page_count,
+            "page_only": page_only,
         }
 
 

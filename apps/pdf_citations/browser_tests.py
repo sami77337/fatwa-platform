@@ -1,8 +1,10 @@
 """Native loopback forms and original-document request; no claim of PDF plugin rendering."""
 
+import io
 import os
 
 from django.test import LiveServerTestCase, override_settings
+from pypdf import PdfReader
 
 from .models import PdfCitation
 from .tests import SETTINGS, Fixture
@@ -61,6 +63,15 @@ class PdfBrowserTests(Fixture, LiveServerTestCase):
                 wire = context.request.get(original.value.url)
                 self.assertIn("sandbox", wire.headers["content-security-policy"])
                 self.assertEqual(wire.body(), self.pdf["raw"])
+                selected = page.get_by_role(
+                    "link", name="فتح الصفحة المحددة وحدها للتحقق", exact=True
+                ).get_attribute("href")
+                self.assertTrue(selected.endswith("/review-page/"))
+                single = context.request.get(self.live_server_url + selected)
+                self.assertEqual(single.status, 200)
+                self.assertEqual(len(PdfReader(io.BytesIO(single.body()), strict=True).pages), 1)
+                self.assertIn("no-store", single.headers["cache-control"])
+                self.assertIn("sandbox", single.headers["content-security-policy"])
                 print(
                     f"PDF_NAVIGATION_CSP={original.value.headers.get('content-security-policy')}; PDF_WIRE_CSP={wire.headers.get('content-security-policy')}"
                 )
@@ -77,6 +88,13 @@ class PdfBrowserTests(Fixture, LiveServerTestCase):
                 document_url = page.locator("iframe").get_attribute("src").split("#")[0]
                 response = context.request.get(self.live_server_url + document_url)
                 self.assertEqual(response.body(), self.pdf["raw"])
+                confirmed_page_url = page.get_by_role(
+                    "link", name="فتح الصفحة المحددة وحدها للتحقق", exact=True
+                ).get_attribute("href")
+                self.assertTrue(confirmed_page_url.endswith("/page/"))
+                confirmed = context.request.get(self.live_server_url + confirmed_page_url)
+                self.assertEqual(confirmed.status, 200)
+                self.assertEqual(len(PdfReader(io.BytesIO(confirmed.body())).pages), 1)
                 self.assertIn("no-store", response.headers["cache-control"])
                 self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
                 self.assertFalse(page.evaluate("document.documentElement.scrollWidth > innerWidth"))
@@ -85,6 +103,9 @@ class PdfBrowserTests(Fixture, LiveServerTestCase):
                 page.get_by_role("button", name="سحب الإحالة", exact=True).click()
                 self.assertEqual(
                     context.request.get(self.live_server_url + document_url).status, 404
+                )
+                self.assertEqual(
+                    context.request.get(self.live_server_url + confirmed_page_url).status, 404
                 )
                 self.assertIn("WITHDRAWN", page.content())
                 self.assertEqual(external, [])
