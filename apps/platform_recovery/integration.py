@@ -5,6 +5,7 @@ not use application admission. Only proven fresh-target file restoration has a
 separate, exact-root storage scope; it never admits source database writers.
 """
 
+import inspect
 import json
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -75,14 +76,22 @@ def mutation_scope(*, operation="WRITE", storage_root=None):
     if not required():
         yield
         return
+    if type(operation) is not str or operation not in {"WRITE", "GC"}:
+        raise MaintenanceUnavailable("maintenance_operation_unsupported")
     current = _current()
     if current is not None:
         _storage_match(current, storage_root)
         yield
         return
-    # A caller-owned outer atomic would outlive this scope/on_commit. Refuse it.
-    if connection.in_atomic_block or not connection.get_autocommit():
-        raise MaintenanceUnavailable("maintenance_outer_boundary_required")
+    from .admission import require_outer_boundary
+    from .service import RecoveryError
+
+    try:
+        require_outer_boundary()
+    except RecoveryError as exc:
+        raise MaintenanceUnavailable(str(exc)) from exc
+    except Exception as exc:
+        raise MaintenanceUnavailable("maintenance_unavailable") from exc
     from . import maintenance
     from .service import read_file
 
@@ -106,14 +115,19 @@ def mutation_scope(*, operation="WRITE", storage_root=None):
             try:
                 entered = True
                 yield
-                if connection.in_atomic_block or not connection.get_autocommit():
-                    raise MaintenanceUnavailable("maintenance_unclosed_transaction")
+                # The low-level guard checks *every* exit, including exceptions,
+                # closes leaked transactions before release and discards hooks.
             finally:
                 admission.lease.active = False
                 _ADMISSION.reset(token)
     except MaintenanceUnavailable:
         raise
     except Exception as exc:
+        if str(exc) in {
+            "maintenance_unclosed_transaction",
+            "maintenance_transaction_cleanup_failed",
+        }:
+            raise MaintenanceUnavailable(str(exc)) from exc
         if entered:
             raise  # Preserve domain failures after admission; never rewrite them.
         raise MaintenanceUnavailable("maintenance_unavailable") from exc
@@ -125,7 +139,16 @@ def mutation_service(function):
     @wraps(function)
     def guarded(*args, **kwargs):
         with mutation_scope():
-            return function(*args, **kwargs)
+            value = function(*args, **kwargs)
+            if required() and (
+                inspect.isawaitable(value)
+                or inspect.isgenerator(value)
+                or inspect.isasyncgen(value)
+            ):
+                if hasattr(value, "close"):
+                    value.close()
+                raise MaintenanceUnavailable("maintenance_deferred_work_unsupported")
+            return value
 
     return guarded
 
@@ -147,6 +170,8 @@ def mutation_context(function):
 def storage_scope(root, *, operation="WRITE"):
     offline = _RESTORE_FILES.get()
     if required() and offline is not None and offline.matches(root):
+        if operation != "WRITE":
+            raise MaintenanceUnavailable("maintenance_restore_write_only")
         yield
         return
     with mutation_scope(operation=operation, storage_root=root):

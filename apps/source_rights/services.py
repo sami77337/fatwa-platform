@@ -8,6 +8,7 @@ Rights never authorize a publication, private identity, or full original book te
 import json
 import os
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import timedelta
 from hashlib import sha256
 
@@ -30,6 +31,35 @@ from .models import RightsAction, RightsRevision, SourceRegistration, SourceVers
 
 USES = {"READ", "CITE", "RELATE", "PREVIEW_METADATA"}
 PRIVATE_USES = {"READ", "RELATE"}
+
+
+_PROJECTION_DEADLINES = ContextVar("source_rights_projection_deadlines", default=())
+
+
+@contextmanager
+def projection_expiry_guard():
+    """Fail a composed read closed if any used grant expires during composition.
+
+    No permission is cached or conferred. Existing exact reference/transcript
+    predicates record only their successful checks. Caller retains its case lock;
+    explicit revocation is serialized there, while time expiry needs this final
+    check. Nested compositions contribute to every enclosing read boundary.
+    """
+    deadlines = []
+    token = _PROJECTION_DEADLINES.set((*_PROJECTION_DEADLINES.get(), deadlines))
+    try:
+        yield
+        now = timezone.now()
+        if any(deadline <= now for deadline in deadlines):
+            raise cases.CaseConflict("current_source_rights_required")
+    finally:
+        _PROJECTION_DEADLINES.reset(token)
+
+
+def _projection_deadline(deadline):
+    for deadlines in _PROJECTION_DEADLINES.get():
+        deadlines.append(deadline)
+    return deadline
 
 
 def _enabled():
@@ -326,28 +356,39 @@ def review(
             return {"id": str(revision.pk), "state": _state(revision)}
 
 
-def permits_reference_for_locked_case(*, case, source, usage):
+def reference_permission_deadline_for_locked_case(*, case, source, usage):
     """Integrator hook, not an authorization entrypoint. Caller has already checked
     synthetic DB, acquired the canonical case lock and established its own access.
-    Source is the exact {source, source_sha256} citation snapshot. False by default.
+    Source is the exact {source, source_sha256} citation snapshot. None by default.
+    Return the existing grant deadline, not a new or extended permission. Collection
+    readers use it to reject expiry during later checks and result aggregation.
     Never authorizes publication, original book text, or replaces preview policy.
     """
     try:
         _enabled()
         if usage not in USES or not connection.in_atomic_block:
-            return False
+            return None
         heading = ReferenceHeading.objects.filter(
             edition_id=source["source"]["edition_id"],
             source_row_id=source["source"]["source_row_id"],
         ).first()
         record = SourceVersion.objects.filter(heading=heading).first() if heading else None
         if record is None or record.snapshot != {"kind": "TOC_METADATA", **source}:
-            return False
+            return None
         _current_source(record, case)
         revision = _latest(record, case)
-        return _state(revision) == "ALLOWED" and usage in revision.uses
+        if _state(revision) == "ALLOWED" and usage in revision.uses:
+            return _projection_deadline(revision.valid_until)
+        return None
     except (cases.CaseConflict, KeyError, TypeError, ValueError):
-        return False
+        return None
+
+
+def permits_reference_for_locked_case(*, case, source, usage):
+    """Boolean compatibility hook over the same exact, current grant validation."""
+    return reference_permission_deadline_for_locked_case(
+        case=case, source=source, usage=usage
+    ) is not None
 
 
 def _require_reference(case, heading_id, usage):
@@ -412,11 +453,16 @@ def correct_citation(
             rows = citations._citation_snapshots_for_locked_answer(answer)
             if str(citation_id) not in {row["id"] for row in rows}:
                 raise cases.CaseConflict("case_citation_unavailable")
-            selections = []
-            for row in rows:
+            selections, corrections = [], []
+            for ordinal, row in enumerate(rows, 1):
                 if row["id"] == str(citation_id):
                     source, _ = _require_reference(case, target_id, "CITE")
-                    editorial_note = note
+                    # The reason can quote the previous restricted source. Keep it
+                    # in canonical correction history, not the new source's note.
+                    editorial_note = ""
+                    corrections.append(
+                        {"ordinal": ordinal, "previous_id": row["id"], "reason": note}
+                    )
                 else:
                     source = {key: row[key] for key in ("source", "source_sha256")}
                     if not permits_reference_for_locked_case(
@@ -438,6 +484,7 @@ def correct_citation(
             **common,
             text=text,
             selections=selections,
+            corrections=corrections,
             expected_revision=expected_revision,
             expected_evidence_version=expected_evidence_version,
         )
@@ -555,15 +602,18 @@ def desk(
                 edition_id=item["source"]["edition_id"],
                 source_row_id=item["source"]["source_row_id"],
             ).pk
-        record_ids = set(
+        registered_ids = set(
             SourceRegistration.objects.filter(case=case).values_list("source_id", flat=True)
         )
+        record_ids = set(registered_ids)
         record_ids.update(
             SourceVersion.objects.filter(heading_id__in=heading_ids).values_list("pk", flat=True)
         )
         record_ids.update(
             SourceVersion.objects.filter(transcript__case=case).values_list("pk", flat=True)
         )
+        from .registry import decorate_record
+
         records = []
         for source in SourceVersion.objects.filter(pk__in=record_ids).order_by("created_at"):
             revisions = list(
@@ -577,6 +627,7 @@ def desk(
             records.append(
                 {
                     "id": str(source.pk),
+                    "registered": source.pk in registered_ids,
                     "kind": source.kind,
                     "snapshot": source.snapshot,
                     "sha256": source.sha256,
@@ -600,6 +651,7 @@ def desk(
                     ],
                 }
             )
+            decorate_record(records[-1], source, revisions, case=case, actor=actor, provider=provider)
         published = list(
             PublicationEdition.objects.filter(case=case, actions__action="APPROVE").order_by(
                 "-number"
@@ -651,6 +703,9 @@ def permits_transcript_for_locked_case(*, case, transcript_id, usage):
             return False
         _current_source(source, case)
         revision = _latest(source, case)
-        return _state(revision) == "ALLOWED" and usage in revision.uses
+        if _state(revision) == "ALLOWED" and usage in revision.uses:
+            _projection_deadline(revision.valid_until)
+            return True
+        return False
     except (cases.CaseConflict, KeyError, TypeError, ValueError):
         return False

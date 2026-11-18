@@ -77,6 +77,9 @@ def main():
 
     op = args.operation
     try:
+        # Refuse a plaintext downgrade before opening/initializing even the source store.
+        if op in {"legacy-snapshot", "legacy-restore"}:
+            service.require_v10_test_profile()
         if op == "key-create":
             result = encrypted.generate_key(path=args.key_file, synthetic_fixtures_only=True)
         elif op == "maintenance-init":

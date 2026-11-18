@@ -7,14 +7,14 @@
 {% if error %}<p role="alert">{{ error }}</p>{% endif %}
 <nav aria-label="متابعة النشر والقضية">
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>العودة إلى هذه القضية</button></form>
-<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_library"><input type="hidden" name="query" value="{{ library_query }}"><input type="hidden" name="category" value="{{ library_category }}"><button>المكتبة التجريبية المغلقة</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_library"><input type="hidden" name="query" value="{{ library_query }}"><input type="hidden" name="category" value="{{ library_category }}"><input type="hidden" name="page" value="{{ library_page }}"><button>المكتبة التجريبية المغلقة</button></form>
 </nav>
 <h3>{{ selected.public_ref }}</h3>
 <section aria-labelledby="publication-current-heading">
 <h3 id="publication-current-heading">الإتاحة الحالية</h3>
 {% if selected.visible_edition %}
 <p>النسخة {{ selected.visible_edition.number }} متاحة في المكتبة المغلقة. إنشاء مرشح جديد لا يبدّل النسخة المتاحة حتى مراجعته والموافقة عليه مستقلًا.</p>
-<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_read"><input type="hidden" name="edition_id" value="{{ selected.visible_edition.id }}"><input type="hidden" name="query" value="{{ library_query }}"><input type="hidden" name="category" value="{{ library_category }}"><button>فتح النسخة المتاحة حاليًا</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_read"><input type="hidden" name="edition_id" value="{{ selected.visible_edition.id }}"><input type="hidden" name="query" value="{{ library_query }}"><input type="hidden" name="category" value="{{ library_category }}"><input type="hidden" name="page" value="{{ library_page }}"><button>فتح النسخة المتاحة حاليًا</button></form>
 {% else %}<p>لا نسخة متاحة حاليًا في المكتبة. راجع حالة كل نسخة والخطوة المطلوبة أدناه.</p>{% endif %}
 </section>
 {% if attempted %}

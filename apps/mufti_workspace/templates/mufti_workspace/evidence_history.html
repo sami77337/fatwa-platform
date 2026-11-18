@@ -1,0 +1,16 @@
+<section id="mufti-evidence-history" aria-labelledby="mufti-evidence-history-heading">
+<h3 id="mufti-evidence-history-heading">الوقائع ومرفقاتها حسب الإصدار</h3>
+<p>كل ملف مع أصل رسالته ونسخة الوقائع التي أُضيف إليها. المعاينة لا تستبدل الأصل ولا تعني مراجعة أو اعتمادًا.</p>
+<ol>{% for item in mufti_workspace.evidence_history %}<li id="mufti-evidence-{{ item.version }}" data-evidence-version="{{ item.version }}">
+<details{% if item.current or item.newer_than_answer %} open{% endif %}><summary>الوقائع {{ item.version }}{% if item.current %} — الحالية{% endif %}{% if item.newer_than_answer %} — أُضيفت بعد أساس أحدث جواب{% endif %}</summary>
+<p class="original">{{ item.text }}</p>
+{% for origin in item.origins %}<p>أصل الرسالة: {{ origin.source }} · <bdi>{{ origin.message_id }}</bdi> · <bdi>{{ origin.conversation }}</bdi></p>{% endfor %}
+{% if item.answer_revisions %}<p>إصدارات الجواب المبنية على هذه الوقائع: {{ item.answer_revisions|join:"، " }}.</p>{% endif %}
+{% for attachment in item.attachments %}<article data-evidence-attachment="{{ attachment.id }}"><h4>{{ attachment.filename }}</h4><p>{{ attachment.media_type }} · {{ attachment.size }} بايت · أُضيف {{ attachment.created_at|date:"Y-m-d H:i:s" }}</p>
+{% if attachment.kind == 'image' %}<img loading="lazy" src="{{ attachment.preview_url }}" alt="مرفق الوقائع {{ item.version }}: {{ attachment.filename }}">
+{% elif attachment.kind == 'audio' %}<audio controls preload="none" src="{{ attachment.preview_url }}" aria-label="مرفق الوقائع {{ item.version }}: {{ attachment.filename }}"></audio>
+{% elif attachment.media_type == 'application/pdf' %}<iframe sandbox loading="lazy" src="{{ attachment.preview_url }}" title="PDF الوقائع {{ item.version }}: {{ attachment.filename }}"></iframe>{% endif %}
+<p><a href="{{ attachment.preview_url }}" target="_blank" rel="noopener">فتح {{ attachment.filename }} بصلاحية القضية</a> · <a href="{{ attachment.preview_url }}" download="{{ attachment.filename }}">تنزيل الأصل</a></p>
+<details><summary>بصمة الأصل المحفوظ</summary><code>{{ attachment.sha256 }}</code></details></article>{% endfor %}
+</details></li>{% endfor %}</ol>
+</section>

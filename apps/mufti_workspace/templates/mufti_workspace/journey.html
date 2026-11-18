@@ -1,0 +1,5 @@
+<details id="mufti-connected-journey">
+<summary>متابعة القضية من الأصل إلى المكتبة</summary>
+<p>تفتح الأزرار اللوحات الحالية للقضية نفسها. فتح لوحة أو معاينة ملف لا يسجل اعتمادًا أو إتاحة أو تسليمًا.</p>
+<ol>{% for group in mufti_workspace.journey %}<li data-journey="{{ group.key }}"><strong>{{ group.label }}</strong><nav aria-label="{{ group.label }} للقضية الحالية">{% for item in group.actions %}<form method="post" action="/casework/staff/{% if item.fragment %}#{{ item.fragment }}{% endif %}">{% csrf_token %}<input type="hidden" name="action" value="{{ item.action }}"><input type="hidden" name="case_ref" value="{{ mufti_workspace.case.public_ref }}">{% if item.action == 'rights_desk' %}<input type="hidden" name="query" value=""><input type="hidden" name="edition_id" value="">{% endif %}<button type="submit">{{ item.label }}</button></form>{% endfor %}</nav></li>{% endfor %}</ol>
+</details>

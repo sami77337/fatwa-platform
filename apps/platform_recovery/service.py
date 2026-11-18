@@ -63,6 +63,24 @@ def require(value, code):
         raise RecoveryError(code)
 
 
+V10_TEST_SETTINGS = "apps.platform_recovery.v12_recovery_v10_test_settings"
+
+
+def require_v10_test_profile():
+    """Plaintext disk bundles are restricted to the separate V10 test composition.
+
+    Strict mode is the fail-closed default. No CLI flag, environment override or
+    ordinary profile can silently downgrade V11/V12 backup/restore to plaintext.
+    This is trusted configuration policy, not a boundary against arbitrary Python.
+    """
+    require(
+        getattr(settings, "FATWA_RECOVERY_ENCRYPTION_REQUIRED", True) is False
+        and getattr(settings, "FATWA_RECOVERY_V10_TEST_COMPAT", False) is True
+        and settings.SETTINGS_MODULE == V10_TEST_SETTINGS,
+        "plaintext_recovery_disabled",
+    )
+
+
 def digest(raw):
     return hashlib.sha256(raw).hexdigest()
 
@@ -364,7 +382,11 @@ def checkpoint(stage):
 def snapshot(
     *, scratch, storage, pg_bin, synthetic_fixtures_only=False, offline=False, _capture=None
 ):
-    """Returns a complete bundle path and separately retainable manifest digest."""
+    """V10 test disk bundle, or bounded in-memory capture for the encrypted engine."""
+    if _capture is None:
+        require_v10_test_profile()
+    else:
+        require(type(_capture) is dict and not _capture, "invalid_memory_capture")
     owned = guard(synthetic_fixtures_only=synthetic_fixtures_only, offline=offline)
     require(isinstance(storage, FileSystemStorage), "filesystem_adapter_required")
     safe_directory(storage.root)
@@ -606,6 +628,8 @@ def restore(
     Callers must explicitly reopen Django against the returned DB/root only after
     READY. No caller-chosen database names, existing roots or automatic activation.
     """
+    if _files is None:
+        require_v10_test_profile()
     guard(synthetic_fixtures_only=synthetic_fixtures_only, offline=offline)
     manifest = verify_bundle(bundle, expected_manifest_sha256, _files=_files)
     parent = safe_directory(scratch)

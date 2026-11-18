@@ -1,0 +1,20 @@
+{
+  "evidence_sha": "5aff9ba3cce35241b3ded27ed3428e0d4ecad768",
+  "owner_points": 556,
+  "specification_clauses": 479,
+  "unique_decision_ids": 72,
+  "decision_occurrences": 77,
+  "status_counts": {
+    "COMPLETE": 0,
+    "PARTIAL": 303,
+    "DECISION": 52,
+    "NOT_IMPLEMENTED": 168,
+    "OUT_OF_SCOPE": 33
+  },
+  "acceptance": "HOLD",
+  "p1_evidence_included": true,
+  "p1_evidence_sha": "0055a5ab05c6dbe6d41a528666666f9db07f2fee",
+  "p1_assessed_points": 91,
+  "status_upgrades": 0,
+  "percentage": null
+}

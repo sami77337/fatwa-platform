@@ -1,0 +1,14 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_failing_on_commit_callback_holds_lease_until_exception_then_releases (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_failing_on_commit_callback_holds_lease_until_exception_then_releases) ... ok
+test_flush_rejected_before_executing_destructive_sql (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_flush_rejected_before_executing_destructive_sql) ... ok
+test_get_and_head_throttle_cannot_write_or_disclose_control_when_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_get_and_head_throttle_cannot_write_or_disclose_control_when_frozen) ... ok
+test_loaddata_cannot_insert_fixture_row_while_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_loaddata_cannot_insert_fixture_row_while_frozen) ... ok
+test_outer_atomic_cannot_schedule_callback_beyond_admission (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_outer_atomic_cannot_schedule_callback_beyond_admission) ... ok
+test_shell_command_cannot_execute_writer_while_frozen (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_shell_command_cannot_execute_writer_while_frozen) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.425s
+
+OK
+Found 6 test(s).
+System check identified no issues (0 silenced).

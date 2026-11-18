@@ -67,9 +67,11 @@ def _edition(publication_id, subject_id, provider, synthetic_fixtures_only):
     if str(publication_id) not in {row["id"] for row in visible}:
         raise cases.CaseConflict("knowledge_publication_unavailable")
     edition = PublicationEdition.objects.get(pk=cases._uuid(publication_id))
-    with cases._staff_case(edition.case_id, subject_id, provider, synthetic_fixtures_only) as (
-        case,
-        actor,
+    with (
+        cases._staff_case(edition.case_id, subject_id, provider, synthetic_fixtures_only) as (
+            case, actor,
+        ),
+        citations._projection_expiry_guard(),
     ):
         # Revalidate under canonical lock (withdrawal/correction share this lock).
         publications._approved(case, edition)
@@ -88,6 +90,22 @@ def _edition(publication_id, subject_id, provider, synthetic_fixtures_only):
             raise cases.CaseConflict("knowledge_publication_unavailable")
         public = publications._projection(edition)
         yield edition, public, case, actor
+        _recheck(case, actor, provider)
+
+
+@contextmanager
+def _withdrawal_edition(publication_id, subject_id, provider, synthetic_fixtures_only):
+    """Revocation must remain possible after publication/source availability lapses."""
+    _enabled()
+    edition = PublicationEdition.objects.filter(pk=cases._uuid(publication_id)).first()
+    if edition is None:
+        raise cases.CaseConflict("knowledge_publication_unavailable")
+    with cases._staff_case(edition.case_id, subject_id, provider, synthetic_fixtures_only) as (
+        case,
+        actor,
+    ):
+        publications._verify(edition)
+        yield edition, None, case, actor
         _recheck(case, actor, provider)
 
 
@@ -287,7 +305,8 @@ def act(
 ):
     if action not in {"APPROVE", "WITHDRAW"} or confirmed is not True:
         raise cases.CaseConflict("knowledge_explicit_review_required")
-    with _edition(publication_id, subject_id, provider, synthetic_fixtures_only) as (
+    scope = _withdrawal_edition if action == "WITHDRAW" else _edition
+    with scope(publication_id, subject_id, provider, synthetic_fixtures_only) as (
         edition,
         _,
         case,
@@ -473,7 +492,7 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False)
                     "id": str(row.pk),
                     "number": row.number,
                     "state": _state(row),
-                    "reason": row.reason,
+                    "reason": row.reason if _row_permitted(case, row, "READ") else "",
                     "actor": row.subject_id,
                     "created_at": row.created_at,
                     "kind": "REFERENCE" if row.heading_id else "TRANSCRIPT",
@@ -534,7 +553,7 @@ def history(*, publication_id, subject_id, provider, synthetic_fixtures_only=Fal
                     "series": str(row.series),
                     "number": row.number,
                     "state": _state(row),
-                    "reason": row.reason,
+                    "reason": row.reason if _row_permitted(case, row, "READ") else "",
                     "snapshot": row.snapshot if _row_permitted(case, row, "READ") else None,
                     "rights_restricted": not _row_permitted(case, row, "READ"),
                     "subject_id": row.subject_id,

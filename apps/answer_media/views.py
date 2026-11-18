@@ -63,9 +63,16 @@ def _multipart(request):
         "synthetic_only",
         "csrfmiddlewaretoken",
     }
+    posted = set(request.POST)
+    # Native browsers serialize an unselected optional file control as one
+    # empty field. It is absence of a file, never a filename/path or an upload.
+    if "answer_file" in posted:
+        if request.POST.getlist("answer_file") != [""] or request.FILES:
+            raise InvalidForm("answer_media_form_invalid")
+        posted.remove("answer_file")
     if (
         request.content_type != "multipart/form-data"
-        or set(request.POST) != required
+        or posted != required
         or any(len(request.POST.getlist(k)) != 1 for k in request.POST)
         or set(request.FILES) not in (set(), {"answer_file"})
         or len(request.FILES.getlist("answer_file")) > 1

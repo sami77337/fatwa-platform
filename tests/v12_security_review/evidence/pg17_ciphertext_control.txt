@@ -1,0 +1,9 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_encrypted_snapshot_positive_control_publishes_ciphertext_only (tests.v12_security_review.test_recovery.RecoveryP0Tests.test_encrypted_snapshot_positive_control_publishes_ciphertext_only) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.343s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).

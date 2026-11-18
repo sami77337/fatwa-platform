@@ -58,6 +58,7 @@ def _identity():
 
 
 def _read(root):
+    require(not (root / "unsafe-transaction").exists(), "maintenance_cleanup_unproven")
     state = json.loads(read_file(root / "journal.json"))
     require(
         state.get("format") == FORMAT and state.get("binding") == _identity(),
@@ -152,6 +153,9 @@ def mutation_guard(*, root=None, operation="WRITE", synthetic_fixtures_only=Fals
     if any(lease.matches(root) for lease in held):
         yield
         return
+    from .admission import abort_unfinished, require_outer_boundary
+
+    require_outer_boundary()
     with _lock(root, "activity.lock", shared=True):
         state = _read(root)
         require(state["phase"] == "ACTIVE", "maintenance_writes_blocked")
@@ -160,8 +164,30 @@ def mutation_guard(*, root=None, operation="WRITE", synthetic_fixtures_only=Fals
         try:
             yield
         finally:
-            lease.active = False
-            _LEASE.reset(token)
+            try:
+                try:
+                    unfinished = abort_unfinished()
+                except BaseException:
+                    # If rollback cannot be proved, no future freeze/resume may
+                    # treat released filesystem admission as a consistent cut.
+                    fd = os.open(
+                        root / "unsafe-transaction",
+                        os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW,
+                        0o600,
+                    )
+                    try:
+                        os.write(fd, b"maintenance_transaction_cleanup_failed\n")
+                        os.fsync(fd)
+                    finally:
+                        os.close(fd)
+                    from .service import sync_directory
+
+                    sync_directory(root)
+                    raise RecoveryError("maintenance_transaction_cleanup_failed") from None
+                require(not unfinished, "maintenance_unclosed_transaction")
+            finally:
+                lease.active = False
+                _LEASE.reset(token)
 
 
 @contextmanager

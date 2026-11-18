@@ -284,7 +284,7 @@ def main(argv=None):
         parser.error("provide both public verification keys, or neither for export-only mode")
     if os.environ.get("FATWA_PRODUCTION") != "0":
         raise RuntimeError("run through the owned synthetic PostgreSQL helper")
-    os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings.campaign_review"
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.campaign_review")
     import django
 
     django.setup()

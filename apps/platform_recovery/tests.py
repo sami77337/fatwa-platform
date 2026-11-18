@@ -24,6 +24,13 @@ def setup():
 class RecoveryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.setup_records()
+        cls.setup_legacy_snapshot()
+
+    @classmethod
+    def setup_records(cls):
+        """Canonical service fixture shared without choosing a recovery format."""
+        from django.conf import settings
         from django.test import override_settings
 
         from apps.answer_media import services as answers
@@ -41,6 +48,10 @@ class RecoveryTests(unittest.TestCase):
         cls.root = Path(cls.temp.name)
         cls.storage = FileSystemStorage(cls.root / "source", synthetic_fixtures_only=True)
         cls.settings = override_settings(
+            # Django's UserSettingsHolder otherwise masks this with None. Keep
+            # the profile actually selected by the isolated process; do not
+            # manufacture compatibility or alter encryption flags here.
+            SETTINGS_MODULE=settings.SETTINGS_MODULE,
             FATWA_PRIVATE_MEDIA_STORAGE=cls.storage,
             FATWA_CASE_ATTACHMENTS_ENABLED=True,
             FATWA_ANSWER_MEDIA_ENABLED=True,
@@ -88,6 +99,10 @@ class RecoveryTests(unittest.TestCase):
             manifest_sha256=manifest.sha256,
             confirmed=True,
         )
+    @classmethod
+    def setup_legacy_snapshot(cls):
+        from . import service
+
         cls.backup = cls.take_snapshot()
         cls.manifest = service.verify_bundle(cls.backup["bundle"], cls.backup["manifest_sha256"])
         print(
@@ -490,7 +505,7 @@ service.restore(**json.load(sys.stdin))
                 "--major",
                 str(self.manifest["postgres_major"]),
                 "--settings",
-                "config.settings.campaign_review",
+                self.service.V10_TEST_SETTINGS,
                 "--",
                 sys.executable,
                 "-m",

@@ -1,11 +1,9 @@
-"""Hold maintenance admission through every migration commit and signal."""
+"""Hold maintenance admission through migration checks, commits and signals."""
 
 from django.core.management.commands.migrate import Command as DjangoMigrate
 
-from apps.platform_recovery.integration import mutation_service
+from apps.intake_workflow.management.admission import AdmittedCommand
 
 
-class Command(DjangoMigrate):
-    @mutation_service
-    def handle(self, *args, **options):
-        return super().handle(*args, **options)
+class Command(AdmittedCommand, DjangoMigrate):
+    pass

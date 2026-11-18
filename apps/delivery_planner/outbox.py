@@ -145,6 +145,9 @@ def _now() -> str:
 
 
 def _path(directory: Path) -> Path:
+    from config.legacy_stores import require_isolated_legacy_store
+
+    require_isolated_legacy_store()
     if not isinstance(directory, Path) or directory.is_symlink() or not directory.is_dir():
         raise OutboxConflict("synthetic_outbox_directory_unavailable")
     path = directory.resolve(strict=True) / FILE_NAME

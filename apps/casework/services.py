@@ -65,7 +65,7 @@ def _answer_citations(answer):
     if not django_apps.is_installed("apps.case_citations"):
         # A restored database may still contain citations even when its app was
         # omitted from a composition. Enforcement cannot infer their absence.
-        if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is True:
+        if getattr(settings, "FATWA_SOURCE_RIGHTS_ENFORCED", False) is not False:
             raise CaseConflict("citation_schema_unavailable")
         return []
     from apps.case_citations.services import citations_for_locked_answer

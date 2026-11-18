@@ -1,0 +1,27 @@
+{% extends "casework/base.html" %}
+{% block title %}تفاصيل الحقوق ومقارنة الإصدارات{% endblock %}
+{% block content %}
+<h1>تفاصيل الحقوق ومقارنة الإصدارات</h1>
+<p>القضية {{ case_ref }} — مراجعة {{ revision }} — أدلة {{ evidence_version }}</p>
+<p class="notice">هذه مراجعة خاصة لسجل الحقوق؛ ليست إذن فتح أو اقتباس أو نشر. الفحص الفعلي يعاد عند كل استخدام.</p>
+<section id="rights-material-kind" data-material-kind="{{ material.kind }}">
+<h2>{{ material.label }}</h2><p>{{ material.description }}</p>
+<dl>{% for field in material.identity %}<dt>{{ field.label }}</dt><dd class="original">{% if field.value != '' %}{{ field.value }}{% else %}غير مسجل{% endif %}</dd>{% endfor %}</dl>
+<label>بصمة النسخة الأصلية أو موضعها <input readonly value="{{ material.snapshot_sha256 }}" aria-label="بصمة نسخة المادة"></label>
+<label>بصمة هوية سجل الحقوق <input readonly value="{{ source_sha256 }}" aria-label="بصمة هوية سجل الحقوق"></label>
+<p>سُجلت الهوية {{ source_created_at }}. الحق يخص هذه الهوية ونسختها والقضية الحالية؛ لا ينتقل إلى طبعة أو قضية أخرى.</p>
+</section>
+<section id="rights-current-status" data-current-state="{{ current_state }}"><h2>القرار الحالي</h2><p><strong>{{ current_state_label }}</strong> — {{ current_state }} — إصدار {{ current_number }}</p>{% if current_until %}<p>نهاية المدة {{ current_until }}</p>{% endif %}<p>وقت الفحص {{ inspected_at }}. إضافة اقتراح جديد توقف القرار السابق إلى أن تكتمل مراجعته المستقلة.</p></section>
+{% include "source_rights/usage_matrix.html" %}
+<section id="rights-revision-comparison">
+<h2>مقارنة إصدارات الحقوق المحفوظة</h2>
+{% if versions %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rights_inspect"><input type="hidden" name="case_ref" value="{{ case_ref }}"><input type="hidden" name="source_id" value="{{ source_id }}"><input type="hidden" name="query" value="{{ query }}"><input type="hidden" name="edition_id" value="{{ edition_id|default_if_none:'' }}"><label for="rights-inspect-revision">الإصدار المحفوظ</label><select name="revision_number" id="rights-inspect-revision">{% for version in versions %}<option value="{{ version.number }}" {% if version.number == selected.number %}selected{% endif %}>الإصدار {{ version.number }}{% if version.number == current_number %} — الأحدث{% endif %}</option>{% endfor %}</select><button>عرض مقارنة الإصدار</button></form>
+<p>الإصدار المختار {{ selected.number }} — {% if selected_is_current %}أحدث إصدار محفوظ؛ الإتاحة بحسب الحالة الحالية أعلاه{% else %}إصدار تاريخي لا يمنح إتاحة حالية{% endif %}.</p>
+<p>{% if previous_number %}مقارنة بالإصدار {{ previous_number }}{% else %}أول اقتراح؛ لا يوجد إصدار سابق{% endif %}</p>
+{% for change in comparison %}<article data-comparison-field="{{ change.field }}"><h3>{{ change.label }} — {% if change.changed %}تغير{% else %}لم يتغير{% endif %}</h3><p class="original">السابق: {% if change.before == None %}لا يوجد{% elif change.field == 'uses' %}{{ change.before|join:', '|default:'لا استخدامات' }}{% else %}{{ change.before }}{% endif %}</p><p class="original">المختار: {% if change.field == 'uses' %}{{ change.after|join:', '|default:'لا استخدامات' }}{% else %}{{ change.after }}{% endif %}</p></article>{% endfor %}
+<h3>قرارات المراجعة للإصدار المختار</h3>{% for event in selected_actions %}<p>{{ event.action }} — {{ event.subject_id }} — {{ event.created_at }} — {{ event.note }}</p>{% empty %}<p>لا قرار مراجعة محفوظ لهذا الإصدار.</p>{% endfor %}
+{% else %}<p>هوية مسجلة دون اقتراح حقوق أو مراجعة؛ التسجيل لا يمنح إتاحة.</p>{% endif %}
+</section>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rights_desk"><input type="hidden" name="case_ref" value="{{ case_ref }}"><input type="hidden" name="query" value="{{ query }}"><input type="hidden" name="edition_id" value="{{ edition_id|default_if_none:'' }}"><button>العودة إلى نتائج المصادر نفسها</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="case_workspace"><input type="hidden" name="case_ref" value="{{ case_ref }}"><button>العودة إلى القضية</button></form>
+{% endblock %}

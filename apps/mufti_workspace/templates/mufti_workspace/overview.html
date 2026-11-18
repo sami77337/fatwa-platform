@@ -8,6 +8,7 @@
 {% if message %}<p class="notice" role="status">{{ message }}</p>{% endif %}
 {% if attempted_text != None %}<article><h3>نص المحاولة غير المحفوظة</h3><p>لم تُحفظ هذه المحاولة ولم تنتقل إلى إصدار آخر. راجع الوقائع الحالية قبل إعادة الصياغة.</p><label for="attempted-text">نسخة للاسترجاع فقط</label><textarea id="attempted-text" readonly>{{ attempted_text }}</textarea></article>{% endif %}
 <nav aria-label="أقسام المراجعة"><a href="#mufti-facts-heading">السؤال والوقائع</a><a href="#editor">تحرير الجواب</a><a href="#review">اعتماد الإصدار</a><a href="#history">سجل القضية</a></nav>
+{% include "mufti_workspace/evidence_history.html" %}
 <form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}<input type="hidden" name="action" value="clarify"><label for="clarification-text">الاستيضاح المطلوب من السائل</label><textarea id="clarification-text" name="text" maxlength="16000" required></textarea><button type="submit">طلب استيضاح</button></form>
 </section>
 <section id="editor" aria-labelledby="mufti-editor-heading"><h2 id="mufti-editor-heading">تحرير الجواب البشري</h2>
@@ -15,8 +16,11 @@
 {% else %}
 {% if selected.stale_answer %}<p class="notice" id="stale-answer">تغيّرت الوقائع بعد آخر مسودة. راجع التعقيبات واحفظ إصدارًا جديدًا قبل الاعتماد.</p>{% endif %}
 {% if mufti_workspace.approved %}<p class="notice">حفظ تعديل جديد يبطل الاعتماد السابق ويتطلب اعتمادًا بشريًا جديدًا.</p>{% endif %}
-{% if mufti_workspace.manifest %}<p class="notice">هذا الجواب يتضمن ملفات أو صوتًا. احفظ الأجزاء عبر لوحة «أجزاء الجواب والإتاحة»؛ المحرر أدناه ينشئ إصدارًا نصيًا فقط.</p>{% endif %}
+{% if mufti_workspace.manifest %}<p class="notice">هذا الإصدار يجمع النص والملفات أو الصوت. افتح محرره لتعديل النص مع حفظ الأجزاء؛ ترتيب الأجزاء أو استبعادها قرار صريح في المحرر.</p>
+{% if mufti_workspace.multipart_editor_available %}<form id="mufti-multipart-edit" method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="answer_media"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تحرير النص مع الحفاظ على أجزاء الجواب</button></form>{% else %}<p>محرر الأجزاء مغلق في هذه البيئة؛ تبقى النسخة وأجزاؤها محفوظة دون تعديل نصي منفصل.</p>{% endif %}
+{% else %}
 <form method="post" action="/casework/staff/">{% csrf_token %}{% include "team_workspace/versions.html" %}<input type="hidden" name="action" value="draft"><label for="answer-text">{% if selected.latest_answer %}تحرير أحدث جواب — الإصدار {{ selected.latest_answer.revision }}{% else %}مسودة جواب بشرية جديدة{% endif %}</label><textarea id="answer-text" name="text" required maxlength="16000">{{ selected.latest_answer.text }}</textarea><p>الحفظ يضيف إصدارًا ولا يستبدل الأصل أو المسودات السابقة. الإحالات والأجزاء لها محرراتها في أقسام القضية.</p><button type="submit">حفظ مسودة الجواب</button></form>
+{% endif %}
 {% endif %}</section>
 <section id="review" aria-labelledby="mufti-review-heading"><h2 id="mufti-review-heading">مراجعة أحدث إصدار واعتماده</h2>
 {% if mufti_workspace.manifest %}{% if rendered_case.revision == selected.revision and rendered_case.answer_manifest %}<p>راجع جميع الأجزاء التالية. الاعتماد يشمل الإصدار كاملًا.</p>{% include "answer_media/parts.html" with package=rendered_case.answer_manifest is_staff=True %}{% else %}<p class="notice">تغيرت النسخة أثناء فتح الصفحة. افتح القضية مجددًا لقراءة جميع الأجزاء قبل الاعتماد.</p>{% endif %}{% endif %}

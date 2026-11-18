@@ -579,7 +579,13 @@ class V10ConnectedBrowserTests(BrowserHarness, LiveServerTestCase):
                 )
                 pg_bin = str(Path(pg_dump).parent)
             source_database = connection.settings_dict["NAME"]
-            with TemporaryDirectory(prefix="v10-recovery-") as scratch:
+            # LiveServerTestCase adds its own settings holder after the class
+            # overlay. Preserve the process-selected profile at the offline
+            # operation itself; never override encryption/compatibility flags.
+            with (
+                TemporaryDirectory(prefix="v10-recovery-") as scratch,
+                override_settings(SETTINGS_MODULE=os.environ.get("DJANGO_SETTINGS_MODULE")),
+            ):
                 backup = snapshot(
                     scratch=scratch,
                     storage=storage,

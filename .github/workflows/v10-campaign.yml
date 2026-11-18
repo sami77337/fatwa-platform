@@ -53,7 +53,7 @@ jobs:
     env:
       FATWA_PRODUCTION: '0'
       FATWA_WAVE7_SYNTHETIC_WRITES: '1'
-      DJANGO_SETTINGS_MODULE: config.settings.campaign_review
+      DJANGO_SETTINGS_MODULE: apps.platform_recovery.v12_recovery_v10_test_settings
       EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       PG_EXPECTED_MAJOR: ${{ matrix.postgres }}
     steps:
@@ -96,7 +96,7 @@ jobs:
           if [ "$PG_EXPECTED_MAJOR" = 17 ]; then extra+=(--browser); fi
           python infra/dev/with_casework_postgres.py \
             --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" \
-            --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
+            --major "$PG_EXPECTED_MAJOR" --settings apps.platform_recovery.v12_recovery_v10_test_settings -- \
             python infra/dev/v10_verify.py --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" "${extra[@]}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

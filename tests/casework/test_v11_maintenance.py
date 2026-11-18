@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import connection, connections, transaction
 from django.test import Client, TransactionTestCase, override_settings
 
@@ -250,7 +251,7 @@ class MaintenanceIntegrationTests(TransactionTestCase):
             synthetic_atomic(synthetic_fixtures_only=True),
         ):
             self.fail("Wave7 should be blocked")
-        with self.assertRaises(MaintenanceUnavailable):
+        with self.assertRaisesMessage(CommandError, "MAINTENANCE_ADMINISTRATION_UNAVAILABLE"):
             call_command("migrate", interactive=False, verbosity=0)
         with self.assertRaises(MaintenanceUnavailable):
             require_owned_migration(None, "default")

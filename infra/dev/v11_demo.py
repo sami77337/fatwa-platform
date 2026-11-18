@@ -291,6 +291,8 @@ def main(argv=None):
             )
             settings.FATWA_RECOVERY_MAINTENANCE_ROOT = str(control_root)
             settings.FATWA_RECOVERY_MAINTENANCE_REQUIRED = True
+            settings.FATWA_RECOVERY_ENCRYPTION_REQUIRED = True
+            settings.FATWA_RECOVERY_V10_TEST_COMPAT = False
             fixture = setup_synthetic_fixture(
                 operator_authority=operator,
                 identity_provider=directory,

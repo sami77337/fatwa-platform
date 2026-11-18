@@ -1,0 +1,24 @@
+{
+  "head_sha": "0055a5ab05c6dbe6d41a528666666f9db07f2fee",
+  "base_sha": "5aff9ba3cce35241b3ded27ed3428e0d4ecad768",
+  "observed_date": "2026-11-18",
+  "workflow_run_id": 44208238581,
+  "job_ids": [
+    134479648225,
+    134479647759
+  ],
+  "workflow_lookup_boundary": "First page of pull_request-triggered runs: 22 returned, 22 success; no global history claim",
+  "log_boundary": "Relevant timestamped lines only; raw job log and artifact JSON not committed; test assertions and source inspected at the exact head",
+  "extraction_sha256": {
+    "sources/p1_job_134479647759_excerpt.json": "5df04af36fd4cd5b8f646fcaf67bd306179542feadaa06047cb73e94e27bb0cc",
+    "sources/p1_job_134479648225_excerpt.json": "5801892f041a1b3ea5b1d2180ec93d6c9904b414027a1bff1d334d2a0b94bc41",
+    "sources/p1_jobs_44208238581.json": "9300e5b8b20f453d4552d2250f8358cd2412c9ad04d7122735a89822d7144d85",
+    "sources/p1_workflows.json": "1d49f86c204b15b48dc0e3611c953c6d6447de6d8492ca16ba94222bd22469f6"
+  },
+  "preserved_baseline_sha": "0055a5ab05c6dbe6d41a528666666f9db07f2fee",
+  "preserved_baseline_files": {
+    "matrix.json": "ee4ce4bec94750b22dbd15f00ca312808765c5731b8dc9d4f52bb5f8ad976fdd",
+    "evidence.json": "4b3d450791fa486f2ace54508a5a23cf4e74cc918c281f28f69a87670f725083",
+    "summary.json": "882832f89bd1864092806d921d7f66655d25e8517474aebce5833db143ab135e"
+  }
+}

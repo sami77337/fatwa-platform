@@ -1,0 +1,43 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) ...
+  test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) (helper='clone_parts_for_new_answer') ... FAIL
+  test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) (helper='clone_citations_for_new_answer') ... FAIL
+
+======================================================================
+FAIL: test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) (helper='clone_parts_for_new_answer')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 202, in test_clone_helpers_require_admission_before_any_source_read
+    self.assertEqual(reached, [], "P0: internal clone read reached without admission")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [True] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+True
+
+- [True]
++ [] : P0: internal clone read reached without admission
+
+======================================================================
+FAIL: test_clone_helpers_require_admission_before_any_source_read (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_clone_helpers_require_admission_before_any_source_read) (helper='clone_citations_for_new_answer')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 202, in test_clone_helpers_require_admission_before_any_source_read
+    self.assertEqual(reached, [], "P0: internal clone read reached without admission")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [True] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+True
+
+- [True]
++ [] : P0: internal clone read reached without admission
+
+----------------------------------------------------------------------
+Ran 1 test in 0.075s
+
+FAILED (failures=2)
+Found 1 test(s).
+System check identified no issues (0 silenced).

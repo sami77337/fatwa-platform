@@ -1,0 +1,9 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7; fresh owned cluster
+test_stranded_transaction_and_callback_abort_before_lease_release (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_stranded_transaction_and_callback_abort_before_lease_release) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.095s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).

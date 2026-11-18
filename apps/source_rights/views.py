@@ -14,10 +14,11 @@ from apps.casework_web.views import InvalidForm, _integer, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 
-from . import services
+from . import registry, services
 
 FIELDS = {
     "rights_desk": {"query", "edition_id"},
+    "rights_inspect": {"source_id", "revision_number", "query", "edition_id"},
     "rights_register": {"kind", "target_id"},
     "rights_propose": {"source_id", "expected_number", "basis", "note", "ttl_minutes", "uses"},
     "rights_review": {"revision_id", "decision", "confirm", "note"},
@@ -64,6 +65,18 @@ def workspace(request):
             return denied("source_rights_unavailable", 404)
         common["case_id"] = selected["case_id"]
         get_token(request)
+        if action == "rights_inspect":
+            query = fields["query"]
+            if len(query) > 100:
+                raise InvalidForm("rights_form_invalid")
+            cases._text(query, optional=True)
+            edition_id = _integer(fields["edition_id"]) if fields["edition_id"] else None
+            number = 0 if fields["revision_number"] == "0" else _integer(fields["revision_number"])
+            projection = registry.inspect_source(
+                **common, source_id=fields["source_id"], revision_number=number
+            )
+            projection.update(query=query, edition_id=edition_id)
+            return private(render(request, "source_rights/inspect.html", projection))
         if action == "rights_register":
             target = (
                 _integer(fields["target_id"])

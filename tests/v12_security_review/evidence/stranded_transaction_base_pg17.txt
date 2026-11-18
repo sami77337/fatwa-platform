@@ -1,0 +1,41 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_stranded_transaction_and_callback_abort_before_lease_release (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_stranded_transaction_and_callback_abort_before_lease_release) ...
+  test_stranded_transaction_and_callback_abort_before_lease_release (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_stranded_transaction_and_callback_abort_before_lease_release) (exceptional_exit=False) ... FAIL
+  test_stranded_transaction_and_callback_abort_before_lease_release (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_stranded_transaction_and_callback_abort_before_lease_release) (exceptional_exit=True) ... FAIL
+
+======================================================================
+FAIL: test_stranded_transaction_and_callback_abort_before_lease_release (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_stranded_transaction_and_callback_abort_before_lease_release) (exceptional_exit=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 162, in test_stranded_transaction_and_callback_abort_before_lease_release
+    self.assertTrue(
+    ~~~~~~~~~~~~~~~^
+        closed_before_probe_cleanup,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "P0: admission released while its PostgreSQL transaction was live",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: False is not true : P0: admission released while its PostgreSQL transaction was live
+
+======================================================================
+FAIL: test_stranded_transaction_and_callback_abort_before_lease_release (tests.v12_security_review.test_maintenance.MaintenanceP0Tests.test_stranded_transaction_and_callback_abort_before_lease_release) (exceptional_exit=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/fatwa-platform/tests/v12_security_review/test_maintenance.py", line 162, in test_stranded_transaction_and_callback_abort_before_lease_release
+    self.assertTrue(
+    ~~~~~~~~~~~~~~~^
+        closed_before_probe_cleanup,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "P0: admission released while its PostgreSQL transaction was live",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+AssertionError: False is not true : P0: admission released while its PostgreSQL transaction was live
+
+----------------------------------------------------------------------
+Ran 1 test in 0.116s
+
+FAILED (failures=2)
+Found 1 test(s).
+System check identified no issues (0 silenced).

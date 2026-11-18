@@ -2,12 +2,15 @@
 
 import json
 import os
+from contextlib import ExitStack
 from hashlib import sha256
 
 from django.apps import apps
 from django.conf import settings
+from django.utils import timezone
 
 from apps.casework import services as cases
+from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.editorial_search.query_terms import normalize_editorial_search
 from apps.platform_recovery.integration import mutation_service
 
@@ -85,6 +88,10 @@ def _citation_snapshot(answer):
     # The citation app supplies only source-pinned, human-verified references.
     # Without that optional app there is no free-form citation input fallback.
     if not apps.is_installed("apps.case_citations"):
+        from apps.source_rights.enforcement import required
+
+        if required():
+            raise cases.CaseConflict("citation_schema_unavailable")
         return []
     from apps.case_citations.services import citations_for_locked_answer
 
@@ -94,12 +101,44 @@ def _citation_snapshot(answer):
     ]
 
 
+def _require_publication_sources(case, citations):
+    """Current rights are conditions of availability, never publication approval.
+
+    Called under the canonical case lock on every publication transition/read.
+    Persisted editorial text and approval history are retained when rights lapse.
+    """
+    from apps.source_rights.enforcement import required
+
+    if not required():
+        return
+    from apps.case_citations.services import _rights_services
+
+    rights = _rights_services()  # Missing/disabled registry cannot become an empty grant.
+    deadlines = []
+    for item in citations:
+        for usage in ("READ", "CITE", "PREVIEW_METADATA"):
+            deadline = rights.reference_permission_deadline_for_locked_case(
+                case=case, source=item, usage=usage
+            )
+            if deadline is None:
+                raise cases.CaseConflict("current_source_rights_required")
+            deadlines.append(deadline)
+    # The bound is from the exact rights revision validated above. It lets a
+    # collection check all earlier grants against one clock after its last check.
+    return min(deadlines, default=None)
+
+
 def _projection(edition, *, editorial=False, rights_usage="READ"):
     _verify(edition)
+    if not editorial:
+        _require_publication_sources(edition.case, edition.citations)
     from apps.case_citations.services import _permits_source
 
     visible_citations = [
-        item for item in edition.citations if _permits_source(edition.case, item, rights_usage)
+        item
+        for item in edition.citations
+        if _permits_source(edition.case, item, rights_usage)
+        and _permits_source(edition.case, item, "READ")
     ]
     actions = set(edition.actions.values_list("action", flat=True))
     result = {
@@ -207,6 +246,7 @@ def act(
             answer, decision = _approved(case, edition)
             if edition.citations != _citation_snapshot(answer):
                 raise cases.CaseConflict("publication_citation_source_changed")
+            _require_publication_sources(case, edition.citations)
             if edition.number != PublicationEdition.objects.filter(case=case).count():
                 raise cases.CaseConflict("publication_edition_changed")
             if action == "REVIEW":
@@ -286,6 +326,7 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             source_current = False
             try:
                 answer, _ = _approved(case, edition)
+                _require_publication_sources(case, edition.citations)
                 source_current = edition.citations == _citation_snapshot(answer)
             except cases.CaseConflict:
                 pass
@@ -397,8 +438,26 @@ def correction_draft(*, case_id, edition_id, subject_id, provider, synthetic_fix
         }
 
 
+LIBRARY_PAGE_SIZE = 12
+
+
 @mutation_service
 def library(*, subject_id, provider, query="", category="", synthetic_fixtures_only=False):
+    return _library(subject_id=subject_id, provider=provider, query=query, category=category,
+                    synthetic_fixtures_only=synthetic_fixtures_only)
+
+
+@mutation_service
+def library_catalog(*, subject_id, provider, query="", category="", page=1,
+                    synthetic_fixtures_only=False):
+    """One rights-current collection supplies rows, facets, count and bounded pages."""
+    if type(page) is not int or not 1 <= page <= 100:
+        raise cases.CaseConflict("publication_page_invalid")
+    return _library(subject_id=subject_id, provider=provider, query=query, category=category,
+                    page=page, synthetic_fixtures_only=synthetic_fixtures_only)
+
+
+def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, page=None):
     _enabled()
     cases._text(query, optional=True)
     cases._text(category, optional=True)
@@ -409,15 +468,22 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
     scoped = cases.list_cases(
         subject_id=subject_id, provider=provider, synthetic_fixtures_only=synthetic_fixtures_only
     )
-    output = []
-    for row in scoped:
-        with cases._staff_case(row["case_id"], subject_id, provider, True) as (case, _):
-            # The most recently approved edition is authoritative; withdrawal never
-            # resurrects an older publication. Unapproved candidates are never searched.
+    candidates = []
+    # Keep every authorized case locked through projection, final collection
+    # validation and filtering. The existing queue unit retains its ownership
+    # preflight; it does not create a second authorization path.
+    with synthetic_queue_atomic(), ExitStack() as stack:
+        locked = {}
+        for row in sorted(scoped, key=lambda row: row["case_id"]):
+            locked[row["case_id"]] = stack.enter_context(
+                cases._staff_case(row["case_id"], subject_id, provider, True)
+            )
+        for row in scoped:
+            case, actor = locked[row["case_id"]]
+            # Withdrawal never resurrects an older publication.
             edition = (
                 PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
-                .order_by("-number")
-                .first()
+                .order_by("-number").first()
             )
             if edition is None or edition.actions.filter(action="WITHDRAW").exists():
                 continue
@@ -426,14 +492,55 @@ def library(*, subject_id, provider, query="", category="", synthetic_fixtures_o
                 _verify(edition)
                 if edition.citations != _citation_snapshot(edition.answer):
                     continue
+                public = _projection(edition, rights_usage="PREVIEW_METADATA")
             except cases.CaseConflict:
                 continue
-            public = _projection(edition, rights_usage="PREVIEW_METADATA")
+            candidates.append((case, edition, public))
+
+        available = []
+        for case, edition, public in candidates:
+            try:
+                deadline = _require_publication_sources(case, edition.citations)
+            except cases.CaseConflict:
+                continue
+            available.append((public, deadline))
+        # Re-resolve every identity before returning the batch, not just before
+        # each projection. A withdrawn scope cannot leave an earlier row behind.
+        for case, actor in locked.values():
+            current = cases._identity(provider, subject_id, case)
+            if current.auth_epoch != actor.auth_epoch:
+                raise cases.CaseConflict("case_identity_changed")
+        now = timezone.now()
+        available = [(public, end) for public, end in available if end is None or end > now]
+        output = []
+        for public, _ in available:
+            source_text = " ".join(
+                str(item["source"].get(key, ""))
+                for item in public["citations"]
+                for key in ("work_title", "edition_title", "edition_key", "heading_title",
+                            "publisher", "printed_part", "printed_page")
+            )
             haystack = normalize_editorial_search(
-                " ".join((public["title"], public["category"], public["body"]))
+                " ".join((public["title"], public["category"], public["body"], source_text))
             )
             if (not query or query in haystack) and (
                 not category or normalize_editorial_search(public["category"]) == category
             ):
                 output.append(public)
-    return output
+        result = output
+        if page is not None:
+            start = (page - 1) * LIBRARY_PAGE_SIZE
+            result = {
+                "publications": output[start:start + LIBRARY_PAGE_SIZE],
+                "categories": sorted({row["category"] for row, _ in available},
+                                     key=normalize_editorial_search),
+                "total": len(output), "page": page,
+                "has_previous": page > 1,
+                "has_next": start + LIBRARY_PAGE_SIZE < len(output),
+            }
+        # If a grant expires during filtering, fail the whole response closed.
+        # No stale partial results or metadata escape and no retry loop extends it.
+        now = timezone.now()
+        if any(end is not None and end <= now for _, end in available):
+            raise cases.CaseConflict("current_source_rights_required")
+        return result

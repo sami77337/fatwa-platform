@@ -159,8 +159,9 @@ class RightsBoundaryTests(RightsFixture, TransactionTestCase):
     def test_preview_metadata_is_independent_and_filtered_before_search_counts(self):
         self.grant(["READ", "CITE", "RELATE"])
         book = self.read()["source"]["work_title"]
-        self.assertEqual(preview.browse()["total"], 1)
-        self.assertEqual(preview.read(self.edition["id"])["references"], [])
+        self.assertEqual(preview.browse()["total"], 0)
+        with self.assertRaises(preview.PreviewUnavailable):
+            preview.read(self.edition["id"])
         self.assertEqual(preview.browse(query=book)["total"], 0)
         self.assertEqual(preview.browse(material="reference")["total"], 0)
         with self.assertRaises(preview.PreviewUnavailable):
@@ -173,21 +174,58 @@ class RightsBoundaryTests(RightsFixture, TransactionTestCase):
         )
 
     def test_relationship_read_and_relate_are_independent_and_current(self):
-        self.grant(["READ", "CITE"])
+        self.grant(["READ", "CITE", "PREVIEW_METADATA"])
         with self.assertRaises(cases.CaseConflict):
             self.propose()
-        self.grant(["READ", "CITE", "RELATE"], number=1)
+        self.grant(["READ", "CITE", "RELATE", "PREVIEW_METADATA"], number=1)
         link = self.propose()
         self.approve(link)
         self.assertEqual(len(knowledge.browse(**self.access)["links"]), 1)
-        self.grant(["CITE", "RELATE"], number=2)
+        self.grant(["CITE", "RELATE", "PREVIEW_METADATA"], number=2)
+        with self.assertRaisesMessage(cases.CaseConflict, "knowledge_publication_unavailable"):
+            knowledge.browse(**self.access)
+        with self.assertRaises(cases.CaseConflict):
+            knowledge.open_material(**self.access, revision_id=link["id"])
+        self.grant(["READ", "CITE", "PREVIEW_METADATA"], number=3)
         self.assertEqual(knowledge.browse(**self.access)["links"], [])
         with self.assertRaises(cases.CaseConflict):
             knowledge.open_material(**self.access, revision_id=link["id"])
-        self.grant(["READ", "CITE"], number=3)
-        self.assertEqual(knowledge.browse(**self.access)["links"], [])
-        with self.assertRaises(cases.CaseConflict):
-            knowledge.open_material(**self.access, revision_id=link["id"])
+
+    def test_projection_expiry_removes_whole_item_and_counts_before_return(self):
+        proposal = rights.propose(
+            **self.common, source_id=self.source["id"], expected_number=0,
+            uses=["READ", "CITE", "RELATE", "PREVIEW_METADATA"],
+            basis="Synthetic independent review", note="Synthetic", ttl_minutes=1,
+        )
+        self.decision(proposal)
+        self.assertEqual(preview.browse()["total"], 1)
+        for module, read in (
+            (preview, preview.browse),
+            (publications, lambda: publications.library(
+                **{k: v for k, v in self.common.items() if k != "case_id"}
+            )),
+        ):
+            clock = [timezone.now()]
+            future = clock[0] + timedelta(minutes=2)
+            original = module._projection
+
+            def delayed(*args, **kwargs):
+                result = original(*args, **kwargs)
+                clock[0] = future
+                return result
+
+            with (
+                self.subTest(surface=module.__name__),
+                patch.object(rights.timezone, "now", side_effect=lambda: clock[0]),
+                patch.object(module, "_projection", side_effect=delayed),
+            ):
+                result = read()
+                if module is preview:
+                    self.assertEqual(result["total"], 0)
+                    self.assertEqual(result["items"], [])
+                    self.assertEqual(result["categories"], [])
+                else:
+                    self.assertEqual(result, [])
 
     def test_private_transcript_requires_read_relate_and_original_open_authority(self):
         self.allow()
