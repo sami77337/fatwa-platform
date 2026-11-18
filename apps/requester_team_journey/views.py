@@ -48,6 +48,12 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.timed_citations"):
+            from apps.timed_citations.views import ACTIONS as TIMED_ACTIONS
+            from apps.timed_citations.views import workspace as timed_workspace
+
+            if action in TIMED_ACTIONS:
+                return _panel(timed_workspace(request), "cases")
         if django_apps.is_installed("apps.classification_review"):
             from apps.classification_review.views import ACTIONS as CLASSIFICATION_ACTIONS
             from apps.classification_review.views import workspace as classification_workspace

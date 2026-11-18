@@ -25,7 +25,9 @@ INSTALLED_APPS = [
     "apps.pilot_workbench",
     "apps.browser_audio",
     "apps.classification_review",
+    "apps.timed_citations",
 ]
+FATWA_TIMED_CITATIONS_ENABLED = False
 FATWA_BROWSER_AUDIO_ENABLED = False
 FATWA_CLASSIFICATION_REVIEW_ENABLED = False
 FATWA_CLASSIFICATION_REVIEW_AUTHORITY = None

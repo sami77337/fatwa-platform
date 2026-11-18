@@ -1,4 +1,6 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>الإحالات الزمنية الخاصة</title><link rel="stylesheet" href="/casework/casework.css"><body><main>
+{% extends "casework/base.html" %}
+{% block title %}الإحالات الزمنية الخاصة{% endblock %}
+{% block content %}
 <h1>الإحالات الزمنية الخاصة</h1><p>القضية {{ public_ref }} — إصدار الجواب {{ answer_revision }}. الأصل محفوظ؛ الإحالة موضع زمني وليست تفريغًا أو اعتماد فتوى.</p>
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="timed_desk"><input type="hidden" name="case_ref" value="{{ public_ref }}"><button>تحديث الإحالات والحقوق</button></form>
 {% if player_url %}<audio controls preload="none" src="{{ player_url }}">متصفحك لا يدعم المشغل الصوتي.</audio><p>المقطع المحدد للتنقل فقط؛ إذن الفتح يخص التسجيل الكامل.</p>{% endif %}
@@ -11,4 +13,4 @@
 {% if row.latest %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ public_ref }}"><input type="hidden" name="citation_id" value="{{ row.id }}"><input type="hidden" name="confirm" value="yes">{% if row.current and row.state == 'PROPOSED' %}<button name="action" value="timed_confirm">تأكيد الموضع بعد الاستماع البشري</button>{% endif %}{% if row.state != 'WITHDRAWN' %}<button name="action" value="timed_withdraw">سحب الإحالة</button>{% endif %}</form>
 {% if row.current and row.state == 'PROPOSED' and row.source %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ public_ref }}"><input type="hidden" name="citation_id" value="{{ row.id }}"><button name="action" value="timed_preview">استماع خاص للمراجعة قبل التأكيد</button></form>{% endif %}
 {% if row.current and row.state == 'CONFIRMED' and row.source %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ public_ref }}"><input type="hidden" name="citation_id" value="{{ row.id }}"><button name="action" value="timed_open">فتح الموضع المصرح به</button></form>{% endif %}{% endif %}</article>{% empty %}<p>لا توجد إحالات زمنية.</p>{% endfor %}
-<a href="/casework/staff/">العودة إلى مكتب القضية</a></main></body></html>
+<a href="/casework/staff/">العودة إلى مكتب القضية</a>{% endblock %}
