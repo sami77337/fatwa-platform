@@ -480,7 +480,11 @@ class PdfTests(Fixture, TransactionTestCase):
         published = client.get(selected_url)
         self.assertEqual(published.status_code, 200)
         self.assertEqual(len(PdfReader(io.BytesIO(published.content)).pages), 1)
-        self.assertEqual(client.get(review_url).status_code, 404)
+        # A confirmed locator remains reviewable while the answer is still a
+        # draft. It stops being usable after a rights withdrawal.
+        reviewed = client.get(review_url)
+        self.assertEqual(reviewed.status_code, 200)
+        self.assertEqual(len(PdfReader(io.BytesIO(reviewed.content)).pages), 1)
         self.assertEqual(
             Client(REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1")
             .get(selected_url)
@@ -488,10 +492,11 @@ class PdfTests(Fixture, TransactionTestCase):
             404,
         )
         self.rights.actions.remove("READ_MEDIA")
+        self.assertEqual(client.get(review_url).status_code, 404)
         self.assertEqual(client.get(selected_url).status_code, 404)
         self.assertEqual(client.head(selected_url).status_code, 404)
         # The selected-page derivative never replaces the immutable original.
-        self.assertEqual(PdfReader(io.BytesIO(self.pdf["raw"])).pages.__len__(), 3)
+        self.assertEqual(len(PdfReader(io.BytesIO(self.pdf["raw"])).pages), 3)
         self.assertEqual(AnswerPart.objects.get(pk=self.part.pk).sha256, self.part.sha256)
 
     def test_concurrent_correction_has_one_successor(self):
