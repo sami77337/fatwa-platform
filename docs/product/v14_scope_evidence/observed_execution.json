@@ -382,6 +382,6 @@
   "limits": [
     "Original V14 evidence.json and 556-point matrix remain pending; this bridge does not mark a single point COMPLETE.",
     "Original/user files and secrets are not contained in this receipt.",
-    "Chrome PDF selected-page rendering, genuine scholar-reviewed ranking, U03/production permissions and arbitrary privileged SQL control remain outside this evidence."
+    "Chrome PDF plugin selected-page rendering is NOT_VERIFIED; genuine scholar-reviewed ranking, U03/production permissions and arbitrary privileged SQL control remain outside this evidence."
   ]
 }
