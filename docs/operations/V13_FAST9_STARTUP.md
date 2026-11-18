@@ -179,3 +179,58 @@ it cannot promise to diagnose every future timeout. It would retain the existing
 launch timeout, sandbox and single launch, add no version-probe process/timer,
 and keep failed browser version unknown. Implementation requires separate
 authorization and focused privacy/contract tests against the pinned runtime.
+
+## Authorized prospective launch observations
+
+Implemented after the doc-only repeated-failure record above. The existing
+`return_preparation_browser.py` now calls `launch_diagnostics.launch_browser`
+once, with the same executable, `chromium_sandbox=True` and `timeout=10000`.
+It still enters the existing Playwright context through the same ExitStack,
+and the original harness still owns browser cleanup. There is no new process,
+probe, timer, retry, sandbox exception or outcome/error-category change.
+
+The fixed `startup_diagnostics` object appears in both the JSON receipt and the
+compact stdout summary, on success and failure. It contains the locally installed
+numeric Playwright version (otherwise `UNKNOWN`), driver-entry and launch-only
+monotonic elapsed milliseconds, the unchanged configured timeout/sandbox, and
+whether launch returned. Elapsed values are bounded to 0–600000 for reporting
+only; nonfinite measurements are null. The failed browser version remains null:
+the Playwright package version is not the Chrome version.
+
+On a Playwright launch exception only, the helper examines at most the first
+32768 existing message characters and records truncation. Anchored, fixed
+patterns recognize launching/launched/exit records and two stderr markers:
+`No usable sandbox!` and `error while loading shared libraries:`. Outputs are
+fixed `OBSERVED`/`UNKNOWN` enums and `ZERO`/`NONZERO`/`SIGNAL`/`UNKNOWN` exit kinds.
+Unlike the preliminary proposal's `NOT_OBSERVED`, missing markers explicitly
+remain `UNKNOWN`: an absent, truncated or changed call-log format cannot prove
+that a process did not start. A recorded exit may reflect timeout cleanup.
+Neither markers nor exit kinds are asserted as the root cause. Raw messages,
+stack/name, stderr, URLs, paths, PID, signal names and command arguments are never
+exported. Historical failures remain `ROOT_CAUSE_UNKNOWN`; these observations
+cannot retrofit information that their logs did not preserve.
+
+The local inspected Playwright **1.62.0** wheel has these relevant SHA-256 hashes:
+
+| Installed package source | SHA-256 |
+|---|---|
+| `driver/package/lib/coreBundle.js` | `3258d1cf334c6afc95f22aa9c292436cb976b391e0437f1359c83b84f0cb9d66` |
+| `_impl/_helper.py` | `b6a448ddd5f0fbab04872932cdb5d88b35cfa031440fc3a372b29aa1328a7ed9` |
+| `_impl/_connection.py` | `1e323ddddbc6fe2c5739760059b6cd5d7cc7b1456547ec8ce44023e4774a9d6e` |
+
+Its process launcher records `<launching>`, `<launched> pid=…`, `[pid=…][err] …`
+and `<process did exit: exitCode=…, signal=…>`. The Python error parser appends
+formatted call logs to the exception message; these internals are not a stable
+public structured diagnostic interface. The focused contract uses the actual
+1.62.0 error parser and call-log formatter with synthetic private strings.
+
+Verification: `python -m unittest tests.editorial_workbench.test_launch_diagnostics -v`
+passed **12/12**, using the isolated 1.62.0 package. Tests cover private-string
+absence, oversize truncation, unknown formats, fixed exit categories, fake-clock
+measurements/bounds, identical single-launch arguments, driver failure, same
+exception propagation and no journey after timeout, plus actual harness output
+wiring. Ruff checks/format checks passed for the three owned Python files.
+These tests require no database, browser or external request. No product suite
+or workflow was rerun for this change. The next normal integration CI run is
+still needed to exercise this observation path with hosted Chrome; any later
+success will not establish the historical failure cause.
