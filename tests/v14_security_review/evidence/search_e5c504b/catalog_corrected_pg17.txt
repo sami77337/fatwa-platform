@@ -1,0 +1,9 @@
+SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.12 (Debian 17.12-0+deb13u1); fresh owned cluster
+test_catalog_version_mutation_is_rejected_before_projection (tests.v14_security_review.test_search_repair.SearchRepairBoundary.test_catalog_version_mutation_is_rejected_before_projection) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.280s
+
+OK
+Found 1 test(s).
+System check identified no issues (0 silenced).
