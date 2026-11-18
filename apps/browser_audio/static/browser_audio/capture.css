@@ -2,3 +2,5 @@
 [data-browser-audio] audio { display: block; width: 100%; max-width: 28rem; }
 [data-browser-audio] audio[hidden] { display: none; }
 [data-browser-audio] button { white-space: normal; margin-block: .25rem; }
+[data-audio-metrics] p { margin-block: .25rem; }
+[data-audio-progress] { width: 100%; max-width: 28rem; }
