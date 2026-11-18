@@ -154,3 +154,17 @@ restored target handled104 HTTP checks. This run preceded `8329364` and is only 
 harness-debug receipt, not final-head/security/protected evidence. Hosted PG17/18
 Chrome sandbox execution on the merged head remains pending. Real expert search
 review remains PENDING; PDF engine-selected page rendering remains NOT_VERIFIED.
+
+## Compatibility expectation correction
+
+The first V13 compatibility run on combined `32cfcb7` failed one of120 affected
+checks on each PG major before its browser phase: the old security test expected
+coverage BOUNDED_CANDIDATE_WINDOW and20 candidates. V14 intentionally enumerates
+the current case's registered authorized TOC set up to64. The test now asserts
+that exact contract, forwards the new ranking keyword argument, and explicitly
+asserts the expiry attack executed once for both matching and empty queries.
+Its unchanged denial requirement remains: no metadata projection after expiry.
+Before the additional attack counter assertion, the focused test passed1/1 on
+PG17.12 (0.448s) and18.7 (0.458s); exact final CI must execute the final assertion.
+The historical hosted run is44235937030 (jobs134571960360 and134571961093).
+No product permission was relaxed to accommodate this expectation update.
