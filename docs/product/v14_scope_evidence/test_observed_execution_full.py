@@ -9,7 +9,7 @@ except ImportError:
     from verify_observed_execution_full import EvidenceError, verify
 
 HERE = Path(__file__).resolve().parent
-BASE = "6b4f77e29ccb1f21d48ad3d77f5e63d3be953fab"
+PRODUCT = "762f322f26b21cf30f65a2453f360dd8738e9eec"
 
 
 class FullObservedEvidenceTests(unittest.TestCase):
@@ -27,7 +27,7 @@ class FullObservedEvidenceTests(unittest.TestCase):
 
     def read_file(self, path):
         import subprocess
-        return subprocess.check_output(["git", "show", f"{BASE}:{path}"], cwd=HERE.parents[2])
+        return subprocess.check_output(["git", "show", f"{PRODUCT}:{path}"], cwd=HERE.parents[2])
 
     def check(self, mutate=None, read_file=None):
         data = copy.deepcopy(self.data)
