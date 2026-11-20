@@ -3,8 +3,11 @@ from django.core.management import call_command
 from django.db import connections
 from django.test.runner import DiscoverRunner
 from psycopg import sql
+
 from apps.intake_workflow.guards import (
-    initialize_synthetic_database, require_synthetic_write, validate_write_configuration,
+    initialize_synthetic_database,
+    require_synthetic_write,
+    validate_write_configuration,
 )
 
 
@@ -52,7 +55,18 @@ class Wave7TestRunner(DiscoverRunner):
         if created != 'test_' + self._wave7_base:
             raise RuntimeError('Wave7 exact-resource cleanup identity changed')
         with connection.cursor() as cursor:
-            cursor.execute(sql.SQL('DROP DATABASE {}').format(sql.Identifier(created)))
+            # Reclaiming this invocation's migrated database can exceed the
+            # application's 3-second query budget. Bound this maintenance DROP
+            # to 30 seconds; keep lock_timeout and every runtime option intact.
+            cursor.execute('SHOW statement_timeout')
+            previous_timeout = cursor.fetchone()[0]
+            try:
+                cursor.execute("SELECT set_config('statement_timeout', %s, false)", ['30s'])
+                cursor.execute(sql.SQL('DROP DATABASE {}').format(sql.Identifier(created)))
+            finally:
+                cursor.execute(
+                    "SELECT set_config('statement_timeout', %s, false)", [previous_timeout]
+                )
         self._wave7_created = None
 
     def teardown_databases(self, old_config, **kwargs):

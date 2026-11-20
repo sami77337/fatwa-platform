@@ -1,0 +1,709 @@
+{
+  "schema": "fatwa.functional-scope-plan.v1",
+  "status": "CANDIDATES_REQUIRE_EXACT_COMMIT_EXECUTION",
+  "source_inventory": {
+    "path": "docs/product/v14_scope_evidence/matrix.json",
+    "sha256": "0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487",
+    "denominator": 556,
+    "unit": "original_owner_point",
+    "other_inventory_clauses": 479
+  },
+  "baseline_commit": "4825f025b3f95eacd08fa315a062d6850e896b69",
+  "first_batch_commit": "da920d3a206e8a0776e64f801093e3a05d06f2c7",
+  "claim_boundary": "Newly completed functional behavior in the explicitly synthetic development composition. No production acceptance, deployment, data corpus completeness, weighted effort percentage or overall product completion claim.",
+  "candidate_count": 57,
+  "groups": [
+    {
+      "id": "assignments",
+      "title_ar": "إسناد القضايا وقوائم العمل",
+      "contract": "apps/case_assignments/README.md",
+      "service_test_labels": [
+        "apps.case_assignments.tests",
+        "apps.case_assignments.review_tests"
+      ],
+      "browser_test_file": "tests/casework/test_functional_completion_browser.py",
+      "points": [
+        {
+          "original_id": "56",
+          "original_text": "توجد للشيخ قائمة للقضايا المعينة له.",
+          "direct_spec_ids": [
+            "SPEC-U02-002"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "57",
+          "original_text": "توجد Shared Queue للقضايا غير المعينة.",
+          "direct_spec_ids": [
+            "SPEC-U02-002"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "58",
+          "original_text": "توجد قائمة للتعقيبات الجديدة.",
+          "direct_spec_ids": [
+            "SPEC-U02-002"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "61",
+          "original_text": "يمكن للشيخ Claim قضية من القائمة المشتركة يدويًا.",
+          "direct_spec_ids": [
+            "SPEC-U14-012",
+            "SPEC-U03-010"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "64",
+          "original_text": "يمكن أن يكون للقضية شيخ أساسي Primary Mufti.",
+          "direct_spec_ids": [
+            "SPEC-U14-012"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "65",
+          "original_text": "يمكن تسجيل شيوخ مساهمين أو مراجعين حسب الحاجة.",
+          "direct_spec_ids": [
+            "SPEC-U14-012"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "437",
+          "original_text": "Assignments تاريخية.",
+          "direct_spec_ids": [
+            "SPEC-U14-012",
+            "SPEC-U15-019"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "438",
+          "original_text": "يوجد Primary Mufti نشط واحد كحد أقصى للقضية وفق النموذج المعتمد.",
+          "direct_spec_ids": [
+            "SPEC-U14-012"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "organization",
+      "title_ar": "التنظيم والأنواع والملاحظات بإصدار مستقل",
+      "contract": "apps/case_organization/README.md",
+      "service_test_labels": [
+        "apps.case_organization.tests"
+      ],
+      "browser_test_file": "tests/casework/test_functional_completion_browser.py",
+      "points": [
+        {
+          "original_id": "47",
+          "original_text": "تعديل Metadata مثل Tag أو تصنيف لا يرفع Evidence Version لأنه لا يغير وقائع السؤال.",
+          "direct_spec_ids": [
+            "SPEC-U01-014"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "166",
+          "original_text": "Tags منفصلة عن الشجرة الفقهية.",
+          "direct_spec_ids": [
+            "SPEC-U04-006"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "167",
+          "original_text": "أمثلة: مسافر، مريض، حامل، حائض، غاضب، ناسٍ، موسوس.",
+          "direct_spec_ids": [
+            "SPEC-U04-006"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "171",
+          "original_text": "يوجد تصنيف مستقل لنوع السؤال، وليس موضوعه فقط.",
+          "direct_spec_ids": [
+            "SPEC-U04-008"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "172",
+          "original_text": "الأنواع تشمل مثلًا: حكم، صحة/بطلان، قضاء، كفارة، ضمان، حقوق والتزامات، كيفية، مقدار، وقت، شروط وموانع، أهلية، توزيع، نزاع، علاج مشكلة، سؤال تعليمي وغيرها.",
+          "direct_spec_ids": [
+            "SPEC-U04-008"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "173",
+          "original_text": "يمكن للقضية أن تحمل أكثر من Question Type عند الحاجة.",
+          "direct_spec_ids": [
+            "SPEC-U04-009"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "174",
+          "original_text": "هذه الطبقة مهمة جدًا للبحث لاحقًا.",
+          "direct_spec_ids": [
+            "SPEC-U05-009"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "224",
+          "original_text": "يدعم Tags.",
+          "direct_spec_ids": [
+            "SPEC-U05-004",
+            "SPEC-U05-009"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "225",
+          "original_text": "يدعم Question Type.",
+          "direct_spec_ids": [
+            "SPEC-U05-004",
+            "SPEC-U05-009"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "436",
+          "original_text": "Evidence Version منفصلة عن Metadata Version.",
+          "direct_spec_ids": [
+            "SPEC-U01-012",
+            "SPEC-U01-014"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "research",
+      "title_ar": "مجموعات بحث خاصة وبحث محفوظ ومقارنة مصادر",
+      "contract": "apps/research_workspace/COLLECTIONS.md",
+      "service_test_labels": [
+        "apps.research_workspace.test_collections"
+      ],
+      "browser_test_file": "tests/casework/test_functional_completion_browser.py",
+      "points": [
+        {
+          "original_id": "338",
+          "original_text": "الباحث يستطيع إنشاء Workspace أو Collection خاصة.",
+          "direct_spec_ids": [
+            "SPEC-U12-012",
+            "SPEC-U12-013",
+            "SPEC-U12-016"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "340",
+          "original_text": "يمكن حفظ Search داخل Collection.",
+          "direct_spec_ids": [
+            "SPEC-U12-015"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "341",
+          "original_text": "توجد Compare Mode للمقارنة بين مواد مختلفة.",
+          "direct_spec_ids": [
+            "SPEC-U12-017"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "reports",
+      "title_ar": "بلاغات محتوى ومراجعة بشرية تحفظ الأصل",
+      "contract": "apps/content_reports/README.md",
+      "service_test_labels": [
+        "apps.content_reports.tests",
+        "apps.content_reports.test_review",
+        "apps.content_reports.test_requester_review"
+      ],
+      "browser_test_file": "tests/casework/test_functional_completion_browser.py",
+      "points": [
+        {
+          "original_id": "470",
+          "original_text": "يوجد Error Reporting للمحتوى.",
+          "direct_spec_ids": [
+            "SPEC-U09-027",
+            "SPEC-U15-008"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "472",
+          "original_text": "لا يؤدي Report تلقائيًا إلى تعديل المحتوى؛ يدخل Workflow للمراجعة.",
+          "direct_spec_ids": [
+            "SPEC-U09-027",
+            "SPEC-U15-008"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "recording",
+      "title_ar": "إيقاف التسجيل واستكماله والاستماع إلى التسجيل نفسه",
+      "contract": "apps/browser_audio/PAUSE_RESUME.md",
+      "service_test_labels": [
+        "apps.browser_audio.test_boundaries"
+      ],
+      "browser_test_file": "apps/browser_audio/test_browser.py",
+      "points": [
+        {
+          "original_id": "77",
+          "original_text": "يستطيع الشيخ بدء التسجيل وإيقافه واستكماله والاستماع إليه قبل الاعتماد.",
+          "direct_spec_ids": [
+            "SPEC-U02-013"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "scholarly",
+      "title_ar": "سلاسل دروس وعلاقات يدوية بين نسخ الفتاوى",
+      "contract": "apps/scholarly_links/README.md",
+      "service_test_labels": [
+        "apps.scholarly_links.tests"
+      ],
+      "browser_test_file": "apps/scholarly_links/browser_tests.py",
+      "points": [
+        {
+          "original_id": "74",
+          "original_text": "يمكنه الإحالة إلى فتوى سابقة.",
+          "direct_spec_ids": [
+            "SPEC-U02-031"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "175",
+          "original_text": "تصنيف الدروس مستقل عن Taxonomy الشرعية.",
+          "direct_spec_ids": [
+            "SPEC-U04-002"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "176",
+          "original_text": "توجد Lesson Series.",
+          "direct_spec_ids": [
+            "SPEC-U11-003"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "177",
+          "original_text": "داخلها Lessons.",
+          "direct_spec_ids": [
+            "SPEC-U11-003"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "178",
+          "original_text": "يمكن ربط الفتوى بأكثر من درس.",
+          "direct_spec_ids": [
+            "SPEC-U04-015"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "181",
+          "original_text": "يمكن ربط الفتاوى ببعضها.",
+          "direct_spec_ids": [
+            "SPEC-U04-019"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "182",
+          "original_text": "أنواع العلاقات تشمل Related.",
+          "direct_spec_ids": [
+            "SPEC-U04-019"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "183",
+          "original_text": "Referred by Sheikh.",
+          "direct_spec_ids": [
+            "SPEC-U02-031",
+            "SPEC-U12-004"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "185",
+          "original_text": "Duplicate Of.",
+          "direct_spec_ids": [
+            "SPEC-U04-019",
+            "SPEC-U12-004",
+            "SPEC-U12-007"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "186",
+          "original_text": "Supersedes.",
+          "direct_spec_ids": [
+            "SPEC-U04-019",
+            "SPEC-U12-004",
+            "SPEC-U12-007"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "226",
+          "original_text": "يدعم Lessons.",
+          "direct_spec_ids": [
+            "SPEC-U05-004",
+            "SPEC-U05-009"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "228",
+          "original_text": "يدعم Manual Relations.",
+          "direct_spec_ids": [
+            "SPEC-U05-009"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "public_knowledge",
+      "title_ar": "صفحات علماء وروابط معلنة وترجمات بشرية وبيانات فهرسة",
+      "contract": "apps/public_knowledge/README.md",
+      "service_test_labels": [
+        "apps.public_knowledge.tests",
+        "apps.public_knowledge.test_scholarly",
+        "apps.library_preview.tests"
+      ],
+      "browser_test_file": "apps/public_knowledge/browser_tests.py",
+      "points": [
+        {
+          "original_id": "275",
+          "original_text": "الفتاوى المرتبطة.",
+          "direct_spec_ids": [
+            "SPEC-U09-012"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "276",
+          "original_text": "الدروس المرتبطة.",
+          "direct_spec_ids": [
+            "SPEC-U09-012"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "279",
+          "original_text": "لكل شيخ صفحة عامة عند الحاجة.",
+          "direct_spec_ids": [
+            "SPEC-U09-014"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "280",
+          "original_text": "تعرض الاسم والنبذة والمحتوى المنشور المرتبط به.",
+          "direct_spec_ids": [
+            "SPEC-U09-014"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "282",
+          "original_text": "لا تعرض مؤشرات تشغيل داخلية مثل متوسط زمن الإجابة.",
+          "direct_spec_ids": [
+            "SPEC-U09-014"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "460",
+          "original_text": "Structured Data عندما يكون مناسبًا.",
+          "direct_spec_ids": [
+            "SPEC-U09-024"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "461",
+          "original_text": "Sitemaps.",
+          "direct_spec_ids": [
+            "SPEC-U09-024"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "463",
+          "original_text": "البنية تدعم تعدد اللغات.",
+          "direct_spec_ids": [
+            "SPEC-U09-023"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "464",
+          "original_text": "الأصل العربي يبقى محفوظًا.",
+          "direct_spec_ids": [
+            "SPEC-U09-023"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "465",
+          "original_text": "الترجمات لها Versions.",
+          "direct_spec_ids": [
+            "SPEC-U09-023",
+            "SPEC-U12-019"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "466",
+          "original_text": "الترجمة المنشورة المعتمدة لا تعتبر مجرد AI Translation غير مراجعة.",
+          "direct_spec_ids": [
+            "SPEC-U09-023"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "467",
+          "original_text": "لا تصبح ترجمة آلية غير معتمدة مصدرًا شرعيًا رسميًا.",
+          "direct_spec_ids": [
+            "SPEC-U09-023"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "exports",
+      "title_ar": "تصدير مواد مختارة بصلاحية مستقلة وحزمة قابلة للتحقق",
+      "contract": "apps/selected_exports/README.md",
+      "service_test_labels": [
+        "apps.selected_exports.tests",
+        "apps.selected_exports.test_durability"
+      ],
+      "browser_test_file": "apps/selected_exports/browser_tests.py",
+      "points": [
+        {
+          "original_id": "357",
+          "original_text": "يدعم Bulk Export للبيانات.",
+          "direct_spec_ids": [
+            "SPEC-U13-003"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "363",
+          "original_text": "Metadata.",
+          "direct_spec_ids": [
+            "SPEC-U13-003"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "364",
+          "original_text": "يمكن دعم CSV/JSON/JSONL/XLSX/Parquet حسب نوع التصدير.",
+          "direct_spec_ids": [
+            "SPEC-U13-005"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "365",
+          "original_text": "الحزم الكبيرة يمكن إخراجها كـZIP/Archive.",
+          "direct_spec_ids": [
+            "SPEC-U13-005"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "366",
+          "original_text": "الحزمة تحتوي Manifest وChecksums.",
+          "direct_spec_ids": [
+            "SPEC-U13-007"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "367",
+          "original_text": "التصدير يحترم الصلاحيات والخصوصية.",
+          "direct_spec_ids": [
+            "SPEC-U13-010"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "368",
+          "original_text": "Credentials وSecrets لا تدخل في Export.",
+          "direct_spec_ids": [
+            "SPEC-U13-010"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "quality",
+      "title_ar": "لوحة جودة للسجلات والملفات والنسبة والإحالات",
+      "contract": "apps/data_quality/README.md",
+      "service_test_labels": [
+        "apps.data_quality.tests",
+        "apps.data_quality.test_review"
+      ],
+      "browser_test_file": "apps/data_quality/browser_tests.py",
+      "points": [
+        {
+          "original_id": "468",
+          "original_text": "يوجد Data Quality Dashboard.",
+          "direct_spec_ids": [
+            "SPEC-U15-006",
+            "SPEC-U15-007"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        },
+        {
+          "original_id": "469",
+          "original_text": "يمكن كشف السجلات الناقصة أو العلاقات المكسورة.",
+          "direct_spec_ids": [
+            "SPEC-U15-006",
+            "SPEC-U15-007"
+          ],
+          "assessment": "WHOLE_CANDIDATE_PENDING_AGGREGATE_EXECUTION"
+        }
+      ]
+    }
+  ],
+  "explicit_exclusions": [
+    {
+      "original_id": "59",
+      "reason": "The new dedicated drafts inbox improves stale/returned-draft coverage, but the baseline already listed saved current drafts under review. Conservative novelty audit gives no new point credit."
+    },
+    {
+      "original_id": "60",
+      "reason": "Existing inbox/workflow behavior is regression evidence, not new work."
+    },
+    {
+      "original_id": "62",
+      "reason": "Multiple authorized Muftis were already supported; no new point credit."
+    },
+    {
+      "original_id": "63",
+      "reason": "Identity/provider configuration was already independent of a single hardcoded Mufti; no new point credit."
+    },
+    {
+      "original_id": "70",
+      "reason": "Direct voice recording existed before this batch; pause/resume earns point77 only."
+    },
+    {
+      "original_id": "100",
+      "reason": "Internal note capability does not resolve the held organizer/decision scope."
+    },
+    {
+      "original_id": "102",
+      "reason": "Existing nonblocking enrichment rule; no new credit."
+    },
+    {
+      "original_id": "103",
+      "reason": "Existing nonblocking enrichment rule; no new credit."
+    },
+    {
+      "original_id": "104",
+      "reason": "Existing nonblocking enrichment rule; no new credit."
+    },
+    {
+      "original_id": "105",
+      "reason": "Existing nonblocking enrichment rule; no new credit."
+    },
+    {
+      "original_id": "184",
+      "reason": "Existing canonical follow-up behavior is preserved, not counted again."
+    },
+    {
+      "original_id": "187",
+      "reason": "No future/custom relation kinds or held policy are invented."
+    },
+    {
+      "original_id": "188",
+      "reason": "Human review is a boundary, not automatically a new point here."
+    },
+    {
+      "original_id": "281",
+      "reason": "Scholar pages show granted fatwas and explicitly released lessons; every general public material type is not implemented."
+    },
+    {
+      "original_id": "283",
+      "reason": "Topic curation remains within its authorized owning case; cross-case topic hub aggregation is unfinished."
+    },
+    {
+      "original_id": "284",
+      "reason": "The full topic-hub behavior remains partial; example names are not counted as a delivered hub."
+    },
+    {
+      "original_id": "285",
+      "reason": "Hadith corpus and all cross-case topic material aggregation are unavailable."
+    },
+    {
+      "original_id": "336",
+      "reason": "Previously existing human-review requirements are not newly credited."
+    },
+    {
+      "original_id": "337",
+      "reason": "Previously existing human-review requirements are not newly credited."
+    },
+    {
+      "original_id": "339",
+      "reason": "Collections cover available exact reference/transcript/knowledge materials, not the absent hadith corpus and every promised material kind."
+    },
+    {
+      "original_id": "354",
+      "reason": "Bulk import is outside the selected-export implementation."
+    },
+    {
+      "original_id": "355",
+      "reason": "Bulk import/reimport is not claimed by a selected export."
+    },
+    {
+      "original_id": "356",
+      "reason": "Bulk import/reimport is not claimed by a selected export."
+    },
+    {
+      "original_id": "361",
+      "reason": "Video export is not implemented."
+    },
+    {
+      "original_id": "459",
+      "reason": "Public breadcrumbs already existed in the baseline reference catalog and native navigation tests. New fatwa/topic paths extend their coverage without new whole-point credit."
+    },
+    {
+      "original_id": "471",
+      "reason": "Reporting every hadith/content kind requires unavailable corpora; available targets do not close this point."
+    }
+  ],
+  "release_state": {
+    "gate_b": "NOT_PASSED",
+    "gates_c_d_e": "HOLD",
+    "phase_01": "BLOCKED",
+    "deployment": "NOT_DEPLOYED"
+  }
+}

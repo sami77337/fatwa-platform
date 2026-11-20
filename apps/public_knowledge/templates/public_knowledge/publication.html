@@ -1,0 +1,15 @@
+{% extends "public_knowledge/base.html" %}{% block knowledge_content %}
+<nav aria-label="لغة المادة">{% for language in languages %}<a href="{{ language.url }}" lang="{{ language.code }}">{{ language.label }}{% if not language.available %} — لا توجد ترجمة مراجعة{% endif %}</a> {% endfor %}</nav>
+{% if missing_translation %}<p role="status">لا توجد ترجمة مراجعة ومصرح بها للغة المختارة. يُعرض الأصل العربي كما هو، دون توليد ترجمة بديلة.</p>{% endif %}
+<article itemscope itemtype="https://schema.org/CreativeWork" lang="{{ edition.language }}" dir="auto"><meta itemprop="inLanguage" content="{{ edition.language }}"><meta itemprop="version" content="{{ edition.version|default:edition.source_version }}">
+<h1 itemprop="name">{{ edition.title }}</h1>
+{% if edition.scholar %}<p>صاحب الجواب: <a itemprop="author" href="{{ edition.scholar.url }}">{{ edition.scholar.name }}</a></p>{% endif %}
+<p>نسخة المصدر العربي {{ edition.source_version }}{% if edition.version %} · نسخة العرض أو الترجمة {{ edition.version }}{% endif %}</p><p>تاريخ اعتماد نسخة النشر: <time dir="ltr" datetime="{{ published_at|date:'c' }}">{{ published_at|date:'Y-m-d H:i' }}</time></p>
+{% if edition.language != 'ar' %}<p>ترجمة منفصلة مرت بمراجعة واعتماد بشريين. <a itemprop="translationOfWork" href="{{ original_url }}">فتح الأصل العربي المحفوظ</a></p>{% endif %}
+{% if edition.question %}<section><h2>السؤال المنشور</h2><p class="body">{{ edition.question|linebreaksbr }}</p></section>{% endif %}
+<section><h2>الجواب{% if edition.language != 'ar' %} — الترجمة المراجعة{% endif %}</h2><div class="body" itemprop="text" id="public-answer">{{ edition.body|linebreaksbr }}</div></section></article>
+{% if edition.topics %}<section><h2>الموضوعات</h2>{% for topic in edition.topics %}<p><a href="{{ topic.url }}">{{ topic.title }}</a></p>{% endfor %}</section>{% endif %}
+<section><h2>الإحالات المصرح بها</h2>{% for reference in edition.references %}<article><h3><a href="{{ reference.url }}">{{ reference.heading_title }}</a></h3><p>{{ reference.work_title }} · {{ reference.edition_title }} · الجزء {{ reference.printed_part }} · الصفحة {{ reference.printed_page }}</p></article>{% empty %}<p>لا توجد إحالات متاحة في هذه المعاينة.</p>{% endfor %}</section>
+<section><h2>فتاوى بعلاقات بشرية موثقة</h2>{% for target in related %}<p>{{ target.label }}: <a href="{{ target.url }}">{{ target.title }}</a></p>{% empty %}<p>لا توجد علاقات فتاوى متاحة حاليًا.</p>{% endfor %}</section>
+<section><h2>الدروس المرتبطة المعتمدة</h2>{% for lesson in lessons %}<p><a href="{{ lesson.url }}">{{ lesson.title }}</a></p>{% empty %}<p>لا توجد بيانات دروس مرتبطة مصرح بها حاليًا.</p>{% endfor %}</section>
+{% endblock %}

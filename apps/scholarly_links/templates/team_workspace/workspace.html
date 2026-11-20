@@ -1,0 +1,5 @@
+{% extends "team_workspace/workspace.html" %}
+{% block content %}
+{{ block.super }}
+{% if selected %}{% include "scholarly_links/entry.html" with scholarly_case_ref=selected.public_ref %}{% endif %}
+{% endblock %}

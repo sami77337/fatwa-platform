@@ -22,6 +22,7 @@ ROUTES = {
     BASE + "followup/": ("POST",),
     BASE + "staff/login/": ("GET", "HEAD", "POST"),
     BASE + "staff/": ("GET", "HEAD", "POST"),
+    BASE + "staff/quality/": ("GET", "HEAD"),
     BASE + "staff/logout/": ("POST",),
     BASE + "casework.css": ("GET", "HEAD"),
     BASE + "audio-capture.js": ("GET", "HEAD"),

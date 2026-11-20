@@ -31,7 +31,22 @@ INSTALLED_APPS = [
     "apps.case_assignments",
     "apps.case_organization",
     "apps.content_reports",
+    "apps.data_quality",
+    "apps.selected_exports",
+    "apps.scholarly_links",
+    "apps.public_knowledge",
 ]
+FATWA_PUBLIC_KNOWLEDGE_ENABLED = False
+FATWA_PUBLIC_KNOWLEDGE_AUTHORITY = None
+FATWA_PUBLIC_KNOWLEDGE_LANGUAGES = {"ar": "العربية"}
+FATWA_PUBLIC_KNOWLEDGE_ORIGIN = ""
+FATWA_DATA_QUALITY_ENABLED = False
+FATWA_SCHOLARLY_LINKS_ENABLED = False
+FATWA_SCHOLARLY_LINKS_AUTHORITY = None
+FATWA_SELECTED_EXPORTS_ENABLED = False
+FATWA_SELECTED_EXPORTS_AUTHORITY = None
+FATWA_SELECTED_EXPORTS_TTL_SECONDS = 1800
+FATWA_SELECTED_EXPORTS_LEASE_SECONDS = 120
 FATWA_CASE_ASSIGNMENTS_ENABLED = False
 FATWA_CASE_ASSIGNMENT_CANDIDATES = None
 FATWA_CASE_ORGANIZATION_ENABLED = False
@@ -103,6 +118,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].append(
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.mufti_workspace.context.case_workspace")
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.browser_audio.context.capture")
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.case_organization.context.organization")
+TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.scholarly_links.context.scholarly_links")
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",
     Path(__file__).resolve().parents[2] / "apps/requester_team_journey/templates",

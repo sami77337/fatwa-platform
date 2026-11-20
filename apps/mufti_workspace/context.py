@@ -42,10 +42,20 @@ TABS = (
     ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
     ("publication", "pub_open", "نسخة النشر المستقلة", "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED"),
     ("reports", "reports_open", "بلاغات المحتوى ومراجعتها", "FATWA_CONTENT_REPORTS_ENABLED"),
+    ("quality", "quality_case", "جودة بيانات القضية", "FATWA_DATA_QUALITY_ENABLED"),
+    ("exports", "exports_open", "تصدير المواد المختارة", "FATWA_SELECTED_EXPORTS_ENABLED"),
+    ("scholarly", "scholarly_open", "الدروس والعلاقات اليدوية", "FATWA_SCHOLARLY_LINKS_ENABLED"),
+    ("public_knowledge", "pk_open", "صفحات العلماء والترجمات", "FATWA_PUBLIC_KNOWLEDGE_ENABLED"),
 )
 
 
 def _active(action):
+    if action.startswith("pk_"):
+        return "public_knowledge"
+    if action.startswith(("scholarly_", "lesson_", "relation_")):
+        return "scholarly"
+    if action.startswith("exports_"):
+        return "exports"
     if action.startswith("organization_"):
         return "organization"
     if action.startswith(("report_", "reports_")):
@@ -173,6 +183,10 @@ def case_workspace(request):
     """
     if (
         getattr(settings, "FATWA_MUFTI_WORKSPACE_ENABLED", False) is not True
+        # Diagnostics authorize and pin their own projection, including a case
+        # with an invalid required record. A normal canonical header would
+        # reject that record before its bounded diagnostic could be displayed.
+        or request.POST.get("action") in {"quality_case", "quality_open"}
         or getattr(request, "_mufti_workspace_error", False) is True
         or request.path != "/casework/staff/"
         or request.method != "POST"

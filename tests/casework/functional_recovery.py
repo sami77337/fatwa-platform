@@ -1,6 +1,7 @@
 """Encrypted restore of nonempty new feature tables, followed by fresh-process readers."""
 
 import argparse
+import importlib
 import json
 import os
 import subprocess
@@ -11,6 +12,12 @@ import uuid
 from pathlib import Path
 
 import django
+
+ADDITIONAL_WORKFLOWS = (
+    "apps.scholarly_links.recovery_support",
+    "apps.public_knowledge.recovery_support",
+    "apps.selected_exports.recovery_support",
+)
 
 
 def restored(fixture):
@@ -74,6 +81,11 @@ def restored(fixture):
                 raise AssertionError("Restore must not fabricate identity authority")
             except cases.CaseConflict:
                 pass
+    for name in ADDITIONAL_WORKFLOWS:
+        result = importlib.import_module(name).verify_restored(
+            fixture["additional_workflows"][name]
+        )
+        print(json.dumps({"verified_restored_workflow": name, "result": result}, default=str))
     print("RESTORED_NEW_WORKFLOWS_PASS")
 
 
@@ -209,6 +221,9 @@ def drill(pg_bin):
                             action_note="إجراء بشري موثق",
                             verification_note="تحقق اصطناعي" if action == "RESOLVE" else "",
                         )
+                additional = {
+                    name: importlib.import_module(name).populate() for name in ADDITIONAL_WORKFLOWS
+                }
                 control = root / "control"
                 control.mkdir(mode=0o700)
                 maintenance.initialize(root=control, storage=storage, synthetic_fixtures_only=True)
@@ -230,6 +245,9 @@ def drill(pg_bin):
                     "research_workspace_savedresearchsearch",
                     "research_workspace_researchcollectionevent",
                 ]
+                for name in ADDITIONAL_WORKFLOWS:
+                    tables.extend(importlib.import_module(name).TABLES)
+                assert len(tables) == len(set(tables))
                 assert all(before["tables"][name]["rows"] > 0 for name in tables)
                 sealed = encrypted.snapshot(
                     scratch=root,
@@ -254,7 +272,14 @@ def drill(pg_bin):
                 assert maintenance.status(root=control)["phase"] == "FROZEN"
                 child = subprocess.run(
                     [sys.executable, "-m", "tests.casework.functional_recovery", "--restored"],
-                    input=json.dumps({**fixture.receipt, "collection_id": collection["id"]}),
+                    input=json.dumps(
+                        {
+                            **fixture.receipt,
+                            "collection_id": collection["id"],
+                            "additional_workflows": additional,
+                            "private_root": result["private_root"],
+                        }
+                    ),
                     text=True,
                     capture_output=True,
                     env={
@@ -266,12 +291,17 @@ def drill(pg_bin):
                 if child.returncode:
                     raise AssertionError(child.stdout + child.stderr)
                 assert "RESTORED_NEW_WORKFLOWS_PASS" in child.stdout
+                with service.connect() as db:
+                    assert service.baseline(db) == before
+                assert maintenance.status(root=control)["phase"] == "FROZEN"
                 receipt = {
                     "status": "PASS",
                     "tables": {name: before["tables"][name] for name in tables},
                     "source_unchanged": True,
                     "source_frozen": True,
                     "fresh_process_readers": True,
+                    "restored_private_storage_used": True,
+                    "additional_workflows": list(additional),
                     "encrypted": True,
                     "plaintext_dump_present": bool(list(root.rglob("database.dump"))),
                 }
@@ -288,7 +318,17 @@ def main():
     args = parser.parse_args()
     django.setup()
     if args.restored:
-        restored(json.load(sys.stdin))
+        from django.test import override_settings
+
+        from apps.private_media.filesystem import FileSystemStorage
+
+        fixture = json.load(sys.stdin)
+        with override_settings(
+            FATWA_PRIVATE_MEDIA_STORAGE=FileSystemStorage(
+                fixture["private_root"], synthetic_fixtures_only=True
+            )
+        ):
+            restored(fixture)
     else:
         if not args.pg_bin:
             parser.error("--pg-bin required for recovery drill")

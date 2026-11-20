@@ -3,12 +3,27 @@
 from pathlib import Path
 from urllib.parse import urlencode
 
+from django.apps import apps
+from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 
 from . import services
 from .guard import safe_read
+
+
+def _knowledge_url(publication_id=None):
+    if (
+        not apps.is_installed("apps.public_knowledge")
+        or getattr(settings, "FATWA_PUBLIC_KNOWLEDGE_ENABLED", False) is not True
+    ):
+        return ""
+    return (
+        reverse("public_knowledge:publication", args=[publication_id, "ar"])
+        if publication_id
+        else reverse("public_knowledge:index")
+    )
 
 
 def _filters(request):
@@ -60,6 +75,7 @@ def index(request):
     for row in result["items"]:
         row["url"] = reverse("library_preview:detail", args=[row["id"]]) + "?" + _query(chosen)
     result.update(_navigation(chosen))
+    result["knowledge_url"] = _knowledge_url()
     result["previous_url"] = "?" + _query(chosen, page=chosen["page"] - 1)
     result["next_url"] = "?" + _query(chosen, page=chosen["page"] + 1)
     return render(request, "library_preview/index.html", result)
@@ -72,7 +88,13 @@ def detail(request, publication_id):
     for source in edition["references"] + edition["relations"]["references"]:
         source["url"] = _source_url(publication_id, source["position"], chosen)
     return render(
-        request, "library_preview/detail.html", {"edition": edition, **_navigation(chosen)}
+        request,
+        "library_preview/detail.html",
+        {
+            "edition": edition,
+            "knowledge_url": _knowledge_url(publication_id),
+            **_navigation(chosen),
+        },
     )
 
 
