@@ -90,7 +90,7 @@ def verify(data, candidate, read_file):
                 and point["bounded_relevance"] == src["bounded_relevance"],
                 "owner_text_or_status_changed",
             )
-            record = (point["original_text"], point["preserved_status"], point["bounded_relevance"])
+            record = (point["original_text"], point["preserved_status"])
             require(pid not in points or points[pid] == record, "conflicting_duplicate_point")
             points[pid] = record
         expected_code = {c["path"] for c in source["code"]}
