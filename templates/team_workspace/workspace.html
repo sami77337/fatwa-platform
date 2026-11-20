@@ -33,11 +33,14 @@
 </form>{% empty %}<p id="empty-queue">لا توجد قضايا مطابقة ضمن صلاحيتك.</p>{% endfor %}</div>
 </section>
 {% if selected %}
+{% if scholarly_links_enabled %}{% include "scholarly_links/entry.html" with scholarly_case_ref=selected.public_ref %}{% endif %}
 {% if organization_enabled %}{% include "case_organization/entry.html" with organization_case_ref=selected.public_ref %}{% endif %}
 {% if assignment %}{% include "case_assignments/panel.html" %}{% endif %}
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
 <nav aria-label="أدوات القضية">
+{% if selected_exports_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="exports_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تصدير المواد المختارة</button></form>{% endif %}
+{% if public_knowledge_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pk_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>صفحات العلماء والترجمات</button></form>{% endif %}
 {% if composite_delivery_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تجهيز توصيل الجواب المركب</button></form>{% endif %}
 {% if answer_media_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="answer_media"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">تحرير جواب متعدد الأجزاء</button></form>{% endif %}
 {% if attachments_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="attachment_list"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button type="submit">مرفقات القضية</button></form>{% endif %}

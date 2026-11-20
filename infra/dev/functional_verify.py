@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 LABELS = [
@@ -26,6 +27,14 @@ LABELS = [
     "apps.requester_portal.tests",
     "apps.requester_portal.workflow_tests",
     "apps.browser_audio.test_boundaries",
+    "apps.scholarly_links.tests",
+    "apps.public_knowledge.tests",
+    "apps.public_knowledge.test_scholarly",
+    "apps.library_preview.tests",
+    "apps.selected_exports.tests",
+    "apps.selected_exports.test_durability",
+    "apps.data_quality.tests",
+    "apps.data_quality.test_review",
 ]
 
 
@@ -63,6 +72,7 @@ def main():
         "browser_requested": args.browser,
         "stages": [],
         "status": "RUNNING",
+        "started_at_epoch": time.time(),
     }
     env = {
         **os.environ,
@@ -93,6 +103,10 @@ def main():
                     "tests.casework.test_functional_completion_browser",
                     "apps.case_assignments.browser_tests",
                     "apps.browser_audio.test_browser.BrowserAudioTests.test_pause_resume_preserves_one_recording_and_excludes_paused_time",
+                    "apps.scholarly_links.browser_tests",
+                    "apps.public_knowledge.browser_tests",
+                    "apps.selected_exports.browser_tests",
+                    "apps.data_quality.browser_tests",
                     "--noinput",
                     "--verbosity",
                     "2",
@@ -124,6 +138,16 @@ def main():
         if proof.get("status") != "PASS" or proof.get("sandbox") is not True:
             raise RuntimeError("Protected browser proof missing")
     receipt["status"] = "PASS" if args.browser else "SERVICE_HTTP_RECOVERY_ONLY"
+    from functional_scope_receipt import write_scope_receipt
+
+    try:
+        accounting = write_scope_receipt(receipt, output, labels=LABELS)
+    except Exception:
+        receipt["status"] = "FAILED_SCOPE_ACCOUNTING"
+        (output / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
+        raise
+    receipt["scope_audit_status"] = accounting["status"]
+    receipt["completed_original_owner_points"] = accounting["completed_original_owner_points"]
     (output / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
     return 0
 

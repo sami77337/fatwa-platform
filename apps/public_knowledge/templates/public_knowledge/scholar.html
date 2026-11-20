@@ -1,0 +1,5 @@
+{% extends "public_knowledge/base.html" %}{% block knowledge_content %}
+<article itemscope itemtype="https://schema.org/Person"><h1 itemprop="name">{{ scholar.name }}</h1>{% if scholar.bio %}<p class="body" itemprop="description">{{ scholar.bio|linebreaksbr }}</p>{% endif %}<p>نسخة البيانات العامة {{ scholar.version }}</p></article>
+<section><h2>المواد المنسوبة إلى صاحب الجواب</h2>{% include "public_knowledge/cards.html" with publications=scholar.publications %}</section>
+<section><h2>الدروس ذات النسبة الموثقة</h2>{% for lesson in scholar.lessons %}<p><a href="{{ lesson.url }}">{{ lesson.title }}</a></p>{% empty %}<p>لا توجد دروس مصرح بإظهار نسبتها هنا حاليًا.</p>{% endfor %}</section>
+{% endblock %}

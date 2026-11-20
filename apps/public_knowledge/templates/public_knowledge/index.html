@@ -1,0 +1,7 @@
+{% extends "public_knowledge/base.html" %}{% block knowledge_content %}
+<h1>العلماء والموضوعات والمواد</h1><p>تظهر البيانات التي راجعها المخولون وأجازوا إتاحتها حاليًا. غياب قسم أو مادة لا يعني توليد محتوى بديل له.</p>
+<section aria-labelledby="public-scholars"><h2 id="public-scholars">العلماء</h2>{% for scholar in scholars %}<p><a href="{{ scholar.url }}">{{ scholar.name }}</a></p>{% empty %}<p>لا توجد أسماء مصرح بإظهارها الآن.</p>{% endfor %}</section>
+<section aria-labelledby="public-topics"><h2 id="public-topics">الموضوعات البحثية</h2>{% for topic in topics %}<p><a href="{{ topic.url }}">{{ topic.title }}</a></p>{% empty %}<p>لا توجد موضوعات تحريرية متاحة حاليًا.</p>{% endfor %}</section>
+<section aria-labelledby="public-editions"><h2 id="public-editions">الفتاوى والمواد المنشورة في المعاينة</h2>{% include "public_knowledge/cards.html" %}</section>
+<section aria-labelledby="public-lessons"><h2 id="public-lessons">الدروس المرتبطة</h2>{% for lesson in lessons %}<p><a href="{{ lesson.url }}">{{ lesson.title }}</a></p>{% empty %}<p>لا توجد بيانات دروس مصرح بها حاليًا.</p>{% endfor %}</section>
+{% endblock %}

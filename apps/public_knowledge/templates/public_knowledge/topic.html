@@ -1,0 +1,7 @@
+{% extends "public_knowledge/base.html" %}{% block knowledge_content %}
+<article itemscope itemtype="https://schema.org/CollectionPage"><h1 itemprop="name">{{ topic.title }}</h1>{% if topic.introduction %}<p class="body" itemprop="description">{{ topic.introduction|linebreaksbr }}</p>{% endif %}<p>موضوع تحريري للمواد المتاحة؛ لا يقرر اعتماد شجرة تصنيف نهائية.</p></article>
+{% if topic.children %}<section><h2>الموضوعات الفرعية</h2>{% for child in topic.children %}<p><a href="{{ child.url }}">{{ child.title }}</a></p>{% endfor %}</section>{% endif %}
+<section><h2>الفتاوى والمواد المرتبطة</h2>{% include "public_knowledge/cards.html" with publications=topic.publications %}</section>
+<section><h2>الدروس المرتبطة</h2>{% for lesson in topic.lessons %}<p><a href="{{ lesson.url }}">{{ lesson.title }}</a></p>{% empty %}<p>لا توجد بيانات دروس متاحة في هذا الموضوع.</p>{% endfor %}</section>
+<section><h2>المصادر المصرح بها</h2>{% for reference in topic.references %}<article><h3><a href="{{ reference.url }}">{{ reference.heading_title }}</a></h3><p>{{ reference.work_title }} · {{ reference.edition_title }} · الجزء {{ reference.printed_part }} · الصفحة {{ reference.printed_page }}</p></article>{% empty %}<p>لا توجد إحالات كتابية متاحة ضمن مواد هذا الموضوع.</p>{% endfor %}</section>
+{% endblock %}

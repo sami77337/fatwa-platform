@@ -1,0 +1,3 @@
+{% if scholarly_links_enabled %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="scholarly_open"><input type="hidden" name="case_ref" value="{{ scholarly_case_ref }}"><button>الدروس والعلاقات اليدوية</button></form>
+{% endif %}

@@ -48,6 +48,30 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.public_knowledge"):
+            from apps.public_knowledge.editor import ACTIONS as PUBLIC_KNOWLEDGE_ACTIONS
+            from apps.public_knowledge.editor import workspace as public_knowledge_workspace
+
+            if action in PUBLIC_KNOWLEDGE_ACTIONS:
+                return _panel(public_knowledge_workspace(request), "cases")
+        if django_apps.is_installed("apps.scholarly_links"):
+            from apps.scholarly_links.views import ACTIONS as SCHOLARLY_ACTIONS
+            from apps.scholarly_links.views import workspace as scholarly_workspace
+
+            if action in SCHOLARLY_ACTIONS:
+                return _panel(scholarly_workspace(request), "cases")
+        if django_apps.is_installed("apps.selected_exports"):
+            from apps.selected_exports.views import ACTIONS as EXPORT_ACTIONS
+            from apps.selected_exports.views import workspace as export_workspace
+
+            if action in EXPORT_ACTIONS:
+                return _panel(export_workspace(request), "cases")
+        if django_apps.is_installed("apps.data_quality"):
+            from apps.data_quality.views import ACTIONS as QUALITY_ACTIONS
+            from apps.data_quality.views import workspace as quality_workspace
+
+            if action in QUALITY_ACTIONS:
+                return _panel(quality_workspace(request), "cases")
         if django_apps.is_installed("apps.case_organization"):
             from apps.case_organization.views import ACTIONS as ORGANIZATION_ACTIONS
             from apps.case_organization.views import workspace as organization_workspace

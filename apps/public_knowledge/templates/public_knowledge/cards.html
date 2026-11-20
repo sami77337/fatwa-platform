@@ -1,0 +1,1 @@
+{% for card in publications %}<article><h3><a href="{{ card.url }}">{{ card.title }}</a></h3><p>{{ card.category }} · نسخة المصدر {{ card.version }}</p>{% if card.presentation.scholar %}<p><a href="{{ card.presentation.scholar.url }}">{{ card.presentation.scholar.name }}</a></p>{% endif %}</article>{% empty %}<p>لا توجد مواد متاحة ضمن هذا القسم حاليًا.</p>{% endfor %}

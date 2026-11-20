@@ -1,0 +1,5 @@
+{% extends "research_workspace/desk.html" %}
+{% block content %}
+{{ block.super }}
+{% if result.case_ref %}{% include "scholarly_links/research_entry.html" with scholarly_case_ref=result.case_ref %}{% endif %}
+{% endblock %}

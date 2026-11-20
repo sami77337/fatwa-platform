@@ -1,0 +1,4 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>التصدير الخاص المختار</title><link rel="stylesheet" href="/casework/casework.css"><link rel="stylesheet" href="/research-workspace.css"></head>
+<body><main class="research-collections"><h1>التصدير الخاص المختار</h1><p>اختر قضية ضمن صلاحيتك الحالية. لا يمنح التصدير حق نشر المحتوى.</p>
+{% for row in cases %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="exports_open"><input type="hidden" name="case_ref" value="{{ row.case_ref }}"><button type="submit">فتح تصدير القضية {{ row.case_ref }}</button></form>{% empty %}<p>لا توجد قضايا متاحة للتصدير.</p>{% endfor %}
+<p><a href="/casework/staff/">العودة إلى المكتب</a></p></main></body></html>

@@ -1,0 +1,22 @@
+{% extends "casework/base.html" %}
+{% block title %}جودة البيانات والروابط{% endblock %}
+{% block content %}
+<h1>جودة البيانات والروابط</h1>
+<p><a href="/casework/staff/">العودة إلى مكتب القضايا</a></p>
+<p>فحص السجلات المتاحة ضمن صلاحيتك وقت هذه القراءة. لا يعدّل الملفات أو الإحالات، ولا يصدر حكمًا على صحة الفتوى أو الحديث.</p>
+<p>غياب التفريغ الاختياري أو الشرح أو التخريج الإضافي لا يُعد خللًا، ولا يمنع حفظ جواب الشيخ.</p>
+<p>آخر فحص: <time datetime="{{ quality.scanned_at|date:'c' }}">{{ quality.scanned_at }}</time> · الصفحة {{ quality.page }}</p>
+<section id="quality-summary" aria-label="نتيجة فحوص هذه الصفحة">
+<h2>نتيجة فحوص هذه الصفحة</h2>
+<p>{{ quality.page_case_count }} قضايا · {{ quality.technical_count }} فحوص كشفت خللًا تقنيًا · {{ quality.review_count }} قضايا ببلاغات تنتظر مراجعة · {{ quality.unchecked_count }} فحوص لم تكتمل.</p>
+<p>اكتمال الفحص التقني لا يثبت سلامة المعنى أو صحة الاستدلال. الصلاحية المفقودة لا تُصنَّف رابطًا معطلًا.</p>
+</section>
+<form method="post" action="/casework/staff/">{% csrf_token %}{% if quality.case_ref %}<input type="hidden" name="action" value="quality_case"><input type="hidden" name="case_ref" value="{{ quality.case_ref }}">{% else %}<input type="hidden" name="action" value="quality_open"><input type="hidden" name="page" value="{{ quality.page }}">{% endif %}<button id="quality-refresh">إعادة الفحص الآن</button></form>
+{% for row in quality.rows %}<section data-quality-case="{{ row.public_ref }}">
+<h2><bdi>{{ row.public_ref }}</bdi></h2><p>نسخة السجل {{ row.revision }} · نسخة الوقائع {{ row.evidence_version }}</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button>فتح القضية ضمن الصلاحية الحالية</button></form>
+{% for check in row.checks %}<article data-quality-check="{{ check.code }}" data-quality-state="{{ check.state }}"><h3>{{ check.title }}</h3><p><strong>{{ check.label }}</strong></p><p>{{ check.detail }}</p></article>{% endfor %}
+</section>{% empty %}<p>لا توجد قضايا متاحة في هذه الصفحة.</p>{% endfor %}
+<nav aria-label="صفحات الفحص">{% if quality.previous_page %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="quality_open"><input type="hidden" name="page" value="{{ quality.previous_page }}"><button>الصفحة السابقة</button></form>{% endif %}{% if quality.next_page %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="quality_open"><input type="hidden" name="page" value="{{ quality.next_page }}"><button>الصفحة التالية</button></form>{% endif %}</nav>
+<p>نطاق الفحص: أصل القضية وسجلها ونسبة إجراءاتها، مرفقات الوقائع، وأحدث جواب ومصادره ومواضعه. لا يشمل تدقيقًا علميًا أو تحققًا آليًا من متن مصدر لم يُتح رقميًا.</p>
+{% endblock %}

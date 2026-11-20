@@ -8,6 +8,7 @@
 {% if notice %}<p role="status">{{ notice }}</p>{% endif %}
 {% if result %}
 <p>القضية <bdi>{{ result.public_ref }}</bdi> · إصدار الوقائع {{ result.evidence_version }}</p>
+{% if scholarly_links_enabled %}{% include "scholarly_links/research_entry.html" with scholarly_case_ref=result.public_ref %}{% endif %}
 {% if collections_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_collections"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>مجموعاتي البحثية الخاصة</button></form>{% endif %}
 {% if evaluation_review_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_evaluation_open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>إصدارات تقييم البحث والمراجعة البشرية</button></form>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>

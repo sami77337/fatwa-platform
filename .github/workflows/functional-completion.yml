@@ -17,6 +17,7 @@ on:
       - 'pyproject.toml'
       - '.github/workflows/functional-completion.yml'
       - 'infra/dev/functional_verify.py'
+      - 'infra/dev/functional_scope_receipt.py'
   workflow_dispatch:
 permissions:
   contents: read
