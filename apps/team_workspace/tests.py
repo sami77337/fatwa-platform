@@ -72,6 +72,42 @@ class TeamWorkspaceTests(contracts.CaseworkHTTPTests):
         self.assertEqual(response.context["rows"], [])
         self.assertEqual(list(CaseEvent.objects.values_list("id", flat=True)), before)
 
+    def test_inbox_counts_remain_global_when_search_narrows_results(self):
+        waiting, _, _, _, _ = self.intake("سؤال اصطناعي ينتظر استيضاحًا")
+        draft_case, _, _, _, _ = self.intake("سؤال اصطناعي عن أحكام البيع")
+        approved_case, _, _, _, _ = self.intake("سؤال اصطناعي عن الصيام")
+        self.directory.grant(waiting.public_ref, draft_case.public_ref, approved_case.public_ref)
+        page = self.open_case(waiting, self.login())
+        page = self.mutation(page, "clarify", text="يلزم استيضاح الوقائع")
+        draft_page = post(self.client, "/casework/staff/", {
+            "action": "open", "case_ref": draft_case.public_ref,
+        }, page)
+        draft_page = self.mutation(draft_page, "draft", text="مسودة اصطناعية للمراجعة")
+        approved_page = post(self.client, "/casework/staff/", {
+            "action": "open", "case_ref": approved_case.public_ref,
+        }, draft_page)
+        approved_page = self.mutation(approved_page, "draft", text="جواب اصطناعي")
+        approved_page = self.mutation(
+            approved_page, "approve", answer_id=hidden(approved_page, "answer_id"), note=""
+        )
+        before = list(CaseEvent.objects.values_list("id", flat=True))
+        filtered = post(self.client, "/casework/staff/", {
+            "action": "filter", "state": "waiting", "query": waiting.public_ref,
+        }, approved_page)
+        self.assertEqual(filtered.status_code, 200, filtered.content)
+        self.assertEqual(filtered.context["total"], 3)
+        self.assertEqual(filtered.context["matched_total"], 1)
+        self.assertEqual(filtered.context["visible_total"], 1)
+        counts = {item["key"]: item["count"] for item in filtered.context["filters"]}
+        self.assertEqual(counts, {
+            "all": 3, "draft": 0, "waiting": 1, "review": 1,
+            "returned": 0, "approved": 1,
+        })
+        self.assertEqual(list(CaseEvent.objects.values_list("id", flat=True)), before)
+        self.assertContains(filtered, waiting.public_ref)
+        self.assertNotContains(filtered, draft_case.public_ref)
+        self.assertNotContains(filtered, approved_case.public_ref)
+
     def test_edit_return_reason_reopen_new_version_and_approval(self):
         case, _, page = self.setup_case()
         original = "  مسودة <اصطناعية> & بشرية.  "
