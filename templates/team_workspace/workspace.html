@@ -18,6 +18,8 @@
 <label for="queue-query">بحث في القضايا المخوّلة: الرقم أو السؤال أو التعقيب أو الجواب</label><input id="queue-query" name="query" value="{{ query }}" maxlength="40" autocomplete="off">
 <p>تظهر أرقام النتائج وحالتها فقط. افتح القضية لقراءة نصوصها ضمن صلاحيتك.</p>
 <label for="queue-state">مرحلة العمل</label>
+<label for="queue-sort">ترتيب النتائج</label>
+<select id="queue-sort" name="sort">{% for item in sorts %}<option value="{{ item.key }}"{% if item.key == sort %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select>
 <select id="queue-state" name="state">{% for item in filters %}<option value="{{ item.key }}"{% if item.key == selected_filter %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
 <button type="submit">عرض القضايا</button><a href="/casework/staff/">كل القضايا</a>
 <p role="status">نتائج البحث: {{ matched_total }} · المعروض بعد التصفية: {{ visible_total }}</p>

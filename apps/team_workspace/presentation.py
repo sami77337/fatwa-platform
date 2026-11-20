@@ -3,6 +3,14 @@
 from apps.casework import services
 from apps.platform_recovery.integration import mutation_service
 
+SORTS = {
+    "newest": "الأحدث أولًا",
+    "oldest": "الأقدم أولًا",
+    "priority": "الأولوية العملية",
+}
+PRIORITY = {"returned": 0, "draft": 1, "review": 2, "waiting": 3, "approved": 4}
+
+
 FILTERS = {
     "all": "كل القضايا",
     "draft": "تحتاج إلى مسودة",
@@ -95,7 +103,7 @@ def read_workspace_case(*, include_answer_manifest=True, **common):
         return snapshot
 
 
-def queue(rows, selected_filter, query):
+def queue(rows, selected_filter, query, sort="newest"):
     # list_cases has already revalidated every case against the current scoped
     # identity. Search only that projection, and keep result cards free of snippets.
     described = [describe(row) for row in reversed(rows)]
@@ -120,10 +128,17 @@ def queue(rows, selected_filter, query):
         key: (len(described) if key == "all" else sum(row["category"] == key for row in described))
         for key in FILTERS
     }
+    visible = [
+        row for row in matched if selected_filter == "all" or row["category"] == selected_filter
+    ]
+    if sort == "oldest":
+        visible.reverse()
+    elif sort == "priority":
+        visible.sort(key=lambda row: PRIORITY[row["category"]])
     return {
-        "rows": [
-            row for row in matched if selected_filter == "all" or row["category"] == selected_filter
-        ],
+        "rows": visible,
+        "sort": sort,
+        "sorts": [{"key": key, "label": label} for key, label in SORTS.items()],
         "filters": [
             {"key": key, "label": label, "count": counts[key]} for key, label in FILTERS.items()
         ],

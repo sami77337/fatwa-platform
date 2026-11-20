@@ -45,7 +45,7 @@ def stylesheet(request):
 
 
 def _page(request, provider, identity, *, common=None, selected_filter="all", query="",
-          message="", attempted_text=None, status=200, access=None):
+          sort="newest", message="", attempted_text=None, status=200, access=None):
     rows = services.list_cases(
         subject_id=identity.subject_id, provider=provider, synthetic_fixtures_only=True,
     )
@@ -62,7 +62,7 @@ def _page(request, provider, identity, *, common=None, selected_filter="all", qu
         else "team_workspace/workspace.html"
     )
     return private(render(request, template, {
-        **queue(rows, selected_filter, query), "selected": selected,
+        **queue(rows, selected_filter, query, sort=sort), "selected": selected,
         "source_origins": source_origins,
         "composite_delivery_enabled": getattr(settings, "FATWA_COMPOSITE_DELIVERY_ENABLED", False) is True,
         "message": message, "attempted_text": attempted_text, "access": access,
@@ -90,11 +90,19 @@ def workspace(request):
         ) is not True:
             raise InvalidForm("connected_workspace_disabled")
         if action == "filter":
-            fields = _form(request, {"action", "state", "query"})
-            if fields["state"] not in FILTERS or len(fields["query"]) > 40 or "\x00" in fields["query"]:
+            fields = _form(request, {"action", "state", "query", "sort"})
+            from .presentation import SORTS
+            if (
+                fields["state"] not in FILTERS
+                or fields["sort"] not in SORTS
+                or len(fields["query"]) > 40
+                or "\x00" in fields["query"]
+            ):
                 raise InvalidForm("invalid_queue_filter")
-            return _page(request, provider, identity,
-                         selected_filter=fields["state"], query=fields["query"])
+            return _page(
+                request, provider, identity,
+                selected_filter=fields["state"], query=fields["query"], sort=fields["sort"],
+            )
         required = {"action", "case_ref"}
         if action in {"draft", "clarify"}:
             required |= {"text", "revision", "evidence_version"}
