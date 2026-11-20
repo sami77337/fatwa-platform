@@ -6,6 +6,7 @@ import os
 import json
 import subprocess
 import unittest
+import io
 from pathlib import Path
 from hashlib import sha256
 from unittest.mock import patch
@@ -78,15 +79,19 @@ class SelectedPageDerivativeTests(unittest.TestCase):
 
     def test_worker_invocation_uses_sanitized_environment_and_fixed_cwd(self):
         selected = produce(self.raw, 2, 3)
-        response = subprocess.CompletedProcess(
-            [],
-            0,
-            stdout=json.dumps(
-                {"page_number": 2, "page_count": 1, "pdf": base64.b64encode(selected).decode("ascii")}
-            ),
-        )
+        response = json.dumps(
+            {"page_number": 2, "page_count": 1, "pdf": base64.b64encode(selected).decode("ascii")}
+        ).encode("utf-8")
+        class FakeProcess:
+            def __init__(self, *args, **kwargs):
+                self.stdin = io.BytesIO()
+                self.stdout = io.BytesIO(response)
+            def wait(self, timeout=None):
+                return 0
+            def kill(self):
+                return None
         with patch(
-            "apps.pdf_citations.page_preview.subprocess.run", return_value=response
+            "apps.pdf_citations.page_preview.subprocess.Popen", side_effect=FakeProcess
         ) as run:
             self.assertEqual(selected_page(self.raw, page_number=2, page_count=3), selected)
         kwargs = run.call_args.kwargs
@@ -126,18 +131,38 @@ class SelectedPageDerivativeTests(unittest.TestCase):
 
     def test_worker_failure_timeout_or_forged_response_stays_closed(self):
         bad = (
-            subprocess.CompletedProcess([], 1, stdout=""),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"page_number": 2, "page_count": 3, "pdf": ""})),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"page_number": 1, "page_count": 1, "pdf": ""})),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"page_number": 2, "page_count": 1, "pdf": "YWJj"})),
+            (1, b""),
+            (0, json.dumps({"page_number": 2, "page_count": 3, "pdf": ""}).encode()),
+            (0, json.dumps({"page_number": 1, "page_count": 1, "pdf": ""}).encode()),
+            (0, json.dumps({"page_number": 2, "page_count": 1, "pdf": "YWJj"}).encode()),
         )
-        for response in bad:
-            with patch("apps.pdf_citations.page_preview.subprocess.run", return_value=response):
+        for code, response in bad:
+            class FakeProcess:
+                def __init__(self, *args, **kwargs):
+                    self.stdin = io.BytesIO()
+                    self.stdout = io.BytesIO(response)
+                def wait(self, timeout=None):
+                    return code
+                def kill(self):
+                    return None
+            with patch("apps.pdf_citations.page_preview.subprocess.Popen", side_effect=FakeProcess):
                 with self.assertRaises(PdfPageUnavailable):
                     selected_page(self.raw, page_number=2, page_count=3)
 
+        class OversizedProcess:
+            def __init__(self, *args, **kwargs):
+                self.stdin = io.BytesIO()
+                self.stdout = io.BytesIO(b"x" * 400001)
+            def wait(self, timeout=None):
+                return 0
+            def kill(self):
+                return None
+        with patch("apps.pdf_citations.page_preview.subprocess.Popen", side_effect=OversizedProcess):
+            with self.assertRaises(PdfPageUnavailable):
+                selected_page(self.raw, page_number=2, page_count=3)
+
         with patch(
-            "apps.pdf_citations.page_preview.subprocess.run",
+            "apps.pdf_citations.page_preview.subprocess.Popen",
             side_effect=subprocess.TimeoutExpired("page_worker", 6),
         ):
             with self.assertRaises(PdfPageUnavailable):

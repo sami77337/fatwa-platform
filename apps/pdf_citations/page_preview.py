@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 
 MAX_ORIGINAL_BYTES = 192000
 MAX_DERIVED_BYTES = 262144
@@ -40,16 +41,11 @@ def selected_page(raw: bytes, *, page_number: int, page_count: int) -> bytes:
         separators=(",", ":"),
     )
     try:
-        result = subprocess.run(
+        process = subprocess.Popen(
             [sys.executable, "-m", "apps.pdf_citations.page_worker"],
-            input=request,
-            text=True,
+            stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
-            timeout=6,
-            check=False,
-            # Do not pass application credentials, database URLs, cloud tokens,
-            # HOME configuration or caller-specific PYTHONPATH to the parser.
             cwd=Path(__file__).resolve().parents[2],
             env={
                 "PATH": os.defpath,
@@ -59,9 +55,44 @@ def selected_page(raw: bytes, *, page_number: int, page_count: int) -> bytes:
                 "PYTHONHASHSEED": "0",
             },
         )
-        if result.returncode or len(result.stdout) > MAX_WORKER_STDOUT:
+        captured = bytearray()
+        overflow = threading.Event()
+
+        def drain_stdout():
+            # Drain concurrently to prevent a full pipe from blocking the child.
+            # Retain at most the configured ceiling plus one byte in memory.
+            while True:
+                chunk = process.stdout.read(8192)
+                if not chunk:
+                    return
+                remaining = MAX_WORKER_STDOUT + 1 - len(captured)
+                if remaining > 0:
+                    captured.extend(chunk[:remaining])
+                if len(chunk) > remaining:
+                    overflow.set()
+
+        reader = threading.Thread(target=drain_stdout, daemon=True)
+        reader.start()
+        try:
+            process.stdin.write(request.encode("utf-8"))
+            process.stdin.close()
+            returncode = process.wait(timeout=6)
+        except (OSError, subprocess.TimeoutExpired):
+            process.kill()
+            process.wait()
+            reader.join(timeout=1)
+            raise
+        reader.join(timeout=1)
+        if reader.is_alive():
+            process.kill()
+            process.wait()
+            process.stdout.close()
+            reader.join(timeout=1)
             raise ValueError
-        value = json.loads(result.stdout)
+        if returncode != 0 or overflow.is_set() or len(captured) > MAX_WORKER_STDOUT:
+            raise ValueError
+        response = bytes(captured)
+        value = json.loads(response.decode("utf-8"))
         if (
             type(value) is not dict
             or set(value) != {"page_number", "page_count", "pdf"}
