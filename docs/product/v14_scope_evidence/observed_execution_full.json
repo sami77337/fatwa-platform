@@ -1,0 +1,471 @@
+{
+  "schema": "fatwa.v14.full-candidate-observation.v1",
+  "source_sha": "6b4f77e29ccb1f21d48ad3d77f5e63d3be953fab",
+  "product_tested_sha": "762f322f26b21cf30f65a2453f360dd8738e9eec",
+  "pr_number": 233,
+  "workflow_run": 44362928144,
+  "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44362928144",
+  "jobs": [
+    {
+      "postgres_major": 17,
+      "job_id": 135008889226,
+      "tested_sha": "762f322f26b21cf30f65a2453f360dd8738e9eec",
+      "tests_count": 130,
+      "browser_recovery_exit_0": true
+    },
+    {
+      "postgres_major": 18,
+      "job_id": 135008890057,
+      "tested_sha": "762f322f26b21cf30f65a2453f360dd8738e9eec",
+      "tests_count": 130,
+      "browser_recovery_exit_0": true
+    }
+  ],
+  "groups": [
+    {
+      "id": "recording-controls",
+      "points": [
+        {
+          "id": 70,
+          "original_text": "يمكنه تسجيل جواب صوتي مباشرة من الواجهة.",
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Direct UI recording controls are enhanced; recording was already present in V13."
+        },
+        {
+          "id": 77,
+          "original_text": "يستطيع الشيخ بدء التسجيل وإيقافه واستكماله والاستماع إليه قبل الاعتماد.",
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Elapsed samples/size, preview, stop and cancel are bounded additions; resume is still not implemented."
+        },
+        {
+          "id": 78,
+          "original_text": "التسجيل الأصلي للشيخ يبقى محفوظًا ولا يُستبدل بالتفريغ.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Controls retain the existing immutable original path; no transcript substitutes it."
+        },
+        {
+          "id": 408,
+          "original_text": "السياسة Default Deny.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Frozen form saves remain denied through the existing native maintenance boundary."
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/browser_audio/static/browser_audio/capture.js",
+          "blob_sha": "e4558999a86ec9ce6db35c4339fb90a50227a42e"
+        },
+        {
+          "path": "apps/browser_audio/static/browser_audio/worklet.js",
+          "blob_sha": "ac32ca796ce56fc4e64c1a5de70ba6afc2ac8036"
+        },
+        {
+          "path": "apps/browser_audio/templates/browser_audio/capture.html",
+          "blob_sha": "556b32d74add87e6fec4935b50f897cad2454d87"
+        }
+      ],
+      "tests": [
+        {
+          "group": "recording-controls",
+          "kind": "positive",
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file",
+          "path": "apps/browser_audio/test_browser.py",
+          "blob_sha": "0ae7dff0a86909dc01232911ebee0ebdaba0770d",
+          "pg17_line": "test_v14_live_metrics_interruption_and_reset_preserve_selected_file (apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file) ... ok",
+          "pg18_line": "test_v14_live_metrics_interruption_and_reset_preserve_selected_file (apps.browser_audio.test_browser.BrowserAudioTests.test_v14_live_metrics_interruption_and_reset_preserve_selected_file) ... ok"
+        },
+        {
+          "group": "recording-controls",
+          "kind": "negative",
+          "symbol": "apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume",
+          "path": "apps/browser_audio/test_browser.py",
+          "blob_sha": "0ae7dff0a86909dc01232911ebee0ebdaba0770d",
+          "pg17_line": "test_v14_native_capture_frozen_save_denied_then_explicit_resume (apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume) ... ok",
+          "pg18_line": "test_v14_native_capture_frozen_save_denied_then_explicit_resume (apps.browser_audio.test_browser.V14MaintenanceBrowserTests.test_v14_native_capture_frozen_save_denied_then_explicit_resume) ... ok"
+        },
+        {
+          "group": "recording-controls",
+          "kind": "negative",
+          "symbol": "apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup",
+          "path": "apps/browser_audio/test_browser.py",
+          "blob_sha": "0ae7dff0a86909dc01232911ebee0ebdaba0770d",
+          "pg17_line": "test_permission_denial_cancel_late_grant_limits_and_cleanup (apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup) ... ok",
+          "pg18_line": "test_permission_denial_cancel_late_grant_limits_and_cleanup (apps.browser_audio.test_browser.BrowserAudioTests.test_permission_denial_cancel_late_grant_limits_and_cleanup) ... ok"
+        }
+      ]
+    },
+    {
+      "id": "exact-pdf-and-time-preview",
+      "points": [
+        {
+          "id": 543,
+          "original_text": "يوجد نظام استدلال وإحالات دقيقة يمكّن الشيخ أو الباحث من ربط عبارة في الفتوى أو مادة علمية بأصل محدد وموضع معين قابل للفتح مباشرة، لا بمجرد عنوان كتاب أو نتيجة بحث عامة.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "An exact private PDF page becomes a selectable source position, not merely a search title."
+        },
+        {
+          "id": 544,
+          "original_text": "يستطيع الشيخ تحديد عبارة في جوابه أو إضافة بطاقة مصدر مستقلة، ثم اختيار المصدر والنسخة والموضع ومعاينة ما سيفتحه الرابط قبل تثبيت الإحالة، دون فقد مسودة جوابه.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Native preview/confirmation can precede adding the locator to the current draft; arbitrary phrase selection is not proved."
+        },
+        {
+          "id": 545,
+          "original_text": "تشمل الإحالات الكتب والطبعات وملفات PDF والوثائق والمصادر الرقمية، مع التمييز بين الكتاب بوصفه عملًا علميًا، والطبعة أو النسخة المعينة، والملف الرقمي الذي يعرضها؛ ويمكن تحديد صفحة أو فقرة أو مقطع بحسب المتاح.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Private PDF attachment/answer-part identity is distinct from general bibliographic identity."
+        },
+        {
+          "id": 546,
+          "original_text": "يُحفظ رقم الصفحة المطبوع ورقم الصفحة داخل ملف PDF على نحو مستقل عند توفر المطابقة الموثقة بينهما، ويمكن تحديد فقرة نصية أو منطقة في صفحة مصورة حيث تسمح التقنية بذلك، دون ادعاء دقة غير متاحة.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Physical 1-based page and optional human-asserted printed label are stored separately; no automatic page-offset inference."
+        },
+        {
+          "id": 549,
+          "original_text": "يمكن توجيه الإحالة إلى درس أو تسجيل صوتي أو فيديو بموضع زمني محدد، كدقيقة وثانية أو بداية ونهاية مقطع، ويرتبط التوقيت بنسخة التسجيل نفسها ولا ينتقل تلقائيًا إلى نسخة أخرى.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Audio context preview is clamped to verified recording duration without migrating the existing timed locator."
+        },
+        {
+          "id": 551,
+          "original_text": "تستند الإحالة إلى معرف ثابت للمصدر ونسخته وموضعه، لا إلى ترتيب مؤقت في نتائج البحث أو وصف غامض مثل «الكتاب الثاني»؛ وعند الغموض يُطلب تحديد المقصود بدل تخمينه.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Source UUID/version/hash and parser metadata pin a stable immutable original."
+        },
+        {
+          "id": 552,
+          "original_text": "إذا أضيفت طبعة أو ملف أو تسجيل جديد فلا تنتقل الإحالة القديمة إليه بصمت؛ تظل مرتبطة بالنسخة التي اختارها صاحب الاستدلال مع حفظ التوثيق وتاريخ التصحيحات.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Corrections append a successor; new answers/sources do not silently acquire old locators."
+        },
+        {
+          "id": 553,
+          "original_text": "إذا تعذر فتح الفقرة أو الموضع الدقيق تقنيًا، يُفتح أقرب موضع موثق مع بيان حدود الدقة، ولا يُختلق رقم صفحة أو رابط أو مقتطف غير متحقق؛ ويمكن الاحتفاظ بمرجع وصفي عندما لا تتوفر نسخة رقمية.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Native PDF #page is a navigation hint; full-file READ is required and precise region/OCR is absent."
+        },
+        {
+          "id": 554,
+          "original_text": "تخضع الإحالات لحقوق المصدر وصلاحيات الوصول وقت الإنشاء والفتح والتوصيل والنشر والتصدير؛ لا يكشف الربط بمصدر داخلي محتواه أو ملفاته لجمهور غير مخوّل، ولا يحوّل القضية الخاصة إلى مادة عامة.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Separate exact READ_MEDIA/CITE and expiry checks guard creation/open/use; publication permission is not conferred."
+        },
+        {
+          "id": 556,
+          "original_text": "يسجل النظام من أضاف الإحالة وراجعها وصححها وموضعها وإصدارها؛ ويظهر في الطباعة والتصدير مرجع مقروء يتضمن المصدر والنسخة والموضع المتاح، ولا يسمح التصحيح التقني بتبديل الحجة أو المصدر المقصود دون مراجعة الشيخ.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Locator actor/review/correction history is retained; print/export of a human-readable reference is not established."
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/pdf_citations/services.py",
+          "blob_sha": "5a7174fd7b5e945dfbd04d6fcffce5c736636c2f"
+        },
+        {
+          "path": "apps/timed_citations/services.py",
+          "blob_sha": "c0fd0f62f8c63bc1851dacc25d42bd4b078374d8"
+        }
+      ],
+      "tests": [
+        {
+          "group": "exact-pdf-and-time-preview",
+          "kind": "positive",
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original",
+          "path": "apps/pdf_citations/tests.py",
+          "blob_sha": "31774842b04182674d8c8749f79e52dc2fe88d5d",
+          "pg17_line": "test_actual_page_count_and_explicit_human_mapping_preserve_original (apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original) ... ok",
+          "pg18_line": "test_actual_page_count_and_explicit_human_mapping_preserve_original (apps.pdf_citations.tests.PdfTests.test_actual_page_count_and_explicit_human_mapping_preserve_original) ... ok"
+        },
+        {
+          "group": "exact-pdf-and-time-preview",
+          "kind": "positive",
+          "symbol": "apps.timed_citations.test_preview_context.PreviewContextTests.test_context_is_clamped_to_verified_duration_and_original_stays_immutable",
+          "path": "apps/timed_citations/test_preview_context.py",
+          "blob_sha": "42021ecb65276a3222322ecff44254aa5ddc4a94",
+          "pg17_line": "test_context_is_clamped_to_verified_duration_and_original_stays_immutable (apps.timed_citations.test_preview_context.PreviewContextTests.test_context_is_clamped_to_verified_duration_and_original_stays_immutable) ... ok",
+          "pg18_line": "test_context_is_clamped_to_verified_duration_and_original_stays_immutable (apps.timed_citations.test_preview_context.PreviewContextTests.test_context_is_clamped_to_verified_duration_and_original_stays_immutable) ... ok"
+        },
+        {
+          "group": "exact-pdf-and-time-preview",
+          "kind": "negative",
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny",
+          "path": "apps/pdf_citations/tests.py",
+          "blob_sha": "31774842b04182674d8c8749f79e52dc2fe88d5d",
+          "pg17_line": "test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny (apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny) ... ok",
+          "pg18_line": "test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny (apps.pdf_citations.tests.PdfTests.test_invalid_pages_forged_count_version_digest_and_guessed_mapping_deny) ... ok"
+        },
+        {
+          "group": "exact-pdf-and-time-preview",
+          "kind": "negative",
+          "symbol": "apps.pdf_citations.tests.PdfTests.test_read_cite_expiry_and_withdrawal_redact_source_label_and_reason",
+          "path": "apps/pdf_citations/tests.py",
+          "blob_sha": "31774842b04182674d8c8749f79e52dc2fe88d5d",
+          "pg17_line": "test_read_cite_expiry_and_withdrawal_redact_source_label_and_reason (apps.pdf_citations.tests.PdfTests.test_read_cite_expiry_and_withdrawal_redact_source_label_and_reason) ... ok",
+          "pg18_line": "test_read_cite_expiry_and_withdrawal_redact_source_label_and_reason (apps.pdf_citations.tests.PdfTests.test_read_cite_expiry_and_withdrawal_redact_source_label_and_reason) ... ok"
+        },
+        {
+          "group": "exact-pdf-and-time-preview",
+          "kind": "negative",
+          "symbol": "apps.timed_citations.test_preview_context.PreviewContextTests.test_context_does_not_bypass_scope_rights_confirmation_or_withdrawal",
+          "path": "apps/timed_citations/test_preview_context.py",
+          "blob_sha": "42021ecb65276a3222322ecff44254aa5ddc4a94",
+          "pg17_line": "test_context_does_not_bypass_scope_rights_confirmation_or_withdrawal (apps.timed_citations.test_preview_context.PreviewContextTests.test_context_does_not_bypass_scope_rights_confirmation_or_withdrawal) ... ok",
+          "pg18_line": "test_context_does_not_bypass_scope_rights_confirmation_or_withdrawal (apps.timed_citations.test_preview_context.PreviewContextTests.test_context_does_not_bypass_scope_rights_confirmation_or_withdrawal) ... ok"
+        }
+      ]
+    },
+    {
+      "id": "closed-classification-editorial",
+      "points": [
+        {
+          "id": 47,
+          "original_text": "تعديل Metadata مثل Tag أو تصنيف لا يرفع Evidence Version لأنه لا يغير وقائع السؤال.",
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "New editorial classification copies remain separate from canonical case evidence."
+        },
+        {
+          "id": 121,
+          "original_text": "لا يتم هذا النشر تلقائيًا دون صلاحية أو قرار بشري.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "A classification approval is not a publication approval; separate review and independent approval are mandatory."
+        },
+        {
+          "id": 140,
+          "original_text": "يمكن Republish بنسخة جديدة مع تاريخ إصدارات.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "A new editorial candidate has its own number/history; this is closed simulation, not accepted U03 republish policy."
+        },
+        {
+          "id": 169,
+          "original_text": "الإنسان يستطيع قبولها أو رفضها أو تعديلها.",
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Previously human-approved classification is a prerequisite; rejected/pending/withdrawn proposals cannot prepare a candidate."
+        },
+        {
+          "id": 417,
+          "original_text": "تغيير التصنيف مسجل.",
+          "preserved_status": "NOT_IMPLEMENTED",
+          "bounded_relevance": "Immutable binding ties an exact classification revision to a separate editorial revision and actor history."
+        },
+        {
+          "id": 419,
+          "original_text": "النشر وإلغاء النشر مسجل.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Independent review/approval records remain canonical publication actions under extra binding admission."
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/classification_review/editorial.py",
+          "blob_sha": "0987dd00f474cee5031c5a3fe46360ac925f278f"
+        }
+      ],
+      "tests": [
+        {
+          "group": "closed-classification-editorial",
+          "kind": "positive",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing",
+          "path": "apps/classification_review/editorial_tests.py",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c",
+          "pg17_line": "test_candidate_links_exact_approved_classification_without_publishing (apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing) ... ok",
+          "pg18_line": "test_candidate_links_exact_approved_classification_without_publishing (apps.classification_review.editorial_tests.EditorialTests.test_candidate_links_exact_approved_classification_without_publishing) ... ok"
+        },
+        {
+          "group": "closed-classification-editorial",
+          "kind": "positive",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver",
+          "path": "apps/classification_review/editorial_tests.py",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c",
+          "pg17_line": "test_two_manual_steps_and_independent_publication_approver (apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver) ... ok",
+          "pg18_line": "test_two_manual_steps_and_independent_publication_approver (apps.classification_review.editorial_tests.EditorialTests.test_two_manual_steps_and_independent_publication_approver) ... ok"
+        },
+        {
+          "group": "closed-classification-editorial",
+          "kind": "negative",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy",
+          "path": "apps/classification_review/editorial_tests.py",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c",
+          "pg17_line": "test_canonical_publication_actions_cannot_bypass_bound_policy (apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy) ... ok",
+          "pg18_line": "test_canonical_publication_actions_cannot_bypass_bound_policy (apps.classification_review.editorial_tests.EditorialTests.test_canonical_publication_actions_cannot_bypass_bound_policy) ... ok"
+        },
+        {
+          "group": "closed-classification-editorial",
+          "kind": "negative",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_rights_expiry_revoke_and_late_policy_revocation_deny",
+          "path": "apps/classification_review/editorial_tests.py",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c",
+          "pg17_line": "test_rights_expiry_revoke_and_late_policy_revocation_deny (apps.classification_review.editorial_tests.EditorialTests.test_rights_expiry_revoke_and_late_policy_revocation_deny) ... ok",
+          "pg18_line": "test_rights_expiry_revoke_and_late_policy_revocation_deny (apps.classification_review.editorial_tests.EditorialTests.test_rights_expiry_revoke_and_late_policy_revocation_deny) ... ok"
+        },
+        {
+          "group": "closed-classification-editorial",
+          "kind": "negative",
+          "symbol": "apps.classification_review.editorial_tests.EditorialTests.test_freeze_blocks_prepare_inspect_and_decision_without_changes",
+          "path": "apps/classification_review/editorial_tests.py",
+          "blob_sha": "9a8b454788310d9b7f29a659d0d23d75356c7c0c",
+          "pg17_line": "test_freeze_blocks_prepare_inspect_and_decision_without_changes (apps.classification_review.editorial_tests.EditorialTests.test_freeze_blocks_prepare_inspect_and_decision_without_changes) ... ok",
+          "pg18_line": "test_freeze_blocks_prepare_inspect_and_decision_without_changes (apps.classification_review.editorial_tests.EditorialTests.test_freeze_blocks_prepare_inspect_and_decision_without_changes) ... ok"
+        }
+      ]
+    },
+    {
+      "id": "batched-rights-performance",
+      "points": [
+        {
+          "id": 216,
+          "original_text": "يبدأ Authorization أولًا قبل Retrieval؛ لا يجب أن يبحث المستخدم في بيانات لا يحق له رؤيتها.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Batched exact ledger checks can preserve authorization-before-retrieval; endpoint custom-policy/identity boundaries remain independently necessary."
+        },
+        {
+          "id": 408,
+          "original_text": "السياسة Default Deny.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Default-deny registration/review/use checks and whole-projection invalidation remain mandatory."
+        },
+        {
+          "id": 554,
+          "original_text": "تخضع الإحالات لحقوق المصدر وصلاحيات الوصول وقت الإنشاء والفتح والتوصيل والنشر والتصدير؛ لا يكشف الربط بمصدر داخلي محتواه أو ملفاته لجمهور غير مخوّل، ولا يحوّل القضية الخاصة إلى مادة عامة.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Fresh case-scoped source/version/edition checks avoid transferring revoked or expired rights to metadata/counts/facets."
+        }
+      ],
+      "code": [
+        {
+          "path": "apps/source_rights/batch.py",
+          "blob_sha": "0336ab4444e99664e510aa885f194abfa6086c5a"
+        }
+      ],
+      "tests": [
+        {
+          "group": "batched-rights-performance",
+          "kind": "positive",
+          "symbol": "apps.source_rights.test_v14_batch.BatchReferenceTests.test_bulk_query_bound_and_parity_multiple_positions",
+          "path": "apps/source_rights/test_v14_batch.py",
+          "blob_sha": "bd876df91ea67d1de1b5b14e6c49670b51611487",
+          "pg17_line": "test_bulk_query_bound_and_parity_multiple_positions (apps.source_rights.test_v14_batch.BatchReferenceTests.test_bulk_query_bound_and_parity_multiple_positions) ... ok",
+          "pg18_line": "test_bulk_query_bound_and_parity_multiple_positions (apps.source_rights.test_v14_batch.BatchReferenceTests.test_bulk_query_bound_and_parity_multiple_positions) ... ok"
+        },
+        {
+          "group": "batched-rights-performance",
+          "kind": "positive",
+          "symbol": "apps.source_rights.test_v14_batch.BatchReferenceTests.test_mixed_editions_have_exact_parity_without_inherited_grants",
+          "path": "apps/source_rights/test_v14_batch.py",
+          "blob_sha": "bd876df91ea67d1de1b5b14e6c49670b51611487",
+          "pg17_line": "test_mixed_editions_have_exact_parity_without_inherited_grants (apps.source_rights.test_v14_batch.BatchReferenceTests.test_mixed_editions_have_exact_parity_without_inherited_grants) ... ok",
+          "pg18_line": "test_mixed_editions_have_exact_parity_without_inherited_grants (apps.source_rights.test_v14_batch.BatchReferenceTests.test_mixed_editions_have_exact_parity_without_inherited_grants) ... ok"
+        },
+        {
+          "group": "batched-rights-performance",
+          "kind": "negative",
+          "symbol": "apps.source_rights.test_v14_batch.BatchReferenceTests.test_revoked_during_composition_invalidates_entire_projection",
+          "path": "apps/source_rights/test_v14_batch.py",
+          "blob_sha": "bd876df91ea67d1de1b5b14e6c49670b51611487",
+          "pg17_line": "test_revoked_during_composition_invalidates_entire_projection (apps.source_rights.test_v14_batch.BatchReferenceTests.test_revoked_during_composition_invalidates_entire_projection) ... ok",
+          "pg18_line": "test_revoked_during_composition_invalidates_entire_projection (apps.source_rights.test_v14_batch.BatchReferenceTests.test_revoked_during_composition_invalidates_entire_projection) ... ok"
+        },
+        {
+          "group": "batched-rights-performance",
+          "kind": "negative",
+          "symbol": "apps.source_rights.test_v14_batch.BatchReferenceTests.test_expiry_during_composition_invalidates_metadata_counts_and_facets",
+          "path": "apps/source_rights/test_v14_batch.py",
+          "blob_sha": "bd876df91ea67d1de1b5b14e6c49670b51611487",
+          "pg17_line": "test_expiry_during_composition_invalidates_metadata_counts_and_facets (apps.source_rights.test_v14_batch.BatchReferenceTests.test_expiry_during_composition_invalidates_metadata_counts_and_facets) ... ok",
+          "pg18_line": "test_expiry_during_composition_invalidates_metadata_counts_and_facets (apps.source_rights.test_v14_batch.BatchReferenceTests.test_expiry_during_composition_invalidates_metadata_counts_and_facets) ... ok"
+        }
+      ]
+    },
+    {
+      "id": "startup-diagnostics",
+      "points": [
+        {
+          "id": 428,
+          "original_text": "توجد Runbooks للأعطال.",
+          "preserved_status": "PARTIAL",
+          "bounded_relevance": "Bounded B6/D6/FAST9 failure observations support an operational diagnostic record, not resolution of root cause."
+        }
+      ],
+      "code": [
+        {
+          "path": "tests/v14_browser_startup/b6_observations.mjs",
+          "blob_sha": "b9662600d0c1bd1731ec4dd30f75675fcfbae450"
+        },
+        {
+          "path": "tests/acceptance/wave6/browser.mjs",
+          "blob_sha": "540f3379fc280cc05b960b942eda2e940dd4aa84"
+        },
+        {
+          "path": "docs/operations/V14_STARTUP.md",
+          "blob_sha": "77c5a9054f1a414300666283c63f0ccd35bb07ce"
+        }
+      ],
+      "tests": [
+        {
+          "group": "startup-diagnostics",
+          "kind": "positive",
+          "symbol": "tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_later_pass_preserves_failure_and_unknown_cause",
+          "path": "tests/v14_browser_startup/test_evidence.py",
+          "blob_sha": "04e6acfde417ce6624eb9cff11cea794e7b48a21",
+          "pg17_line": "test_later_pass_preserves_failure_and_unknown_cause (tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_later_pass_preserves_failure_and_unknown_cause) ... ok",
+          "pg18_line": "test_later_pass_preserves_failure_and_unknown_cause (tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_later_pass_preserves_failure_and_unknown_cause) ... ok"
+        },
+        {
+          "group": "startup-diagnostics",
+          "kind": "negative",
+          "symbol": "tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_checkout_and_report_sha_must_both_match",
+          "path": "tests/v14_browser_startup/test_evidence.py",
+          "blob_sha": "04e6acfde417ce6624eb9cff11cea794e7b48a21",
+          "pg17_line": "test_checkout_and_report_sha_must_both_match (tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_checkout_and_report_sha_must_both_match) ... ok",
+          "pg18_line": "test_checkout_and_report_sha_must_both_match (tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_checkout_and_report_sha_must_both_match) ... ok"
+        },
+        {
+          "group": "startup-diagnostics",
+          "kind": "negative",
+          "symbol": "tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_case_results_and_counts_cannot_upgrade_a_failure",
+          "path": "tests/v14_browser_startup/test_evidence.py",
+          "blob_sha": "04e6acfde417ce6624eb9cff11cea794e7b48a21",
+          "pg17_line": "test_case_results_and_counts_cannot_upgrade_a_failure (tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_case_results_and_counts_cannot_upgrade_a_failure) ... ok",
+          "pg18_line": "test_case_results_and_counts_cannot_upgrade_a_failure (tests.v14_browser_startup.test_evidence.B6EvidenceTests.test_case_results_and_counts_cannot_upgrade_a_failure) ... ok"
+        }
+      ]
+    }
+  ],
+  "owner_points_unique": [
+    47,
+    70,
+    77,
+    78,
+    121,
+    140,
+    169,
+    216,
+    408,
+    417,
+    419,
+    428,
+    543,
+    544,
+    545,
+    546,
+    549,
+    551,
+    552,
+    553,
+    554,
+    556
+  ],
+  "candidate_point_occurrences": 24,
+  "unique_named_methods": 20,
+  "status_upgrades": 0,
+  "acceptance": "HOLD",
+  "percentage": null,
+  "method": "Five candidate groups were read from the original V14 candidates.json. Each candidate point and preserved classification is copied verbatim. Twenty named positive/negative methods were resolved to source files at the tested V14 SHA; their exact passing unittest lines were observed in both decoded PG17/PG18 logs for that SHA. Every referenced source file is pinned by Git blob SHA. This is bounded CI observation, not owner approval or full acceptance.",
+  "limits": [
+    "No point is promoted to COMPLETE; original matrix and status counts remain unchanged.",
+    "B6 historical startup failure remains ROOT_CAUSE_UNKNOWN despite later successful run.",
+    "Native Chrome PDF plugin #page positioning remains NOT_VERIFIED; the selected-page derivative is a different artifact.",
+    "Human search relevance, real source rights, U03 and production acceptance remain unresolved."
+  ]
+}

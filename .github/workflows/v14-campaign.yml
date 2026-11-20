@@ -44,6 +44,11 @@ jobs:
           python-version: '3.13'
       - name: Install pinned runtime
         run: python -m pip install --no-deps -r requirements.txt
+      - name: Verify bounded V14 evidence mapping without status upgrades
+        run: |
+          set -euo pipefail
+          python docs/product/v14_scope_evidence/verify_observed_execution_full.py --check
+          python -m unittest discover -s docs/product/v14_scope_evidence -p 'test_observed_execution_full.py' -v
       # Match pg_dump/pg_restore to the service major; the runner default may be older.
       # Official packages: https://www.postgresql.org/download/linux/ubuntu/
       - name: Install matching PostgreSQL drill server and clients
