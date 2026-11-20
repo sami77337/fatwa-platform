@@ -67,11 +67,15 @@ def _zero(value):
 def _fields(request, action):
     required = {"action", "case_ref"}
     repeated = set()
+    optional = set()
     if action == "rl_search":
         required |= {"query", "kind", "page"}
     if action in {"rl_item", "rl_edit"}:
         required.add("version_id")
     if action == "rl_save":
+        # Browsers submit an untouched file input with filename="". Django
+        # represents that part as one empty POST value instead of a file.
+        optional.add("source_file")
         required |= {
             *services.FIELDS,
             "kind",
@@ -108,12 +112,16 @@ def _fields(request, action):
         )
         or not required | {"csrfmiddlewaretoken"}
         <= set(request.POST)
-        <= required | repeated | {"csrfmiddlewaretoken"}
+        <= required | repeated | optional | {"csrfmiddlewaretoken"}
         or any(len(values) != 1 for key, values in request.POST.lists() if key not in repeated)
         or len(request.POST.getlist("uses")) > 7
         or (action != "rl_save" and request.FILES)
         or set(request.FILES) - {"source_file"}
         or any(len(request.FILES.getlist(key)) != 1 for key in request.FILES)
+        or (
+            "source_file" in request.POST
+            and (request.POST.getlist("source_file") != [""] or "source_file" in request.FILES)
+        )
     ):
         raise InvalidForm("library_form_invalid")
     return request.POST

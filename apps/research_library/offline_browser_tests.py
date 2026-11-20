@@ -4,6 +4,7 @@ import base64
 import io
 import json
 import os
+import time
 import zipfile
 from datetime import datetime, timedelta
 from hashlib import sha256
@@ -35,7 +36,30 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
     login = native_browser.LibraryBrowserTests.login
     open_library = native_browser.LibraryBrowserTests.open_library
     decision = native_browser.LibraryBrowserTests.decision
-    playable = native_browser.LibraryBrowserTests.playable
+
+    def wait_native(self, page, expression, *, arg=None, timeout=15000):
+        """Read actual browser state without Playwright's page-world eval poller.
+
+        The application keeps its strict CSP. DevTools evaluates the observation
+        directly; no unsafe-eval, injected success state or CSP bypass is enabled.
+        """
+        deadline = time.monotonic() + timeout / 1000
+        while time.monotonic() < deadline:
+            if page.evaluate(expression, arg):
+                return
+            page.wait_for_timeout(50)
+        self.fail("Native browser condition did not become true within its bound")
+
+    def playable(self, page):
+        self.assertEqual(page.locator("video[controls]").count(), 1)
+        self.wait_native(
+            page,
+            """() => {
+            const video = document.querySelector('video[controls]');
+            return video && video.readyState >= 1 && Number.isFinite(video.duration)
+                && video.duration > 0 && video.videoWidth > 0 && !video.error;
+        }""",
+        )
 
     def setUp(self):
         super().setUp()
@@ -93,7 +117,8 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
             "button", name="قراءة النسخة المحلية", exact=True
         ).click()
         page.locator("#reader").wait_for(state="visible")
-        page.wait_for_function(
+        self.wait_native(
+            page,
             "title => document.querySelector('#reader h2')?.textContent === title",
             arg=self.materials[name]["payload"]["title"],
         )
@@ -200,9 +225,9 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     )
                     response = page.goto(origin + ROOT)
                     self.assertEqual(response.status, 200)
-                    page.wait_for_function("navigator.serviceWorker.controller !== null")
-                    page.wait_for_function(
-                        "document.querySelectorAll('#available article').length === 3"
+                    self.wait_native(page, "navigator.serviceWorker.controller !== null")
+                    self.wait_native(
+                        page, "document.querySelectorAll('#available article').length === 3"
                     )
                     self.assertEqual(page.locator("#saved article").count(), 0)
                     for name in self.materials:
@@ -241,8 +266,8 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     local.set_offline(True)
                     response = page.reload(wait_until="domcontentloaded")
                     self.assertEqual(response.status, 200)
-                    page.wait_for_function(
-                        "document.querySelectorAll('#saved article').length === 2"
+                    self.wait_native(
+                        page, "document.querySelectorAll('#saved article').length === 2"
                     )
                     self.assertFalse(page.evaluate("navigator.onLine"))
                     self.assertEqual(self.card(page, "saved", "uncached").count(), 0)
@@ -277,8 +302,9 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     proof["local_delete_preserved_other_copy"] = True
 
                     local.set_offline(False)
-                    page.wait_for_function(
-                        "navigator.onLine && document.querySelectorAll('#available article').length === 3"
+                    self.wait_native(
+                        page,
+                        "navigator.onLine && document.querySelectorAll('#available article').length === 3",
                     )
                     publisher_context = context("source-editor")
                     publisher = publisher_context.new_page()
@@ -300,7 +326,7 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     self.decision(publisher, "WITHDRAW")
                     page.locator("#refresh").click()
                     self.card(page, "saved", "video").wait_for(state="detached")
-                    page.wait_for_function("document.querySelector('#reader').hidden")
+                    self.wait_native(page, "document.querySelector('#reader').hidden")
                     self.assertIsNone(self.copy(page, "video"))
                     proof["withdrawal_removed_saved_and_active_copy"] = True
 
@@ -315,7 +341,8 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                         FATWA_LIBRARY_PREVIEW_POLICY=PreviewPolicy((), (), deadline, True)
                     ):
                         page.locator("#refresh").click()
-                        page.wait_for_function(
+                        self.wait_native(
+                            page,
                             """async ({root, id, oldUntil}) => {
                                 const cache = await caches.open('fatwa-library-selected-v1');
                                 const response = await cache.match(root + 'packets/' + id + '/');
@@ -333,7 +360,8 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                         self.assertFalse(
                             page.locator("#reader").evaluate("element => element.hidden")
                         )
-                        page.wait_for_function(
+                        self.wait_native(
+                            page,
                             "document.querySelector('#reader').hidden && document.querySelectorAll('#saved article').length === 0",
                             timeout=15000,
                         )

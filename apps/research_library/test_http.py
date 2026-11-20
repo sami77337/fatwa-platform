@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 from django.test import Client, TransactionTestCase, override_settings
+from django.test.client import encode_multipart
 
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.library_preview import services as preview
@@ -126,6 +127,96 @@ class LibraryHTTPTests(LibraryFixture, TransactionTestCase):
         self.assertNotContains(page, "تنزيل الملف")
         self.assertEqual(client.get(url + "file/").status_code, 404)
         self.assertEqual(client.get(url + "file/?download=1").status_code, 404)
+
+    def test_browser_empty_file_control_creates_new_version_without_replacing_original(self):
+        raw = b"synthetic original with preserved line endings\r\n"
+        original = self.release(
+            self.write(
+                file_bytes=raw, filename="original.txt", media_type="text/plain"
+            )
+        )
+        client, page = self.login()
+        editing = self.action(client, page, "rl_edit", version_id=original["version_id"])
+        self.assertContains(editing, 'id="library-save"')
+        values = {
+            "csrfmiddlewaretoken": hidden(editing, "csrfmiddlewaretoken"),
+            "action": "rl_save",
+            "case_ref": self.receipt["public_ref"],
+            "namespace": original["namespace"],
+            "external_id": original["external_id"],
+            "revision": "1",
+            "evidence_version": "1",
+            "expected_version": "1",
+            "request_key": str(uuid.uuid4()),
+            **{key: value for key, value in payload().items() if key != "synthetic"},
+            "title": "نسخة ثانية مستقلة بلا استبدال ملف الأصل",
+            "edition_label": "نسخة ثانية",
+        }
+        boundary = "NativeEmptyFileControl"
+        ending = f"--{boundary}--\r\n".encode()
+        # Chromium includes this part for an untouched optional file input.
+        # Django places it in POST as an empty string, not in FILES.
+        empty_file = (
+            f'--{boundary}\r\nContent-Disposition: form-data; name="source_file"; '
+            'filename=""\r\nContent-Type: application/octet-stream\r\n\r\n\r\n'
+        ).encode()
+        body = encode_multipart(boundary, values)
+        self.assertTrue(body.endswith(ending))
+        body = body[: -len(ending)] + empty_file + ending
+        response = client.post(
+            "/casework/staff/", body, content_type=f"multipart/form-data; boundary={boundary}"
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        first = LibraryVersion.objects.get(pk=original["version_id"])
+        second = LibraryVersion.objects.get(item=first.item, number=2)
+        self.assertEqual(second.previous_id, first.pk)
+        self.assertEqual(second.blob_id, first.blob_id)
+        self.assertEqual(second.filename, first.filename)
+        self.assertEqual(first.payload, payload())
+        self.assertEqual(second.payload["title"], values["title"])
+        self.assertFalse(second.decisions.exists())
+        self.assertEqual(
+            client.get(f"/casework/staff/library/{second.pk}/file/").status_code, 404
+        )
+        self.assertEqual(
+            client.get(f"/casework/staff/library/{first.pk}/file/").content, raw
+        )
+        public_url = f"/library-preview/materials/{first.item.public_id}/1/"
+        self.assertEqual(client.get(public_url + "file/").content, raw)
+        self.assertEqual(client.get(public_url.replace("/1/", "/2/")).status_code, 404)
+        replay = client.post(
+            "/casework/staff/", body, content_type=f"multipart/form-data; boundary={boundary}"
+        )
+        self.assertEqual(replay.status_code, 200, replay.content)
+        self.assertEqual(LibraryVersion.objects.filter(item=first.item).count(), 2)
+        first.item.case.refresh_from_db()
+        self.assertEqual(first.item.case.revision, 1)
+        self.assertEqual(first.item.case.evidence_version, 1)
+
+    def test_no_file_form_rejects_nonempty_duplicate_and_file_text_ambiguity(self):
+        client, page = self.login()
+        values = {
+            "csrfmiddlewaretoken": hidden(page, "csrfmiddlewaretoken"),
+            "action": "rl_save",
+            "case_ref": self.receipt["public_ref"],
+            "namespace": "native-empty-file-validation",
+            "external_id": "test-source",
+            "revision": "1",
+            "evidence_version": "1",
+            "expected_version": "0",
+            "request_key": str(uuid.uuid4()),
+            **{key: value for key, value in payload().items() if key != "synthetic"},
+        }
+        for source in (
+            "not-a-file",
+            ["", ""],
+            ["", SimpleUploadedFile("test.txt", b"synthetic", content_type="text/plain")],
+        ):
+            with self.subTest(source=type(source).__name__):
+                response = client.post("/casework/staff/", {**values, "source_file": source})
+                self.assertEqual(response.status_code, 400, response.content)
+        self.assertFalse(LibraryItem.objects.exists())
+        self.assertFalse(LibraryVersion.objects.exists())
 
     def test_read_permission_is_independent_from_download_permission(self):
         row = self.release(

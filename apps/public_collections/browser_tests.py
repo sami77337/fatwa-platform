@@ -2,9 +2,11 @@
 
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from django.db import close_old_connections, connections
 from django.test import LiveServerTestCase, override_settings
 
 from .models import CollectionRevision
@@ -21,6 +23,19 @@ BROWSER_FEATURES = {
 @override_settings(**BROWSER_FEATURES)
 class PublicCollectionsBrowserTests(CollectionFixture, LiveServerTestCase):
     host = "127.0.0.1"
+
+    def sync(self, operation):
+        """Evaluate ORM work off Playwright's event-loop thread and close its connection."""
+
+        def work():
+            close_old_connections()
+            try:
+                return operation()
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=1) as workers:
+            return workers.submit(work).result(timeout=30)
 
     def form(self, page, action):
         result = page.locator(f'form:visible:has([name="action"][value="{action}"])').first
@@ -136,32 +151,41 @@ class PublicCollectionsBrowserTests(CollectionFixture, LiveServerTestCase):
                     "مقدمة منتقاة بشرية؛ لا تجمع الأحكام في جواب جديد."
                 )
                 form.locator('[name="featured"]').check()
-                for selection in (
-                    self.member(),
-                    self.member(second),
-                    f"LIBRARY|{material['version_id']}|{material['digest']}",
-                ):
+                selections = self.sync(
+                    lambda: (
+                        self.member(),
+                        self.member(second),
+                        f"LIBRARY|{material['version_id']}|{material['digest']}",
+                    )
+                )
+                for selection in selections:
                     form.locator(f'[name="members"][value="{selection}"]').check()
                 self.submit(author, form)
-                first = CollectionRevision.objects.get()
+                first = self.sync(lambda: CollectionRevision.objects.values("id").get())
                 self.capture(author, "draft")
                 # Real native reorder creates another immutable draft.
                 reorder = author.locator(
                     'form:visible:has([name="action"][value="pc_reorder"]):has([name="index"][value="1"])'
                 )
                 self.submit(author, reorder, command="UP")
-                record = CollectionRevision.objects.order_by("-number").first()
-                self.assertEqual(record.number, 2)
-                self.assertNotEqual(record.pk, first.pk)
+                record = self.sync(
+                    lambda: (
+                        CollectionRevision.objects.order_by("-number")
+                        .values("id", "number", "series__public_id")
+                        .first()
+                    )
+                )
+                self.assertEqual(record["number"], 2)
+                self.assertNotEqual(record["id"], first["id"])
                 public_url = (
                     self.live_server_url
-                    + f"/library-preview/collections/items/{record.series.public_id}/"
+                    + f"/library-preview/collections/items/{record['series__public_id']}/"
                 )
                 self.assertEqual(reader.goto(public_url).status, 404)
-                self.act(reviewer, str(record.pk), "REVIEW")
-                self.act(publisher, str(record.pk), "APPROVE")
+                self.act(reviewer, str(record["id"]), "REVIEW")
+                self.act(publisher, str(record["id"]), "APPROVE")
                 self.assertEqual(reader.goto(public_url).status, 404)
-                self.act(publisher, str(record.pk), "RELEASE")
+                self.act(publisher, str(record["id"]), "RELEASE")
                 self.assertEqual(reader.goto(public_url).status, 200)
                 self.assertIn("فتوى ثانية مصرح بها", reader.locator("main").inner_text())
                 self.assertIn("مصدر منتقى عبر الواجهة", reader.locator("main").inner_text())
@@ -177,13 +201,13 @@ class PublicCollectionsBrowserTests(CollectionFixture, LiveServerTestCase):
                 self.submit(reader, reader.locator('form[role="search"]'))
                 self.assertIn("موضوع عابر للقضايا", reader.locator("main").inner_text())
                 self.capture(reader, "filtered")
-                self.act(publisher, str(record.pk), "REVOKE")
+                self.act(publisher, str(record["id"]), "REVOKE")
                 self.assertEqual(reader.goto(public_url).status, 404)
                 self.assertEqual(
                     reader.goto(self.live_server_url + "/library-preview/collections/").status, 200
                 )
                 self.assertNotIn("موضوع عابر للقضايا", reader.locator("main").inner_text())
-                self.assertEqual(CollectionRevision.objects.count(), 2)
+                self.assertEqual(self.sync(lambda: CollectionRevision.objects.count()), 2)
                 self.assertEqual(errors, [])
                 self.assertEqual(external, [])
                 for index, context in enumerate(contexts):
