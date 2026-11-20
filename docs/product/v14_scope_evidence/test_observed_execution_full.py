@@ -3,7 +3,10 @@ import json
 import unittest
 from pathlib import Path
 
-from .verify_observed_execution_full import EvidenceError, git_blob, verify
+try:
+    from .verify_observed_execution_full import EvidenceError, verify
+except ImportError:
+    from verify_observed_execution_full import EvidenceError, verify
 
 HERE = Path(__file__).resolve().parent
 BASE = "6b4f77e29ccb1f21d48ad3d77f5e63d3be953fab"
