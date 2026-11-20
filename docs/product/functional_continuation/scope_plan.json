@@ -1,0 +1,1068 @@
+{
+  "schema": "fatwa.functional-continuation-scope-plan.v1",
+  "status": "CANDIDATES_REQUIRE_EXACT_INTEGRATED_EXECUTION",
+  "source_inventory": {
+    "path": "docs/product/v14_scope_evidence/matrix.json",
+    "sha256": "0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487",
+    "denominator": 556,
+    "unit": "original_owner_point",
+    "other_inventory_clauses": 479,
+    "specification_path": "docs/product/v12_scope_evidence/specifications.json",
+    "specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
+    "decision_path": "docs/product/v12_scope_evidence/decisions.json",
+    "decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931"
+  },
+  "baseline_commit": "bdfc9bcc3794a65dcbce0f5fc50285bbd2ca4c51",
+  "previous_batch": {
+    "scope_plan_path": "docs/product/functional_completion/scope_plan.json",
+    "scope_plan_sha256": "dbd94e919df6cf726d6f37b961114bfcfa8d7f2d051140120e1ab8165d9d3fb8",
+    "credited_by_coordinator": 57,
+    "original_ids": [
+      "47",
+      "56",
+      "57",
+      "58",
+      "61",
+      "64",
+      "65",
+      "74",
+      "77",
+      "166",
+      "167",
+      "171",
+      "172",
+      "173",
+      "174",
+      "175",
+      "176",
+      "177",
+      "178",
+      "181",
+      "182",
+      "183",
+      "185",
+      "186",
+      "224",
+      "225",
+      "226",
+      "228",
+      "275",
+      "276",
+      "279",
+      "280",
+      "282",
+      "338",
+      "340",
+      "341",
+      "357",
+      "363",
+      "364",
+      "365",
+      "366",
+      "367",
+      "368",
+      "436",
+      "437",
+      "438",
+      "460",
+      "461",
+      "463",
+      "464",
+      "465",
+      "466",
+      "467",
+      "468",
+      "469",
+      "470",
+      "472"
+    ],
+    "new_credit_in_this_plan": 0,
+    "historical_plan_modified": false
+  },
+  "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
+  "candidate_count": 20,
+  "implemented_scope_candidates": 20,
+  "planned_scope_candidates": 0,
+  "verified_additional_point_count": 0,
+  "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
+  "candidate_percentage": 3.5971,
+  "requested_target": {
+    "percent_min": 10,
+    "percent_max": 12,
+    "whole_point_min": 56,
+    "whole_point_max": 66,
+    "met_by_selected_scope": false,
+    "shortfall_from_56_candidates": 36
+  },
+  "groups": [
+    {
+      "id": "research_library",
+      "title_ar": "مكتبة المواد والنسخ وحقوق الاستخدام المستقلة",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/research_library/README.md",
+      "baseline_gap": "The baseline had reference TOC editions and private media, but no generic durable typed material/version catalogue with a native authorized source reader and separately released exact public versions.",
+      "service_test_labels": [
+        "apps.research_library.tests",
+        "apps.research_library.test_http",
+        "apps.research_library.test_storage",
+        "apps.research_library.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.research_library.tests.LibraryTests",
+        "apps.research_library.test_http.LibraryHTTPTests",
+        "apps.research_library.test_storage.LibraryStorageTests",
+        "apps.research_library.test_recovery.LibraryRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.research_library.browser_tests.LibraryBrowserTests",
+        "result_path": ".local/qa/functional-continuation/library-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.research_library.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 4,
+        "models": [
+          "LibraryBlob",
+          "LibraryItem",
+          "LibraryVersion",
+          "LibraryDecision"
+        ]
+      },
+      "points": [
+        {
+          "original_id": "286",
+          "original_text": "المكتبة لا تقتصر على PDF.",
+          "direct_spec_ids": [
+            "SPEC-U09-017",
+            "SPEC-U11-003"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 288
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "A native material catalogue opens exact non-PDF resources under current rights, distinguishes descriptive metadata from an available file, and never invents a full-text search over unindexed content."
+        },
+        {
+          "original_id": "287",
+          "original_text": "تدعم الكتب والملفات.",
+          "direct_spec_ids": [
+            "SPEC-U09-017",
+            "SPEC-U11-003"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 289
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create and browse books/documents with separate logical source, edition/version and actual file identity; read authorized original bytes and preserve old versions and their rights independently."
+        },
+        {
+          "original_id": "288",
+          "original_text": "الصوتيات.",
+          "direct_spec_ids": [
+            "SPEC-U09-017",
+            "SPEC-U11-003"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 290
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Admit a real validated AUDIO material and prove current authorized native/public audio reading using its exact bytes. A type enum or an inherited private-media parser alone is insufficient evidence."
+        },
+        {
+          "original_id": "289",
+          "original_text": "الفيديوهات.",
+          "direct_spec_ids": [
+            "SPEC-U09-017",
+            "SPEC-U11-003"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 291
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Admit a real decoded VIDEO material, show an authorized player/read path and prove exact bytes and revocation. Metadata-only or dummy video filenames do not close this point."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PASS_REPORTED_BY_OWNER",
+        "actual_audio_native_read": "PG17_AND_PG18_PASS",
+        "actual_video_bytes": "PG17_AND_PG18_PASS",
+        "recovery_helper": "PG17_AND_PG18_PASS",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "material_import",
+      "title_ar": "مركز استيراد دائم وتصدير نسخ قابلة لإعادة الاستيراد",
+      "implementation_state": "IMPLEMENTED_LOCAL_BACKEND_AND_CAMPAIGN_HTTP_CHECKS_REPORTED_FINAL_EXECUTION_PENDING",
+      "contract": "apps/material_import/README.md",
+      "baseline_gap": "Prior prepared_pipeline receipts were process-local and fixed-fixture review projections; provider-specific source intake did not implement a general durable material import centre or create canonical library versions.",
+      "service_test_labels": [
+        "apps.material_import.test_formats",
+        "apps.material_import.tests",
+        "apps.material_import.test_roundtrip",
+        "apps.material_import.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.material_import.test_formats.InputTests",
+        "apps.material_import.tests.ImportTests",
+        "apps.material_import.tests.ImportNativeTests",
+        "apps.material_import.test_roundtrip.RoundtripTests",
+        "apps.material_import.test_recovery.RecoveryAdapterTests",
+        "apps.material_import.test_roundtrip.RoundtripNativeTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.material_import.browser_tests.MaterialImportBrowserTests",
+        "result_path": ".local/qa/library-operations/import-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.material_import.recovery_support",
+        "status": "LOCAL_HELPER_SMOKE_REPORTED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 7,
+        "notes": "Includes durable input/mapping/plan/decision/application/event history and RoundtripReceipt; exact model inventory is supplied by the helper."
+      },
+      "points": [
+        {
+          "original_id": "348",
+          "original_text": "يوجد Import Center.",
+          "direct_spec_ids": [
+            "SPEC-U13-011"
+          ],
+          "decision_ids": [
+            "D-053",
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 350
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Native upload creates a durable staged batch and original input receipt, with current source namespace/version/provenance/rights assertions; it leads to a real canonical library reader after authorized execution."
+        },
+        {
+          "original_id": "350",
+          "original_text": "يمر بـValidation.",
+          "direct_spec_ids": [
+            "SPEC-U13-013"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 352
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Validate actual file/row/type/source identities and declared dependencies, separate blocking errors from optional enrichment, reject forged bytes and retain a useful report."
+        },
+        {
+          "original_id": "351",
+          "original_text": "Dry Run.",
+          "direct_spec_ids": [
+            "SPEC-U13-014"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 353
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "A durable dry run reports adds/skips/conflicts/errors without changing target material records; changed input, mapping or target pins invalidate the reviewed plan."
+        },
+        {
+          "original_id": "352",
+          "original_text": "Mapping.",
+          "direct_spec_ids": [
+            "SPEC-U13-012"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 354
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Native explicit field mapping preserves the external source identity separately from local IDs and never merges names/owners merely by similarity."
+        },
+        {
+          "original_id": "353",
+          "original_text": "Duplicate Detection.",
+          "direct_spec_ids": [
+            "SPEC-U13-015"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 355
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Exact renamed/replayed input and accepted rows do not create duplicate canonical versions; physical byte deduplication does not merge logical ownership or permissions."
+        },
+        {
+          "original_id": "354",
+          "original_text": "Conflict Detection.",
+          "direct_spec_ids": [
+            "SPEC-U13-016"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 356
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Detect changes against current human-edited versions, require a supported explicit resolution, preserve prior versions and reject stale plans instead of last-file-wins replacement."
+        },
+        {
+          "original_id": "355",
+          "original_text": "Provenance Check.",
+          "direct_spec_ids": [
+            "SPEC-U13-011",
+            "SPEC-U13-017",
+            "SPEC-U13-018"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 357
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "An independent authorized human checks and records provenance for the exact staged plan; an input approved field or matching hash never creates historical or current scholarly authority."
+        },
+        {
+          "original_id": "356",
+          "original_text": "ثم Import واعتماد.",
+          "direct_spec_ids": [
+            "SPEC-U13-011",
+            "SPEC-U13-017",
+            "SPEC-U13-018"
+          ],
+          "decision_ids": [
+            "D-053"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 358
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Independently approve the exact valid plan, apply real bounded dependency groups with durable receipts, report partial failure honestly, retry only unfinished work and preserve canonical originals. Import approval grants no publication/use rights."
+        },
+        {
+          "original_id": "361",
+          "original_text": "الفيديو.",
+          "direct_spec_ids": [
+            "SPEC-U13-003"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 363
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Select a real validated library VIDEO with current separate EXPORT permission, download actual video bytes in a manifested archive, reimport through the canonical workflow, and prove exact identity/byte preservation, changed namespace mapping and revoked-rights denial. Native/browser evidence must exercise the workflow; format support alone is insufficient.",
+          "local_observation": "Owner reported actual decoded WebM export and fresh-case reimport preserving every byte in the 36-test set passing on PG17 and PG18; native round-trip HTTP tests are included, hosted browser remains pending."
+        }
+      ],
+      "implementation_commit": "38992c2",
+      "local_observation": {
+        "status": "PASS_REPORTED_BY_OWNER_FOR_BACKEND_ONLY",
+        "postgres_17_tests": 36,
+        "postgres_18_tests": 36,
+        "native_http_status": "PG17_CAMPAIGN_HTTP_2_TESTS_PASS_REPORTED_BY_OWNER",
+        "counted_as_integrated_completion": false,
+        "campaign_native_focused_tests": 2,
+        "includes_actual_video_roundtrip": true,
+        "final_policy_review_followup": "PENDING_AFTER_REPORTED_LOCAL_RUN"
+      }
+    },
+    {
+      "id": "public_collections",
+      "title_ar": "موضوعات ومجموعات عامة منتقاة عبر قضايا متعددة",
+      "implementation_state": "IMPLEMENTED_PG17_PG18_AND_CAMPAIGN_HTTP_PASSED_HOSTED_BROWSER_AND_ENCRYPTED_DRILL_PENDING",
+      "implementation_commit": "7c71916629bfa1affddc2ac8e408912dbfe62656",
+      "campaign_http_followup_commit": "5b4c5270359e26e30931d1d578eff19599e94290",
+      "contract": "apps/public_collections/README.md",
+      "baseline_gap": "Baseline public topics were confined to one authorized owning case and had no cross-case immutable public collection workflow; private researcher collections did not publish their members.",
+      "service_test_labels": [
+        "apps.public_collections.tests",
+        "apps.public_collections.test_scholarly",
+        "apps.public_collections.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.public_collections.tests.CollectionTests",
+        "apps.public_collections.test_scholarly.ScholarlyCollectionTests",
+        "apps.public_collections.test_recovery.RecoveryContractTests"
+      ],
+      "pending_service_test_labels": [],
+      "local_observation": {
+        "status": "PASS_FOR_FOCUSED_TESTS_ONLY",
+        "postgres_17_tests": 28,
+        "postgres_18_tests": 28,
+        "campaign_native_focused_tests": 3,
+        "counted_as_integrated_completion": false
+      },
+      "browser": {
+        "test_class": "apps.public_collections.browser_tests.PublicCollectionsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/collections-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.public_collections.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "models": [
+          "CollectionSeries",
+          "CollectionRevision",
+          "CollectionAction"
+        ]
+      },
+      "points": [
+        {
+          "original_id": "283",
+          "original_text": "يمكن لكل موضوع رئيسي أن يصبح Knowledge Hub.",
+          "direct_spec_ids": [
+            "SPEC-U09-015"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 285
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create a real reviewed topic with exact released material from at least two currently authorized cases, optional exact released parent and reviewed introduction; browse it under current grants. A single-case list or an example topic name is insufficient."
+        },
+        {
+          "original_id": "291",
+          "original_text": "Collections علمية منتقاة.",
+          "direct_spec_ids": [
+            "SPEC-U09-019"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 293
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Native human curation selects and orders exact released members, edits/removes/reorders into immutable versions, independently reviews/approves and explicitly releases/withdraws. A lost member hides the whole composition without private titles/counts. Private collections never become public automatically."
+        }
+      ]
+    },
+    {
+      "id": "case_lifecycle",
+      "title_ar": "الإغلاق والأرشفة وإعادة الفتح مع حفظ الأصل",
+      "implementation_state": "IMPLEMENTED_PG17_PG18_PASSED_HOSTED_BROWSER_AND_ENCRYPTED_DRILL_PENDING",
+      "contract": "apps/case_lifecycle/README.md",
+      "baseline_gap": "Canonical case stages/events had neither a distinct closed/archive lifecycle nor the associated reopen/restore workflow. Archiving private research collections did not implement case lifecycle.",
+      "service_test_labels": [
+        "apps.case_lifecycle.tests",
+        "apps.case_lifecycle.test_delivery",
+        "apps.case_lifecycle.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.case_lifecycle.tests.LifecycleTests",
+        "apps.case_lifecycle.tests.LifecycleHTTPTests",
+        "apps.case_lifecycle.test_delivery.DeliveryClosureTests",
+        "apps.case_lifecycle.test_delivery.CompositeClosureTests",
+        "apps.case_lifecycle.test_recovery.LifecycleRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "local_observation": {
+        "status": "PASS_REPORTED_BY_OWNER_FOR_FOCUSED_TESTS_ONLY",
+        "postgres_17_tests": 40,
+        "postgres_18_tests": 40,
+        "counted_as_integrated_completion": false
+      },
+      "browser": {
+        "test_class": "apps.case_lifecycle.browser_tests.LifecycleBrowserTests",
+        "result_path": ".local/qa/functional-completion/lifecycle-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.case_lifecycle.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 1,
+        "models": [
+          "LifecycleEvent"
+        ]
+      },
+      "points": [
+        {
+          "original_id": "385",
+          "original_text": "CLOSED لا تعني ARCHIVED.",
+          "direct_spec_ids": [
+            "SPEC-U14-020"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 387
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "A separately authorized and audited close/reopen lifecycle is distinct from archive and canonical answer approval; current delivery proof or explicit no-delivery permission is checked. Real same-case requester follow-up reopens the preserved case."
+        },
+        {
+          "original_id": "386",
+          "original_text": "ARCHIVED لا تعني SOFT DELETE.",
+          "direct_spec_ids": [
+            "SPEC-U14-020"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 388
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Archive/restore moves a closed case out of regular follow-up queues without deleting source/evidence/history; restore and reopen remain separate native actions. No soft delete or purge is claimed."
+        }
+      ]
+    },
+    {
+      "id": "offline_library",
+      "title_ar": "تثبيت القارئ والحفظ الصريح وحزم القراءة دون اتصال",
+      "implementation_state": "IMPLEMENTED_LOCAL_PG17_PG18_AND_NODE_PASSED_HOSTED_EXECUTION_PENDING",
+      "contract": "apps/research_library/offline.py",
+      "baseline_gap": "Existing server previews and selected export ZIPs did not provide an installable selected-material offline reader or an explicit current OFFLINE use gate.",
+      "service_test_labels": [
+        "apps.research_library.test_offline"
+      ],
+      "service_test_classes": [
+        "apps.research_library.test_offline.OfflineLibraryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.research_library.offline_browser_tests.OfflineLibraryBrowserTests",
+        "result_path": ".local/qa/functional-continuation/offline-browser/result.json",
+        "status": "BROWSER_JOURNEY_IMPLEMENTATION_IN_PROGRESS_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": null,
+        "status": "NO_NEW_SERVER_TABLES_PLANNED_REUSE_LIBRARY_EXACT_SOURCE_RECOVERY",
+        "notes": "Client caches are not a replacement for source/database recovery and must never persist authority credentials."
+      },
+      "points": [
+        {
+          "original_id": "373",
+          "original_text": "الموقع يدعم PWA.",
+          "direct_spec_ids": [
+            "SPEC-U09-026"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 375
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Provide a real installable manifest, service worker and offline application shell; automatic cache is limited to scoped static shell assets, never private or implicitly selected content. Protected browser verifies actual registration and offline navigation."
+        },
+        {
+          "original_id": "374",
+          "original_text": "يمكن حفظ مواد معينة للقراءة Offline بحسب الحقوق.",
+          "direct_spec_ids": [
+            "SPEC-U09-026"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 376
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Explicit SAVE of selected currently released material requires independent live OFFLINE use permission; preserve exact source/version and deadline, clear expired cached records, remove revoked content when online and prove actual offline reading. Do not claim immediate revocation of an unreachable downloaded copy."
+        },
+        {
+          "original_id": "375",
+          "original_text": "يمكن إنشاء Offline Archive Packages للباحثين أو للأرشفة عند الحاجة.",
+          "direct_spec_ids": [
+            "SPEC-U12-026",
+            "SPEC-U13-005"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 377
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create a readable bounded selected-material archive with actual allowed bytes/text, source names/version/locators, preparation time and manifest/checksums; absent files remain absent, no private IDs/credentials are exported, and current OFFLINE rights are checked through completion."
+        }
+      ],
+      "implementation_commit": "95f5869",
+      "review_fix_commit": "3ae98ecbbe58f5874f6bf6dcab19ed0354897bcd",
+      "node_test_files": [
+        "apps/research_library/static/research_library/offline/core.test.mjs"
+      ],
+      "local_observation": {
+        "status": "PASS_FOR_FOCUSED_TESTS_ONLY",
+        "postgres_17_tests_reported_by_owner": 8,
+        "postgres_18_tests_reported_by_owner": 8,
+        "node_tests_independently_observed": 4,
+        "counted_as_integrated_completion": false
+      }
+    }
+  ],
+  "conditional_scope": [],
+  "explicit_exclusions": [
+    {
+      "original_id": "349",
+      "original_text": "لا يدخل Dataset كبير مباشرة إلى الإنتاج.",
+      "direct_spec_ids": [
+        "SPEC-U13-011"
+      ],
+      "classification": "BASELINE_PROTECTIVE_INVARIANT",
+      "reason": "Staging/synthetic-only and no direct production import were already required and enforced. Maintaining this guard gives regression evidence, not a newly completed point."
+    },
+    {
+      "original_id": "260",
+      "original_text": "الصفحة تعرض موضوعات مختارة.",
+      "direct_spec_ids": [
+        "SPEC-U09-006"
+      ],
+      "classification": "BASELINE_OR_PARTIAL_NOT_NEW_CREDIT",
+      "reason": "Existing public navigation already listed topics, fatwas, scholars and lesson metadata and linked research/catalogue services. New curation is counted under 283/291; merely redisplaying old card types is not duplicate completion."
+    },
+    {
+      "original_id": "261",
+      "original_text": "فتاوى حديثة أو مختارة.",
+      "direct_spec_ids": [
+        "SPEC-U09-006"
+      ],
+      "classification": "BASELINE_OR_PARTIAL_NOT_NEW_CREDIT",
+      "reason": "Existing public navigation already listed topics, fatwas, scholars and lesson metadata and linked research/catalogue services. New curation is counted under 283/291; merely redisplaying old card types is not duplicate completion."
+    },
+    {
+      "original_id": "262",
+      "original_text": "العلماء.",
+      "direct_spec_ids": [
+        "SPEC-U09-006"
+      ],
+      "classification": "BASELINE_OR_PARTIAL_NOT_NEW_CREDIT",
+      "reason": "Existing public navigation already listed topics, fatwas, scholars and lesson metadata and linked research/catalogue services. New curation is counted under 283/291; merely redisplaying old card types is not duplicate completion."
+    },
+    {
+      "original_id": "263",
+      "original_text": "الدروس والصوتيات.",
+      "direct_spec_ids": [
+        "SPEC-U09-006"
+      ],
+      "classification": "BASELINE_OR_PARTIAL_NOT_NEW_CREDIT",
+      "reason": "Existing public navigation already listed topics, fatwas, scholars and lesson metadata and linked research/catalogue services. New curation is counted under 283/291; merely redisplaying old card types is not duplicate completion."
+    },
+    {
+      "original_id": "264",
+      "original_text": "المكتبة والخدمات البحثية.",
+      "direct_spec_ids": [
+        "SPEC-U09-006"
+      ],
+      "classification": "BASELINE_OR_PARTIAL_NOT_NEW_CREDIT",
+      "reason": "Existing public navigation already listed topics, fatwas, scholars and lesson metadata and linked research/catalogue services. New curation is counted under 283/291; merely redisplaying old card types is not duplicate completion."
+    },
+    {
+      "original_id": "284",
+      "original_text": "مثل: الطلاق، الزكاة، الحج، الصيام.",
+      "direct_spec_ids": [
+        "SPEC-U09-015"
+      ],
+      "classification": "EXAMPLES_NOT_A_SEPARATE_UNIT",
+      "reason": "The named topics illustrate 283; names do not constitute additional functional delivery."
+    },
+    {
+      "original_id": "281",
+      "original_text": "تعرض الفتاوى والدروس والمواد العامة.",
+      "direct_spec_ids": [
+        "SPEC-U09-014"
+      ],
+      "classification": "PARTIAL_ALL_MATERIAL_SCOPE",
+      "reason": "The new catalogue/collection does not supply every general material on scholar pages or an absent specialized hadith corpus. No whole-point claim."
+    },
+    {
+      "original_id": "285",
+      "original_text": "الصفحة تجمع الموضوعات الفرعية والفتاوى والدروس والأحاديث والمواد المرتبطة.",
+      "direct_spec_ids": [
+        "SPEC-U09-015"
+      ],
+      "classification": "PARTIAL_ALL_MATERIAL_SCOPE",
+      "reason": "The new catalogue/collection does not supply every general material on scholar pages or an absent specialized hadith corpus. No whole-point claim."
+    },
+    {
+      "original_id": "290",
+      "original_text": "الدروس والسلاسل.",
+      "direct_spec_ids": [
+        "SPEC-U09-017",
+        "SPEC-U11-003"
+      ],
+      "classification": "NOT_IMPLEMENTED_IN_THIS_LIBRARY",
+      "reason": "Existing scholarly lesson/series models were credited in the previous batch. The new typed library has not implemented integrated lesson/series catalogue support; reusing old models is not new completion."
+    },
+    {
+      "original_id": "272",
+      "original_text": "Audio إذا وجد.",
+      "direct_spec_ids": [
+        "SPEC-U09-011"
+      ],
+      "classification": "NOT_SELECTED_OR_UNFINISHED",
+      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
+    },
+    {
+      "original_id": "273",
+      "original_text": "Transcript إذا وجد.",
+      "direct_spec_ids": [
+        "SPEC-U09-011"
+      ],
+      "classification": "NOT_SELECTED_OR_UNFINISHED",
+      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
+    },
+    {
+      "original_id": "274",
+      "original_text": "روابط مباشرة إلى مقاطع محددة عند توفرها.",
+      "direct_spec_ids": [
+        "SPEC-U09-011"
+      ],
+      "classification": "NOT_SELECTED_OR_UNFINISHED",
+      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
+    },
+    {
+      "original_id": "278",
+      "original_text": "تدعم Save/Share/Print/Download وفق السياسة.",
+      "direct_spec_ids": [
+        "SPEC-U09-020",
+        "SPEC-U11-024"
+      ],
+      "classification": "NOT_SELECTED_OR_UNFINISHED",
+      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
+    },
+    {
+      "original_id": "387",
+      "original_text": "SOFT DELETE لا تعني PURGE.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "388",
+      "original_text": "UNPUBLISH لا تعني حذف الأصل.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "389",
+      "original_text": "يمكن وجود Anonymization كعملية مستقلة.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "390",
+      "original_text": "Purge الحقيقي عملية مضبوطة ومدققة، وليس Cascade عشوائيًا.",
+      "direct_spec_ids": [
+        "SPEC-U14-022",
+        "SPEC-U14-019"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "391",
+      "original_text": "يمكن تصنيف البيانات إلى Public.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "392",
+      "original_text": "Internal.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "393",
+      "original_text": "Confidential.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "394",
+      "original_text": "Restricted.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "395",
+      "original_text": "الصلاحيات والتصدير والبحث تتأثر بهذا التصنيف.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+    },
+    {
+      "original_id": "369",
+      "original_text": "يمكن نشر إصدارات Public Dataset رسمية مستقبلًا.",
+      "direct_spec_ids": [
+        "SPEC-U13-021"
+      ],
+      "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
+      "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
+    },
+    {
+      "original_id": "370",
+      "original_text": "يوجد Developer API للمواد المسموح بها.",
+      "direct_spec_ids": [
+        "SPEC-U13-022"
+      ],
+      "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
+      "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
+    },
+    {
+      "original_id": "371",
+      "original_text": "يمكن توفير Webhooks للتكاملات المصرح بها.",
+      "direct_spec_ids": [
+        "SPEC-U13-025"
+      ],
+      "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
+      "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
+    },
+    {
+      "original_id": "372",
+      "original_text": "النسخ المنشورة من Dataset لها Version وتاريخ.",
+      "direct_spec_ids": [
+        "SPEC-U13-021"
+      ],
+      "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
+      "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
+    },
+    {
+      "original_id": "219",
+      "original_text": "يدعم Full-Text Arabic Search.",
+      "direct_spec_ids": [
+        "SPEC-U05-006",
+        "SPEC-U05-007",
+        "SPEC-U05-027"
+      ],
+      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
+    },
+    {
+      "original_id": "220",
+      "original_text": "يدعم Fuzzy Search والأخطاء الإملائية.",
+      "direct_spec_ids": [
+        "SPEC-U05-007"
+      ],
+      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
+    },
+    {
+      "original_id": "247",
+      "original_text": "يمكن استخدام Shadow Mode قبل اعتماد تغيير كبير.",
+      "direct_spec_ids": [
+        "SPEC-U05-027"
+      ],
+      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
+    },
+    {
+      "original_id": "443",
+      "original_text": "Search وAI Derived Data قابلة لإعادة البناء.",
+      "direct_spec_ids": [
+        "SPEC-U15-019"
+      ],
+      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
+    },
+    {
+      "original_id": "449",
+      "original_text": "PostgreSQL FTS وpg_trgm جزء من Search baseline.",
+      "direct_spec_ids": [
+        "SPEC-U05-006",
+        "SPEC-U16-005"
+      ],
+      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
+    }
+  ],
+  "deferred_scope": [
+    {
+      "decision_id": "D-072",
+      "specification_ids": [
+        "SPEC-U10-001",
+        "SPEC-U10-002",
+        "SPEC-U10-003",
+        "SPEC-U10-004",
+        "SPEC-U10-005",
+        "SPEC-U10-006",
+        "SPEC-U10-007",
+        "SPEC-U10-008",
+        "SPEC-U10-009",
+        "SPEC-U10-010",
+        "SPEC-U10-011",
+        "SPEC-U10-012",
+        "SPEC-U10-013",
+        "SPEC-U10-014",
+        "SPEC-U10-015",
+        "SPEC-U10-016",
+        "SPEC-U10-017",
+        "SPEC-U10-018",
+        "SPEC-U10-019",
+        "SPEC-U10-020",
+        "SPEC-U10-021",
+        "SPEC-U10-022",
+        "SPEC-U10-023",
+        "SPEC-U10-024",
+        "SPEC-U10-025",
+        "SPEC-U10-026",
+        "SPEC-U10-027",
+        "SPEC-U10-028"
+      ],
+      "status": "DEFERRED_BEYOND_V1_AND_ACCEPTANCE_HOLD",
+      "reason": "D-072 is the later explicit scope decision. Earlier permission to design synthetic hadith architecture in D-053 does not authorize expanding the specialized U10 library in this continuation."
+    },
+    {
+      "decision_id": "D-067",
+      "status": "NO_NEW_ROLE_OR_PERMISSION_POLICY_ACCEPTANCE",
+      "reason": "Use current explicit resource authorities under the authorized synthetic development composition. Do not invent organizer/researcher grants or convert historical DENY/HOLD rows to ALLOW."
+    },
+    {
+      "decision_id": "D-069",
+      "status": "NO_NEW_TAXONOMY_OR_CORPUS",
+      "reason": "Book 622 remains a separately sourced fiqh TOC, not a final global taxonomy or permission to publish protected source text."
+    }
+  ],
+  "receipt_contract": "docs/product/functional_continuation/RECEIPTS.md",
+  "release_state": {
+    "gate_b": "NOT_PASSED",
+    "gates_c_d_e": "HOLD",
+    "phase_01": "BLOCKED",
+    "deployment": "NOT_DEPLOYED"
+  },
+  "scope_changes": [
+    {
+      "original_id": "361",
+      "from": "EXCLUDED_PENDING_REAL_VIDEO_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual decoded WebM export/reimport test now exists and owner reports PG17/18 PASS; not a metadata-only or format-list claim."
+    }
+  ]
+}

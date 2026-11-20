@@ -1,0 +1,58 @@
+{% extends "casework/base.html" %}
+{% block title %}مكتبة المصادر والنسخ{% endblock %}
+{% block content %}
+<h2>مكتبة المصادر والنسخ</h2>
+<p>القضية <bdi>{{ result.case_ref }}</bdi> · الوقائع {{ result.evidence_version }}</p>
+<p>احفظ بيانات المصدر ونسخته وملفه، ثم راجع النسبة والاستخدامات المسموح بها. الحفظ لا ينشر المادة، وغياب الملف لا يتحول إلى زر قراءة وهمي.</p>
+{% if message %}<p role="status">{{ message }}</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_open"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><button>جميع المواد وإضافة مصدر</button></form>
+<form method="post" action="/casework/staff/" aria-label="البحث في المكتبة">{% csrf_token %}<input type="hidden" name="action" value="rl_search"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="page" value="1">
+<label for="rl-search">العنوان أو المصدر أو اسم صاحب المادة</label><input id="rl-search" name="query" value="{{ result.query }}" maxlength="160">
+<label for="rl-filter">نوع المادة</label><select id="rl-filter" name="kind"><option value="">جميع الأنواع</option>{% for code,label in kinds.items %}<option value="{{ code }}" {% if result.kind == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button>بحث في المواد المتاحة لي</button></form>
+{% if selected %}
+<section id="library-selected" data-library-version="{{ selected.version_id }}">
+<h3>{{ selected.payload.title }} — النسخة {{ selected.number }}</h3>
+<dl><dt>العمل أو المصدر</dt><dd>{{ selected.payload.work_title }}</dd><dt>الطبعة</dt><dd>{{ selected.payload.edition_label|default:"غير موصوفة" }}</dd><dt>صاحب المادة كما ورد</dt><dd>{{ selected.payload.creator|default:"غير متوفر" }}</dd><dt>الموضع</dt><dd>{{ selected.payload.source_locator|default:"مرجع وصفي بلا موضع أدق" }}</dd><dt>مصدر الإدخال</dt><dd class="original">{{ selected.payload.provenance }}</dd><dt>مرجع الحقوق المقدم</dt><dd class="original">{{ selected.payload.rights_basis }}</dd></dl>
+<p class="original">{{ selected.payload.description }}</p>
+{% if selected.payload.recorded_text %}<h4>النص المحفوظ في هذه النسخة</h4><div class="original">{{ selected.payload.recorded_text }}</div>{% endif %}
+{% if selected.file %}<p>ملف هذه النسخة: <bdi>{{ selected.file.filename }}</bdi> · {{ selected.file.size }} بايت.</p>
+{% if 'READ' in selected.allowed_uses %}
+{% if selected.payload.kind == 'AUDIO' %}<audio class="library-player" controls preload="metadata" src="/casework/staff/library/{{ selected.version_id }}/file/"><a href="/casework/staff/library/{{ selected.version_id }}/file/">فتح التسجيل</a></audio>
+{% elif selected.payload.kind == 'VIDEO' %}<video class="library-player" controls preload="metadata" width="280" src="/casework/staff/library/{{ selected.version_id }}/file/"><a href="/casework/staff/library/{{ selected.version_id }}/file/">فتح التسجيل المرئي</a></video>
+{% elif selected.payload.kind == 'IMAGE' %}<img class="library-player" width="280" src="/casework/staff/library/{{ selected.version_id }}/file/" alt="{{ selected.payload.title }}">
+{% else %}<p><a href="/casework/staff/library/{{ selected.version_id }}/file/">فتح ملف النسخة المصرح بقراءتها</a></p>{% endif %}
+{% else %}<p>الملف محفوظ، ولم تُتح قراءة محتواه لهذه الهوية الآن.</p>{% endif %}
+{% if 'DOWNLOAD' in selected.allowed_uses %}<p><a href="/casework/staff/library/{{ selected.version_id }}/download/">تنزيل الملف المصرح به</a></p>{% endif %}
+{% else %}<p>مرجع وصفي: لا توجد نسخة رقمية مرفقة. بياناته وموضعه المتاح محفوظان للاقتباس.</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_edit"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="version_id" value="{{ selected.version_id }}"><button>إعداد نسخة جديدة من هذه البيانات</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_item"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><label>نسخ المصدر المحفوظة<select name="version_id">{% for version in selected.versions %}<option value="{{ version.version_id }}" {% if version.version_id == selected.version_id %}selected{% endif %}>{{ version.number }} — {{ version.payload.edition_label }}</option>{% endfor %}</select></label><button>فتح النسخة المحددة</button></form>
+<h4>المراجعة وحقوق الاستخدام والإتاحة</h4>
+{% for command,label in selected.options %}
+<form class="library-decision" data-command="{{ command }}" method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="rl_decide"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="version_id" value="{{ selected.version_id }}"><input type="hidden" name="command" value="{{ command }}"><input type="hidden" name="expected_actions" value="{{ selected.action_count }}"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="evidence_version" value="{{ result.evidence_version }}"><input type="hidden" name="request_key" value="{{ key }}">
+<h5>{{ label }}</h5>
+{% if command == 'APPROVE' %}<fieldset><legend>الاستخدامات التي راجعت الإذن بها لهذه النسخة فقط</legend>{% for code,use_label in use_labels.items %}<label><input type="checkbox" name="uses" value="{{ code }}"> {{ use_label }}</label>{% endfor %}</fieldset>{% endif %}
+{% if command == 'APPROVE' or command == 'RELEASE' %}<label>مدة الإذن بالدقائق، بحد أقصى ساعة<input name="minutes" type="number" min="1" max="60" value="{% if command == 'APPROVE' %}30{% else %}15{% endif %}" required></label>{% else %}<input type="hidden" name="minutes" value="0">{% endif %}
+<label>ما راجعته وسبب القرار<textarea name="note" maxlength="1000" required></textarea></label><label><input type="checkbox" name="confirmed" value="yes" required> تحققت من النسخة والنسبة والحقوق بحسب صلاحيتي.</label><button>{{ label }}</button>
+</form>{% empty %}<p>لا يوجد قرار متاح لهذه الهوية في الحالة الحالية.</p>{% endfor %}
+<h4>السجل المحفوظ</h4><ol>{% for event in selected.history %}<li><bdi>{{ event.action }}</bdi> — {{ event.note }} · <time dir="ltr" datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'Y-m-d H:i' }}</time>{% if event.valid_until %} · حتى <time dir="ltr" datetime="{{ event.valid_until|date:'c' }}">{{ event.valid_until|date:'Y-m-d H:i' }}</time>{% endif %}</li>{% empty %}<li>نسخة محفوظة تنتظر المراجعة.</li>{% endfor %}</ol>
+</section>
+{% endif %}
+{% if not selected or editing %}
+<section><h3>{% if editing %}إعداد نسخة جديدة؛ الأصل محفوظ{% else %}إضافة مادة ومصدرها{% endif %}</h3>
+<form id="library-save" method="post" enctype="multipart/form-data" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="rl_save"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="revision" value="{{ result.revision }}"><input type="hidden" name="evidence_version" value="{{ result.evidence_version }}"><input type="hidden" name="expected_version" value="{% if editing %}{{ selected.number }}{% else %}0{% endif %}"><input type="hidden" name="request_key" value="{{ key }}">
+<label for="rl-namespace">مفتاح مجموعة المصدر</label><input id="rl-namespace" name="namespace" required maxlength="100" value="{% if editing %}{{ selected.namespace }}{% endif %}" {% if editing %}readonly{% endif %}>
+<label for="rl-external">معرّف المادة لدى المصدر</label><input id="rl-external" name="external_id" required maxlength="100" value="{% if editing %}{{ selected.external_id }}{% endif %}" {% if editing %}readonly{% endif %}>
+<label for="rl-kind">نوع المادة</label><select id="rl-kind" name="kind">{% for code,label in kinds.items %}<option value="{{ code }}" {% if edit_kind == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<label for="rl-language">لغة المادة</label><select id="rl-language" name="language"><option value="ar" {% if edit_language == 'ar' %}selected{% endif %}>العربية</option><option value="en" {% if edit_language == 'en' %}selected{% endif %}>English</option></select>
+{% for field in fields %}<label for="rl-{{ field.name }}">{{ field.label }}</label>{% if field.multiline %}<textarea id="rl-{{ field.name }}" name="{{ field.name }}" maxlength="{{ field.maximum }}" {% if field.required %}required{% endif %}>{{ field.value }}</textarea>{% else %}<input id="rl-{{ field.name }}" name="{{ field.name }}" value="{{ field.value }}" maxlength="{{ field.maximum }}" {% if field.required %}required{% endif %}>{% endif %}{% endfor %}
+<label for="rl-file">ملف النسخة، اختياري</label><input id="rl-file" name="source_file" type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav,.mp4,.webm">
+<p>حتى 192000 بايت للملف في هذه المعاينة. عند تعديل مادة وترك الملف فارغًا تبقى نسخته السابقة مرتبطة؛ لا يُحذف ملف ولا يستبدل بصمت.</p><button>حفظ المصدر والنسخة للمراجعة</button>
+</form></section>{% endif %}
+<section><h3>المواد المتاحة ضمن البحث — {{ result.total }}</h3>
+{% for row in result.rows %}<article><h4>{{ row.payload.title }}</h4><p>{{ row.payload.work_title }} · {{ row.payload.edition_label }} · النسخة {{ row.number }}</p><form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_item"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="version_id" value="{{ row.version_id }}"><button>فتح المادة ونسخها</button></form></article>{% empty %}<p>لا توجد مواد متاحة ضمن البحث الحالي.</p>{% endfor %}
+{% if result.page > 1 %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_search"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="query" value="{{ result.query }}"><input type="hidden" name="kind" value="{{ result.kind }}"><input type="hidden" name="page" value="{{ result.page|add:'-1' }}"><button>الصفحة السابقة</button></form>{% endif %}
+{% if result.has_next %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_search"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="query" value="{{ result.query }}"><input type="hidden" name="kind" value="{{ result.kind }}"><input type="hidden" name="page" value="{{ result.page|add:'1' }}"><button>الصفحة التالية</button></form>{% endif %}
+</section>
+{% endblock %}

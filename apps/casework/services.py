@@ -372,6 +372,10 @@ def _verify(case):
 
 
 def _event(case, action, subject_id, *, note="", answer=None, decision=None, initial=False):
+    if django_apps.is_installed("apps.case_lifecycle") and getattr(settings, "FATWA_CASE_LIFECYCLE_ENABLED", False) is True:
+        from apps.case_lifecycle.services import before_canonical_event
+
+        before_canonical_event(case=case, action=action)
     if not initial:
         case.revision += 1
         case.save(
@@ -384,7 +388,7 @@ def _event(case, action, subject_id, *, note="", answer=None, decision=None, ini
                 "updated_at",
             ]
         )
-    CaseEvent.objects.create(
+    event = CaseEvent.objects.create(
         case=case,
         sequence=case.revision,
         action=action,
@@ -396,6 +400,14 @@ def _event(case, action, subject_id, *, note="", answer=None, decision=None, ini
         answer=answer,
         decision=decision,
     )
+    if (
+        action == "FOLLOWUP"
+        and django_apps.is_installed("apps.case_lifecycle")
+        and getattr(settings, "FATWA_CASE_LIFECYCLE_ENABLED", False) is True
+    ):
+        from apps.case_lifecycle.services import record_followup
+
+        record_followup(case=case, event=event)
 
 
 def _ticket(case):

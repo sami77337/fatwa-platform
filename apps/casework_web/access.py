@@ -37,6 +37,16 @@ class RequestDirectory(MuftiIdentityProvider):
     def authenticate(self, credential):
         raise IdentityUnavailable("request_directory_cannot_authenticate")
 
+    def projection_epoch(self):
+        """Optional pure identity revision for composed readers that require it."""
+        method = getattr(self._provider, "projection_epoch", None)
+        if not callable(method) or self._provider.provider_id != self.provider_id:
+            raise IdentityUnavailable("request_identity_snapshot_required")
+        epoch = method()
+        if type(epoch) is not str or not 1 <= len(epoch) <= 65536:
+            raise IdentityUnavailable("request_identity_snapshot_required")
+        return repr((id(self._provider), self.provider_id, self._subject, self._epoch, epoch))
+
     def resolve(self, subject_id):
         if subject_id != self._subject or self._provider.provider_id != self.provider_id:
             raise IdentityUnavailable("request_identity_changed")

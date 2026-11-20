@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils import timezone
 
 from apps.case_citations import services as citations
@@ -84,7 +84,17 @@ def _recheck(selected: PreviewPolicy) -> None:
 
 def _start() -> PreviewPolicy:
     selected = policy()
-    require_owned_database(synthetic_fixtures_only=True)
+    if connection.in_atomic_block:
+        # A composed reader may reuse only the already verified execution-local
+        # queue unit bound to this exact connection and live atomic block.
+        from apps.delivery_queue.services import QueueConflict, _postgres_only
+
+        try:
+            _postgres_only()
+        except QueueConflict as exc:
+            raise PreviewUnavailable() from exc
+    else:
+        require_owned_database(synthetic_fixtures_only=True)
     return selected
 
 

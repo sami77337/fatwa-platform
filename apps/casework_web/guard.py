@@ -33,6 +33,10 @@ PRIVATE_MEDIA_ROUTE = re.compile(
     r"/casework/(?:staff|status)/(?:attachments|answer-media)/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
 )
+LIBRARY_MEDIA_ROUTE = re.compile(
+    r"/casework/staff/library/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?:file|download)/"
+)
 TIMED_MEDIA_ROUTE = re.compile(
     r"/casework/staff/timed-citations/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
@@ -148,6 +152,7 @@ class CaseworkGuard:
         methods = ROUTES.get(request.path)
         if methods is None and (
             PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
+            or LIBRARY_MEDIA_ROUTE.fullmatch(request.path)
             or TIMED_MEDIA_ROUTE.fullmatch(request.path)
             or PDF_MEDIA_ROUTE.fullmatch(request.path)
         ):

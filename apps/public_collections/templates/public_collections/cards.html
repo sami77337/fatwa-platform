@@ -1,0 +1,1 @@
+<ol class="pc-members">{% for card in cards %}<li><article><p>{{ card.label }} · النسخة {{ card.version }} · {{ card.language }}</p><h3><a href="{{ card.url }}">{{ card.title }}</a></h3></article></li>{% empty %}<li>لم تُضف مواد متاحة إلى هذا القسم بعد.</li>{% endfor %}</ol>

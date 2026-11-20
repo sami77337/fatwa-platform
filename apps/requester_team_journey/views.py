@@ -48,6 +48,30 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.material_import"):
+            from apps.material_import.views import ACTIONS as MATERIAL_IMPORT_ACTIONS
+            from apps.material_import.views import workspace as material_import_workspace
+
+            if action in MATERIAL_IMPORT_ACTIONS:
+                return _panel(material_import_workspace(request), "cases")
+        if django_apps.is_installed("apps.public_collections"):
+            from apps.public_collections.editor import ACTIONS as COLLECTION_ACTIONS
+            from apps.public_collections.editor import workspace as collection_workspace
+
+            if action in COLLECTION_ACTIONS:
+                return _panel(collection_workspace(request), "cases")
+        if django_apps.is_installed("apps.case_lifecycle"):
+            from apps.case_lifecycle.views import ACTIONS as LIFECYCLE_ACTIONS
+            from apps.case_lifecycle.views import workspace as lifecycle_workspace
+
+            if action in LIFECYCLE_ACTIONS:
+                return _panel(lifecycle_workspace(request), "cases")
+        if django_apps.is_installed("apps.research_library"):
+            from apps.research_library.editor import ACTIONS as LIBRARY_ACTIONS
+            from apps.research_library.editor import workspace as library_workspace
+
+            if action in LIBRARY_ACTIONS:
+                return _panel(library_workspace(request), "cases")
         if django_apps.is_installed("apps.public_knowledge"):
             from apps.public_knowledge.editor import ACTIONS as PUBLIC_KNOWLEDGE_ACTIONS
             from apps.public_knowledge.editor import workspace as public_knowledge_workspace

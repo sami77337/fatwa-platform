@@ -1,0 +1,9 @@
+{% extends "casework/base.html" %}
+{% block title %}القضايا المغلقة والأرشيف{% endblock %}
+{% block content %}
+<h1>القضايا المغلقة والأرشيف</h1><p><a href="/casework/staff/">العودة إلى مكتب القضايا</a></p>
+<p>القضايا المتاحة لك: متابعة جارية {{ lifecycle.counts.OPEN }} · مغلقة {{ lifecycle.counts.CLOSED }} · مؤرشفة {{ lifecycle.counts.ARCHIVED }}.</p>
+<form method="post" action="/casework/staff/" id="lifecycle-filter">{% csrf_token %}<input type="hidden" name="action" value="lc_filter"><label for="lc-state">الحالة</label><select id="lc-state" name="state"><option value="ALL"{% if lifecycle.state == "ALL" %} selected{% endif %}>جميع الحالات المتاحة</option>{% for value,label in states %}<option value="{{ value }}"{% if lifecycle.state == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select><label for="lc-query">رقم القضية أو آخر سبب</label><input id="lc-query" name="query" maxlength="128" value="{{ lifecycle.query }}"><button>عرض النتائج</button></form>
+<p id="lifecycle-count">{{ lifecycle.count }} نتائج ضمن الفلتر الحالي.</p>
+{% for row in lifecycle.rows %}<article data-lifecycle-case="{{ row.public_ref }}"><h2><bdi>{{ row.public_ref }}</bdi> · {{ row.state_label }}</h2><p>{{ row.last_reason }}</p><p><time dir="ltr" datetime="{{ row.updated_at|date:'c' }}">{{ row.updated_at|date:'Y-m-d H:i' }} {{ row.updated_at|date:'T' }}</time></p><form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="lc_open"><input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button>فتح السجل والإجراءات</button></form></article>{% empty %}<p>لا توجد قضايا متاحة ضمن الفلتر الحالي.</p>{% endfor %}
+{% endblock %}

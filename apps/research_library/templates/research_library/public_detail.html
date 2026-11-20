@@ -1,0 +1,16 @@
+{% extends "library_preview/base.html" %}
+{% block title %}{{ material.title }} — النسخة {{ material.number }}{% endblock %}
+{% block content %}
+<nav aria-label="مسار المادة"><a href="{% url 'research_library:index' %}">المصادر والنسخ</a></nav>
+<article><h1>{{ material.title }}</h1><p>{{ material.description }}</p>
+<dl><dt>المصدر</dt><dd>{{ material.work_title }}</dd><dt>الطبعة</dt><dd>{{ material.edition_label|default:"غير موصوفة" }}</dd><dt>صاحب المادة</dt><dd>{{ material.creator|default:"غير متوفر" }}</dd><dt>الموضع المتاح</dt><dd>{{ material.source_locator|default:"لا يتوفر موضع أدق" }}</dd><dt>نسخة هذه الصفحة</dt><dd>{{ material.number }}</dd></dl>
+{% if material.recorded_text %}<section><h2>النص المتاح لهذه النسخة</h2><div class="original">{{ material.recorded_text }}</div></section>{% endif %}
+{% if material.file %}
+{% if material.kind == 'AUDIO' %}<audio class="library-player" controls preload="metadata" src="{{ material.url }}file/"><a href="{{ material.url }}file/">فتح التسجيل</a></audio>
+{% elif material.kind == 'VIDEO' %}<video class="library-player" width="280" controls preload="metadata" src="{{ material.url }}file/"><a href="{{ material.url }}file/">فتح التسجيل المرئي</a></video>
+{% elif material.kind == 'IMAGE' %}<img class="library-player" width="280" src="{{ material.url }}file/" alt="{{ material.title }}">
+{% else %}<p><a href="{{ material.url }}file/">فتح ملف هذه النسخة</a></p>{% endif %}
+{% if can_download %}<p><a href="{{ material.url }}file/?download=1">تنزيل الملف المصرح به</a></p>{% endif %}
+{% else %}<p>مرجع وصفي متاح. لا يوجد ملف مصرح بفتحه لهذه النسخة.</p>{% endif %}
+<section aria-label="مرجع قابل للقراءة"><h2>توثيق هذه المادة</h2><p>{{ material.creator }}، {{ material.work_title }}، {{ material.edition_label|default:"طبعة غير موصوفة" }}، {{ material.source_locator|default:"موضع غير متوفر" }}. نسخة المنصة {{ material.number }}.</p><p><a href="{{ material.url }}">رابط هذه النسخة المحددة</a></p></section>
+</article>{% endblock %}

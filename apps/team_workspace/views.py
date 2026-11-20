@@ -62,11 +62,21 @@ def stylesheet(request):
     ))
 
 
-def _page(request, provider, identity, *, common=None, selected_filter="all", query="",
-          sort="newest", inbox="all", message="", attempted_text=None, status=200, access=None):
+def _page(request, provider, identity, **options):
     rows = services.list_cases(
         subject_id=identity.subject_id, provider=provider, synthetic_fixtures_only=True,
     )
+    if apps.is_installed("apps.case_lifecycle") and getattr(settings, "FATWA_CASE_LIFECYCLE_ENABLED", False) is True:
+        from apps.case_lifecycle.services import queue_projection
+
+        with queue_projection(rows, subject_id=identity.subject_id, provider=provider,
+                              synthetic_fixtures_only=True, states=("OPEN",)) as visible:
+            return _page_body(request, provider, identity, rows=visible, **options)
+    return _page_body(request, provider, identity, rows=rows, **options)
+
+
+def _page_body(request, provider, identity, *, rows, common=None, selected_filter="all", query="",
+               sort="newest", inbox="all", message="", attempted_text=None, status=200, access=None):
     selected = read_workspace_case(**common) if common else None
     assignment = None
     assignments_enabled = _assignments_enabled()

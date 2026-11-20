@@ -4,6 +4,7 @@
 <h2>مساحة الشيخ والفريق</h2>
 <p>المكتب الدائم للشيخ المخوّل بالقضية. صلاحيات المؤلف والمراجع والمشغّل في مساحة التدريب باقية كما هي.</p>
 {% if message %}<p class="notice" role="status">{{ message }}</p>{% endif %}
+{% if lifecycle_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="lc_inbox"><button>القضايا المغلقة والأرشيف</button></form>{% endif %}
 {% if attempted_text != None %}
 <article><h3>نص المحاولة غير المحفوظة</h3><p>انسخ النص عند الحاجة. لم يُستبدل به الجواب الحالي، ولم يُربط تلقائيًا بالوقائع الجديدة.</p>
 <label for="attempted-text">نسخة للاسترجاع فقط</label><textarea id="attempted-text" readonly>{{ attempted_text }}</textarea></article>
@@ -33,12 +34,16 @@
 </form>{% empty %}<p id="empty-queue">لا توجد قضايا مطابقة ضمن صلاحيتك.</p>{% endfor %}</div>
 </section>
 {% if selected %}
+{% if lifecycle_enabled %}{% include "case_lifecycle/entry.html" with lifecycle_case_ref=selected.public_ref %}{% endif %}
 {% if scholarly_links_enabled %}{% include "scholarly_links/entry.html" with scholarly_case_ref=selected.public_ref %}{% endif %}
 {% if organization_enabled %}{% include "case_organization/entry.html" with organization_case_ref=selected.public_ref %}{% endif %}
 {% if assignment %}{% include "case_assignments/panel.html" %}{% endif %}
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
 <nav aria-label="أدوات القضية">
+{% if research_library_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>مكتبة المصادر والنسخ</button></form>{% endif %}
+{% if material_import_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="mi_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>مركز استيراد المواد</button></form>{% endif %}
+{% if public_collections_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pc_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>المجموعات العلمية والموضوعات</button></form>{% endif %}
 {% if selected_exports_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="exports_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تصدير المواد المختارة</button></form>{% endif %}
 {% if public_knowledge_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pk_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>صفحات العلماء والترجمات</button></form>{% endif %}
 {% if composite_delivery_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>تجهيز توصيل الجواب المركب</button></form>{% endif %}

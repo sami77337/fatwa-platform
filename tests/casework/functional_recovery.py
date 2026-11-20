@@ -17,6 +17,10 @@ ADDITIONAL_WORKFLOWS = (
     "apps.scholarly_links.recovery_support",
     "apps.public_knowledge.recovery_support",
     "apps.selected_exports.recovery_support",
+    "apps.research_library.recovery_support",
+    "apps.material_import.recovery_support",
+    "apps.public_collections.recovery_support",
+    "apps.case_lifecycle.recovery_support",
 )
 
 
@@ -86,6 +90,18 @@ def restored(fixture):
             fixture["additional_workflows"][name]
         )
         print(json.dumps({"verified_restored_workflow": name, "result": result}, default=str))
+    from apps.platform_recovery import service
+    from apps.private_media.storage import configured_storage
+
+    # The fresh process must still use the target originals after every reader.
+    storage = configured_storage()
+    assert storage.root == Path(fixture["private_root"])
+    with service.connect() as db:
+        current_references = service.references(db)
+        assert current_references == fixture["expected_durable_original_references"]
+    for reference in current_references:
+        if reference["backend"] == "private-filesystem-v1":
+            storage.get(service.original(reference))
     print("RESTORED_NEW_WORKFLOWS_PASS")
 
 
@@ -235,6 +251,8 @@ def drill(pg_bin):
                 encrypted.generate_key(path=key, synthetic_fixtures_only=True)
                 with service.connect() as db:
                     before = service.baseline(db)
+                    references = service.references(db)
+                    postgres_major = db.info.server_version // 10000
                 tables = [
                     "case_assignments_assignmentevent",
                     "case_organization_organizationrevision",
@@ -278,6 +296,7 @@ def drill(pg_bin):
                             "collection_id": collection["id"],
                             "additional_workflows": additional,
                             "private_root": result["private_root"],
+                            "expected_durable_original_references": references,
                         }
                     ),
                     text=True,
@@ -291,21 +310,37 @@ def drill(pg_bin):
                 if child.returncode:
                     raise AssertionError(child.stdout + child.stderr)
                 assert "RESTORED_NEW_WORKFLOWS_PASS" in child.stdout
+                with service.connect(result["database"]) as db:
+                    assert service.baseline(db) == before
+                    assert service.references(db) == references
                 with service.connect() as db:
                     assert service.baseline(db) == before
+                    assert service.references(db) == references
+                for reference in references:
+                    if reference["backend"] == "private-filesystem-v1":
+                        storage.get(service.original(reference))
                 assert maintenance.status(root=control)["phase"] == "FROZEN"
                 receipt = {
                     "status": "PASS",
+                    "tested_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                    "postgres_major": postgres_major,
                     "tables": {name: before["tables"][name] for name in tables},
+                    "durable_original_references": references,
                     "source_unchanged": True,
                     "source_frozen": True,
                     "fresh_process_readers": True,
                     "restored_private_storage_used": True,
+                    "restored_unchanged_after_readers": True,
+                    "all_restored_originals_verified_after_readers": True,
+                    "source_originals_unchanged": True,
                     "additional_workflows": list(additional),
                     "encrypted": True,
                     "plaintext_dump_present": bool(list(root.rglob("database.dump"))),
                 }
                 assert receipt["plaintext_dump_present"] is False
+                proof = Path(".local/qa/functional-continuation") / f"recovery-pg{postgres_major}.json"
+                proof.parent.mkdir(parents=True, exist_ok=True)
+                proof.write_text(json.dumps(receipt, indent=2) + "\n")
                 print(json.dumps(receipt, indent=2))
             finally:
                 fixture.doCleanups()

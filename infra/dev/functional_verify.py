@@ -36,6 +36,37 @@ LABELS = [
     "apps.selected_exports.test_durability",
     "apps.data_quality.tests",
     "apps.data_quality.test_review",
+    "apps.research_library.tests",
+    "apps.research_library.test_http",
+    "apps.research_library.test_storage",
+    "apps.research_library.test_offline",
+    "apps.research_library.test_recovery",
+    "apps.material_import.test_formats",
+    "apps.material_import.tests",
+    "apps.material_import.test_roundtrip",
+    "apps.material_import.test_recovery",
+    "apps.public_collections.tests",
+    "apps.public_collections.test_scholarly",
+    "apps.public_collections.test_recovery",
+    "apps.case_lifecycle.tests",
+    "apps.case_lifecycle.test_delivery",
+    "apps.case_lifecycle.test_recovery",
+    "apps.case_attachments.storage_gc_tests",
+]
+
+BROWSER_LABELS = [
+    "tests.casework.test_functional_completion_browser",
+    "apps.case_assignments.browser_tests",
+    "apps.browser_audio.test_browser.BrowserAudioTests.test_pause_resume_preserves_one_recording_and_excludes_paused_time",
+    "apps.scholarly_links.browser_tests",
+    "apps.public_knowledge.browser_tests",
+    "apps.selected_exports.browser_tests",
+    "apps.data_quality.browser_tests",
+    "apps.research_library.browser_tests",
+    "apps.research_library.offline_browser_tests",
+    "apps.material_import.browser_tests",
+    "apps.public_collections.browser_tests",
+    "apps.case_lifecycle.browser_tests",
 ]
 
 
@@ -84,6 +115,7 @@ def main():
         ("system", [sys.executable, "manage.py", "check"]),
         ("migrations", [sys.executable, "manage.py", "makemigrations", "--check", "--dry-run"]),
         ("recording", ["node", "--test", "apps/browser_audio/test_capture_worklet.mjs"]),
+        ("offline_client", ["node", "--test", "apps/research_library/static/research_library/offline/core.test.mjs"]),
         (
             "affected",
             [sys.executable, "manage.py", "test", *LABELS, "--noinput", "--verbosity", "2"],
@@ -101,13 +133,7 @@ def main():
                     sys.executable,
                     "manage.py",
                     "test",
-                    "tests.casework.test_functional_completion_browser",
-                    "apps.case_assignments.browser_tests",
-                    "apps.browser_audio.test_browser.BrowserAudioTests.test_pause_resume_preserves_one_recording_and_excludes_paused_time",
-                    "apps.scholarly_links.browser_tests",
-                    "apps.public_knowledge.browser_tests",
-                    "apps.selected_exports.browser_tests",
-                    "apps.data_quality.browser_tests",
+                    *BROWSER_LABELS,
                     "--noinput",
                     "--verbosity",
                     "2",
@@ -139,17 +165,22 @@ def main():
         if proof.get("status") != "PASS" or proof.get("sandbox") is not True:
             raise RuntimeError("Protected browser proof missing")
     receipt["status"] = "PASS" if args.browser else "SERVICE_HTTP_RECOVERY_ONLY"
+    from functional_continuation_receipt import write_continuation_receipt
     from functional_scope_receipt import write_scope_receipt
 
     try:
         accounting = write_scope_receipt(receipt, output, labels=LABELS)
+        continuation = write_continuation_receipt(receipt, output, labels=LABELS, browser_labels=BROWSER_LABELS)
     except Exception:
         receipt["status"] = "FAILED_SCOPE_ACCOUNTING"
         (output / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
         raise
     receipt["scope_audit_status"] = accounting["status"]
     receipt["completed_original_owner_points"] = accounting["completed_original_owner_points"]
+    receipt["continuation_scope_status"] = continuation["status"]
+    receipt["completed_additional_original_owner_points"] = continuation["completed_additional_original_owner_points"]
     (output / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    (Path(".local/qa/functional-continuation") / ("pg" + major) / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
     return 0
 
 

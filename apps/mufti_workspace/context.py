@@ -46,10 +46,22 @@ TABS = (
     ("exports", "exports_open", "تصدير المواد المختارة", "FATWA_SELECTED_EXPORTS_ENABLED"),
     ("scholarly", "scholarly_open", "الدروس والعلاقات اليدوية", "FATWA_SCHOLARLY_LINKS_ENABLED"),
     ("public_knowledge", "pk_open", "صفحات العلماء والترجمات", "FATWA_PUBLIC_KNOWLEDGE_ENABLED"),
+    ("library", "rl_open", "مكتبة المصادر والنسخ", "FATWA_RESEARCH_LIBRARY_ENABLED"),
+    ("material_import", "mi_open", "مركز استيراد المواد", "FATWA_MATERIAL_IMPORT_ENABLED"),
+    ("public_collections", "pc_open", "المجموعات العلمية والموضوعات", "FATWA_PUBLIC_COLLECTIONS_ENABLED"),
+    ("lifecycle", "lc_open", "إغلاق القضية وأرشفتها", "FATWA_CASE_LIFECYCLE_ENABLED"),
 )
 
 
 def _active(action):
+    if action.startswith("mi_"):
+        return "material_import"
+    if action.startswith("pc_"):
+        return "public_collections"
+    if action.startswith("lc_"):
+        return "lifecycle"
+    if action.startswith("rl_"):
+        return "library"
     if action.startswith("pk_"):
         return "public_knowledge"
     if action.startswith(("scholarly_", "lesson_", "relation_")):
