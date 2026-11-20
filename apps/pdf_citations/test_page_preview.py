@@ -1,9 +1,12 @@
 """Synthetic single-page derivative verification; no Django, file or user data."""
 
+import base64
 import io
+import os
 import json
 import subprocess
 import unittest
+from pathlib import Path
 from hashlib import sha256
 from unittest.mock import patch
 
@@ -11,6 +14,7 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.actions import JavaScript
 
 from .page_preview import PdfPageUnavailable, selected_page
+from .page_worker import produce
 
 
 def multipage_pdf():
@@ -37,6 +41,35 @@ class SelectedPageDerivativeTests(unittest.TestCase):
                 self.assertNotEqual(chosen, self.raw)
         self.assertEqual(sha256(self.raw).hexdigest(), original_sha)
         self.assertEqual(len(PdfReader(io.BytesIO(self.raw)).pages), 3)
+
+    def test_worker_invocation_uses_sanitized_environment_and_fixed_cwd(self):
+        selected = produce(self.raw, 2, 3)
+        response = subprocess.CompletedProcess(
+            [],
+            0,
+            stdout=json.dumps(
+                {"page_number": 2, "page_count": 1, "pdf": base64.b64encode(selected).decode("ascii")}
+            ),
+        )
+        with patch(
+            "apps.pdf_citations.page_preview.subprocess.run", return_value=response
+        ) as run:
+            self.assertEqual(selected_page(self.raw, page_number=2, page_count=3), selected)
+        kwargs = run.call_args.kwargs
+        self.assertEqual(
+            kwargs["env"],
+            {
+                "PATH": os.defpath,
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONHASHSEED": "0",
+            },
+        )
+        self.assertEqual(kwargs["cwd"], Path(__file__).resolve().parents[2])
+        self.assertNotIn("DATABASE_URL", kwargs["env"])
+        self.assertNotIn("SECRET_KEY", kwargs["env"])
+        self.assertNotIn("PYTHONPATH", kwargs["env"])
 
     def test_wrong_page_and_boolean_coercion_fail_before_subprocess(self):
         for page, pages in ((0, 3), (4, 3), (2, 2), (True, 3), (2, False), (2, 11)):
