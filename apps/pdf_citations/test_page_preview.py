@@ -6,6 +6,7 @@ import os
 import json
 import subprocess
 import unittest
+import io
 from pathlib import Path
 from hashlib import sha256
 from unittest.mock import patch
@@ -81,11 +82,16 @@ class SelectedPageDerivativeTests(unittest.TestCase):
         response = json.dumps(
             {"page_number": 2, "page_count": 1, "pdf": base64.b64encode(selected).decode("ascii")}
         ).encode("utf-8")
-        def write_response(*args, **kwargs):
-            kwargs["stdout"].write(response)
-            return subprocess.CompletedProcess([], 0)
+        class FakeProcess:
+            def __init__(self, *args, **kwargs):
+                self.stdin = io.BytesIO()
+                self.stdout = io.BytesIO(response)
+            def wait(self, timeout=None):
+                return 0
+            def kill(self):
+                return None
         with patch(
-            "apps.pdf_citations.page_preview.subprocess.run", side_effect=write_response
+            "apps.pdf_citations.page_preview.subprocess.Popen", side_effect=FakeProcess
         ) as run:
             self.assertEqual(selected_page(self.raw, page_number=2, page_count=3), selected)
         kwargs = run.call_args.kwargs
@@ -131,17 +137,27 @@ class SelectedPageDerivativeTests(unittest.TestCase):
             (0, json.dumps({"page_number": 2, "page_count": 1, "pdf": "YWJj"}).encode()),
         )
         for code, response in bad:
-            def write_bad(*args, _code=code, _response=response, **kwargs):
-                kwargs["stdout"].write(_response)
-                return subprocess.CompletedProcess([], _code)
-            with patch("apps.pdf_citations.page_preview.subprocess.run", side_effect=write_bad):
+            class FakeProcess:
+                def __init__(self, *args, **kwargs):
+                    self.stdin = io.BytesIO()
+                    self.stdout = io.BytesIO(response)
+                def wait(self, timeout=None):
+                    return code
+                def kill(self):
+                    return None
+            with patch("apps.pdf_citations.page_preview.subprocess.Popen", side_effect=FakeProcess):
                 with self.assertRaises(PdfPageUnavailable):
                     selected_page(self.raw, page_number=2, page_count=3)
 
-        def write_oversized(*args, **kwargs):
-            kwargs["stdout"].write(b"x" * 400001)
-            return subprocess.CompletedProcess([], 0)
-        with patch("apps.pdf_citations.page_preview.subprocess.run", side_effect=write_oversized):
+        class OversizedProcess:
+            def __init__(self, *args, **kwargs):
+                self.stdin = io.BytesIO()
+                self.stdout = io.BytesIO(b"x" * 400001)
+            def wait(self, timeout=None):
+                return 0
+            def kill(self):
+                return None
+        with patch("apps.pdf_citations.page_preview.subprocess.Popen", side_effect=OversizedProcess):
             with self.assertRaises(PdfPageUnavailable):
                 selected_page(self.raw, page_number=2, page_count=3)
 
