@@ -71,7 +71,7 @@ def verify(data, candidate, read_file):
     )
     require(len(data["groups"]) == len(EXPECTED), "group_count")
     source_groups = {g["id"]: g for g in candidate["groups"]}
-    seen, points, methods = set(), set(), set()
+    seen, points, methods = set(), {}, set()
     for group in data["groups"]:
         gid = group["id"]
         require(gid in EXPECTED and gid not in seen, "duplicate_or_unknown_group")
@@ -82,8 +82,7 @@ def verify(data, candidate, read_file):
         original = {p["original_id"]: p for p in source["point_mappings"]}
         for point in group["points"]:
             pid = point["id"]
-            require(pid not in points and pid in original, "duplicate_or_missing_point")
-            points.add(pid)
+            require(pid in original, "missing_point")
             src = original[pid]
             require(
                 point["original_text"] == src["original_text"]
@@ -91,6 +90,9 @@ def verify(data, candidate, read_file):
                 and point["bounded_relevance"] == src["bounded_relevance"],
                 "owner_text_or_status_changed",
             )
+            record = (point["original_text"], point["preserved_status"], point["bounded_relevance"])
+            require(pid not in points or points[pid] == record, "conflicting_duplicate_point")
+            points[pid] = record
         expected_code = {c["path"] for c in source["code"]}
         actual_code = {c["path"] for c in group["code"]}
         require(actual_code == expected_code, "code_inventory_mismatch")
@@ -124,7 +126,7 @@ def verify(data, candidate, read_file):
         require(observed == set(expected_tests), "test_inventory_mismatch")
     require(seen == set(EXPECTED), "group_missing")
     require(len(points) == 22 and len(methods) == 20, "inventory_totals")
-    require(data["owner_points_unique"] == sorted(points), "point_index")
+    require(data["owner_points_unique"] == sorted(points.keys()), "point_index")
     require(data["unique_named_methods"] == len(methods), "method_index")
     require(data["candidate_point_occurrences"] == 24, "occurrence_count")
     require(len(data["jobs"]) == 2, "jobs")
