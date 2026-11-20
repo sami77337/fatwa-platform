@@ -47,15 +47,25 @@ def produce(raw: bytes, page_number: int, expected_pages: int) -> bytes:
     return derivative
 
 
+
+def apply_resource_limits():
+    """Require Linux resource limits; never silently run the parser unbounded."""
+    import resource
+
+    limits = (
+        (resource.RLIMIT_CPU, 3, 3),
+        (resource.RLIMIT_AS, 256 * 1024 * 1024, 256 * 1024 * 1024),
+        (resource.RLIMIT_FSIZE, 1 * 1024 * 1024, 1 * 1024 * 1024),
+        (resource.RLIMIT_NOFILE, 32, 32),
+        (resource.RLIMIT_CORE, 0, 0),
+    )
+    for kind, soft, hard in limits:
+        resource.setrlimit(kind, (soft, hard))
+
+
 def main():
     try:
-        try:
-            import resource
-
-            resource.setrlimit(resource.RLIMIT_CPU, (3, 3))
-            resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
-        except ImportError:
-            pass
+        apply_resource_limits()
         value = json.loads(sys.stdin.read(300000))
         if type(value) is not dict or set(value) != {"raw", "page_number", "page_count"}:
             raise ValueError

@@ -22,14 +22,24 @@ The source's exact owner, SHA-256, version, parser metadata, physical page index
 case/evidence/current-answer revision, READ_MEDIA/CITE, identity and staff
 session are checked by the existing `services.open_pdf` transaction.
 
-`page_only=True` asks an isolated `page_worker` to revalidate the **same
-original** and copy only its selected physical page into a transient PDF. The
-worker removes annotations/actions metadata, validates the single-page result,
-and never writes a derivative to disk. Limits: original <=192000 bytes, 1–10
-original pages, derived response <=262144 bytes, six-second parent timeout,
-worker three-second CPU and 256MiB address-space limits on Linux. Missing,
-malformed, oversized or unsafe PDFs fail closed and **never** fall back to
-returning the full original from the selected-page URL.
+`page_only=True` invokes `page_worker` in a separate process to revalidate the
+**same original** and copy only its selected physical page into a transient PDF.
+The worker receives a minimal environment (no application secrets, database
+URLs, caller `PYTHONPATH` or HOME configuration), a fixed project working
+directory, and bounded CPU, address-space, output-file, file-descriptor and
+core-dump limits on Linux. It removes annotations/actions metadata, validates
+the one-page result, and never writes a derivative to disk. Limits: original
+<=192000 bytes, 1–10 original pages, derived response <=262144 bytes,
+six-second parent timeout, worker three-second CPU, 256MiB address space,
+1MiB output file, 32 file descriptors and disabled core dumps.
+
+**Security boundary:** this is process separation plus resource limits and
+environment sanitization, not an OS sandbox, seccomp profile, container,
+chroot or different UID. The worker runs with the application process's OS
+identity and filesystem permissions. Do not treat it as protection against a
+compromised host or privileged local process. Missing, malformed, oversized
+or unsafe PDFs fail closed and **never** fall back to returning the full
+original from the selected-page URL.
 
 The service rechecks rights and staff identity **after** the conversion while
 still holding the scoped transaction, including the source-expiry guard. The
