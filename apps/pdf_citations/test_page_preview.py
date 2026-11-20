@@ -162,7 +162,7 @@ class SelectedPageDerivativeTests(unittest.TestCase):
                 selected_page(self.raw, page_number=2, page_count=3)
 
         with patch(
-            "apps.pdf_citations.page_preview.subprocess.run",
+            "apps.pdf_citations.page_preview.subprocess.Popen",
             side_effect=subprocess.TimeoutExpired("page_worker", 6),
         ):
             with self.assertRaises(PdfPageUnavailable):
