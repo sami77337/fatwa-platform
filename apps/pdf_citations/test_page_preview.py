@@ -43,23 +43,21 @@ class SelectedPageDerivativeTests(unittest.TestCase):
         self.assertEqual(len(PdfReader(io.BytesIO(self.raw)).pages), 3)
 
     def test_worker_requires_all_os_resource_limits(self):
-        fake = type(
-            "Resource",
-            (),
-            {
-                "RLIMIT_CPU": 1,
-                "RLIMIT_AS": 2,
-                "RLIMIT_FSIZE": 3,
-                "RLIMIT_NOFILE": 4,
-                "RLIMIT_CORE": 5,
-                "calls": [],
-                "setrlimit": staticmethod(lambda kind, value: Resource.calls.append((kind, value))),
-            },
+        from types import SimpleNamespace
+
+        calls = []
+        fake = SimpleNamespace(
+            RLIMIT_CPU=1,
+            RLIMIT_AS=2,
+            RLIMIT_FSIZE=3,
+            RLIMIT_NOFILE=4,
+            RLIMIT_CORE=5,
+            setrlimit=lambda kind, value: calls.append((kind, value)),
         )
         with patch.dict("sys.modules", {"resource": fake}):
             apply_resource_limits()
         self.assertEqual(
-            fake.calls,
+            calls,
             [(1, (3, 3)), (2, (268435456, 268435456)), (3, (1048576, 1048576)),
              (4, (32, 32)), (5, (0, 0))],
         )
