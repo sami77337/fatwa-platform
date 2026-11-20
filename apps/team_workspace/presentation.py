@@ -114,8 +114,11 @@ def queue(rows, selected_filter, query):
             )
         )
     ]
+    # Counts describe the complete authorized inbox, not the current search
+    # subset. This keeps workload totals stable while the operator narrows results.
     counts = {
-        key: sum(key == "all" or row["category"] == key for row in matched) for key in FILTERS
+        key: (len(described) if key == "all" else sum(row["category"] == key for row in described))
+        for key in FILTERS
     }
     return {
         "rows": [
@@ -127,4 +130,6 @@ def queue(rows, selected_filter, query):
         "selected_filter": selected_filter,
         "query": query,
         "total": len(described),
+        "matched_total": len(matched),
+        "visible_total": sum(1 for row in matched if selected_filter == "all" or row["category"] == selected_filter),
     }

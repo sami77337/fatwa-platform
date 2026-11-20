@@ -9,7 +9,10 @@
 <label for="attempted-text">نسخة للاسترجاع فقط</label><textarea id="attempted-text" readonly>{{ attempted_text }}</textarea></article>
 {% endif %}
 <section aria-labelledby="queue-heading">
-<h2 id="queue-heading">القضايا المخوّلة ({{ total }})</h2>
+<h2 id="queue-heading">صندوق الوارد — القضايا المخوّلة ({{ total }})</h2>
+<div class="actions" id="queue-summary" aria-label="توزيع القضايا حسب حالة العمل">
+{% for item in filters %}<p><strong>{{ item.label }}</strong>: <bdi>{{ item.count }}</bdi></p>{% endfor %}
+</div>
 <form method="post" action="/casework/staff/">{% csrf_token %}
 <input type="hidden" name="action" value="filter">
 <label for="queue-query">بحث في القضايا المخوّلة: الرقم أو السؤال أو التعقيب أو الجواب</label><input id="queue-query" name="query" value="{{ query }}" maxlength="40" autocomplete="off">
@@ -17,6 +20,7 @@
 <label for="queue-state">مرحلة العمل</label>
 <select id="queue-state" name="state">{% for item in filters %}<option value="{{ item.key }}"{% if item.key == selected_filter %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
 <button type="submit">عرض القضايا</button><a href="/casework/staff/">كل القضايا</a>
+<p role="status">نتائج البحث: {{ matched_total }} · المعروض بعد التصفية: {{ visible_total }}</p>
 </form>
 <div class="actions">{% for case in rows %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ case.public_ref }}">
