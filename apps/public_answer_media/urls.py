@@ -3,6 +3,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("casework/staff/recording-player.js", views.staff_player, name="recording_player"),
+    path(
+        "library-preview/recordings/player.js", views.public_player, name="public_recording_player"
+    ),
     path(
         "casework/staff/recording-parts/<uuid:part_id>/audio/",
         views.staff_audio,

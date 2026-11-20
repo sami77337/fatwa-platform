@@ -177,6 +177,53 @@ class MediaHTTPTests(MediaFixture, TransactionTestCase):
         self.assertEqual(segment.status_code, 200, segment.content)
         self.assertContains(segment, "#t=1,2.5")
 
+    def test_actual_segment_initializer_is_current_authorized_external_and_narrowly_scoped(self):
+        transcript = self.review(self.save())
+        released = self.release(transcript)
+        private_path = f"/casework/staff/recording-transcripts/{transcript['id']}/segments/0/"
+        public_path = f"/library-preview/recordings/{released['id']}/segments/0/"
+        for client, path, asset in (
+            (self.client, private_path, "/casework/staff/recording-player.js"),
+            (self.client_for(), public_path, "/library-preview/recordings/player.js"),
+        ):
+            with self.subTest(path=path):
+                response = client.get(path)
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertContains(response, f'type="module" src="{asset}"')
+                self.assertContains(response, 'data-start-ms="1000" data-end-ms="2500"')
+                self.assertNotContains(response, "autoplay")
+                policy = response["Content-Security-Policy"]
+                self.assertIn("script-src 'self'", policy)
+                self.assertNotIn("unsafe-inline", policy)
+                self.assertNotIn("unsafe-eval", policy)
+                self.assertNotIn("connect-src", policy)
+                response = client.get(asset)
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertTrue(response["Content-Type"].startswith("text/javascript"))
+                self.assertIn(b"loadedmetadata", response.content)
+                self.assertIn("no-store", response["Cache-Control"])
+                self.assertEqual(client.head(asset).content, b"")
+        self.assertEqual(
+            self.client_for().get("/casework/staff/recording-player.js").status_code, 403
+        )
+        self.assertEqual(
+            self.client.get("/casework/staff/recording-player.js?start=1").status_code, 400
+        )
+        self.assertEqual(
+            self.client_for().post("/library-preview/recordings/player.js").status_code, 405
+        )
+        with override_settings(FATWA_PUBLIC_ANSWER_MEDIA_PUBLIC_ENABLED=False):
+            self.assertEqual(
+                self.client_for().get("/library-preview/recordings/player.js").status_code, 404
+            )
+        normal = self.client_for().get(self.url)
+        self.assertNotIn("script-src", normal["Content-Security-Policy"])
+        original = self.client.get(
+            f"/casework/staff/recording-transcripts/{transcript['id']}/audio/"
+        )
+        self.assertIn("sandbox", original["Content-Security-Policy"])
+        self.assertNotIn("script-src", original["Content-Security-Policy"])
+
     def test_missing_file_or_media_policy_preserves_only_current_authorized_text(self):
         released = self.release(self.review(self.save()))
         object_path = self.storage.root / "objects" / self.part.storage_key

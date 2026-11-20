@@ -62,6 +62,7 @@ class ContinuationReceiptTests(unittest.TestCase):
             "system",
             "migrations",
             "recording",
+            "recording_player",
             "offline_client",
             "affected",
             "recovery",

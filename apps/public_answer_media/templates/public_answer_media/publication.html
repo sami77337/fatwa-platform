@@ -1,7 +1,8 @@
 {% extends "library_preview/base.html" %}
 {% block title %}{{ publication.title }} — النص والتسجيل{% endblock %}
+{% block metadata %}{% if segment %}<script type="module" src="{% url 'public_recording_player' %}"></script>{% endif %}{% endblock %}
 {% block content %}
 <article><h1>{{ publication.title }}</h1><p>{{ publication.category }} · النسخة المنشورة {{ publication.number }}</p><div class="body" id="published-text">{{ publication.body|linebreaksbr }}</div></article>
 {% include "public_answer_media/panel.html" %}
-{% if segment %}<section id="documented-segment"><h2>مقطع بتوقيت موثق</h2><p class="body">{{ segment.text }}</p><p>المدة بالثواني <bdi>{{ segment.seconds_label }}</bdi></p><audio class="library-player" controls preload="metadata" src="{{ segment.audio_url }}">تعذّر تشغيل التسجيل في هذا المتصفح.</audio><p>اضغط تشغيل للاستماع. يبدأ المشغل من الموضع الموثق؛ لا تشغيل تلقائيًا.</p></section>{% endif %}
+{% if segment %}<section id="documented-segment"><h2>مقطع بتوقيت موثق</h2><p class="body">{{ segment.text }}</p><p>المدة بالثواني <bdi>{{ segment.seconds_label }}</bdi></p><audio class="library-player" controls preload="metadata" data-recording-segment data-start-ms="{{ segment.start_ms }}" data-end-ms="{{ segment.end_ms }}" src="{{ segment.audio_url }}">تعذّر تشغيل التسجيل في هذا المتصفح.</audio><p data-recording-seek-status role="status">جارٍ تهيئة الموضع الموثق بعد تحميل بيانات التسجيل. لا تشغيل تلقائيًا.</p></section>{% endif %}
 {% endblock %}

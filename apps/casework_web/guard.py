@@ -24,6 +24,7 @@ ROUTES = {
     BASE + "staff/": ("GET", "HEAD", "POST"),
     BASE + "staff/quality/": ("GET", "HEAD"),
     BASE + "staff/logout/": ("POST",),
+    BASE + "staff/recording-player.js": ("GET", "HEAD"),
     BASE + "staff/pwa/manifest.webmanifest": ("GET", "HEAD"),
     BASE + "staff/pwa/install.mjs": ("GET", "HEAD"),
     BASE + "staff/pwa/sw.mjs": ("GET", "HEAD"),
@@ -122,6 +123,17 @@ def private(response, *, head=False):
             if directive not in policy:
                 policy += "; " + directive + " 'self'"
         response["Content-Security-Policy"] = policy
+    if (
+        enabled()
+        and getattr(settings, "FATWA_PUBLIC_ANSWER_MEDIA_ENABLED", False) is True
+        and getattr(response, "_allow_recording_player", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+        and "sandbox" not in response["Content-Security-Policy"]
+    ):
+        policy = response["Content-Security-Policy"]
+        if "script-src" not in policy:
+            response["Content-Security-Policy"] = policy + "; script-src 'self'"
     if head:
         response.content = b""
     return response

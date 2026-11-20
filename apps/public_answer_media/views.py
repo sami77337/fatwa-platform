@@ -3,6 +3,7 @@
 import re
 import uuid
 from functools import wraps
+from pathlib import Path
 
 from django.core.exceptions import DisallowedHost, SuspiciousOperation
 from django.db import DatabaseError
@@ -243,9 +244,35 @@ def staff_segment(request, transcript_id, index):
         return denied("recording_unavailable", 404)
     common = _common(request, row.case.public_ref)
     with services.segment_projection(**common, transcript_id=transcript_id, index=index) as result:
-        return private(
-            render(request, "public_answer_media/staff_segment.html", {"segment": result})
-        )
+        response = render(request, "public_answer_media/staff_segment.html", {"segment": result})
+        response._allow_recording_player = True
+        return private(response)
+
+
+def _player_script():
+    raw = (Path(__file__).parent / "static" / "public_answer_media" / "player.mjs").read_bytes()
+    return HttpResponse(raw, content_type="text/javascript; charset=utf-8")
+
+
+@_private_read
+def staff_player(request):
+    current_staff(request, _provider())
+    return private(_player_script(), head=request.method == "HEAD")
+
+
+@safe_read
+def public_player(request):
+    if request.GET:
+        raise preview.InvalidFilter()
+    try:
+        enabled()
+    except cases.CaseConflict as exc:
+        raise preview.PreviewUnavailable() from exc
+    from django.conf import settings
+
+    if getattr(settings, "FATWA_PUBLIC_ANSWER_MEDIA_PUBLIC_ENABLED", False) is not True:
+        raise preview.PreviewUnavailable()
+    return _player_script()
 
 
 def _public_render(request, result, *, unavailable=False, segment=None):
@@ -260,6 +287,8 @@ def _public_render(request, result, *, unavailable=False, segment=None):
         },
     )
     response._allow_library_media = True
+    if segment is not None:
+        response._allow_recording_player = True
     return response
 
 

@@ -139,6 +139,7 @@ def main():
         ("system", [sys.executable, "manage.py", "check"]),
         ("migrations", [sys.executable, "manage.py", "makemigrations", "--check", "--dry-run"]),
         ("recording", ["node", "--test", "apps/browser_audio/test_capture_worklet.mjs"]),
+        ("recording_player", ["node", "--test", "apps/public_answer_media/test_player.mjs"]),
         ("offline_client", ["node", "--test", "apps/research_library/static/research_library/offline/core.test.mjs"]),
         (
             "affected",

@@ -923,7 +923,11 @@
         "8e16a15",
         "609c799",
         "5c5acbe",
-        "1699bfd"
+        "1699bfd",
+        "83c58f6"
+      ],
+      "node_test_files": [
+        "apps/public_answer_media/test_player.mjs"
       ]
     },
     {

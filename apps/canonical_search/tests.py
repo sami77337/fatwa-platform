@@ -102,6 +102,33 @@ class CanonicalSearchTests(SearchFixture, TransactionTestCase):
             )
             self.assertIn("cs_document_trgm_gin", "\n".join(row[0] for row in cursor.fetchall()))
 
+    def test_fuzzy_reader_on_fresh_backend_loads_extension_without_changing_session_default(self):
+        self.build()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_backend_pid()")
+            builder_pid = cursor.fetchone()[0]
+        # A restored database has the extension and GIN index, but each reader
+        # backend must load the extension library independently of the builder.
+        connection.close()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT pg_backend_pid(), current_setting('pg_trgm.word_similarity_threshold', true)"
+            )
+            reader_pid, missing = cursor.fetchone()
+            self.assertNotEqual(builder_pid, reader_pid)
+            self.assertIsNone(missing)
+            cursor.execute("SELECT count(*) FROM pg_extension WHERE extname='pg_trgm'")
+            self.assertEqual(cursor.fetchone()[0], 1)
+        result = self.search("المعاملاتت", mode="FUZZY")
+        self.assertEqual(result["total"], 1)
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT setting, reset_val FROM pg_settings WHERE name='pg_trgm.word_similarity_threshold'"
+            )
+            setting, initial = cursor.fetchone()
+            self.assertEqual(setting, initial)
+            self.assertNotEqual(setting, "0.35")
+
     def test_rebuild_is_idempotent_and_stale_case_version_requires_explicit_new_generation(self):
         first = self.build()
         self.assertFalse(self.build()["created"])

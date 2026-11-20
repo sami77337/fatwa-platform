@@ -82,8 +82,10 @@ class StaffPWABrowserTests(BrowserHelpers, LiveServerTestCase):
                     page.on("pageerror", lambda error: proof["page_errors"].append(str(error)))
                     self.assertEqual(page.goto(self.live_server_url + "/casework/staff/login/").status, 200)
                     page.locator("#credential").fill(self.directory.credential)
-                    with page.expect_navigation(wait_until="domcontentloaded"):
+                    with page.expect_navigation(wait_until="domcontentloaded") as authenticated:
                         page.get_by_role("button", name="دخول المكتب", exact=True).click()
+                    self.assertEqual(authenticated.value.status, 200)
+                    self.assertNotIn("x-staff-offline", authenticated.value.headers)
                     with page.expect_navigation(wait_until="domcontentloaded"):
                         page.get_by_role("button", name=self.receipt["public_ref"], exact=True).click()
                     self.assertIn(self.receipt["public_ref"], page.locator("body").inner_text())

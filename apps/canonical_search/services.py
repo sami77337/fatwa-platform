@@ -212,6 +212,10 @@ def rebuild(
 def fuzzy_threshold():
     """Bounded local operator threshold; restore caller state even on SQL failure."""
     with connection.cursor() as cursor:
+        # CREATE EXTENSION survives restore; loading its C module is per-backend.
+        # A fresh reader may not know this GUC until one real pg_trgm function
+        # runs. Load it without modifying settings before preserving its value.
+        cursor.execute("SELECT word_similarity('', '')")
         cursor.execute("SHOW pg_trgm.word_similarity_threshold")
         previous = cursor.fetchone()[0]
         try:

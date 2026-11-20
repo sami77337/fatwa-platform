@@ -401,7 +401,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     require(major in {"17", "18"}, "Unsupported PostgreSQL evidence")
     stages = {stage["name"]: stage for stage in execution["stages"]}
     require(
-        {"system", "migrations", "recording", "offline_client", "affected", "recovery"}
+        {"system", "migrations", "recording", "recording_player", "offline_client", "affected", "recovery"}
         <= stages.keys(),
         "Mandatory aggregate stage is missing",
     )

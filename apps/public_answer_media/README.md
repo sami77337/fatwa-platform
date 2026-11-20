@@ -155,3 +155,31 @@ render-time citation revocation denying the whole response. All 36 media tests
 passed on PostgreSQL 17 and 18 in the disposable composition profile
 `apps.public_answer_media.citation_settings`. The profile adds the citation app
 without changing default authority settings or protected runtime requirements.
+
+### Native documented-segment initialization
+
+Protected hosted execution found a real browser behavior gap: the WAV had loaded
+but its `#t=1,2.5` fragment left the paused player's position at zero. The product
+now initializes the native player from the server-verified integer millisecond
+pins after actual metadata becomes available. `player.mjs` accepts only the
+current same-origin exact original audio route, validates the documented interval
+against the loaded duration, makes at most 20 seek attempts within 15 seconds,
+and never calls playback or fetches a substitute. Initialization listeners are
+removed after the first successful seek, preserving later user-controlled seeking.
+An error produces an explicit unavailable message; it does not invent a time.
+
+The private asset `/casework/staff/recording-player.js` requires a current staff
+session; the public asset `/library-preview/recordings/player.js` retains the
+preview boundary and public-media flag. Only successful segment HTML sets the
+coordinator's `_allow_recording_player` marker for same-origin scripts. Original
+byte responses keep their restrictive sandbox CSP. Root shared wiring is
+`34061ee`; no inline script, eval, autoplay, security override or browser-test
+assertion relaxation is introduced.
+
+All **37** media service/native/recovery/composition tests passed on PostgreSQL
+17 and 18 after this repair. `node --test apps/public_answer_media/test_player.mjs`
+passes seven behavior tests, including actual-event initialization sequencing,
+invalid source/timing refusal, finite retries and preserving a later user seek.
+The protected media and search-to-recording journeys still require actual
+`currentTime`, original bytes and native keyboard playback in hosted Chromium;
+their rerun is the remaining proof for this browser-specific correction.

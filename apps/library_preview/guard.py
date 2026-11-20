@@ -31,6 +31,14 @@ def private(response):
             "; script-src 'self'; worker-src 'self'; connect-src 'self'; "
             "manifest-src 'self'; media-src 'self' blob:; img-src 'self' blob:"
         )
+    if (
+        getattr(response, "_allow_recording_player", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+    ):
+        policy = response["Content-Security-Policy"]
+        if "script-src" not in policy:
+            response["Content-Security-Policy"] = policy + "; script-src 'self'"
     response["X-Frame-Options"] = "DENY"
     return response
 

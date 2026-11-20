@@ -72,7 +72,7 @@ class PreciseCitationBrowserTests(CitationFixture, LiveServerTestCase):
         errors, external, contexts = [], [], []
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(
-                executable_path=os.environ.get("FATWA_BROWSER_EXECUTABLE", "/usr/bin/chromium"),
+                executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER", "/usr/bin/chromium"),
                 chromium_sandbox=True,
                 args=["--disable-dev-shm-usage"],
             )
