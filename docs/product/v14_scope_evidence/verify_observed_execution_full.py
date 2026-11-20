@@ -151,7 +151,7 @@ def main():
     data = json.loads((HERE / "observed_execution_full.json").read_text(encoding="utf-8"))
     candidate = json.loads((HERE / "candidates.json").read_text(encoding="utf-8"))
     def read_file(path):
-        return subprocess.check_output(["git", "show", f"{BASE}:{path}"], cwd=ROOT)
+        return subprocess.check_output(["git", "show", f"{PRODUCT}:{path}"], cwd=ROOT)
     print(json.dumps(verify(data, candidate, read_file), sort_keys=True))
 
 
