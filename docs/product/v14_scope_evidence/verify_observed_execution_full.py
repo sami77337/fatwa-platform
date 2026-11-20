@@ -108,7 +108,7 @@ def verify(data, candidate, read_file):
             tokens = symbol.split(".")
             short_symbol = ".".join(tokens[-2:])
             require(short_symbol in expected_tests and symbol not in observed, "test_symbol")
-            observed.add(symbol)
+            observed.add(short_symbol)
             require(test["kind"] == expected_tests[short_symbol], "test_kind")
             require(len(tokens) >= 3 and all(METHOD.fullmatch(t) for t in tokens), "symbol_format")
             expected_path = "/".join(tokens[:-2]) + ".py"
