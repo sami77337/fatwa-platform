@@ -8,6 +8,8 @@ returned page identity, bounds and format before use.
 
 import base64
 import json
+import os
+from pathlib import Path
 import subprocess
 import sys
 
@@ -46,6 +48,16 @@ def selected_page(raw: bytes, *, page_number: int, page_count: int) -> bytes:
             stderr=subprocess.DEVNULL,
             timeout=6,
             check=False,
+            # Do not pass application credentials, database URLs, cloud tokens,
+            # HOME configuration or caller-specific PYTHONPATH to the parser.
+            cwd=Path(__file__).resolve().parents[2],
+            env={
+                "PATH": os.defpath,
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONHASHSEED": "0",
+            },
         )
         if result.returncode or len(result.stdout) > MAX_WORKER_STDOUT:
             raise ValueError
