@@ -5,7 +5,7 @@
 <p><a href="/casework/staff/">العودة إلى مكتب القضايا</a></p>
 <p>فحص السجلات المتاحة ضمن صلاحيتك وقت هذه القراءة. لا يعدّل الملفات أو الإحالات، ولا يصدر حكمًا على صحة الفتوى أو الحديث.</p>
 <p>غياب التفريغ الاختياري أو الشرح أو التخريج الإضافي لا يُعد خللًا، ولا يمنع حفظ جواب الشيخ.</p>
-<p>آخر فحص: <time datetime="{{ quality.scanned_at|date:'c' }}">{{ quality.scanned_at }}</time> · الصفحة {{ quality.page }}</p>
+<p>آخر فحص: <time dir="ltr" datetime="{{ quality.scanned_at|date:'c' }}">{{ quality.scanned_at|date:'Y-m-d H:i' }} {{ quality.scanned_at|date:'T' }}</time> · الصفحة {{ quality.page }}</p>
 <section id="quality-summary" aria-label="نتيجة فحوص هذه الصفحة">
 <h2>نتيجة فحوص هذه الصفحة</h2>
 <p>{{ quality.page_case_count }} قضايا · {{ quality.technical_count }} فحوص كشفت خللًا تقنيًا · {{ quality.review_count }} قضايا ببلاغات تنتظر مراجعة · {{ quality.unchecked_count }} فحوص لم تكتمل.</p>

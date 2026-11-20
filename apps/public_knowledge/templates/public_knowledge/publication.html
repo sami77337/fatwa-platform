@@ -4,7 +4,7 @@
 <article itemscope itemtype="https://schema.org/CreativeWork" lang="{{ edition.language }}" dir="auto"><meta itemprop="inLanguage" content="{{ edition.language }}"><meta itemprop="version" content="{{ edition.version|default:edition.source_version }}">
 <h1 itemprop="name">{{ edition.title }}</h1>
 {% if edition.scholar %}<p>صاحب الجواب: <a itemprop="author" href="{{ edition.scholar.url }}">{{ edition.scholar.name }}</a></p>{% endif %}
-<p>نسخة المصدر العربي {{ edition.source_version }}{% if edition.version %} · نسخة العرض أو الترجمة {{ edition.version }}{% endif %}</p><p>تاريخ اعتماد نسخة النشر: <time datetime="{{ published_at|date:'c' }}">{{ published_at|date:'Y-m-d H:i' }}</time></p>
+<p>نسخة المصدر العربي {{ edition.source_version }}{% if edition.version %} · نسخة العرض أو الترجمة {{ edition.version }}{% endif %}</p><p>تاريخ اعتماد نسخة النشر: <time dir="ltr" datetime="{{ published_at|date:'c' }}">{{ published_at|date:'Y-m-d H:i' }}</time></p>
 {% if edition.language != 'ar' %}<p>ترجمة منفصلة مرت بمراجعة واعتماد بشريين. <a itemprop="translationOfWork" href="{{ original_url }}">فتح الأصل العربي المحفوظ</a></p>{% endif %}
 {% if edition.question %}<section><h2>السؤال المنشور</h2><p class="body">{{ edition.question|linebreaksbr }}</p></section>{% endif %}
 <section><h2>الجواب{% if edition.language != 'ar' %} — الترجمة المراجعة{% endif %}</h2><div class="body" itemprop="text" id="public-answer">{{ edition.body|linebreaksbr }}</div></section></article>
