@@ -72,3 +72,15 @@ git diff --check
 
 **NOT_DEPLOYED / GATES_HOLD / ACCEPTANCE_HOLD.** لا دمج إلى main، لا نشر تطبيق،
 لا إرسال رسائل أو تشغيل قنوات فعلية، ولا بيانات مستخدمين حقيقية.
+
+
+## V14 operational queue ordering
+
+The authorized Mufti inbox supports three read-only orderings:
+- `newest` (default): newest canonical cases first.
+- `oldest`: oldest canonical cases first.
+- `priority`: returned cases first, then cases needing a first/current draft, then answers ready for review, then cases waiting for requester clarification, and finally already-approved cases.
+
+Priority is a presentation rule derived from the existing case stage, latest answer revision and evidence version. It does not write a priority field, change workflow state, imply a service-level deadline, or create a new assignment. Search and state filters run only against the already-authorized case projection. Workload counts remain global to the current authorized scope and do not shrink when a search narrows visible rows.
+
+The ordering is tested through the existing connected PostgreSQL team workspace suite; browser-level verification remains part of the exact-head campaign.
