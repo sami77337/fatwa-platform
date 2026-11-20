@@ -18,10 +18,22 @@ REFERENCE = re.compile(r"FT-[0-9]{4}-[A-F0-9]{20}")
 
 TABS = (
     ("overview", "case_workspace", "القضية والمراجعة", None),
+    (
+        "organization",
+        "organization_open",
+        "التنظيم والملاحظات الداخلية",
+        "FATWA_CASE_ORGANIZATION_ENABLED",
+    ),
     ("origins", "source_timeline", "أصل الأحداث وتسلسلها", "FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED"),
     ("attachments", "attachment_list", "مرفقات الوقائع", "FATWA_CASE_ATTACHMENTS_ENABLED"),
     ("rights", "rights_desk", "حقوق المصادر ومراجعتها", "FATWA_SOURCE_RIGHTS_ENABLED"),
     ("research", "research_open", "البحث في مصادر القضية", "FATWA_RESEARCH_WORKSPACE_ENABLED"),
+    (
+        "collections",
+        "research_collections",
+        "مجموعاتي البحثية الخاصة",
+        "FATWA_RESEARCH_COLLECTIONS_ENABLED",
+    ),
     ("citations", "citations", "الإحالات العلمية", "FATWA_CASE_CITATIONS_ENABLED"),
     ("timed", "timed_desk", "الإحالات الزمنية الخاصة", "FATWA_TIMED_CITATIONS_ENABLED"),
     ("pdf", "pdf_desk", "مواضع PDF الخاصة", "FATWA_PDF_CITATIONS_ENABLED"),
@@ -29,10 +41,17 @@ TABS = (
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
     ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
     ("publication", "pub_open", "نسخة النشر المستقلة", "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED"),
+    ("reports", "reports_open", "بلاغات المحتوى ومراجعتها", "FATWA_CONTENT_REPORTS_ENABLED"),
 )
 
 
 def _active(action):
+    if action.startswith("organization_"):
+        return "organization"
+    if action.startswith(("report_", "reports_")):
+        return "reports"
+    if action.startswith(("research_collection", "research_collect", "research_save_search")):
+        return "collections"
     if action.startswith("pdf_"):
         return "pdf"
     if action.startswith("timed_"):

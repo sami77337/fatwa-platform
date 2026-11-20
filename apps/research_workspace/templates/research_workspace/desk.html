@@ -8,6 +8,7 @@
 {% if notice %}<p role="status">{{ notice }}</p>{% endif %}
 {% if result %}
 <p>القضية <bdi>{{ result.public_ref }}</bdi> · إصدار الوقائع {{ result.evidence_version }}</p>
+{% if collections_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_collections"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>مجموعاتي البحثية الخاصة</button></form>{% endif %}
 {% if evaluation_review_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_evaluation_open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>إصدارات تقييم البحث والمراجعة البشرية</button></form>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
 {% if opened %}
@@ -23,14 +24,17 @@
 <h4>السؤال الأصلي</h4><pre>{{ opened.question.text }}</pre>
 {% if opened.answer %}<h4>جواب المصدر المحفوظ</h4><p>نقل من المصدر، وليس اعتمادًا لجواب القضية.</p><pre>{{ opened.answer.text }}</pre>{% endif %}
 <p>بصمة المصدر: <bdi>{{ opened.source_sha256 }}</bdi></p><p>لا يتوافر ربط مثبت لملف تشغيل هذا الدرس هنا؛ لا يُنشأ رابط وسائط تخميني.</p>
+{% if reports_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="report_prepare"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="target_kind" value="TRANSCRIPT"><input type="hidden" name="target_id" value="{{ opened_resource_id }}"><button>الإبلاغ عن مشكلة في هذا التفريغ</button></form>{% endif %}
 {% elif opened_kind == "KNOWLEDGE" %}
 <h3>{{ opened.title }}</h3><p>علاقة علمية معتمدة بشريًا ضمن المنشور التجريبي المصرح.</p>
 {% if opened.source %}<p>{{ opened.source.work_title }} · {{ opened.source.edition_title }} · جزء {{ opened.source.printed_part }} صفحة {{ opened.source.printed_page }}</p><p>مرجع فهرسي، وليس متن الكتاب.</p>{% endif %}
 {% if opened.material %}<p>مصدر <bdi>{{ opened.material.source_id }}</bdi> · {{ opened.material.start_ms }}–{{ opened.material.end_ms }} مللي ثانية.</p><pre>{{ opened.material.text }}</pre>{% endif %}
 {% endif %}
+{% if collections_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_collect"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="source_state" value="{{ selection }}"><button>حفظ هذه المادة في مجموعة خاصة</button></form>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_back"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ back_state }}"><button>العودة إلى نتائج البحث نفسها</button></form>
 </section>
 {% else %}
+{% if collections_available %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_save_search"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="source_state" value="{{ back_state }}"><button>حفظ البحث الحالي في مجموعة</button></form>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_search"><input type="hidden" name="case_ref" value="{{ result.public_ref }}">
 <label for="query">عبارة البحث العربية</label><input id="query" name="query" value="{{ filters.query }}" maxlength="80">
 <label for="kind">نوع المادة</label><select id="kind" name="kind"><option value="all" {% if filters.kind == 'all' %}selected{% endif %}>المواد المصرح بها</option><option value="REFERENCE" {% if filters.kind == 'REFERENCE' %}selected{% endif %}>فهارس الكتب</option><option value="TRANSCRIPT" {% if filters.kind == 'TRANSCRIPT' %}selected{% endif %}>الدروس والتفريغات المرتبطة</option><option value="KNOWLEDGE" {% if filters.kind == 'KNOWLEDGE' %}selected{% endif %}>العلاقات المعتمدة</option><option value="MEDIA" {% if filters.kind == 'MEDIA' %}selected{% endif %}>وسائط القضية</option></select>
@@ -46,7 +50,7 @@
 {% if row.media_type %}<p><bdi>{{ row.media_type }}</bdi></p>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ row.state }}">
 {% if row.kind == 'ATTACHMENT' or row.kind == 'ANSWER_MEDIA' %}<input type="hidden" name="action" value="research_file"><button>تنزيل الوسيط المصرح: {{ row.title }}</button>{% else %}<input type="hidden" name="action" value="research_view"><button>فتح المصدر: {{ row.title }}</button>{% endif %}
-</form></article>{% empty %}<p>لا توجد نتائج مطابقة ضمن الحقوق الحالية. اختيار الطبعة مطلوب لبحث الفهرس.</p>{% endfor %}</section>
+</form>{% if collections_available and row.kind != 'ATTACHMENT' and row.kind != 'ANSWER_MEDIA' %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_collect"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="source_state" value="{{ row.state }}"><button>حفظ في مجموعة خاصة</button></form>{% endif %}</article>{% empty %}<p>لا توجد نتائج مطابقة ضمن الحقوق الحالية. اختيار الطبعة مطلوب لبحث الفهرس.</p>{% endfor %}</section>
 <nav aria-label="صفحات نتائج البحث">{% for item in pagination %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_page"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ item.state }}"><button>{{ item.label }}</button></form>{% endfor %}</nav>
 {% endif %}{% endif %}
 {% endblock %}

@@ -1,11 +1,14 @@
 """One token-authorized snapshot, no parallel case, answer or delivery records."""
 
+from contextlib import contextmanager
+from copy import deepcopy
+
 from django.apps import apps
 from django.conf import settings
 
 from apps.casework import delivery
 from apps.casework import services as cases
-from apps.platform_recovery.integration import mutation_service
+from apps.platform_recovery.integration import mutation_context, mutation_service
 from apps.requester_access_review import services as access
 
 LABELS = {
@@ -22,6 +25,29 @@ LABELS = {
 def enabled():
     if getattr(settings, "FATWA_REQUESTER_PORTAL_ENABLED", False) is not True:
         raise cases.CaseConflict("requester_portal_disabled")
+
+
+@mutation_context
+@contextmanager
+def page_projection(*, token, expected_result, synthetic_fixtures_only=False):
+    """Keep the private snapshot authorized through enrichment and HTML rendering.
+
+    A later component may observe a withdrawn release while an earlier component
+    still holds answer text and part links. The whole page uses the canonical
+    case/queue lock and existing media-policy/expiry boundary. Re-reading after
+    rendering checks the current capability, release, answer and delivery facts;
+    a changed projection discards the already generated response.
+    """
+    enabled()
+    with delivery._token_case(token, synthetic_fixtures_only):
+        current = snapshot(token=token, synthetic_fixtures_only=synthetic_fixtures_only)
+        if current != expected_result:
+            raise cases.CaseConflict("portal_page_changed")
+        # Presentation code cannot change the baseline used by the final check.
+        baseline = deepcopy(current)
+        yield current
+        if snapshot(token=token, synthetic_fixtures_only=synthetic_fixtures_only) != baseline:
+            raise cases.CaseConflict("portal_page_changed")
 
 
 def _delivery_state(status, summary):

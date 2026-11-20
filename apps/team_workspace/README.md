@@ -7,8 +7,8 @@ not recreated. No existing shared files are modified by this slice.
 ## الوظيفة
 
 - قائمة القضايا المخوّلة، بحث برقم القضية، وتصفية حسب الحاجة لمسودة أو انتظار
-  الاستيضاح أو جاهزية المراجعة أو الإعادة أو اكتمال المراجعة. العدادات ضمن نطاق
-  الهوية والبحث فقط، ولا تظهر مقتطفات أسئلة قضايا أخرى في القائمة.
+  الاستيضاح أو جاهزية المراجعة أو الإعادة أو اكتمال المراجعة. العدادات تشمل نطاق
+  الهوية كاملًا وتبقى ثابتة عند تضييق البحث، ولا تظهر مقتطفات الأسئلة في القائمة.
 - السؤال الأصلي والتعقيبات والاستيضاحات بجانب محرر أحدث جواب بشري. الحفظ ينشئ
   إصدارًا جديدًا عبر الخدمة الموجودة؛ تبقى النسخ السابقة محفوظة.
 - الاعتماد والإعادة يخصان أحدث إصدار متصل بالوقائع الحالية فقط. سبب الإعادة مطلوب،
@@ -83,4 +83,22 @@ The authorized Mufti inbox supports three read-only orderings:
 
 Priority is a presentation rule derived from the existing case stage, latest answer revision and evidence version. It does not write a priority field, change workflow state, imply a service-level deadline, or create a new assignment. Search and state filters run only against the already-authorized case projection. Workload counts remain global to the current authorized scope and do not shrink when a search narrows visible rows.
 
+Previously rendered filter forms without a `sort` field keep the `newest` default. Empty, unknown, or repeated sort values remain invalid; the optional field does not relax the form allowlist.
+
 The ordering is tested through the existing connected PostgreSQL team workspace suite; browser-level verification remains part of the exact-head campaign.
+
+## Current work lists and manual assignments
+
+The workload selector now combines scoped search, state and ordering with dedicated
+lists for newer followups, saved unapproved drafts, reviewable answers and approved
+answers. "Newer followups" means facts newer than the latest answer's basis, not an
+inferred read receipt. Counts are computed over the whole currently authorized inbox.
+The approved list uses approval decision time when the assignment module is enabled.
+
+With the separate default-off `FATWA_CASE_ASSIGNMENTS_ENABLED` flag and installed
+`apps.case_assignments`, two more views show the actor's primary/participating cases
+and unassigned shared cases. A selected case provides human claim/release, scoped
+primary transfer, contributor/reviewer participation and append-only assignment
+history. The module owns its metadata and optimistic assignment version. None of
+these actions changes canonical case facts, answer approvals or access permissions.
+See `apps/case_assignments/README.md` for candidate-policy and recovery integration.

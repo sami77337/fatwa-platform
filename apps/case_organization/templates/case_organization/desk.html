@@ -1,0 +1,20 @@
+{% extends "casework/base.html" %}
+{% block title %}تنظيم القضية والملاحظات الداخلية{% endblock %}
+{% block content %}
+<h1>تنظيم القضية والملاحظات الداخلية</h1>
+<p>القضية <bdi>{{ organization.public_ref }}</bdi> · نسخة التنظيم {{ organization.metadata_version }} · نسخة الوقائع {{ organization.evidence_version }}</p>
+<p>الوسوم وأنواع السؤال تصف هذه القضية فقط. لا تقرر حكمًا شرعيًا ولا تنتقل إلى قضايا أخرى للسائل. الملاحظات داخلية ولا تدخل جواب السائل أو النسخة العامة.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ organization.public_ref }}"><button>العودة إلى القضية</button></form>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+{% if attempted %}<section aria-label="المحاولة غير المحفوظة"><h2>محاولتك غير المحفوظة</h2><pre>{{ attempted.tags }}</pre><pre>{{ attempted.note }}</pre></section>{% endif %}
+<form method="post" action="/casework/staff/" id="organization-editor">
+{% csrf_token %}<input type="hidden" name="action" value="organization_save"><input type="hidden" name="case_ref" value="{{ organization.public_ref }}">
+<input type="hidden" name="revision" value="{{ organization.revision }}"><input type="hidden" name="evidence_version" value="{{ organization.evidence_version }}"><input type="hidden" name="metadata_version" value="{{ organization.metadata_version }}"><input type="hidden" name="command_id" value="{{ command_id }}">
+<label for="organization-tags">الوسوم، وسم واحد في كل سطر (حتى 16)</label><textarea id="organization-tags" name="tags" rows="4" maxlength="783">{% for tag in organization.tags %}{{ tag }}{% if not forloop.last %}
+{% endif %}{% endfor %}</textarea>
+<label for="organization-types">ما الذي يسأل عنه السائل؟ يمكن اختيار أكثر من نوع أو تركه غير محسوم</label>
+<select name="question_types" id="organization-types" multiple size="8">{% for item in types %}<option value="{{ item.key }}"{% if item.selected %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select>
+<label for="organization-note">إضافة ملاحظة داخلية اختيارية</label><textarea name="note" id="organization-note" rows="3" maxlength="2000"></textarea>
+<button>حفظ التنظيم والملاحظة</button></form>
+<section id="organization-history"><h2>سجل التنظيم والملاحظات</h2>{% for item in organization.history %}<article><h3>نسخة التنظيم {{ item.version }}</h3><p>بواسطة <bdi>{{ item.subject_id }}</bdi> · {{ item.created_at }}</p><p>الوسوم: {% for tag in item.tags %}<span>{{ tag }}</span>{% if not forloop.last %}، {% endif %}{% empty %}لا يوجد{% endfor %}</p><p>أنواع السؤال: {{ item.question_types|join:"، "|default:"غير محسوم" }}</p>{% if item.note %}<h4>ملاحظة داخلية</h4><pre>{{ item.note }}</pre>{% endif %}</article>{% empty %}<p>لا توجد تعديلات تنظيمية محفوظة.</p>{% endfor %}</section>
+{% endblock %}

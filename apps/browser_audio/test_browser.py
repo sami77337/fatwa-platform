@@ -542,6 +542,76 @@ class BrowserAudioTests(LiveServerTestCase):
             finally:
                 browser.close()
 
+    def test_pause_resume_preserves_one_recording_and_excludes_paused_time(self):
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as playwright:
+            browser = self.browser(playwright)
+            try:
+                page = self.requester(browser)
+                widget = recorder(page)
+                page.locator('[name="attachment"]').set_input_files(
+                    {
+                        "name": "previous.wav",
+                        "mimeType": "audio/wav",
+                        "buffer": audio_fixture()["raw"],
+                    }
+                )
+                page.locator(
+                    'form:has([name="action"][value="attachment_upload"]) [name="synthetic_only"]'
+                ).check()
+                widget.locator("[data-audio-start]").click()
+                page.wait_for_function(
+                    "() => +document.querySelector('[data-browser-audio]').dataset.audioFrames >= 1600"
+                )
+                widget.locator("[data-audio-pause]").click()
+                page.wait_for_function(
+                    "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'paused'"
+                )
+                paused_frames = int(widget.get_attribute("data-audio-frames"))
+                self.assertFalse(page.evaluate("probe.streams.at(-1).getAudioTracks()[0].enabled"))
+                # Let the real worklet process many callbacks while disabled.
+                page.wait_for_timeout(350)
+                self.assertEqual(int(widget.get_attribute("data-audio-frames")), paused_frames)
+                self.assertEqual(
+                    widget.locator("[data-audio-bytes]").inner_text(), str(44 + paused_frames * 2)
+                )
+                self.assertTrue(widget.locator("[data-audio-accept]").is_disabled())
+                # Native form submission cannot bypass the paused capture choice.
+                widget.evaluate('e=>e.closest("form").requestSubmit()')
+                self.assertEqual(widget.get_attribute("data-audio-state"), "paused")
+                widget.locator("[data-audio-resume]").click()
+                page.wait_for_function(
+                    "n => +document.querySelector('[data-browser-audio]').dataset.audioFrames >= n + 1600",
+                    arg=paused_frames,
+                )
+                self.assertEqual(page.evaluate("probe.calls"), 1)
+                self.assertTrue(page.evaluate("probe.streams.at(-1).getAudioTracks()[0].enabled"))
+                widget.locator("[data-audio-pause]").click()
+                page.wait_for_function(
+                    "() => document.querySelector('[data-browser-audio]').dataset.audioState === 'paused'"
+                )
+                total_frames = int(widget.get_attribute("data-audio-frames"))
+                widget.locator("[data-audio-stop]").click()
+                self.released(page)
+                widget.locator("[data-audio-accept]").click()
+                encoded = page.locator('[name="attachment"]').evaluate("""async e => {
+                    const b = new Uint8Array(await e.files[0].arrayBuffer());
+                    return btoa(Array.from(b, x => String.fromCharCode(x)).join(''));
+                }""")
+                raw = base64.b64decode(encoded)
+                parsed = validate(raw, "capture.wav", "audio/wav")
+                self.assertEqual(parsed.metadata["duration_seconds"], total_frames / 8000)
+                self.assertEqual(len(raw), 44 + total_frames * 2)
+                form = page.locator('form:has([name="action"][value="attachment_upload"])')
+                form.locator('[name="synthetic_only"]').check()
+                self.click(page, form.locator('button:not([type="button"])'))
+                row = self.sync(lambda: CaseAttachment.objects.get())
+                self.assertEqual(row.sha256, sha256(raw).hexdigest())
+                self.assertEqual(self.external, [])
+            finally:
+                browser.close()
+
 
 @override_settings(
     **{

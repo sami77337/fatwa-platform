@@ -1,0 +1,25 @@
+<article class="research-compare-item" data-collection-item="{{ item.id }}">
+  <h3>{{ item.title }}</h3>
+  {% if item.kind == 'REFERENCE' %}
+    <p><strong>عنوان فهرس موثق؛ النص الكامل للكتاب غير متاح هنا.</strong></p>
+    <dl>
+      <dt>العمل</dt><dd>{{ item.opened.source.work_title }}</dd>
+      <dt>الطبعة والناشر</dt><dd>{{ item.opened.source.edition_title }} · {{ item.opened.source.publisher }}</dd>
+      <dt>الموضع</dt><dd>جزء {{ item.opened.source.printed_part }} · صفحة {{ item.opened.source.printed_page }}</dd>
+    </dl>
+    <ol>{% for title in item.opened.source.path %}<li>{{ title }}</li>{% endfor %}</ol>
+  {% elif item.kind == 'TRANSCRIPT' %}
+    <p>مصدر التفريغ <bdi>{{ item.opened.source_id }}</bdi></p>
+    <p>الموضع {{ item.opened.question.start_ms }}–{{ item.opened.question.end_ms }} مللي ثانية.</p>
+    <h4>السؤال في المصدر</h4><pre>{{ item.opened.question.text }}</pre>
+    {% if item.opened.answer %}<h4>جواب المصدر المحفوظ</h4><pre>{{ item.opened.answer.text }}</pre>{% endif %}
+    <p>اسم صاحب المادة غير مسجل في هذا التفريغ؛ لا تُنسب المادة إلى صاحب القضية.</p>
+  {% elif item.kind == 'KNOWLEDGE' %}
+    <p>علاقة معتمدة بشريًا ضمن المنشور المصرح.</p>
+    {% if item.opened.source %}<p>{{ item.opened.source.work_title }} · {{ item.opened.source.edition_title }}</p><p>جزء {{ item.opened.source.printed_part }} · صفحة {{ item.opened.source.printed_page }} · مرجع فهرسي.</p>{% endif %}
+    {% if item.opened.material %}<p>المصدر <bdi>{{ item.opened.material.source_id }}</bdi> · {{ item.opened.material.start_ms }}–{{ item.opened.material.end_ms }} مللي ثانية.</p><pre>{{ item.opened.material.text }}</pre>{% endif %}
+  {% endif %}
+  <details><summary>هوية المادة والنسخة</summary><p><bdi>{{ item.resource.identifier }}</bdi></p><p><bdi>{{ item.resource.sha256 }}</bdi></p></details>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_view"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><input type="hidden" name="state" value="{{ item.research_state }}"><button>{% if item.kind == 'REFERENCE' %}فتح المصدر وخيارات الإحالة للجواب{% else %}فتح سياق المصدر في البحث{% endif %}</button></form>
+  {% if item.note %}<aside aria-label="ملاحظتي الخاصة"><h4>ملاحظتي الخاصة</h4><p class="original">{{ item.note }}</p></aside>{% endif %}
+</article>

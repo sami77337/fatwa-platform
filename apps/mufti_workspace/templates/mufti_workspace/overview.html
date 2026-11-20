@@ -2,6 +2,7 @@
 {% block title %}مساحة المفتي — القضية الحالية{% endblock %}
 {% block content %}
 {% with rendered_case=selected selected=mufti_workspace.case %}
+{% if assignment %}{% include "case_assignments/panel.html" with selected=rendered_case %}{% endif %}
 <section aria-labelledby="mufti-work-heading">
 <h2 id="mufti-work-heading">المراجعة والتحرير</h2>
 <p>القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi> · <span id="workspace-status">{{ selected.stage_label }}</span></p>

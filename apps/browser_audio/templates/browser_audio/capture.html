@@ -5,8 +5,11 @@
   <legend>تسجيل صوت اصطناعي للتجربة</legend>
   <p>بعد موافقتك يبدأ تسجيل الميكروفون، لمدة أقصاها عشر ثوانٍ. استخدم مصدر صوت اصطناعي فقط. عاين التسجيل ثم اختر استخدامه؛ الحفظ يتم بزر النموذج الأصلي ويحتاج صلاحياته ومراجعته.</p>
   <button type="button" data-audio-start>السماح بالميكروفون وبدء التسجيل</button>
+  <button type="button" data-audio-pause disabled>إيقاف مؤقت</button>
+  <button type="button" data-audio-resume disabled>استكمال التسجيل</button>
   <button type="button" data-audio-stop disabled>إيقاف ومعاينة</button>
   <button type="button" data-audio-cancel disabled>إلغاء التسجيل</button>
+  <p>الإيقاف المؤقت لا يُضاف إلى مدة الصوت. يمكنك الاستكمال أو المعاينة؛ يُلغى التسجيل بعد دقيقة من التوقف المؤقت أو عند مغادرة الصفحة.</p>
   <div data-audio-metrics aria-live="off">
     <p>مدة التسجيل: <bdi data-audio-duration>0.00</bdi> ثانية من 10 ثوانٍ.</p>
     <p>حجم ملف WAV: <bdi data-audio-bytes>0</bdi> بايت من 160044 بايت.</p>

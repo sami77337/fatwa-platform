@@ -1,5 +1,8 @@
 """Native team forms using current MUFTI scope, revision checks and case services."""
 
+import re
+
+from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
@@ -17,7 +20,16 @@ from apps.casework_web.views import InvalidForm, _form, _integer, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable, validate_identity
 
-from .presentation import FILTERS, queue, read_workspace_case
+from .presentation import FILTERS, INBOXES, SORTS, queue, read_workspace_case
+
+ASSIGNMENT_ACTIONS = {
+    "assignment_claim": "CLAIM",
+    "assignment_release": "RELEASE",
+    "assignment_transfer": "TRANSFER",
+    "assignment_contributor": "ADD_CONTRIBUTOR",
+    "assignment_reviewer": "ADD_REVIEWER",
+    "assignment_remove": "REMOVE_PARTICIPANT",
+}
 
 MESSAGES = {
     "draft": "حُفظ إصدار جديد. الإصدارات السابقة باقية في سجل الجواب.",
@@ -25,6 +37,12 @@ MESSAGES = {
     "approve": "اعتمدت هذه النسخة. الاعتماد لا يثبت تسليم الجواب أو قراءته.",
     "return": "أُعيد الجواب للتعديل. احفظ إصدارًا جديدًا قبل إعادة المراجعة.",
 }
+
+
+def _assignments_enabled():
+    return getattr(settings, "FATWA_CASE_ASSIGNMENTS_ENABLED", False) is True and apps.is_installed(
+        "apps.case_assignments"
+    )
 
 
 def stylesheet(request):
@@ -45,11 +63,23 @@ def stylesheet(request):
 
 
 def _page(request, provider, identity, *, common=None, selected_filter="all", query="",
-          sort="newest", message="", attempted_text=None, status=200, access=None):
+          sort="newest", inbox="all", message="", attempted_text=None, status=200, access=None):
     rows = services.list_cases(
         subject_id=identity.subject_id, provider=provider, synthetic_fixtures_only=True,
     )
     selected = read_workspace_case(**common) if common else None
+    assignment = None
+    assignments_enabled = _assignments_enabled()
+    if assignments_enabled:
+        from apps.case_assignments.services import annotate_queue, read_assignment
+
+        rows = annotate_queue(rows, subject_id=identity.subject_id, provider=provider,
+                              synthetic_fixtures_only=True)
+        if selected:
+            assignment = read_assignment(
+                **common, expected_revision=selected["revision"],
+                expected_evidence_version=selected["evidence_version"],
+            )
     source_origins = None
     if common and getattr(settings, "FATWA_SOURCE_CASE_INTAKE_ENABLED", False) is True:
         from apps.source_case_intake.services import staff_origins
@@ -62,7 +92,9 @@ def _page(request, provider, identity, *, common=None, selected_filter="all", qu
         else "team_workspace/workspace.html"
     )
     return private(render(request, template, {
-        **queue(rows, selected_filter, query, sort=sort), "selected": selected,
+        **queue(rows, selected_filter, query, sort=sort, inbox=inbox,
+                assignments_enabled=assignments_enabled), "selected": selected,
+        "assignment": assignment, "assignments_enabled": assignments_enabled,
         "source_origins": source_origins,
         "composite_delivery_enabled": getattr(settings, "FATWA_COMPOSITE_DELIVERY_ENABLED", False) is True,
         "message": message, "attempted_text": attempted_text, "access": access,
@@ -90,24 +122,40 @@ def workspace(request):
         ) is not True:
             raise InvalidForm("connected_workspace_disabled")
         if action == "filter":
-            fields = _form(request, {"action", "state", "query", "sort"})
-            from .presentation import SORTS
+            required = {"action", "state", "query"}
+            # Previously rendered native forms omit sort. Keep their default
+            # ordering while retaining exact-field and duplicate validation.
+            if "sort" in request.POST:
+                required.add("sort")
+            if "inbox" in request.POST:
+                required.add("inbox")
+            fields = _form(request, required)
+            sort = fields.get("sort", "newest")
+            inbox = fields.get("inbox", "all")
             if (
                 fields["state"] not in FILTERS
-                or fields["sort"] not in SORTS
+                or sort not in SORTS
+                or inbox not in INBOXES
+                or (inbox in {"mine", "shared"} and not _assignments_enabled())
                 or len(fields["query"]) > 40
                 or "\x00" in fields["query"]
             ):
                 raise InvalidForm("invalid_queue_filter")
             return _page(
                 request, provider, identity,
-                selected_filter=fields["state"], query=fields["query"], sort=fields["sort"],
+                selected_filter=fields["state"], query=fields["query"], sort=sort, inbox=inbox,
             )
         required = {"action", "case_ref"}
         if action in {"draft", "clarify"}:
             required |= {"text", "revision", "evidence_version"}
         elif action in {"approve", "return"}:
             required |= {"answer_id", "note", "revision", "evidence_version"}
+        elif action in ASSIGNMENT_ACTIONS:
+            if not _assignments_enabled():
+                raise InvalidForm("case_assignments_disabled")
+            required |= {"revision", "evidence_version", "assignment_version"}
+            if action not in {"assignment_claim", "assignment_release"}:
+                required.add("target_subject")
         elif action not in {"open", "case_workspace", "rotate", "revoke"}:
             raise InvalidForm("unknown_action")
         fields = _form(request, required)
@@ -124,7 +172,19 @@ def workspace(request):
         }
         access = None
         try:
-            if action in {"draft", "clarify", "approve", "return"}:
+            if action in ASSIGNMENT_ACTIONS:
+                from apps.case_assignments.services import change_assignment
+
+                if re.fullmatch(r"0|[1-9][0-9]{0,5}", fields["assignment_version"]) is None:
+                    raise InvalidForm("assignment_version_invalid")
+                change_assignment(
+                    **common, action=ASSIGNMENT_ACTIONS[action],
+                    expected_assignment_version=int(fields["assignment_version"]),
+                    expected_revision=_integer(fields["revision"]),
+                    expected_evidence_version=_integer(fields["evidence_version"]),
+                    target_subject=fields.get("target_subject"),
+                )
+            elif action in {"draft", "clarify", "approve", "return"}:
                 current = {
                     **common, "expected_revision": _integer(fields["revision"]),
                     "expected_evidence_version": _integer(fields["evidence_version"]),
@@ -163,16 +223,19 @@ def workspace(request):
         except services.CaseConflict:
             # Revalidate identity/scope before showing any refreshed data. A rejected
             # draft is a separate copy buffer, never rebound to fresh revision pins.
-            attempted = fields.get("text", fields.get("note", ""))
-            if len(attempted) > services.MAX_TEXT or "\x00" in attempted:
+            attempted = fields.get("text", fields.get("note"))
+            if attempted is not None and (len(attempted) > services.MAX_TEXT or "\x00" in attempted):
                 attempted = None
             return _page(
                 request, provider, identity, common=common, status=409,
                 attempted_text=attempted,
-                message="لم يُحفظ الإجراء. راجع الحالة والوقائع الحالية وصحة النص قبل المحاولة مجددًا.",
+                message=("لم يتغير التعيين. راجع المسؤول الحالي والمشاركات ثم حاول مجددًا."
+                         if action in ASSIGNMENT_ACTIONS else
+                         "لم يُحفظ الإجراء. راجع الحالة والوقائع الحالية وصحة النص قبل المحاولة مجددًا."),
             )
         return _page(request, provider, identity, common=common,
-                     message=MESSAGES.get(action, ""), access=access)
+                     message=("حُفظ التغيير التنسيقي. صلاحيات القضية ووقائعها واعتماد جوابها باقية."
+                              if action in ASSIGNMENT_ACTIONS else MESSAGES.get(action, "")), access=access)
     except (InvalidForm, SuspiciousOperation):
         return denied("staff_form_invalid", 400)
     except IdentityUnavailable:

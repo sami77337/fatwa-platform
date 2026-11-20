@@ -41,6 +41,28 @@ ACTIONS = EVALUATION_ACTIONS | {
     "research_file",
     "research_page",
 }
+# Collection views import this module only after module initialization through
+# the dispatcher; importing their constant here would create a circular import.
+COLLECTION_ACTIONS = {
+    "research_collections",
+    "research_collection_create",
+    "research_collection_open",
+    "research_collection_rename",
+    "research_collection_archive",
+    "research_collection_restore",
+    "research_collect",
+    "research_save_search",
+    "research_collection_add",
+    "research_collection_save_search",
+    "research_collection_note",
+    "research_collection_remove",
+    "research_collection_move",
+    "research_collection_view",
+    "research_collection_compare",
+    "research_collection_run_search",
+    "research_collection_remove_search",
+}
+ACTIONS |= COLLECTION_ACTIONS
 SALT = "research-workspace.v11"
 FILTERS = {"query", "kind", "edition_id", "printed_part", "printed_page"}
 RANKING = "evaluated_titles"
@@ -127,6 +149,9 @@ def _page(request, *, code=200, **context):
     request._mufti_workspace_error = code >= 400
     get_token(request)
     context["ranked_search_available"] = _ranked_available()
+    context["collections_available"] = (
+        getattr(settings, "FATWA_RESEARCH_COLLECTIONS_ENABLED", False) is True
+    )
     context["evaluation_review_available"] = (
         getattr(settings, "FATWA_ARABIC_SEARCH_REVIEW_ENABLED", False) is True
     )
@@ -136,6 +161,10 @@ def _page(request, *, code=200, **context):
 @sensitive_post_parameters("state", "note")
 @csrf_protect
 def workspace(request):
+    if request.POST.get("action") in COLLECTION_ACTIONS:
+        from .collection_views import workspace as collection_workspace
+
+        return collection_workspace(request)
     if request.POST.get("action") in EVALUATION_ACTIONS:
         from apps.arabic_search_eval.views import desk
 
@@ -257,6 +286,7 @@ def workspace(request):
             notice=notice,
             opened=opened,
             opened_kind=selected_resource.kind if selected_resource else None,
+            opened_resource_id=selected_resource.identifier if selected_resource else None,
             selection=_token(binding, result, filters, asdict(selected_resource))
             if selected_resource
             else "",
@@ -301,7 +331,7 @@ def landing(request):
 def styles(request):
     return private(
         HttpResponse(
-            "select{font:inherit;max-width:100%;width:100%;padding:.5rem}select:focus{outline:3px solid #9c6800;outline-offset:3px}.evaluation-workspace{min-width:0}.evaluation-workspace bdi{overflow-wrap:anywhere}.evaluation-workspace textarea{max-width:100%;box-sizing:border-box}",
+            "select{font:inherit;max-width:100%;width:100%;padding:.5rem}select:focus{outline:3px solid #9c6800;outline-offset:3px}.evaluation-workspace{min-width:0}.evaluation-workspace bdi{overflow-wrap:anywhere}.evaluation-workspace textarea{max-width:100%;box-sizing:border-box}.research-collections{min-width:0}.research-collections bdi,.research-collections pre{overflow-wrap:anywhere;white-space:pre-wrap}.research-collections input,.research-collections textarea{max-width:100%;box-sizing:border-box}.research-compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:1rem}.research-compare-item{min-width:0;border:1px solid #bbb;padding:1rem}",
             content_type="text/css",
         )
     )

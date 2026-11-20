@@ -1,0 +1,53 @@
+{% extends "casework/base.html" %}
+{% block title %}بلاغات المحتوى والمرفقات{% endblock %}
+{% block content %}
+<h2>بلاغات المحتوى والمرفقات</h2>
+<p>القضية <bdi>{{ public_ref }}</bdi></p>
+{% if message %}<p role="status">{{ message }}</p>{% endif %}
+<p>استلام البلاغ ليس إصلاحًا. يسجل الفريق إجراءه والتحقق من نتيجته قبل الإغلاق؛ ولا يغير الإغلاق النص أو الحكم أو الملف تلقائيًا. ملاحظات المحتوى تراجعها الجهة العلمية المخولة، والأعطال التقنية يعالجها المختص بالتشغيل.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ public_ref }}"><button>العودة إلى القضية</button></form>
+{% if selected %}
+<section aria-label="تسجيل بلاغ عن النسخة"><h3>تسجيل بلاغ عن النسخة المحددة</h3>
+<p>نوع المادة {{ selected.target.kind }} · الإصدار {{ selected.target.version }}. يُثبت البلاغ هذه النسخة ولا ينسخ محتوى المصدر.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="report_submit"><input type="hidden" name="case_ref" value="{{ public_ref }}">
+<input type="hidden" name="target_kind" value="{{ selected.target.kind }}"><input type="hidden" name="target_id" value="{{ selected.target.identifier }}">
+<input type="hidden" name="selected_target" value="{{ selected.key }}"><input type="hidden" name="revision" value="{{ selected.case_revision }}">
+<input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}"><input type="hidden" name="request_key" value="{{ request_key }}">
+<label for="staff-report-reason">نوع المشكلة</label><select id="staff-report-reason" name="reason">{% for code,label in reasons.items %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select>
+<label for="staff-report-description">وصف المشكلة</label><textarea id="staff-report-description" name="description" maxlength="2000" required></textarea>
+<label for="staff-report-evidence">موضع المشكلة أو ملاحظة تساعد التحقق</label><textarea id="staff-report-evidence" name="evidence_note" maxlength="2000"></textarea>
+<button>إرسال البلاغ للمراجعة</button></form></section>
+{% endif %}
+<section aria-label="سجل البلاغات"><h3>سجل البلاغات</h3>
+{% for report in reports %}<article aria-labelledby="report-{{ report.id }}">
+<h4 id="report-{{ report.id }}">بلاغ <bdi>{{ report.id }}</bdi></h4>
+<p>{{ report.reason }} · {{ report.state_label }} · إصدار البلاغ {{ report.revision }}</p>
+<p>المادة {{ report.target_kind }}، النسخة {{ report.target_version }} · {{ report.created_at }}</p>
+<p class="original">{{ report.description }}</p>{% if report.evidence_note %}<p class="original">{{ report.evidence_note }}</p>{% endif %}
+<details><summary>تاريخ المراجعة والإجراء والتحقق</summary><ol>{% for event in report.events %}<li>
+<p>{{ event.sequence }} · {{ event.action }} · {{ event.state }} · {{ event.created_at }}</p>
+{% if event.action_note %}<p class="original">الإجراء: {{ event.action_note }}</p>{% endif %}
+{% if event.verification_note %}<p class="original">التحقق: {{ event.verification_note }}</p>{% endif %}
+{% if event.related_report %}<p>مرتبط بالبلاغ <bdi>{{ event.related_report }}</bdi>؛ بقي البلاغان مستقلين.</p>{% endif %}
+</li>{% endfor %}</ol></details>
+<form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="report_advance"><input type="hidden" name="case_ref" value="{{ public_ref }}">
+<input type="hidden" name="report_id" value="{{ report.id }}"><input type="hidden" name="report_revision" value="{{ report.revision }}">
+<input type="hidden" name="request_key" value="{{ report.request_key }}"><input type="hidden" name="related_report_id" value="">
+<label for="transition-{{ report.id }}">الإجراء التالي</label><select id="transition-{{ report.id }}" name="transition">
+{% if report.state == 'OPEN' %}<option value="START">بدء المراجعة</option>
+{% elif report.state == 'IN_REVIEW' %}<option value="RESOLVE">الإغلاق بعد الإجراء والتحقق</option><option value="DISMISS">الإغلاق مع سبب عدم المتابعة</option>
+{% else %}<option value="REOPEN">إعادة فتح البلاغ</option>{% endif %}</select>
+<label for="action-note-{{ report.id }}">الإجراء البشري أو سبب القرار</label><textarea id="action-note-{{ report.id }}" name="action_note" maxlength="2000" required></textarea>
+<label for="verification-{{ report.id }}">كيف تحققت من النتيجة؟ مطلوب قبل الإغلاق</label><textarea id="verification-{{ report.id }}" name="verification_note" maxlength="2000" {% if report.state == 'IN_REVIEW' %}required{% endif %}></textarea>
+<button>حفظ إجراء المراجعة</button></form>
+<details><summary>ربط بلاغ متكرر عن النسخة نفسها</summary><form method="post" action="/casework/staff/">{% csrf_token %}
+<input type="hidden" name="action" value="report_advance"><input type="hidden" name="case_ref" value="{{ public_ref }}">
+<input type="hidden" name="report_id" value="{{ report.id }}"><input type="hidden" name="report_revision" value="{{ report.revision }}">
+<input type="hidden" name="request_key" value="{{ report.link_key }}"><input type="hidden" name="transition" value="LINK"><input type="hidden" name="verification_note" value="">
+<label for="related-{{ report.id }}">معرف البلاغ الآخر</label><input id="related-{{ report.id }}" name="related_report_id" maxlength="36" required>
+<label for="link-note-{{ report.id }}">سبب الربط</label><textarea id="link-note-{{ report.id }}" name="action_note" maxlength="2000" required></textarea>
+<button>ربط البلاغين مع إبقائهما مستقلين</button></form></details>
+</article>{% empty %}<p>لا توجد بلاغات في هذه القضية.</p>{% endfor %}</section>
+{% endblock %}

@@ -177,6 +177,7 @@ def workspace(request):
                     "experimental_publication/detail.html",
                     {
                         "edition": edition,
+                        "report_case_ref": selected["public_ref"],
                         "knowledge_enabled": getattr(
                             settings, "FATWA_KNOWLEDGE_LINKS_ENABLED", False
                         )
