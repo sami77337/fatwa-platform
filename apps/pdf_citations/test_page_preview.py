@@ -78,15 +78,14 @@ class SelectedPageDerivativeTests(unittest.TestCase):
 
     def test_worker_invocation_uses_sanitized_environment_and_fixed_cwd(self):
         selected = produce(self.raw, 2, 3)
-        response = subprocess.CompletedProcess(
-            [],
-            0,
-            stdout=json.dumps(
-                {"page_number": 2, "page_count": 1, "pdf": base64.b64encode(selected).decode("ascii")}
-            ),
-        )
+        response = json.dumps(
+            {"page_number": 2, "page_count": 1, "pdf": base64.b64encode(selected).decode("ascii")}
+        ).encode("utf-8")
+        def write_response(*args, **kwargs):
+            kwargs["stdout"].write(response)
+            return subprocess.CompletedProcess([], 0)
         with patch(
-            "apps.pdf_citations.page_preview.subprocess.run", return_value=response
+            "apps.pdf_citations.page_preview.subprocess.run", side_effect=write_response
         ) as run:
             self.assertEqual(selected_page(self.raw, page_number=2, page_count=3), selected)
         kwargs = run.call_args.kwargs
@@ -126,15 +125,25 @@ class SelectedPageDerivativeTests(unittest.TestCase):
 
     def test_worker_failure_timeout_or_forged_response_stays_closed(self):
         bad = (
-            subprocess.CompletedProcess([], 1, stdout=""),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"page_number": 2, "page_count": 3, "pdf": ""})),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"page_number": 1, "page_count": 1, "pdf": ""})),
-            subprocess.CompletedProcess([], 0, stdout=json.dumps({"page_number": 2, "page_count": 1, "pdf": "YWJj"})),
+            (1, b""),
+            (0, json.dumps({"page_number": 2, "page_count": 3, "pdf": ""}).encode()),
+            (0, json.dumps({"page_number": 1, "page_count": 1, "pdf": ""}).encode()),
+            (0, json.dumps({"page_number": 2, "page_count": 1, "pdf": "YWJj"}).encode()),
         )
-        for response in bad:
-            with patch("apps.pdf_citations.page_preview.subprocess.run", return_value=response):
+        for code, response in bad:
+            def write_bad(*args, _code=code, _response=response, **kwargs):
+                kwargs["stdout"].write(_response)
+                return subprocess.CompletedProcess([], _code)
+            with patch("apps.pdf_citations.page_preview.subprocess.run", side_effect=write_bad):
                 with self.assertRaises(PdfPageUnavailable):
                     selected_page(self.raw, page_number=2, page_count=3)
+
+        def write_oversized(*args, **kwargs):
+            kwargs["stdout"].write(b"x" * 400001)
+            return subprocess.CompletedProcess([], 0)
+        with patch("apps.pdf_citations.page_preview.subprocess.run", side_effect=write_oversized):
+            with self.assertRaises(PdfPageUnavailable):
+                selected_page(self.raw, page_number=2, page_count=3)
 
         with patch(
             "apps.pdf_citations.page_preview.subprocess.run",

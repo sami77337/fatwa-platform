@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 MAX_ORIGINAL_BYTES = 192000
 MAX_DERIVED_BYTES = 262144
@@ -40,28 +41,34 @@ def selected_page(raw: bytes, *, page_number: int, page_count: int) -> bytes:
         separators=(",", ":"),
     )
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "apps.pdf_citations.page_worker"],
-            input=request,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            timeout=6,
-            check=False,
-            # Do not pass application credentials, database URLs, cloud tokens,
-            # HOME configuration or caller-specific PYTHONPATH to the parser.
-            cwd=Path(__file__).resolve().parents[2],
-            env={
-                "PATH": os.defpath,
-                "LANG": "C.UTF-8",
-                "LC_ALL": "C.UTF-8",
-                "PYTHONDONTWRITEBYTECODE": "1",
-                "PYTHONHASHSEED": "0",
-            },
-        )
-        if result.returncode or len(result.stdout) > MAX_WORKER_STDOUT:
-            raise ValueError
-        value = json.loads(result.stdout)
+        # Redirect stdout to a temporary file rather than an unbounded PIPE.
+        # The worker's RLIMIT_FSIZE caps writes while parsing; the parent then
+        # reads at most MAX_WORKER_STDOUT + 1 bytes before JSON decoding.
+        with tempfile.TemporaryFile(mode="w+b") as output:
+            result = subprocess.run(
+                [sys.executable, "-m", "apps.pdf_citations.page_worker"],
+                input=request,
+                text=True,
+                stdout=output,
+                stderr=subprocess.DEVNULL,
+                timeout=6,
+                check=False,
+                cwd=Path(__file__).resolve().parents[2],
+                env={
+                    "PATH": os.defpath,
+                    "LANG": "C.UTF-8",
+                    "LC_ALL": "C.UTF-8",
+                    "PYTHONDONTWRITEBYTECODE": "1",
+                    "PYTHONHASHSEED": "0",
+                },
+            )
+            if result.returncode or output.tell() > MAX_WORKER_STDOUT:
+                raise ValueError
+            output.seek(0)
+            response = output.read(MAX_WORKER_STDOUT + 1)
+            if len(response) > MAX_WORKER_STDOUT:
+                raise ValueError
+        value = json.loads(response.decode("utf-8"))
         if (
             type(value) is not dict
             or set(value) != {"page_number", "page_count", "pdf"}
