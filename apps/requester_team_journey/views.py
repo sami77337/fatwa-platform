@@ -48,6 +48,18 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.case_organization"):
+            from apps.case_organization.views import ACTIONS as ORGANIZATION_ACTIONS
+            from apps.case_organization.views import workspace as organization_workspace
+
+            if action in ORGANIZATION_ACTIONS:
+                return _panel(organization_workspace(request), "cases")
+        if django_apps.is_installed("apps.content_reports"):
+            from apps.content_reports.views import ACTIONS as REPORT_ACTIONS
+            from apps.content_reports.views import workspace as report_workspace
+
+            if action in REPORT_ACTIONS:
+                return _panel(report_workspace(request), "cases")
         if django_apps.is_installed("apps.timed_citations"):
             from apps.timed_citations.views import ACTIONS as TIMED_ACTIONS
             from apps.timed_citations.views import workspace as timed_workspace

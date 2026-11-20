@@ -1,7 +1,10 @@
 """Native forms on the existing private status route and capability cookie."""
 
+import uuid
 from hmac import compare_digest
 
+from django.apps import apps
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
 from django.http import HttpResponse
@@ -29,7 +32,48 @@ def _redirect():
 
 
 @sensitive_variables("token")
-def _page(request, *, token=None, result=None, text="", message="", status=200, unavailable=False):
+def _page(
+    request,
+    *,
+    token=None,
+    result=None,
+    text="",
+    message="",
+    status=200,
+    unavailable=False,
+    report_description="",
+    report_evidence="",
+):
+    fields = dict(
+        token=token,
+        text=text,
+        message=message,
+        status=status,
+        unavailable=unavailable,
+        report_description=report_description,
+        report_evidence=report_evidence,
+    )
+    if result is None:
+        return _render_page(request, result=None, **fields)
+    with services.page_projection(
+        token=token, expected_result=result, synthetic_fixtures_only=True
+    ) as current:
+        return _render_page(request, result=current, **fields)
+
+
+@sensitive_variables("token")
+def _render_page(
+    request,
+    *,
+    token,
+    result,
+    text,
+    message,
+    status,
+    unavailable,
+    report_description,
+    report_evidence,
+):
     get_token(request)
     context = {"result": result, "text": text, "message": message, "unavailable": unavailable}
     if result:
@@ -43,6 +87,23 @@ def _page(request, *, token=None, result=None, text="", message="", status=200, 
         context["review_proof"] = workspace._binding(
             request, token, "access-review:" + result["public_ref"]
         )
+        if (
+            apps.is_installed("apps.content_reports")
+            and getattr(settings, "FATWA_CONTENT_REPORTS_ENABLED", False) is True
+        ):
+            from apps.content_reports import services as reports
+
+            context["reporting"] = reports.requester_context(
+                token=token, expected_revision=result["revision"], synthetic_fixtures_only=True
+            )
+            context["report_request_key"] = str(uuid.uuid4())
+            context["report_proof"] = workspace._binding(
+                request,
+                token,
+                f"content-report:{result['public_ref']}:{result['revision']}:{context['report_request_key']}",
+            )
+            context["report_description"] = report_description
+            context["report_evidence"] = report_evidence
     return notices.clear(
         private(render(request, "requester_portal/portal.html", context, status=status))
     )
@@ -102,6 +163,64 @@ def portal(request):
             return requester(request)
         token = workspace._capability(request)
         result = _read(token)
+        if action == "content_report":
+            if not apps.is_installed("apps.content_reports"):
+                raise InvalidForm("portal_action_invalid")
+            from apps.content_reports import services as reports
+
+            reports.enabled()
+            fields = _form(
+                request,
+                {
+                    "action",
+                    "revision",
+                    "report_proof",
+                    "request_key",
+                    "selected_target",
+                    "reason",
+                    "description",
+                    "evidence_note",
+                },
+            )
+            revision = _integer(fields["revision"])
+            reports._key(fields["request_key"])
+            expected = workspace._binding(
+                request,
+                token,
+                f"content-report:{result['public_ref']}:{revision}:{fields['request_key']}",
+            )
+            if workspace.HEX.fullmatch(fields["report_proof"]) is None or not compare_digest(
+                expected, fields["report_proof"]
+            ):
+                return _page(
+                    request,
+                    token=token,
+                    result=result,
+                    status=409,
+                    message="تغيرت القضية أو الجلسة؛ لم يُسجل البلاغ.",
+                )
+            try:
+                reports.submit_requester(
+                    token=token,
+                    expected_revision=revision,
+                    selected_target=fields["selected_target"],
+                    request_key=fields["request_key"],
+                    reason=fields["reason"],
+                    description=fields["description"],
+                    evidence_note=fields["evidence_note"],
+                    synthetic_fixtures_only=True,
+                )
+            except cases.CaseConflict:
+                return _page(
+                    request,
+                    token=token,
+                    result=_read(token),
+                    status=409,
+                    report_description=fields["description"][:2000],
+                    report_evidence=fields["evidence_note"][:2000],
+                    message="لم يُسجل البلاغ. راجع النسخة المتاحة ووصف المشكلة قبل إعادة الإرسال.",
+                )
+            return notices.remember(request, _redirect(), token, result, "content_report")
         if action == "reply":
             fields = _reply_form(request)
             revision = _integer(fields["revision"])

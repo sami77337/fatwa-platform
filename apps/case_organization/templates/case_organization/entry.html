@@ -1,0 +1,4 @@
+{% if organization_enabled %}
+{% if organization_case_ref %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="organization_open"><input type="hidden" name="case_ref" value="{{ organization_case_ref }}"><button>تنظيم القضية والملاحظات الداخلية</button></form>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="organization_search"><input type="hidden" name="query" value=""><input type="hidden" name="tag" value=""><input type="hidden" name="question_type" value=""><button>البحث بالوسوم ونوع السؤال</button></form>
+{% endif %}

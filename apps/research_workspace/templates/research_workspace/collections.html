@@ -1,0 +1,93 @@
+{% extends "casework/base.html" %}
+{% block title %}مجموعاتي البحثية الخاصة{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/research-workspace.css">
+<section class="research-collections" aria-labelledby="collection-heading">
+<h2 id="collection-heading">مجموعاتي البحثية الخاصة</h2>
+{% if error %}<p role="alert">{{ error }}</p><a href="/casework/staff/">العودة إلى مكتب القضية</a>{% endif %}
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+{% if result %}
+<p>القضية <bdi>{{ result.public_ref }}</bdi>. المجموعات والملاحظات خاصة بصاحبها؛ حفظ مرجع لا يغيّر مصدره أو جواب القضية.</p>
+<nav aria-label="تنقل البحث">
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>البحث في مصادر القضية</button></form>
+  <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="research_collections"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>كل مجموعاتي في القضية</button></form>
+</nav>
+{% if result.id %}
+<header><h3>{{ result.title }}</h3><p>إصدار المجموعة {{ result.collection_revision }}{% if result.archived %} · مؤرشفة{% endif %}</p></header>
+{% if result.archived %}
+  <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_restore" %}<button>استعادة المجموعة للعمل</button></form>
+{% else %}
+  <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_rename" %}<label for="collection-title">عنوان المجموعة</label><input id="collection-title" name="title" maxlength="160" required value="{{ result.title }}"><button>حفظ العنوان</button></form>
+  <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_archive" %}<button>أرشفة المجموعة</button></form>
+{% endif %}
+{% if opened %}
+<section aria-label="المواد المختارة للمقارنة" id="collection-comparison">
+  <h3>{% if opened|length > 1 %}مقارنة المواد المختارة{% else %}المادة المحفوظة{% endif %}</h3>
+  <p>كل مادة تحتفظ بنسبتها وموضعها. المقارنة لا تعتمد حكمًا ولا تفترض انطباقه على واقعة جديدة.</p>
+  <div class="research-compare">{% for item in opened %}{% include "research_workspace/collection_material.html" %}{% endfor %}</div>
+</section>
+{% endif %}
+<section aria-label="عناصر المجموعة">
+<h3>العناصر المختارة</h3>
+{% if result.items %}
+<form method="post" action="/casework/staff/" id="collection-compare-form">
+  {% include "research_workspace/collection_fields.html" with action="research_collection_compare" %}
+  <label for="compare-first">المادة الأولى</label><select id="compare-first" name="first_id" required><option value="">اختر مادة</option>{% for row in result.items %}{% if row.available %}<option value="{{ row.id }}">{{ row.ordinal }}. {{ row.title }}</option>{% endif %}{% endfor %}</select>
+  <label for="compare-second">المادة الثانية</label><select id="compare-second" name="second_id" required><option value="">اختر مادة مختلفة</option>{% for row in result.items %}{% if row.available %}<option value="{{ row.id }}">{{ row.ordinal }}. {{ row.title }}</option>{% endif %}{% endfor %}</select>
+  <label for="compare-third">مادة ثالثة اختيارية</label><select id="compare-third" name="third_id"><option value="">بدون مادة ثالثة</option>{% for row in result.items %}{% if row.available %}<option value="{{ row.id }}">{{ row.ordinal }}. {{ row.title }}</option>{% endif %}{% endfor %}</select>
+  <button>عرض المواد للمقارنة</button>
+</form>
+{% endif %}
+{% for row in result.items %}
+<article data-saved-item="{{ row.id }}">
+  <h4>{{ row.ordinal }}. {% if row.available %}{{ row.title }}{% else %}مرجع غير متاح حاليًا{% endif %}</h4>
+  {% if row.available %}
+    <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_view" form_state=row.state %}<button>فتح المادة المحفوظة</button></form>
+    {% if not result.archived %}<form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_note" form_state=row.state %}<label for="note-{{ row.id }}">ملاحظتي الخاصة عن هذه المادة</label><textarea id="note-{{ row.id }}" name="note" maxlength="2000">{{ row.note }}</textarea><button>حفظ الملاحظة</button></form>{% else %}{% if row.note %}<p class="original">{{ row.note }}</p>{% endif %}{% endif %}
+  {% else %}<p>تعذر التحقق من النسخة أو حق الوصول. لا يُعرض نص المادة أو الملاحظة المرتبطة بها.</p>{% endif %}
+  {% if not result.archived %}
+    {% if not forloop.first %}<form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_move" form_state=row.state %}<input type="hidden" name="direction" value="up"><button>نقل إلى أعلى</button></form>{% endif %}
+    {% if not forloop.last %}<form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_move" form_state=row.state %}<input type="hidden" name="direction" value="down"><button>نقل إلى أسفل</button></form>{% endif %}
+    <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_remove" form_state=row.state %}<button>إزالة المرجع من المجموعة</button></form>
+  {% endif %}
+</article>
+{% empty %}<p>المجموعة فارغة. افتح البحث ثم اختر «حفظ في مجموعة خاصة» بجوار مادة مصرح بها.</p>{% endfor %}
+</section>
+<section aria-label="عمليات البحث المحفوظة">
+<h3>عمليات البحث المحفوظة</h3>
+<p>إعادة البحث تستخدم الحقوق والمواد الحالية. النتائج الجديدة لا تدخل المجموعة تلقائيًا.</p>
+{% for row in result.searches %}<article data-saved-search="{{ row.id }}">
+  <h4>{{ row.title }}</h4><p class="original">{{ row.filters.query }}</p>
+  <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_run_search" form_state=row.state %}<button>إعادة البحث الآن</button></form>
+  {% if not result.archived %}<form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_remove_search" form_state=row.state %}<button>إزالة البحث المحفوظ</button></form>{% endif %}
+</article>{% empty %}<p>لم تحفظ بحثًا بعد. افتح نتائج البحث واختر حفظ البحث الحالي.</p>{% endfor %}
+</section>
+{% else %}
+{% if chooser %}<h3>{% if chooser == 'item' %}اختر مجموعة لحفظ المرجع{% else %}اختر مجموعة لحفظ البحث الحالي{% endif %}</h3>{% endif %}
+{% if pending.source %}<p>المادة المختارة: {{ pending.source.heading_title }} · {{ pending.source.edition_title }} · جزء {{ pending.source.printed_part }} صفحة {{ pending.source.printed_page }}</p>{% elif pending.source_id %}<p>المادة المختارة: تفريغ المصدر <bdi>{{ pending.source_id }}</bdi> · {{ pending.question.start_ms }}–{{ pending.question.end_ms }} مللي ثانية.</p>{% elif pending.title %}<p>المادة المختارة: {{ pending.title }}</p>{% endif %}
+{% for row in result.collections %}
+<article data-collection-id="{{ row.id }}"><h3>{{ row.title }}</h3>
+{% if row.archived %}<p>مؤرشفة</p>{% endif %}
+{% if chooser and not row.archived %}
+  <form method="post" action="/casework/staff/">
+    {% if chooser == 'item' %}{% include "research_workspace/collection_fields.html" with action="research_collection_add" form_state=row.state %}
+    <label for="add-note-{{ row.id }}">ملاحظة خاصة اختيارية</label><textarea id="add-note-{{ row.id }}" name="note" maxlength="2000"></textarea>
+    {% else %}{% include "research_workspace/collection_fields.html" with action="research_collection_save_search" form_state=row.state %}
+    <label for="search-title-{{ row.id }}">اسم البحث المحفوظ</label><input id="search-title-{{ row.id }}" name="title" maxlength="160" required>
+    {% endif %}
+    <input type="hidden" name="source_state" value="{{ source_state }}"><button>حفظ في {{ row.title }}</button>
+  </form>
+{% endif %}
+<form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_open" form_state=row.state %}<button>فتح المجموعة</button></form>
+</article>
+{% empty %}<p>لم تنشئ مجموعة لهذه القضية بعد.</p>{% endfor %}
+<form method="post" action="/casework/staff/" id="collection-create-form">
+  {% include "research_workspace/collection_fields.html" with action="research_collection_create" %}
+  <label for="new-collection-title">عنوان مجموعة جديدة</label><input id="new-collection-title" name="title" maxlength="160" required>
+  <button>إنشاء مجموعة خاصة</button>
+</form>
+{% if chooser %}<p>بعد إنشاء مجموعة جديدة، عد إلى البحث لاختيار المادة أو البحث الذي تريد حفظه.</p>{% endif %}
+{% endif %}
+{% endif %}
+</section>
+{% endblock %}

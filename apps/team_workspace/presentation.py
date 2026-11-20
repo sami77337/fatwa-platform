@@ -9,6 +9,15 @@ SORTS = {
     "priority": "الأولوية العملية",
 }
 PRIORITY = {"returned": 0, "draft": 1, "review": 2, "waiting": 3, "approved": 4}
+INBOXES = {
+    "all": "كل العمل المخوّل",
+    "mine": "قضاياي ومشاركاتي",
+    "shared": "القضايا المشتركة غير المعينة",
+    "followups": "تعقيبات بعد آخر جواب",
+    "drafts": "المسودات المحفوظة",
+    "review": "تحتاج إلى مراجعتي",
+    "approved": "الأجوبة المعتمدة",
+}
 
 
 FILTERS = {
@@ -103,7 +112,22 @@ def read_workspace_case(*, include_answer_manifest=True, **common):
         return snapshot
 
 
-def queue(rows, selected_filter, query, sort="newest"):
+def _inbox_matches(row, inbox):
+    latest = row["latest_answer"]
+    if inbox == "mine":
+        return bool(row.get("assignment", {}).get("is_mine"))
+    if inbox == "shared":
+        return bool(row.get("assignment", {}).get("is_shared"))
+    if inbox == "followups":
+        return row["evidence_version"] > (latest["evidence_version"] if latest else 1)
+    if inbox == "drafts":
+        return bool(latest and latest["id"] != row["approved_answer_id"])
+    if inbox in {"review", "approved"}:
+        return row["category"] == inbox
+    return inbox == "all"
+
+
+def queue(rows, selected_filter, query, sort="newest", inbox="all", assignments_enabled=False):
     # list_cases has already revalidated every case against the current scoped
     # identity. Search only that projection, and keep result cards free of snippets.
     described = [describe(row) for row in reversed(rows)]
@@ -128,15 +152,23 @@ def queue(rows, selected_filter, query, sort="newest"):
         key: (len(described) if key == "all" else sum(row["category"] == key for row in described))
         for key in FILTERS
     }
-    visible = [
-        row for row in matched if selected_filter == "all" or row["category"] == selected_filter
-    ]
+    visible = [row for row in matched if _inbox_matches(row, inbox)
+               and (selected_filter == "all" or row["category"] == selected_filter)]
+    if inbox == "approved" and assignments_enabled:
+        visible.sort(key=lambda row: (row["approved_at"], row["public_ref"]), reverse=True)
     if sort == "oldest":
         visible.reverse()
     elif sort == "priority":
         visible.sort(key=lambda row: PRIORITY[row["category"]])
     return {
         "rows": visible,
+        "inbox": inbox,
+        "inboxes": [
+            {"key": key, "label": label,
+             "count": sum(_inbox_matches(row, key) for row in described)}
+            for key, label in INBOXES.items()
+            if assignments_enabled or key not in {"mine", "shared"}
+        ],
         "sort": sort,
         "sorts": [{"key": key, "label": label} for key, label in SORTS.items()],
         "filters": [
@@ -146,5 +178,5 @@ def queue(rows, selected_filter, query, sort="newest"):
         "query": query,
         "total": len(described),
         "matched_total": len(matched),
-        "visible_total": sum(1 for row in matched if selected_filter == "all" or row["category"] == selected_filter),
+        "visible_total": len(visible),
     }

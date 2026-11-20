@@ -1,0 +1,24 @@
+<section id="case-assignment" aria-labelledby="assignment-heading">
+<h2 id="assignment-heading">تنسيق العمل على القضية</h2>
+<p>{% if assignment.primary_subject %}المفتي الأساسي: <bdi id="primary-mufti">{{ assignment.primary_subject }}</bdi>{% else %}<span id="shared-case">القضية في القائمة المشتركة، دون مفتي أساسي.</span>{% endif %}</p>
+<p>التعيين ينظم المتابعة بين المفتين المخوّلين. لا يمنح وصولًا جديدًا، ولا يمنع مفتيًا مخوّلًا من العمل على القضية أو مراجعتها.</p>
+{% if assignment.is_shared %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "case_assignments/pins.html" %}<input type="hidden" name="action" value="assignment_claim"><button>تولي القضية بصفتي المفتي الأساسي</button></form>
+{% elif assignment.is_primary %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "case_assignments/pins.html" %}<input type="hidden" name="action" value="assignment_release"><button>إعادة القضية إلى القائمة المشتركة</button></form>
+{% endif %}
+<h3>المساهمون والمراجعون</h3>
+<ul>{% for member in assignment.participants %}<li><bdi>{{ member.subject_id }}</bdi> — {{ member.label }}{% if member.can_remove %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "case_assignments/pins.html" %}<input type="hidden" name="action" value="assignment_remove"><input type="hidden" name="target_subject" value="{{ member.subject_id }}"><button>إنهاء هذه المشاركة</button></form>{% endif %}</li>{% empty %}<li>لا توجد مشاركة إضافية مسجلة.</li>{% endfor %}</ul>
+{% if not assignment.is_primary %}<div class="actions">
+{% if assignment.my_role != "CONTRIBUTOR" %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "case_assignments/pins.html" %}<input type="hidden" name="action" value="assignment_contributor"><input type="hidden" name="target_subject" value="{{ assignment.subject_id }}"><button>تسجيل مشاركتي بصفتي مساهمًا</button></form>{% endif %}
+{% if assignment.my_role != "REVIEWER" %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "case_assignments/pins.html" %}<input type="hidden" name="action" value="assignment_reviewer"><input type="hidden" name="target_subject" value="{{ assignment.subject_id }}"><button>تسجيل مشاركتي بصفتي مراجعًا</button></form>{% endif %}
+</div>{% endif %}
+{% if assignment.is_primary and assignment.candidates %}
+<details><summary>تعيين مفتي آخر مخوّل</summary>
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "case_assignments/pins.html" %}
+<label for="assignment-target">المفتي</label><select id="assignment-target" name="target_subject">{% for subject in assignment.candidates %}<option value="{{ subject }}">{{ subject }}</option>{% endfor %}</select>
+<label for="assignment-action">الدور التنسيقي</label><select id="assignment-action" name="action"><option value="assignment_transfer">نقل مسؤولية المفتي الأساسي</option><option value="assignment_contributor">مفتي مساهم</option><option value="assignment_reviewer">مفتي مراجع</option></select><button>حفظ التعيين المختار</button>
+</form></details>
+{% elif assignment.is_primary %}<p>تعيين مفتي آخر غير متاح دون قائمة مرشحين موثوقة للقضية.</p>{% endif %}
+<details><summary>سجل التعيين والمشاركة ({{ assignment.version }})</summary><ol>{% for event in assignment.history %}<li><bdi>{{ event.actor }}</bdi> — {{ event.label }} — <bdi>{{ event.target }}</bdi> <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:"Y-m-d H:i:s" }}</time></li>{% empty %}<li>لم يُسجل تعيين بعد.</li>{% endfor %}</ol></details>
+</section>

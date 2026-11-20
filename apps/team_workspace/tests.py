@@ -108,6 +108,28 @@ class TeamWorkspaceTests(contracts.CaseworkHTTPTests):
         self.assertNotContains(filtered, draft_case.public_ref)
         self.assertNotContains(filtered, approved_case.public_ref)
 
+    def test_previously_rendered_filter_without_sort_keeps_newest_scoped_order(self):
+        older, _, _, _, _ = self.intake("PRIVATE SHARED OLDER")
+        newer, _, _, _, _ = self.intake("PRIVATE SHARED NEWER")
+        hidden_case, _, _, _, _ = self.intake("PRIVATE SHARED OUT OF SCOPE")
+        self.directory.grant(older.public_ref, newer.public_ref)
+        page = self.open_case(older, self.login())
+        before = list(CaseEvent.objects.values_list("id", flat=True))
+        response = post(self.client, "/casework/staff/", {
+            "action": "filter", "state": "draft", "query": "shared",
+        }, page)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.context["sort"], "newest")
+        self.assertEqual(
+            [row["public_ref"] for row in response.context["rows"]],
+            [newer.public_ref, older.public_ref],
+        )
+        self.assertEqual(response.context["total"], 2)
+        self.assertEqual(response.context["visible_total"], 2)
+        self.assertNotContains(response, hidden_case.public_ref)
+        self.assertNotContains(response, "PRIVATE SHARED")
+        self.assertEqual(list(CaseEvent.objects.values_list("id", flat=True)), before)
+
     def test_priority_queue_sort_orders_actionable_work_before_waiting_and_approved(self):
         waiting, _, _, _, _ = self.intake("سؤال ينتظر السائل")
         returned, _, _, _, _ = self.intake("سؤال معاد للتعديل")
@@ -236,13 +258,16 @@ class TeamWorkspaceTests(contracts.CaseworkHTTPTests):
             {"action": "filter", "state": "unknown", "query": "", "sort": "newest"},
             {"action": "filter", "state": "all", "query": "x" * 41, "sort": "newest"},
             {"action": "filter", "state": "all", "query": "", "sort": "unknown"},
+            {"action": "filter", "state": "all", "query": "", "sort": ""},
+            {"action": "filter", "state": "all", "query": "", "role": "MUFTI"},
         ):
             self.assertEqual(post(self.client, "/casework/staff/", fields, page).status_code, 400)
         duplicate = urlencode({"action": "filter", "state": "all", "query": "", "sort": "newest",
                                "csrfmiddlewaretoken": hidden(page, "csrfmiddlewaretoken")})
-        response = self.client.post("/casework/staff/", duplicate + "&state=review",
-                                    content_type="application/x-www-form-urlencoded")
-        self.assertEqual(response.status_code, 400)
+        for repeated in ("&state=review", "&sort=oldest"):
+            response = self.client.post("/casework/staff/", duplicate + repeated,
+                                        content_type="application/x-www-form-urlencoded")
+            self.assertEqual(response.status_code, 400)
         response = self.client.post("/casework/staff/", "action=filter&state=all&query=&sort=newest",
                                     content_type="application/x-www-form-urlencoded")
         self.assertEqual(response.status_code, 403)

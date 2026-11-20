@@ -123,3 +123,12 @@ migrations**. Add `apps.requester_portal.workflow_tests` to the focused campaign
 labels; the affected `apps.requester_portal.browser_tests` now exercises one-step
 clarification with a file and writes `.local/qa/v11-requester/browser/` artifacts.
 See [V11_REPORT.md](V11_REPORT.md) for exact evidence and remaining pilot limits.
+
+## Optional content reporting
+
+When the separately guarded `apps.content_reports` feature is enabled, this portal
+offers a native report form for the currently authorized answer and its exact
+parts. It sends the report to human review and shows a minimal receipt; it does
+not modify the answer or treat report receipt as repair. Staff review notes stay
+out of the requester projection. See `apps/content_reports/README.md` for version
+pins, authorization, idempotency, lifecycle and verified scope.

@@ -28,7 +28,16 @@ INSTALLED_APPS = [
     "apps.timed_citations",
     "apps.pdf_citations",
     "apps.arabic_search_eval",
+    "apps.case_assignments",
+    "apps.case_organization",
+    "apps.content_reports",
 ]
+FATWA_CASE_ASSIGNMENTS_ENABLED = False
+FATWA_CASE_ASSIGNMENT_CANDIDATES = None
+FATWA_CASE_ORGANIZATION_ENABLED = False
+FATWA_RESEARCH_COLLECTIONS_ENABLED = False
+FATWA_CONTENT_REPORTS_ENABLED = False
+FATWA_CONTENT_REPORTS_AUTHORITY = None
 FATWA_ARABIC_SEARCH_EVAL_ENABLED = False
 FATWA_ARABIC_SEARCH_REVIEW_ENABLED = False
 FATWA_ARABIC_SEARCH_REVIEW_AUTHORITY = None
@@ -83,6 +92,8 @@ ROOT_URLCONF = "config.campaign_urls"
 FILE_UPLOAD_HANDLERS = ["django.core.files.uploadhandler.MemoryFileUploadHandler"]
 FILE_UPLOAD_MAX_MEMORY_SIZE = 262144
 DATA_UPLOAD_MAX_NUMBER_FILES = 1
+# Native multi-select question types plus exact version/CSRF fields remain bounded.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 32
 
 # One shared composition; optional profile aliases reuse these same overlays.
 TEMPLATES = deepcopy(TEMPLATES)  # noqa: F405
@@ -91,6 +102,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].append(
 )
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.mufti_workspace.context.case_workspace")
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.browser_audio.context.capture")
+TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.case_organization.context.organization")
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",
     Path(__file__).resolve().parents[2] / "apps/requester_team_journey/templates",

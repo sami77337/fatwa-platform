@@ -15,21 +15,26 @@
 </div>
 <form method="post" action="/casework/staff/">{% csrf_token %}
 <input type="hidden" name="action" value="filter">
+<label for="queue-inbox">قائمة العمل</label>
+<select id="queue-inbox" name="inbox">{% for item in inboxes %}<option value="{{ item.key }}"{% if item.key == inbox %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
 <label for="queue-query">بحث في القضايا المخوّلة: الرقم أو السؤال أو التعقيب أو الجواب</label><input id="queue-query" name="query" value="{{ query }}" maxlength="40" autocomplete="off">
 <p>تظهر أرقام النتائج وحالتها فقط. افتح القضية لقراءة نصوصها ضمن صلاحيتك.</p>
 <label for="queue-state">مرحلة العمل</label>
+<select id="queue-state" name="state">{% for item in filters %}<option value="{{ item.key }}"{% if item.key == selected_filter %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
 <label for="queue-sort">ترتيب النتائج</label>
 <select id="queue-sort" name="sort">{% for item in sorts %}<option value="{{ item.key }}"{% if item.key == sort %} selected{% endif %}>{{ item.label }}</option>{% endfor %}</select>
-<select id="queue-state" name="state">{% for item in filters %}<option value="{{ item.key }}"{% if item.key == selected_filter %} selected{% endif %}>{{ item.label }} ({{ item.count }})</option>{% endfor %}</select>
 <button type="submit">عرض القضايا</button><a href="/casework/staff/">كل القضايا</a>
 <p role="status">نتائج البحث: {{ matched_total }} · المعروض بعد التصفية: {{ visible_total }}</p>
 </form>
 <div class="actions">{% for case in rows %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ case.public_ref }}">
 <button type="submit">{{ case.public_ref }}</button><small>{{ case.stage_label }}</small><small>{{ case.next_step }}</small>
+{% if assignments_enabled %}<small>{% if case.assignment.primary_subject %}المفتي الأساسي: <bdi>{{ case.assignment.primary_subject }}</bdi>{% else %}قضية مشتركة غير معينة{% endif %}{% if case.assignment.my_role == "CONTRIBUTOR" %} · أنت مساهم{% elif case.assignment.my_role == "REVIEWER" %} · أنت مراجع{% endif %}</small>{% endif %}
 </form>{% empty %}<p id="empty-queue">لا توجد قضايا مطابقة ضمن صلاحيتك.</p>{% endfor %}</div>
 </section>
 {% if selected %}
+{% if organization_enabled %}{% include "case_organization/entry.html" with organization_case_ref=selected.public_ref %}{% endif %}
+{% if assignment %}{% include "case_assignments/panel.html" %}{% endif %}
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
 <nav aria-label="أدوات القضية">

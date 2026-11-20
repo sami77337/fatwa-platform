@@ -23,8 +23,25 @@
 <nav aria-label="أقسام قضيتك">
 <a href="#conversation">السؤال والتعقيبات</a><a href="#attachments">مرفقاتي</a>
 <a href="#answer">الجواب والإحالات</a><a href="#delivery">حالة التسليم</a><a href="#followup">إضافة تعقيب</a>
+{% if reporting %}<a href="#content-reports">بلاغات الجواب والمرفقات</a>{% endif %}
 </nav>
 <form method="post" action="/casework/status/">{% csrf_token %}<input type="hidden" name="action" value="leave"><button>إغلاق الوصول في هذا المتصفح</button></form>
+{% if reporting %}
+<section id="content-reports" aria-labelledby="reports-heading"><h3 id="reports-heading">الإبلاغ عن مشكلة في الجواب أو مرفقاته</h3>
+<p>يذهب البلاغ إلى مراجعة بشرية. استلامه أو إغلاقه لا يعدل الجواب تلقائيًا، ولا يُعد تقييمًا لصحة الفتوى. لوقائع جديدة تخص سؤالك استخدم إضافة التعقيب.</p>
+{% if reporting.targets %}<form method="post" action="/casework/status/">{% csrf_token %}
+<input type="hidden" name="action" value="content_report"><input type="hidden" name="revision" value="{{ result.revision }}">
+<input type="hidden" name="request_key" value="{{ report_request_key }}"><input type="hidden" name="report_proof" value="{{ report_proof }}">
+<label for="report-target">الجواب أو الجزء الذي تواجه فيه المشكلة</label><select id="report-target" name="selected_target" required>{% for target in reporting.targets %}<option value="{{ target.key }}">{{ target.label }}</option>{% endfor %}</select>
+<label for="report-reason">نوع المشكلة</label><select id="report-reason" name="reason">{% for code,label in reporting.reasons.items %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select>
+<label for="report-description">صف المشكلة</label><textarea id="report-description" name="description" maxlength="2000" required>{{ report_description }}</textarea>
+<label for="report-evidence">موضع المشكلة أو وصف خطوات ظهورها، إن وجد</label><textarea id="report-evidence" name="evidence_note" maxlength="2000">{{ report_evidence }}</textarea>
+<button>إرسال بلاغ للمراجعة</button></form>{% else %}<p>لا توجد نسخة جواب متاحة يمكنك إنشاء بلاغ عنها الآن. تبقى إيصالات بلاغاتك السابقة أدناه.</p>{% endif %}
+<h4>بلاغاتك المسجلة</h4>{% for report in reporting.reports %}<article>
+<p>بلاغ <bdi>{{ report.id }}</bdi> · {{ report.reason }} · {{ report.state_label }}</p>
+<p>نسخة المادة {{ report.target_version }} · {{ report.created_at }}</p>
+</article>{% empty %}<p>لم ترسل بلاغًا عن الجواب أو مرفقاته.</p>{% endfor %}</section>
+{% endif %}
 <section id="answer" aria-labelledby="answer-heading">
 <h3 id="answer-heading">الجواب والإحالات</h3>
 <p role="status" data-answer-state="{{ result.answer_state }}">{{ result.answer_label }}</p>

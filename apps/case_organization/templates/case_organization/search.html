@@ -1,0 +1,8 @@
+{% extends "casework/base.html" %}{% block title %}البحث في تنظيم القضايا{% endblock %}
+{% block content %}<h1>البحث في تنظيم القضايا</h1>
+<p>البحث داخل القضايا المصرح لك بها. المرشحات التنظيمية اختيارية؛ غياب الوسوم لا يخفي تطابقًا نصيًا.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="organization_search">
+<label for="organization-query">النص أو رقم القضية</label><input name="query" id="organization-query" maxlength="80" value="{{ query }}">
+<label for="organization-tag">وسم مطابق</label><input name="tag" id="organization-tag" maxlength="48" value="{{ tag }}">
+<label for="organization-type-filter">نوع السؤال</label><select name="question_type" id="organization-type-filter"><option value="">كل الأنواع</option>{% for key,label in types %}<option value="{{ key }}"{% if question_type == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select><button>بحث</button></form>
+<p role="status">{{ rows|length }} قضية مطابقة</p><section id="organization-results">{% for item in rows %}<article><h2><bdi>{{ item.public_ref }}</bdi></h2><p>{{ item.tags|join:"، " }} · {{ item.question_types|join:"، " }}</p><form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="organization_open"><input type="hidden" name="case_ref" value="{{ item.public_ref }}"><button>فتح تنظيم القضية</button></form></article>{% empty %}<p>لا توجد نتائج ضمن نطاقك وهذه المرشحات.</p>{% endfor %}</section>{% endblock %}

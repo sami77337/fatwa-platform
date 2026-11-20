@@ -4,10 +4,21 @@ class PrivateCapture extends AudioWorkletProcessor {
     super();
     this.frames = 0;
     this.active = sampleRate === 8000;
-    this.port.onmessage = () => { this.active = false; };
+    this.paused = false;
+    this.port.onmessage = ({data}) => {
+      if (!this.active) return;
+      if (data === "pause" || data === "resume") {
+        this.paused = data === "pause";
+        // The same port orders this acknowledgement after all earlier PCM.
+        this.port.postMessage({state: this.paused ? "paused" : "recording"});
+      } else {
+        this.active = false;
+      }
+    };
   }
   process(inputs) {
     if (!this.active) return false;
+    if (this.paused) return true;
     const input = inputs[0]?.[0];
     if (!input) return true;
     const count = Math.min(input.length, 80000 - this.frames);

@@ -32,6 +32,7 @@ def connected_actions(tabs, *, manifest, waiting):
             (
                 ("overview", "السؤال والوقائع والمرفقات", "mufti-evidence-history"),
                 ("origins", "مراجعة أصل الرسائل ومتابعتها", ""),
+                ("organization", "الوسوم وأنواع السؤال والملاحظات الداخلية", ""),
             ),
         ),
         (
@@ -40,6 +41,7 @@ def connected_actions(tabs, *, manifest, waiting):
             (
                 ("rights", "راجع نوع المصدر وحقوق استعماله", ""),
                 ("research", "ابحث وافتح مصدرًا مصرحًا", ""),
+                ("collections", "اجمع المصادر وقارنها وأعد البحث المحفوظ", ""),
                 ("citations", "راجع إحالات إصدار الجواب", ""),
                 ("pdf", "راجع صفحات الأصل PDF ومطابقتها البشرية", ""),
             ),
@@ -68,7 +70,10 @@ def connected_actions(tabs, *, manifest, waiting):
         (
             "publication",
             "النشر التجريبي المستقل",
-            (("publication", "النسخة التحريرية والمكتبة والعودة", ""),),
+            (
+                ("publication", "النسخة التحريرية والمكتبة والعودة", ""),
+                ("reports", "مراجعة البلاغات وتوثيق معالجتها", ""),
+            ),
         ),
     )
     result = []

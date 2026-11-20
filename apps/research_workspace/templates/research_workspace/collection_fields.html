@@ -1,0 +1,4 @@
+{% csrf_token %}
+<input type="hidden" name="action" value="{{ action }}">
+<input type="hidden" name="case_ref" value="{{ result.public_ref }}">
+<input type="hidden" name="state" value="{{ form_state|default:result.state }}">
