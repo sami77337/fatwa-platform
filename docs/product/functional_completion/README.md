@@ -98,6 +98,14 @@ connected journey, assignment journey and pause/resume scenario.
 It also runs the native lessons/relations, public curation/translation, selected
 ZIP download and data-quality refresh journeys through the shared campaign.
 
+The test runner retains the application statement and lock timeouts. Only the
+maintenance `DROP DATABASE` of the exact database created by that invocation
+receives a finite 30-second statement budget, after the synthetic ownership gates.
+The previous statement timeout is restored on success or failure; lock timeout
+is unchanged. Cleanup never uses `FORCE`, terminates sessions or drops an unknown
+database. Lifecycle regressions verify that boundary separately from product
+requirements and receive no completed-point credit.
+
 ```sh
 python infra/dev/with_casework_postgres.py \
   --pg-bin /path/to/postgresql/17/bin --major 17 \

@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 
 LABELS = [
+    "tests.wave7_foundation.test_runner_lifecycle",
     "apps.case_assignments.tests",
     "apps.case_assignments.review_tests",
     "apps.case_organization.tests",
