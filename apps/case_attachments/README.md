@@ -1,7 +1,8 @@
 # Private synthetic case attachments
 
 Requester uploads a small fabricated text, PDF, JPEG, PNG, WebP, MP3, M4A or
-WAV file from the existing private case session. The original bytes, SHA-256, byte count, validated text media type,
+WAV file from the existing private case session. Explicit video opt-in additionally
+accepts actual WebM and MP4 originals. The original bytes, SHA-256, byte count, validated media type,
 safe filename, source, requester identity and timestamp are bound in PostgreSQL.
 Original bytes use inline storage by default or the explicitly configured synthetic
 private filesystem adapter.
@@ -46,7 +47,7 @@ stored immutably. Preview uses authorized GET on
 `/casework/status/attachments/<uuid>/` or `/casework/staff/attachments/<uuid>/`.
 These paths require parent URL/guard registration. Every fetch checks current
 capability/staff scope; UUID alone grants nothing. No token appears in URLs.
-Images/audio use native browser controls; PDF uses a sandboxed iframe and a
+Images/audio/video use native browser controls; PDF uses a sandboxed iframe and a
 scriptless sandboxed media response. Existing POST download preserves original
 bytes. No public/static path is created.
 
@@ -74,10 +75,36 @@ rollback and PostgreSQL immutability.
 
 Inline and private filesystem storage are bounded synthetic prototypes. Decision D-031's
 separate original Object Storage is NOT_IMPLEMENTED. Production storage, malware scanning,
-video, real personal data, identity policy and deployment remain
+real personal data, identity policy and deployment remain
 out of scope. No full attachment/U03 acceptance. Organizer permissions stay closed.
 Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED.
 NOT_DEPLOYED / GATES_HOLD / ACCEPTANCE_HOLD.
+
+## Requester video originals (original owner point 25)
+
+`FATWA_CASE_ATTACHMENTS_VIDEO_ENABLED=True` is a separate default-off opt-in.
+WebM (VP8/VP9) or MP4 (H.264) uses the same capability-bound multipart upload,
+evidence append, private storage owner, scoped staff reader and exact download.
+A new upload clears the prior answer approval; it never replaces the question,
+an existing attachment, the old answer or its decisions. A stale upload cannot
+append twice. Cross-case and revoked requester/staff access remain denied.
+
+`apps.private_media.video` is shared with the source library, while the existing
+audio/image/document-only `validation.validate` keeps its previous allowlist.
+The isolated decoder accepts pipe input only, rejects unexpected streams and
+decodes actual frames before storage. Limits are 192000 bytes, 60 seconds and
+1280×720, with bounded subprocess time, memory and descriptors. There is no URL
+ingestion or media transcoding of stored originals. Migration 0005 adds typed
+video metadata checks and blocks downgrade while any video original exists.
+
+`video_tests` exercises actual WebM and MP4 decoding, filesystem originals after
+reconnect, native CSRF upload/preview/GET/download, approval invalidation, wrong
+case and revoked access, stale requests and schema immutability. Its recovery
+adapter `video_recovery` reopens both actual video formats after restore and
+performs six negative reads without writing new permission grants. The protected
+browser proof `video_browser_tests` additionally requires real playback time
+advancement and byte-identical native download on the connected campaign route.
+Local service tests are not a substitute for that final hosted browser proof.
 
 
 ## Explicit physical storage conversion (V9)

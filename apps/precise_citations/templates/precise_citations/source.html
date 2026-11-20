@@ -1,0 +1,7 @@
+{% extends "casework/base.html" %}{% block title %}المصدر المحدد للإحالة{% endblock %}{% block content %}
+<h2>{{ source.reference }}</h2><p>{{ source.limitation }}</p><p>{{ source.source_description }}</p>
+{% if source.selected %}<p class="original">{{ source.before }}<mark id="cited-position">{{ source.selected }}</mark>{{ source.after }}</p>{% endif %}
+{% if source.file %}{% if source.locator.mode == 'TIME' %}{% if source.video %}<video controls preload="metadata" src="file/{{ source.media_fragment }}"></video>{% else %}<audio controls preload="metadata" src="file/{{ source.media_fragment }}"></audio>{% endif %}<p>النطاق المحدد بالملي ثانية: {{ source.locator.start }}–{{ source.locator.end }}</p>{% endif %}<a href="file/{% if source.locator.mode == 'PAGE' %}#page={{ source.locator.start }}{% endif %}">فتح الأصل الموثق بالحقوق الحالية</a>{% endif %}
+{% if source.external_url %}<p>رابط أدخله المحرر؛ لم يُجلب أو يُتحقق آليًا: <a href="{{ source.external_url }}" rel="noreferrer noopener">فتح المرجع الخارجي</a></p>{% endif %}
+{% for correction in source.corrections %}<section><h3>جواب لاحق معتمد — الإصدار {{ correction.number }}</h3><p>لا يحل محل النسخة المستشهد بها.</p><p class="original">{{ correction.text }}</p></section>{% endfor %}
+{% endblock %}

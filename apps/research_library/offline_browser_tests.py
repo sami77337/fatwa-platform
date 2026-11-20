@@ -335,6 +335,15 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     self.capture(page, "text-offline", proof)
                     self.show(page, "video")
                     self.playable(page)
+                    page.locator("#reader video[controls]").press("Space")
+                    self.wait_native(
+                        page,
+                        "() => { const video = document.querySelector('#reader video'); "
+                        "return video && video.currentTime >= 0.15 && !video.error; }",
+                    )
+                    proof["offline_native_playback_seconds"] = page.locator("#reader video").evaluate(
+                        "video => video.currentTime"
+                    )
                     raw = base64.b64decode(self.copy(page, "video")["file_base64"])
                     self.assertEqual(raw, video())
                     local_download = page.get_by_role("link", name="تنزيل الملف المحلي", exact=True)

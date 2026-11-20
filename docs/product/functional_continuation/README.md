@@ -1,81 +1,52 @@
-# Functional continuation: material library, import, curation and lifecycle
+# Functional continuation: original requirements and exact execution evidence
 
-This additive audit starts at `bdfc9bcc3794a65dcbce0f5fc50285bbd2ca4c51`, after the coordinator's previous **57 credited original owner points**. It preserves the original matrices, decisions and prior scope plan. It does not rename prior work as new work.
+This additive scope starts after the unchanged prior57-point batch. Its denominator is556 original owner points, pinned to the SHA-256 in `scope_plan.json`; tests, commits, files and elapsed work are not progress units. Every included point retains its exact original wording and direct specification IDs. No original matrix, decision or historical acceptance result is rewritten.
 
-The selected continuation contains **20 candidates across five connected functional groups**, all implemented but awaiting their final combined evidence. **Zero additional points are certified by this plan alone.** Point 361 was added only after an actual decoded WebM export and fresh-case reimport test preserved every byte and passed on both PostgreSQL majors; that local proof does not replace final integrated execution.
+## Verified checkpoint and current scope
 
-The denominator is **556 original owner points**, not the 479 detailed specification clauses. The matrix SHA-256 is:
+The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed20 additional points (3.597122%) on real PostgreSQL17 and18:478 affected tests per major,13 exact protected browser identities,37 nonempty restored tables,7 fresh-process helper results and18 missing/revoked-trust denial reads. Both artifact ZIPs were downloaded, hashed and independently inspected. All18 commit workflows passed. `checkpoints/210b1cc.json` records its source tree, run and artifact identities. This is historical evidence for that exact commit, not current-head certification.
 
-```text
-0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487
-```
+The current source plan contains **35 implemented candidates in12 functional groups**: the historical20 plus15 newly integrated points. **Zero points are certified by the current plan alone.** A new exact-commit PG17/18 service, protected browser and encrypted restoration run must pass before35 may be credited.35/556 is6.294964%, below the authorized additional10–12% target of56–66 points; the selected scope is still21 candidates short of56.
 
-Twenty points would be **3.5971%** of that inventory. This scope does **not** meet the requested additional 10–12%, which would require 56–66 whole original points. There is no attempt to close that gap by counting example topic names, tests, files, UI controls, repeated baseline capabilities or incomplete detailed clauses. The five groups remain five functional groups even where several original points describe one group.
+## Selected functional groups
 
-## Selected work and evidence status
-
-| Group | Exact original IDs | New behavior | Status at plan preparation |
+| Group | Exact original IDs | Contract | Required protected proof |
 | --- | --- | --- | --- |
-| Typed material library | 286–289 | Logical material, exact immutable versions and physical file identity; authorized descriptive/file readers; book/document/audio/video support; separate current use approval and public release | Core/native implementation exists; final integrated, protected browser and encrypted restore evidence pending |
-| Durable import and round-trip centre | 348, 350–356, 361 | Actual upload, persisted mapping/validation/dry run, duplicate/conflict/provenance review, independent approval and bounded canonical execution with partial-failure/retry receipts; separately authorized actual video export/reimport | Backend and actual campaign HTTP checks reported passing by owner; protected browser and combined evidence pending |
-| Public curation | 283, 291 | Exact released material from multiple authorized cases, reviewed introduction/order, immutable revisions, independent approval, explicit release and whole-page withdrawal on lost members | 28 focused tests passed on each PostgreSQL major; 3 native tests passed through the actual campaign dispatcher; hosted browser and encrypted restore pending |
-| Case lifecycle | 385, 386 | Close/reopen and separate archive/restore, preserved canonical facts, delivery-aware closure and same-case follow-up reopening | 40 focused tests passed on each PostgreSQL major as reported by owner; hosted browser and encrypted restore pending |
-| PWA and offline reading | 373–375 | Installable static shell, explicitly selected authorized cached materials, expiry/current online revocation, readable bounded archive with actual bytes and references | 8 PostgreSQL tests passed per major as reported by owner and 4 Node tests independently observed; hosted browser pending; no completion credit |
+| مكتبة المواد والنسخ وحقوق الاستخدام المستقلة | 286, 287, 288, 289 | `apps/research_library/README.md` | `.local/qa/functional-continuation/library-browser/result.json` |
+| مركز استيراد دائم وتصدير نسخ قابلة لإعادة الاستيراد | 348, 350, 351, 352, 353, 354, 355, 356, 361 | `apps/material_import/README.md` | `.local/qa/library-operations/import-browser/result.json` |
+| موضوعات ومجموعات عامة منتقاة عبر قضايا متعددة | 283, 291 | `apps/public_collections/README.md` | `.local/qa/functional-continuation/collections-browser/result.json` |
+| الإغلاق والأرشفة وإعادة الفتح مع حفظ الأصل | 385, 386 | `apps/case_lifecycle/README.md` | `.local/qa/functional-completion/lifecycle-browser/result.json` |
+| تثبيت القارئ والحفظ الصريح وحزم القراءة دون اتصال | 373, 374, 375 | `apps/research_library/offline.py` | `.local/qa/functional-continuation/offline-browser/result.json` |
+| البحث العربي الكامل والتقريبي في المصادر المصرح بها | 219, 220, 449 | `apps/canonical_search/README.md` | `.local/qa/functional-continuation/canonical-search-browser/result.json` |
+| التسجيل والتفريغ المراجع ومقاطع الجواب المنشور | 272, 273, 274, 418 | `apps/public_answer_media/README.md` | `.local/qa/functional-continuation/public-answer-media-browser/result.json` |
+| الإحالات من عبارة محددة إلى أصلها وتاريخها وطباعتها | 543, 550, 553, 556 | `apps/precise_citations/README.md` | `.local/qa/functional-continuation/citations-browser/result.json` |
+| أصول مرفقات القضية بما فيها الفيديو الفعلي | 25 | `apps/case_attachments/README.md` | `.local/qa/functional-continuation/requester-video-browser/result.json` |
+| تثبيت واجهة الشيخ كتطبيق مع تحقق وصول مباشر | 55 | `apps/staff_shell/README.md` | `.local/qa/functional-continuation/staff-pwa-browser/result.json` |
+| الوضع الداكن مع بقاء المحتوى المنشور مقروءاً | 255 | `apps/staff_shell/README.md` | `.local/qa/functional-continuation/dark-mode-browser/result.json` |
+| الانتقال من تطابق التفريغ إلى موضع التسجيل الأصلي | 234 | `apps/canonical_search/README.md` | `.local/qa/functional-continuation/search-recording-browser/result.json` |
 
-The exact Arabic wording, source locators, direct specification IDs, current implementation state, acceptance evidence and test/proof paths are in `scope_plan.json`. `source_extract.json` preserves the exact 17 relevant specification records and relevant decisions, including their original HOLD state. Referencing a detailed specification does not claim every sentence of that specification is now complete.
+The current source extract preserves38 exact specification records and19 decision occurrences, with their original acceptance state. Referencing a detailed specification does not claim every sentence of it is complete.
 
-## Baseline non-overlap
+## Concrete additions and non-overlap
 
-The previous batch's 57 IDs are copied exactly into `scope_plan.json.previous_batch.original_ids` from `docs/product/functional_completion/scope_plan.json`. They are:
+The first five groups add a typed material/version library, canonical staged import with independently reviewed execution and real video round-trip, cross-case reviewed public collections, reversible case close/archive/restore, and an installable explicitly selected offline material reader.
 
-```text
-47, 56, 57, 58, 61, 64, 65, 74, 77,
-166, 167, 171, 172, 173, 174, 175, 176, 177, 178,
-181, 182, 183, 185, 186, 224, 225, 226, 228,
-275, 276, 279, 280, 282, 338, 340, 341,
-357, 363, 364, 365, 366, 367, 368,
-436, 437, 438, 460, 461, 463, 464, 465, 466, 467,
-468, 469, 470, 472
-```
+The seven added groups close different gaps: real PostgreSQL Arabic FTS and pg_trgm over authorized canonical sources; reviewed public answer audio/transcripts/segments and transcript revision history; phrase-bound exact source citations with historical answer parts and readable print/export references; actual decoded requester video originals completing the existing image/file/audio path; an independently scoped staff PWA; actual system dark mode; and a genuine FTS transcript result opening the pinned original audio timestamp. Standalone media players or source cards do not substitute for the connected native workflows.
 
-None of the 20 continuation candidates overlaps that list. Re-running those prior workflows is regression verification and does not add further points.
+None overlaps the previous57 IDs retained in `scope_plan.json.previous_batch.original_ids`. Historical image/audio support is exercised as regression evidence when completing whole point25; it is not credited again. The existing attachment table is newly covered with video originals in the continuation recovery inventory, not described as a newly created table. Recording search reuses the existing search/media recovery owners; it adds no extra table count. Staff PWA and dark mode add no durable server tables, private case cache or queued private writes.
 
-The relevant baseline gaps are concrete. Reference TOC editions and private attachments did not provide a generic durable public material library. Process-local prepared import projections did not apply staged batches to canonical material versions. Single-case public topic metadata did not support reviewed cross-case collections. A research collection's archive flag was not a case close/archive lifecycle. Server previews and prior ZIP exports were not an installable offline material reader.
+## Required integrated verification
 
-## Deliberate exclusions
+`RECEIPTS.md` defines the strict execution boundary. The current explicit registries require20 exact protected browser identities:8 inherited and12 continuation journeys.19 emit their original JSON/screenshot/trace formats; the inherited browser-audio journey retains its actual execution-log proof. An unrelated replacement test, skipped journey, stale artifact or correct aggregate count with a wrong identity must fail.
 
-- **349:** keeping datasets out of production and staging synthetic data is an inherited protective boundary, not new credit.
-- **260–264:** the baseline public navigation already displayed topics, fatwas, scholars and lesson metadata and linked catalog/research services. Real new curation is counted under 283/291; redisplaying prior content types is not credited again.
-- **284:** topic examples are not separate functional units.
-- **281/285:** all general-material scholar-page coverage and every knowledge kind, including specialized hadith content, are not delivered by the new collections.
-- **290:** the typed library does not yet implement its own connected lesson/series catalogue. Previously completed scholarly lesson/series models are not counted again.
-- **272–274/278:** advanced public answer audio/transcript/time-reference and citation workflows are not completed by metadata cards or a generic material player.
-- **387–395:** soft deletion, purge, anonymization, sensitivity classes, retention and derived-index erasure are outside the reversible close/archive lane.
-- **369–372:** a local archive is not a public dataset release, developer API or webhook capability.
-- Search/AI rebuild and typo-tolerance claims remain excluded. Bounded field search does not establish those features or their quality.
+Encrypted restoration must preserve47 nonempty tables:22 inherited and25 additionally covered tables, from11 explicit fresh-process helper results.37 current-access denial reads are required across the relevant helpers, each followed by a real positive read after restoring the explicit fixture authority. All immutable histories, canonical references, actual originals and source/target database fingerprints remain unchanged by the drill. Current credentials are never reconstructed from stored release history.
 
-D-072 is the later explicit decision deferring specialized U10 hadith functionality beyond V1. Earlier D-053 permission to start a synthetic architecture does not override that later scope choice. D-069 identifies one fiqh reference TOC; it does not supply a final global taxonomy or permission to publish protected source text. D-067 does not turn historical held permission rows into runtime grants. No new corpus, scientific facts, final role policy or production authorization is inferred.
+Native workflows execute through `config.campaign_urls`. Real media byte checks, actual seek/playback, exact print/export content, true offline network failure, installability, readable light/dark surfaces and revocation are enforced by their protected journeys. Local service checks do not establish a hosted browser pass. An OS that cannot launch sandboxed Chromium leaves browser evidence pending; it does not justify disabling sandbox/CSP/authentication protections.
 
-Point **361** remains a candidate pending the same final proof as every other point. It was promoted from the initial excluded state only after actual video bytes passed the export/reimport workflow; generic ZIP support alone would not have justified the change.
+## Exclusions and acceptance boundary
 
-## Evidence needed for a completion receipt
+The explicit exclusion list retains all original rows outside the selected scope. A local archive is not an official dataset release, a developer API or a webhook. A library or curated collection is not yet the separate scholar-material/lesson catalogue workflow. Reader save/share/print/download tools are a separate unit. Search mechanics do not establish independently approved gold judgments, corpus completeness, final weights, live shadow governance or a complete AI rebuild capability. Earlier PDF/timed-reader and citation-card behavior is not counted anew.
 
-`RECEIPTS.md` defines the exact-commit accounting boundary. The coordinator must connect the registered service/HTTP labels, actual Node offline tests, protected browser results and encrypted fresh-process recovery at one clean integrated commit on PostgreSQL 17 and 18. Existing per-app local checks are useful evidence but do not substitute for that combined receipt.
+D-072 continues to defer specialized U10 hadith functionality beyondV1. D-069's fiqh reference TOC is not a final global taxonomy. D-067 does not convert held permission rows into accepted grants. No real requester corpus, scientific ruling, final role policy, production provider or final branding approval is inferred. Client offline copies cannot promise remote erasure while the device is unreachable.
 
-The app-specific proof locations intentionally reflect the actual browser implementations. They are not assumed to share one directory prefix:
-
-| Group | Protected browser proof |
-| --- | --- |
-| Library | `.local/qa/functional-continuation/library-browser/result.json` |
-| Import | `.local/qa/library-operations/import-browser/result.json` |
-| Collections | `.local/qa/functional-continuation/collections-browser/result.json` |
-| Lifecycle | `.local/qa/functional-completion/lifecycle-browser/result.json` |
-| Offline reader | `.local/qa/functional-continuation/offline-browser/result.json` |
-
-All five need fresh sandboxed execution, real native actions, 320/1280 RTL screenshots and trace files. A skipped local Chromium run or a file left by an earlier run is not proof. Import and library fixtures must create actual current canonical materials, not substitute display-only samples. Rights, source preservation, current identity and final rendering boundaries are part of the workflow evidence.
-
-Recovery must include nonempty new tables, actual source bytes where present, original hashes and exact reviewed/released version pins. Restored processes receive explicit fresh synthetic authorities; no permission is reconstructed from database history alone. Client offline copies are not a replacement for database/source recovery, and the product must not promise to erase a downloaded copy while its device is unreachable.
-
-## Release boundary
-
-**NOT_DEPLOYED / GATES_HOLD.** Gate B remains NOT_PASSED, Gates C/D/E remain HOLD and Phase01 remains BLOCKED. Development tests can establish a bounded whole functional behavior without claiming production acceptance. New feature flags and independent authorities remain default closed. No real requester corpus, main merge, deployment, irreversible retention action or final scholarly role acceptance is part of this scope plan.
+**NOT_DEPLOYED / GATES_HOLD.** GateB remainsNOT_PASSED, GatesC/D/E remainHOLD and Phase01 remainsBLOCKED. Feature flags and independent authorities remain default closed. A bounded synthetic development receipt does not authorize a main merge, deployment, irreversible retention action or production acceptance.

@@ -106,6 +106,9 @@ def public_projection():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock(546131,1)")
             case_ids = services.public_case_ids()
+            from apps.precise_citations.integration import prelock_cases
+
+            case_ids = prelock_cases(case_ids)
             list(Case.objects.filter(pk__in=case_ids).order_by("pk").select_for_update())
             before = services.public_fingerprint()
             rows = LibraryVersion.objects.filter(

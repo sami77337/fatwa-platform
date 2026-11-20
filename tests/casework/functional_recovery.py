@@ -21,6 +21,10 @@ ADDITIONAL_WORKFLOWS = (
     "apps.material_import.recovery_support",
     "apps.public_collections.recovery_support",
     "apps.case_lifecycle.recovery_support",
+    "apps.canonical_search.recovery_support",
+    "apps.public_answer_media.recovery_support",
+    "apps.precise_citations.recovery_support",
+    "apps.case_attachments.video_recovery",
 )
 
 
@@ -323,19 +327,9 @@ def drill(pg_bin):
                     assert isinstance(observed.get("result"), dict)
                     restored_results[name] = observed["result"]
                 assert set(restored_results) == set(ADDITIONAL_WORKFLOWS)
-                for name, checks in {
-                    "apps.research_library.recovery_support": {
-                        "missing_authority": 3,
-                        "missing_identity_provider": 3,
-                        "revoked_current_reader": 2,
-                        "revoked_public_release_actor": 1,
-                    },
-                    "apps.case_lifecycle.recovery_support": {
-                        "missing_authority": 3,
-                        "missing_identity_provider": 3,
-                        "revoked_current_reader": 3,
-                    },
-                }.items():
+                from infra.dev.functional_continuation_receipt import RESTORED_DENIAL_CHECKS
+
+                for name, checks in RESTORED_DENIAL_CHECKS.items():
                     observed = restored_results[name]
                     assert observed["denial_checks"] == checks
                     assert observed["denied_read_count"] == sum(checks.values())

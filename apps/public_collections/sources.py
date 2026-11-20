@@ -192,7 +192,9 @@ def selection(pin):
 
 @contextmanager
 def _boundary(*, extra_case_ids=()):
-    with synthetic_queue_atomic():
+    from apps.precise_citations.integration import answer_use_boundary
+
+    with synthetic_queue_atomic(), answer_use_boundary():
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock(546131,1)")
         selected = case_ids() | {cases._uuid(value) for value in extra_case_ids}
@@ -209,6 +211,9 @@ def _boundary(*, extra_case_ids=()):
                 raise cases.CaseConflict("collection_scope_bound")
         if len(selected) > 192:
             raise cases.CaseConflict("collection_scope_bound")
+        from apps.precise_citations.integration import prelock_cases
+
+        selected = prelock_cases(selected)
         locked = {
             row.pk: row
             for row in Case.objects.filter(pk__in=selected).order_by("pk").select_for_update()

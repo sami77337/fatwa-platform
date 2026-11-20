@@ -134,10 +134,12 @@ def _answer_use_boundary():
     # One earliest bound per nesting scope, never a cached permission or media.
     earliest = [None]
     token = _TIMED_USE_DEADLINES.set((*_TIMED_USE_DEADLINES.get(), earliest))
+    from apps.precise_citations.integration import answer_use_boundary
+
     from .media_boundary import media_projection_boundary
 
     try:
-        with media_projection_boundary():
+        with answer_use_boundary(), media_projection_boundary():
             yield
         if earliest[0] is not None and earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
@@ -152,7 +154,11 @@ def _answer_annotations(answer, *, actor=None, provider=None):
     Every caller already holds the canonical case lock and outer use boundary.
     Editing flags cannot erase restored annotations from this check.
     """
+    from apps.precise_citations.integration import require_for_answer
+
+    precise_deadline = require_for_answer(answer, actor=actor, provider=provider)
     timed_deadline = _answer_timed(answer, actor=actor, provider=provider)
+    timed_deadline = min((value for value in (precise_deadline, timed_deadline) if value is not None), default=None)
     if answer is None:
         return timed_deadline
     if not django_apps.is_installed("apps.pdf_citations"):
@@ -545,9 +551,12 @@ def _staff_case(
     case_id, subject_id, provider, ack, *, expected_revision=None, expected_evidence_version=None
 ):
     _guard(ack)
-    before_case = _case(case_id)
-    before = _identity(provider, subject_id, before_case)
-    with transaction.atomic():
+    with queue.synthetic_queue_atomic():
+        from apps.precise_citations.integration import lock_dependencies
+
+        lock_dependencies(case_id)
+        before_case = _case(case_id)
+        before = _identity(provider, subject_id, before_case)
         case = _case(case_id, lock=True)
         identity = _identity(provider, subject_id, case)
         if before.auth_epoch != identity.auth_epoch:
@@ -715,6 +724,9 @@ def record_decision(
         case.stage = "ANSWERED" if action == "APPROVE" else "RETURNED_FOR_CHANGES"
         case.approved_answer = answer if action == "APPROVE" else None
         _event(case, action, identity.subject_id, note=note, answer=answer, decision=decision)
+        from apps.precise_citations.integration import canonical_written
+
+        canonical_written(case.pk)
         return _staff(case)
 
 
@@ -727,7 +739,12 @@ def _token_case(token, ack):
     grant = RequesterTrackingToken.objects.filter(pk=digest).first()
     if grant is None:
         raise CaseConflict("case_token_invalid_or_expired")
-    with transaction.atomic():
+    with queue.synthetic_queue_atomic():
+        from apps.precise_citations.integration import lock_dependencies
+
+        owner_id = Case.objects.filter(tracking_id=grant.case_id).values_list("pk", flat=True).first()
+        if owner_id is not None:
+            lock_dependencies(owner_id)
         case = Case.objects.select_for_update().filter(tracking_id=grant.case_id).first()
         # Re-read after acquiring the same case lock used by rotation/revocation.
         grant = RequesterTrackingToken.objects.filter(pk=digest).first()

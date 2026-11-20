@@ -80,19 +80,19 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 20,
-  "implemented_scope_candidates": 20,
+  "candidate_count": 35,
+  "implemented_scope_candidates": 35,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 3.5971,
+  "candidate_percentage": 6.295,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
     "whole_point_min": 56,
     "whole_point_max": 66,
     "met_by_selected_scope": false,
-    "shortfall_from_56_candidates": 36
+    "shortfall_from_56_candidates": 21
   },
   "groups": [
     {
@@ -699,6 +699,601 @@
         "node_tests_independently_observed": 4,
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "canonical_search",
+      "title_ar": "البحث العربي الكامل والتقريبي في المصادر المصرح بها",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/canonical_search/README.md",
+      "baseline_gap": "Prior bounded title/alias matching did not execute canonical PostgreSQL tsvector/GIN/pg_trgm over currently authorized original sources. Scientific gold quality and final weights remain outside this mechanics claim.",
+      "service_test_labels": [
+        "apps.canonical_search.tests",
+        "apps.canonical_search.test_http",
+        "apps.canonical_search.test_rights",
+        "apps.canonical_search.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.canonical_search.tests.CanonicalSearchTests",
+        "apps.canonical_search.test_http.CanonicalSearchHTTPTests",
+        "apps.canonical_search.test_rights.CanonicalSearchRightsTests",
+        "apps.canonical_search.test_recovery.SearchRecoveryAdapterTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.canonical_search.browser_tests.CanonicalSearchBrowserTests",
+        "result_path": ".local/qa/functional-continuation/canonical-search-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.canonical_search.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 2,
+        "models": [
+          "SearchGeneration",
+          "SearchDocument"
+        ]
+      },
+      "points": [
+        {
+          "original_id": "219",
+          "original_text": "يدعم Full-Text Arabic Search.",
+          "direct_spec_ids": [
+            "SPEC-U05-006",
+            "SPEC-U05-007",
+            "SPEC-U05-027"
+          ],
+          "decision_ids": [
+            "D-014",
+            "D-045"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 221
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Run real Arabic FTS against immutable canonical document generations with exact source text and current authorization before ranking/counting. Native literal and FTS modes are visibly distinct; source changes stale the generation and require explicit rebuild."
+        },
+        {
+          "original_id": "220",
+          "original_text": "يدعم Fuzzy Search والأخطاء الإملائية.",
+          "direct_spec_ids": [
+            "SPEC-U05-007"
+          ],
+          "decision_ids": [
+            "D-018",
+            "D-044"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 222
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Run real pg_trgm typo-tolerant search with bounded explicit fuzzy mode, deterministic ranking and source opening. Exercise actual misspelled Arabic text and revoked source/identity reads; no measured corpus-quality claim."
+        },
+        {
+          "original_id": "449",
+          "original_text": "PostgreSQL FTS وpg_trgm جزء من Search baseline.",
+          "direct_spec_ids": [
+            "SPEC-U05-006",
+            "SPEC-U16-005"
+          ],
+          "decision_ids": [
+            "D-039"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 451
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Install and exercise actual PostgreSQL tsvector GIN and pg_trgm GIN indexes and SQL operators on both supported majors, retaining original text, current source pins, generation history and stale rebuild behavior."
+        }
+      ],
+      "implementation_commits": [
+        "5957760",
+        "e1f0fef",
+        "ca1c4ee"
+      ]
+    },
+    {
+      "id": "public_answer_media",
+      "title_ar": "التسجيل والتفريغ المراجع ومقاطع الجواب المنشور",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/public_answer_media/README.md",
+      "baseline_gap": "Private timed citations and release text did not provide independently reviewed canonical transcripts, exact public audio/segments and meaning-changing transcript revision history.",
+      "service_test_labels": [
+        "apps.public_answer_media.tests",
+        "apps.public_answer_media.test_http",
+        "apps.public_answer_media.test_recovery",
+        "apps.public_answer_media.test_citation_integration"
+      ],
+      "service_test_classes": [
+        "apps.public_answer_media.tests.MediaTests",
+        "apps.public_answer_media.test_http.MediaHTTPTests",
+        "apps.public_answer_media.test_recovery.MediaRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.public_answer_media.browser_tests.PublicAnswerMediaBrowserTests",
+        "result_path": ".local/qa/functional-continuation/public-answer-media-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.public_answer_media.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 4,
+        "models": [
+          "RecordingTranscript",
+          "TranscriptAction",
+          "PublicMediaEdition",
+          "PublicMediaAction"
+        ]
+      },
+      "points": [
+        {
+          "original_id": "272",
+          "original_text": "Audio إذا وجد.",
+          "direct_spec_ids": [
+            "SPEC-U09-011"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 274
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Native publication links to an independently released exact original audio part; actual public playback and original byte hash are verified. Missing optional media falls back only to separately current authorized canonical text; withdrawal denies the old audio."
+        },
+        {
+          "original_id": "273",
+          "original_text": "Transcript إذا وجد.",
+          "direct_spec_ids": [
+            "SPEC-U09-011"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 275
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Display an independently reviewed exact transcript pinned to the original answer part and public edition, with sanitized public labels and no private case/actor/file identifiers."
+        },
+        {
+          "original_id": "274",
+          "original_text": "روابط مباشرة إلى مقاطع محددة عند توفرها.",
+          "direct_spec_ids": [
+            "SPEC-U09-011"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 276
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Open exact documented transcript segments at their original audio timestamps and verify actual native seek/playback, rights and withdrawal. No invented timestamp or external media fetching."
+        },
+        {
+          "original_id": "418",
+          "original_text": "تعديل Transcript مسجل.",
+          "direct_spec_ids": [
+            "SPEC-U11-018",
+            "SPEC-U11-019"
+          ],
+          "decision_ids": [
+            "D-029"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 420
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Persist immutable transcript revisions with actor, time and source pins; record independent review and meaningful edits as new revisions, invalidate prior review/release for changed meaning, and retain earlier transcript/audit rows."
+        }
+      ],
+      "implementation_commits": [
+        "8e16a15",
+        "609c799",
+        "5c5acbe",
+        "1699bfd"
+      ]
+    },
+    {
+      "id": "precise_citations",
+      "title_ar": "الإحالات من عبارة محددة إلى أصلها وتاريخها وطباعتها",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/precise_citations/README.md",
+      "baseline_gap": "Earlier private PDF/timed source readers and citation cards did not bind an exact phrase occurrence in the composed answer, a precise historical answer/part, and readable print/export references under retained canonical source guards.",
+      "service_test_labels": [
+        "apps.precise_citations.tests",
+        "apps.precise_citations.test_http",
+        "apps.precise_citations.test_sources",
+        "apps.precise_citations.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.precise_citations.tests.CitationTests",
+        "apps.precise_citations.test_http.CitationHTTPTests",
+        "apps.precise_citations.test_sources.CitationSourceTests",
+        "apps.precise_citations.test_recovery.CitationRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.precise_citations.browser_tests.PreciseCitationBrowserTests",
+        "result_path": ".local/qa/functional-continuation/citations-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.precise_citations.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "models": [
+          "CitationSet",
+          "CitationAnchor",
+          "CitationReview"
+        ]
+      },
+      "points": [
+        {
+          "original_id": "543",
+          "original_text": "يوجد نظام استدلال وإحالات دقيقة يمكّن الشيخ أو الباحث من ربط عبارة في الفتوى أو مادة علمية بأصل محدد وموضع معين قابل للفتح مباشرة، لا بمجرد عنوان كتاب أو نتيجة بحث عامة.",
+          "direct_spec_ids": [
+            "SPEC-U06-001"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 545
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Save a sealed exact phrase occurrence against the exact answer revision and current permitted source/version/locator through the real editor; open the actual original at the documented position. Independent review and canonical final checks prevent stale or substituted arguments."
+        },
+        {
+          "original_id": "550",
+          "original_text": "عند الإحالة إلى فتوى سابقة يمكن تحديد جوابها أو نسخته أو جزئه المقصود وفق الصلاحيات، مع الحفاظ على المرجع التاريخي وإظهار التصحيحات اللاحقة للمخوّلين عند توفرها، دون افتراض انطباق الحكم على قضية جديدة.",
+          "direct_spec_ids": [
+            "SPEC-U06-017"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 552
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Bind a specific prior answer revision or original part under current access to both cases. Retain historical reference and show later authorized corrections separately; no automatic legal/religious applicability inference."
+        },
+        {
+          "original_id": "553",
+          "original_text": "إذا تعذر فتح الفقرة أو الموضع الدقيق تقنيًا، يُفتح أقرب موضع موثق مع بيان حدود الدقة، ولا يُختلق رقم صفحة أو رابط أو مقتطف غير متحقق؛ ويمكن الاحتفاظ بمرجع وصفي عندما لا تتوفر نسخة رقمية.",
+          "direct_spec_ids": [
+            "SPEC-U06-004",
+            "SPEC-U06-018",
+            "SPEC-U06-028"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 555
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Use only a verified nearest page/position when precise targeting is absent and explicitly display precision limits. Keep a descriptive external reference if no digital original exists; do not fetch or invent a URL, quote or locator."
+        },
+        {
+          "original_id": "556",
+          "original_text": "يسجل النظام من أضاف الإحالة وراجعها وصححها وموضعها وإصدارها؛ ويظهر في الطباعة والتصدير مرجع مقروء يتضمن المصدر والنسخة والموضع المتاح، ولا يسمح التصحيح التقني بتبديل الحجة أو المصدر المقصود دون مراجعة الشيخ.",
+          "direct_spec_ids": [
+            "SPEC-U06-023",
+            "SPEC-U06-026",
+            "SPEC-U06-027"
+          ],
+          "decision_ids": [
+            "D-062",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 558
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Record immutable author/reviewer/correction history with exact versions/locations. Actual print and structured export contain readable source/version/location references. Changing intended source/argument creates a new independently reviewed revision; current source CITE/EXPORT rights remain enforced."
+        }
+      ],
+      "implementation_commits": [
+        "e1e365c",
+        "a7cad1b",
+        "faaf8ec"
+      ]
+    },
+    {
+      "id": "requester_video_originals",
+      "title_ar": "أصول مرفقات القضية بما فيها الفيديو الفعلي",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/case_attachments/README.md",
+      "baseline_gap": "Existing requester images/files/audio were covered; accepted decoded video originals, native playback and recovery remained missing. Completes the whole original row without re-crediting prior image/audio implementation.",
+      "service_test_labels": [
+        "apps.case_attachments.tests",
+        "apps.case_attachments.media_tests",
+        "apps.case_attachments.video_tests"
+      ],
+      "service_test_classes": [
+        "apps.case_attachments.tests.AttachmentTests",
+        "apps.case_attachments.tests.AttachmentHTTPTests",
+        "apps.case_attachments.media_tests.MediaCaseTests",
+        "apps.case_attachments.media_tests.MediaHTTPTests",
+        "apps.case_attachments.video_tests.RequesterVideoTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.case_attachments.video_browser_tests.RequesterVideoBrowserTests",
+        "result_path": ".local/qa/functional-continuation/requester-video-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.case_attachments.video_recovery",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 1,
+        "models": [
+          "CaseAttachment"
+        ],
+        "notes": "Existing original-attachment table is newly covered with nonempty actual WebM/MP4 originals; this is not a newly created table or additional original point."
+      },
+      "points": [
+        {
+          "original_id": "25",
+          "original_text": "الصور، الملفات، الصوتيات والفيديوهات تحفظ كأصول مستقلة مرتبطة بالقضية.",
+          "direct_spec_ids": [
+            "SPEC-U01-004",
+            "SPEC-U11-006",
+            "SPEC-U11-009"
+          ],
+          "decision_ids": [
+            "D-031"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 27
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Keep images, files, audio and actual bounded decoded WebM/MP4 video as independent immutable case originals. Native requester upload/playback/download preserves exact bytes, creates current follow-up with approval invalidation, and denies foreign/revoked requester/staff reads. Fresh encrypted restore reads both actual video formats."
+        }
+      ],
+      "implementation_commits": [
+        "dabecc5"
+      ]
+    },
+    {
+      "id": "staff_pwa",
+      "title_ar": "تثبيت واجهة الشيخ كتطبيق مع تحقق وصول مباشر",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/staff_shell/README.md",
+      "baseline_gap": "The public library PWA did not install the separate staff interface or demonstrate that private cases/actions remain online and currently authorized.",
+      "service_test_labels": [
+        "apps.staff_shell.tests"
+      ],
+      "service_test_classes": [
+        "apps.staff_shell.tests.StaffShellHTTPTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.staff_shell.browser_tests.StaffPWABrowserTests",
+        "result_path": ".local/qa/functional-continuation/staff-pwa-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": null,
+        "status": "NO_NEW_SERVER_TABLES_OR_PRIVATE_CLIENT_CACHE",
+        "notes": "Retain existing canonical identity/case restoration. No case bytes, tokens or queued private writes are persisted by this worker."
+      },
+      "points": [
+        {
+          "original_id": "55",
+          "original_text": "يمكن جعل الواجهة PWA لتعمل كتطبيق مثبت على الهاتف.",
+          "direct_spec_ids": [
+            "SPEC-U02-038"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 57
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Serve an actual scoped staff web manifest, valid icons and worker with fresh-profile Chromium installability checks. Native offline navigation displays a generic unavailable screen; no private cache/form/queued action exists. Reconnection after revoking the identity returns the current denial. No actual user-device installation claim."
+        }
+      ],
+      "implementation_commits": [
+        "6c9dda7"
+      ]
+    },
+    {
+      "id": "public_dark_mode",
+      "title_ar": "الوضع الداكن مع بقاء المحتوى المنشور مقروءاً",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/staff_shell/README.md",
+      "baseline_gap": "Public styling did not respond to actual system dark preference; this row concerns functional theme support, not final visual identity approval.",
+      "service_test_labels": [
+        "apps.staff_shell.tests"
+      ],
+      "service_test_classes": [
+        "apps.staff_shell.tests.StaffShellHTTPTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.staff_shell.browser_tests.DarkModeBrowserTests",
+        "result_path": ".local/qa/functional-continuation/dark-mode-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": null,
+        "status": "NO_NEW_PERSISTENT_STATE",
+        "notes": "Theme follows system media preference; published source data and access contracts remain covered by current canonical recovery."
+      },
+      "points": [
+        {
+          "original_id": "255",
+          "original_text": "Dark Mode مدعوم.",
+          "direct_spec_ids": [
+            "SPEC-U09-004"
+          ],
+          "decision_ids": [
+            "D-056",
+            "D-070"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 257
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Switch the actual protected browser from light to dark and back using system color preference, compare unchanged published text and measured readable foreground/background contrast, and verify mobile/desktop layout plus private login styling."
+        }
+      ],
+      "implementation_commits": [
+        "6c9dda7"
+      ]
+    },
+    {
+      "id": "recording_search_segments",
+      "title_ar": "الانتقال من تطابق التفريغ إلى موضع التسجيل الأصلي",
+      "implementation_state": "IMPLEMENTED_LOCAL_VERIFICATION_PARTIAL_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/canonical_search/README.md",
+      "baseline_gap": "Search mechanics and a standalone public segment player do not alone connect a genuine canonical transcript hit to its exact original audio segment.",
+      "service_test_labels": [
+        "apps.canonical_search.test_recordings"
+      ],
+      "service_test_classes": [
+        "apps.canonical_search.test_recordings.RecordingSearchTests",
+        "apps.canonical_search.test_recordings.RecordingSearchHTTPTests",
+        "apps.canonical_search.test_recordings.RecordingSearchStorageTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.canonical_search.browser_recordings.RecordingSearchBrowserTests",
+        "result_path": ".local/qa/functional-continuation/search-recording-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.canonical_search.recovery_support",
+        "status": "SHARED_EXISTING_SEARCH_AND_MEDIA_RECOVERY_NO_ADDITIONAL_TABLES",
+        "notes": "Exact reviewed transcript documents and segment pins are restored by search/media helpers. Table inventory is counted once."
+      },
+      "points": [
+        {
+          "original_id": "234",
+          "original_text": "إذا كان التطابق داخل Transcript صوتي، يمكن الانتقال إلى Timestamp المناسب.",
+          "direct_spec_ids": [
+            "SPEC-U05-015"
+          ],
+          "decision_ids": [
+            "D-018"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 236
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Index a genuinely independently reviewed transcript with exact audio part, segment text/hash/timing and current search/read rights. Native FTS result opens that same original at the pinned segment; verify actual seek/playback, exact bytes and denial after source/review withdrawal. No guessed timing or new table credit."
+        }
+      ],
+      "implementation_commits": [
+        "7fcc7a9"
+      ]
     }
   ],
   "conditional_scope": [],
@@ -793,33 +1388,6 @@
       ],
       "classification": "NOT_IMPLEMENTED_IN_THIS_LIBRARY",
       "reason": "Existing scholarly lesson/series models were credited in the previous batch. The new typed library has not implemented integrated lesson/series catalogue support; reusing old models is not new completion."
-    },
-    {
-      "original_id": "272",
-      "original_text": "Audio إذا وجد.",
-      "direct_spec_ids": [
-        "SPEC-U09-011"
-      ],
-      "classification": "NOT_SELECTED_OR_UNFINISHED",
-      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
-    },
-    {
-      "original_id": "273",
-      "original_text": "Transcript إذا وجد.",
-      "direct_spec_ids": [
-        "SPEC-U09-011"
-      ],
-      "classification": "NOT_SELECTED_OR_UNFINISHED",
-      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
-    },
-    {
-      "original_id": "274",
-      "original_text": "روابط مباشرة إلى مقاطع محددة عند توفرها.",
-      "direct_spec_ids": [
-        "SPEC-U09-011"
-      ],
-      "classification": "NOT_SELECTED_OR_UNFINISHED",
-      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
     },
     {
       "original_id": "278",
@@ -955,26 +1523,6 @@
       "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
     },
     {
-      "original_id": "219",
-      "original_text": "يدعم Full-Text Arabic Search.",
-      "direct_spec_ids": [
-        "SPEC-U05-006",
-        "SPEC-U05-007",
-        "SPEC-U05-027"
-      ],
-      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
-      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
-    },
-    {
-      "original_id": "220",
-      "original_text": "يدعم Fuzzy Search والأخطاء الإملائية.",
-      "direct_spec_ids": [
-        "SPEC-U05-007"
-      ],
-      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
-      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
-    },
-    {
       "original_id": "247",
       "original_text": "يمكن استخدام Shadow Mode قبل اعتماد تغيير كبير.",
       "direct_spec_ids": [
@@ -988,16 +1536,6 @@
       "original_text": "Search وAI Derived Data قابلة لإعادة البناء.",
       "direct_spec_ids": [
         "SPEC-U15-019"
-      ],
-      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
-      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
-    },
-    {
-      "original_id": "449",
-      "original_text": "PostgreSQL FTS وpg_trgm جزء من Search baseline.",
-      "direct_spec_ids": [
-        "SPEC-U05-006",
-        "SPEC-U16-005"
       ],
       "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
       "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
@@ -1063,6 +1601,50 @@
       "from": "EXCLUDED_PENDING_REAL_VIDEO_PROOF",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Actual decoded WebM export/reimport test now exists and owner reports PG17/18 PASS; not a metadata-only or format-list claim."
+    },
+    {
+      "original_id": "272",
+      "from": "NOT_SELECTED_OR_UNFINISHED",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group public_answer_media. No completion credit is assigned until the fresh integrated run passes."
+    },
+    {
+      "original_id": "273",
+      "from": "NOT_SELECTED_OR_UNFINISHED",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group public_answer_media. No completion credit is assigned until the fresh integrated run passes."
+    },
+    {
+      "original_id": "274",
+      "from": "NOT_SELECTED_OR_UNFINISHED",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group public_answer_media. No completion credit is assigned until the fresh integrated run passes."
+    },
+    {
+      "original_id": "219",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group canonical_search. No completion credit is assigned until the fresh integrated run passes."
+    },
+    {
+      "original_id": "220",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group canonical_search. No completion credit is assigned until the fresh integrated run passes."
+    },
+    {
+      "original_id": "449",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group canonical_search. No completion credit is assigned until the fresh integrated run passes."
+    }
+  ],
+  "verified_checkpoints": [
+    {
+      "path": "docs/product/functional_continuation/checkpoints/210b1cc.json",
+      "tested_sha": "210b1cc5b7b4fad2d3e62f8fd1d8588949e59016",
+      "completed_additional_points": 20,
+      "basis": "Historical exact-commit PG17/18 protected browser/service/encrypted recovery execution; not reused as current-head evidence."
     }
   ]
 }

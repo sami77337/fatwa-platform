@@ -53,6 +53,23 @@ LABELS = [
     "apps.case_lifecycle.test_delivery",
     "apps.case_lifecycle.test_recovery",
     "apps.case_attachments.storage_gc_tests",
+    "apps.canonical_search.tests",
+    "apps.canonical_search.test_http",
+    "apps.canonical_search.test_rights",
+    "apps.canonical_search.test_recovery",
+    "apps.canonical_search.test_recordings",
+    "apps.public_answer_media.tests",
+    "apps.public_answer_media.test_http",
+    "apps.public_answer_media.test_recovery",
+    "apps.public_answer_media.test_citation_integration",
+    "apps.precise_citations.tests",
+    "apps.precise_citations.test_http",
+    "apps.precise_citations.test_sources",
+    "apps.precise_citations.test_recovery",
+    "apps.case_attachments.tests",
+    "apps.case_attachments.media_tests",
+    "apps.case_attachments.video_tests",
+    "apps.staff_shell.tests",
 ]
 
 BROWSER_LABELS = [
@@ -68,6 +85,12 @@ BROWSER_LABELS = [
     "apps.material_import.browser_tests",
     "apps.public_collections.browser_tests",
     "apps.case_lifecycle.browser_tests",
+    "apps.canonical_search.browser_tests",
+    "apps.canonical_search.browser_recordings",
+    "apps.public_answer_media.browser_tests",
+    "apps.precise_citations.browser_tests",
+    "apps.case_attachments.video_browser_tests",
+    "apps.staff_shell.browser_tests",
 ]
 
 

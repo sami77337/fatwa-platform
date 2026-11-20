@@ -10,6 +10,7 @@ from django.urls import reverse
 
 from apps.library_preview import services as preview
 from apps.library_preview.guard import safe_read
+from apps.public_answer_media.navigation import publication_recordings_url
 
 from . import public, services
 
@@ -248,6 +249,7 @@ def publication_page(request, publication_id, language="ar"):
             languages=available,
             missing_translation=missing,
             original_url=original_url,
+            recordings_url=publication_recordings_url(publication_id),
             original_canonical=_origin() + original_url if _origin() else "",
             related=related,
             lessons=lessons,

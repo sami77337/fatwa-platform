@@ -1,0 +1,4 @@
+{% extends "casework/base.html" %}{% block title %}المقطع الموثق من التسجيل{% endblock %}{% block content %}
+<h2>المقطع الموثق من التسجيل</h2><p>القضية <bdi>{{ segment.case_ref }}</bdi> · نسخة التفريغ {{ segment.number }}</p><div class="original" id="segment-text">{{ segment.text }}</div><p>البداية <bdi>{{ segment.start_ms }}</bdi> والنهاية <bdi>{{ segment.end_ms }}</bdi> بالمللي ثانية، مرتبطتان بهذه النسخة من التسجيل الأصلي.</p><audio class="library-player" controls preload="metadata" src="{{ segment.audio_url }}">التسجيل غير قابل للتشغيل في هذا المتصفح.</audio><p>اضغط تشغيل للاستماع من الموضع الموثق. لا تشغيل تلقائيًا.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pm_open"><input type="hidden" name="case_ref" value="{{ segment.case_ref }}"><button>العودة إلى التسجيل ونسخ التفريغ</button></form>
+{% endblock %}

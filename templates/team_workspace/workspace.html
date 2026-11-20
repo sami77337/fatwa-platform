@@ -41,6 +41,9 @@
 <article aria-labelledby="case-heading">
 <h2 id="case-heading">القضية <bdi id="selected-reference">{{ selected.public_ref }}</bdi></h2>
 <nav aria-label="أدوات القضية">
+{% if precise_citations_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="precise_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>توثيق العبارات ونسخ المصادر</button></form>{% endif %}
+{% if public_answer_media_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pm_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>التسجيل والتفريغ المراجع</button></form>{% endif %}
+{% if canonical_search_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="cs_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>البحث العربي والفهرس</button></form>{% endif %}
 {% if research_library_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>مكتبة المصادر والنسخ</button></form>{% endif %}
 {% if material_import_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="mi_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>مركز استيراد المواد</button></form>{% endif %}
 {% if public_collections_navigation %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pc_open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>المجموعات العلمية والموضوعات</button></form>{% endif %}

@@ -96,7 +96,7 @@ class ContinuationReceiptTests(unittest.TestCase):
         for helper, checks in receipts.RESTORED_DENIAL_CHECKS.items():
             self.recovery["restored_workflow_results"][helper] = {
                 "denial_checks": checks.copy(),
-                "denied_read_count": 9,
+                "denied_read_count": sum(checks.values()),
                 "positive_reads_after_denial": True,
             }
         self.recovery_path = Path(".local/qa/functional-continuation/recovery-pg17.json")
@@ -158,7 +158,7 @@ class ContinuationReceiptTests(unittest.TestCase):
             method = identity.rsplit(".", 1)[1]
             # Real Django startup/HTTP output can interrupt the first status line.
             detail = (
-                "Found 13 test(s).\nSystem check identified no issues.\nok" if index == 0 else "ok"
+                "Found 20 test(s).\nSystem check identified no issues.\nok" if index == 0 else "ok"
             )
             lines.append(f"{method} ({identity}) ... {detail}")
         self.log("browser", "\n".join(lines) + f"\nRan {len(identities)} tests in 0.001s\n\nOK\n")
@@ -170,22 +170,22 @@ class ContinuationReceiptTests(unittest.TestCase):
 
     def test_full_inventory_records_all_prior_and_additional_evidence(self):
         result = self.receipt()
-        self.assertEqual(result["protected_browser_tests"], 13)
+        self.assertEqual(result["protected_browser_tests"], 20)
         self.assertEqual(
-            (result["prior_browser_journeys"], result["additional_browser_journeys"]), (8, 5)
+            (result["prior_browser_journeys"], result["additional_browser_journeys"]), (8, 12)
         )
         self.assertEqual(
-            (result["browser_json_proofs"], result["browser_log_only_proofs"]), (12, 1)
+            (result["browser_json_proofs"], result["browser_log_only_proofs"]), (19, 1)
         )
-        self.assertEqual(len(result["browser_proofs"]), 13)
+        self.assertEqual(len(result["browser_proofs"]), 20)
         recovery = result["encrypted_recovery_proof"]
-        self.assertEqual(recovery["total_nonempty_tables"], 37)
+        self.assertEqual(recovery["total_nonempty_tables"], 47)
         self.assertEqual(
-            (recovery["prior_nonempty_table_count"], recovery["new_nonempty_table_count"]), (22, 15)
+            (recovery["prior_nonempty_table_count"], recovery["new_nonempty_table_count"]), (22, 25)
         )
-        self.assertEqual(len(recovery["restored_workflow_results"]), 7)
-        self.assertEqual(recovery["fresh_process_denied_reads"], 18)
-        self.assertEqual(result["completed_additional_original_owner_points"], 20)
+        self.assertEqual(len(recovery["restored_workflow_results"]), 11)
+        self.assertEqual(recovery["fresh_process_denied_reads"], 37)
+        self.assertEqual(result["completed_additional_original_owner_points"], 35)
 
     def test_missing_or_replaced_journey_cannot_pass_despite_all_json_proofs(self):
         identities = [
@@ -193,7 +193,7 @@ class ContinuationReceiptTests(unittest.TestCase):
         ]
         without_audio = [identity for identity in identities if "BrowserAudioTests" not in identity]
         for observed, reason in (
-            (without_audio, "Exactly 13"),
+            (without_audio, "Exactly 20"),
             (without_audio + ["unrelated.tests.ExampleTests.test_other"], "omitted or replaced"),
         ):
             with self.subTest(reason=reason):
@@ -205,6 +205,10 @@ class ContinuationReceiptTests(unittest.TestCase):
         for name in (
             "research_workspace_researchcollectionevent",
             "material_import_roundtripreceipt",
+            "canonical_search_searchdocument",
+            "public_answer_media_transcriptaction",
+            "precise_citations_citationanchor",
+            "case_attachments_caseattachment",
         ):
             for operation in ("omit", "replace", "empty"):
                 with self.subTest(name=name, operation=operation):
@@ -217,7 +221,7 @@ class ContinuationReceiptTests(unittest.TestCase):
                             recovery["tables"][name + "_unrelated"] = previous
                     self.json(self.recovery_path, recovery)
                     with self.assertRaisesRegex(
-                        RuntimeError, "37 prior and new|empty prior or new"
+                        RuntimeError, "47 prior and new|empty prior or new"
                     ):
                         self.receipt()
 
@@ -236,28 +240,31 @@ class ContinuationReceiptTests(unittest.TestCase):
                     if operation == "missing":
                         results.pop(helper)
                     elif operation == "mapping":
-                        # Retaining the aggregate nine does not establish each
-                        # independently required missing/revoked-trust check.
-                        results[helper]["denial_checks"]["missing_authority"] = 2
-                        results[helper]["denial_checks"]["missing_identity_provider"] = 4
+                        # Preserve the aggregate while substituting a different
+                        # denial kind; exact individual trust checks are required.
+                        checks = results[helper]["denial_checks"]
+                        key = next(iter(checks))
+                        checks["unrelated_denial"] = checks.pop(key)
                     elif operation == "count":
-                        results[helper]["denied_read_count"] = 8
+                        results[helper]["denied_read_count"] -= 1
                     else:
                         results[helper]["positive_reads_after_denial"] = False
                     self.json(self.recovery_path, recovery)
-                    with self.assertRaisesRegex(RuntimeError, "seven fresh-process|denial proof"):
+                    with self.assertRaisesRegex(RuntimeError, "eleven fresh-process|denial proof"):
                         self.receipt()
         recovery = copy.deepcopy(self.recovery)
         recovery["restored_workflow_results"].pop("apps.public_knowledge.recovery_support")
         self.json(self.recovery_path, recovery)
-        with self.assertRaisesRegex(RuntimeError, "seven fresh-process"):
+        with self.assertRaisesRegex(RuntimeError, "eleven fresh-process"):
             self.receipt()
 
-    def test_missing_or_stale_prior_and_new_proofs_cannot_pass_all_13_tests(self):
+    def test_missing_or_stale_prior_and_new_proofs_cannot_pass_all_20_tests(self):
         for path in (
             ".local/qa/case-assignments/browser/assignments.json",
             ".local/qa/v6-casework/browser/evidence.json",
             ".local/qa/functional-continuation/library-browser/result.json",
+            ".local/qa/functional-continuation/citations-browser/result.json",
+            ".local/qa/functional-continuation/search-recording-browser/result.json",
         ):
             for operation in ("omit", "stale"):
                 with self.subTest(path=path, operation=operation):

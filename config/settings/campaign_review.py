@@ -39,7 +39,20 @@ INSTALLED_APPS = [
     "apps.case_lifecycle",
     "apps.public_collections",
     "apps.material_import",
+    "django.contrib.postgres",
+    "apps.canonical_search",
+    "apps.public_answer_media",
+    "apps.precise_citations",
+    "apps.staff_shell",
 ]
+FATWA_STAFF_PWA_ENABLED = False
+FATWA_PRECISE_CITATIONS_ENABLED = False
+FATWA_PRECISE_CITATIONS_AUTHORITY = None
+FATWA_PUBLIC_ANSWER_MEDIA_ENABLED = False
+FATWA_PUBLIC_ANSWER_MEDIA_PUBLIC_ENABLED = False
+FATWA_PUBLIC_ANSWER_MEDIA_AUTHORITY = None
+FATWA_CANONICAL_SEARCH_ENABLED = False
+FATWA_CANONICAL_SEARCH_AUTHORITY = None
 FATWA_MATERIAL_IMPORT_ENABLED = False
 FATWA_MATERIAL_IMPORT_AUTHORITY = None
 FATWA_MATERIAL_IMPORT_TTL_SECONDS = 1800
@@ -80,6 +93,7 @@ FATWA_CLASSIFICATION_EDITORIAL_SIMULATION_ENABLED = False
 FATWA_CLASSIFICATION_EDITORIAL_SIMULATION_POLICY = None
 # Explicit, separate opt-ins for the closed synthetic V7 workflow.
 FATWA_CASE_ATTACHMENTS_ENABLED = False
+FATWA_CASE_ATTACHMENTS_VIDEO_ENABLED = False
 FATWA_CASE_CITATIONS_ENABLED = False
 FATWA_ANSWER_MEDIA_ENABLED = False
 FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = False
@@ -134,6 +148,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.mufti_workspace.conte
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.browser_audio.context.capture")
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.case_organization.context.organization")
 TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.scholarly_links.context.scholarly_links")
+TEMPLATES[0]["OPTIONS"]["context_processors"].append("apps.staff_shell.context.installable_staff")
 TEMPLATES[0]["DIRS"] = [
     Path(__file__).resolve().parents[2] / "apps/transcript_case_links/templates",
     Path(__file__).resolve().parents[2] / "apps/requester_team_journey/templates",

@@ -24,6 +24,11 @@ ROUTES = {
     BASE + "staff/": ("GET", "HEAD", "POST"),
     BASE + "staff/quality/": ("GET", "HEAD"),
     BASE + "staff/logout/": ("POST",),
+    BASE + "staff/pwa/manifest.webmanifest": ("GET", "HEAD"),
+    BASE + "staff/pwa/install.mjs": ("GET", "HEAD"),
+    BASE + "staff/pwa/sw.mjs": ("GET", "HEAD"),
+    BASE + "staff/pwa/icon-192.png": ("GET", "HEAD"),
+    BASE + "staff/pwa/icon-512.png": ("GET", "HEAD"),
     BASE + "casework.css": ("GET", "HEAD"),
     BASE + "audio-capture.js": ("GET", "HEAD"),
     BASE + "audio-worklet.js": ("GET", "HEAD"),
@@ -36,6 +41,22 @@ PRIVATE_MEDIA_ROUTE = re.compile(
 LIBRARY_MEDIA_ROUTE = re.compile(
     r"/casework/staff/library/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?:file|download)/"
+)
+RECORDING_MEDIA_ROUTE = re.compile(
+    r"/casework/staff/(?:recording-parts|recording-transcripts)/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/audio/"
+)
+RECORDING_SEGMENT_ROUTE = re.compile(
+    r"/casework/staff/recording-transcripts/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/segments/[0-5]/"
+)
+PRECISE_CITATION_ROUTE = re.compile(
+    r"/casework/precise-citations/(?:sources|print|export)/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+)
+PRECISE_CITATION_FILE_ROUTE = re.compile(
+    r"/casework/precise-citations/sources/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/file/"
 )
 TIMED_MEDIA_ROUTE = re.compile(
     r"/casework/staff/timed-citations/"
@@ -87,6 +108,20 @@ def private(response, *, head=False):
                 + "; script-src 'self'; worker-src 'self'"
             )
         response["Permissions-Policy"] = "microphone=(self), camera=()"
+    if (
+        enabled()
+        and getattr(settings, "FATWA_STAFF_PWA_ENABLED", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+        and not getattr(response, "streaming", False)
+        and b'data-staff-pwa="enabled"' in response.content
+        and "sandbox" not in response["Content-Security-Policy"]
+    ):
+        policy = response["Content-Security-Policy"]
+        for directive in ("script-src", "worker-src", "manifest-src"):
+            if directive not in policy:
+                policy += "; " + directive + " 'self'"
+        response["Content-Security-Policy"] = policy
     if head:
         response.content = b""
     return response
@@ -153,6 +188,10 @@ class CaseworkGuard:
         if methods is None and (
             PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
             or LIBRARY_MEDIA_ROUTE.fullmatch(request.path)
+            or PRECISE_CITATION_ROUTE.fullmatch(request.path)
+            or PRECISE_CITATION_FILE_ROUTE.fullmatch(request.path)
+            or RECORDING_MEDIA_ROUTE.fullmatch(request.path)
+            or RECORDING_SEGMENT_ROUTE.fullmatch(request.path)
             or TIMED_MEDIA_ROUTE.fullmatch(request.path)
             or PDF_MEDIA_ROUTE.fullmatch(request.path)
         ):

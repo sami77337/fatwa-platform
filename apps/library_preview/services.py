@@ -123,6 +123,9 @@ def _current(selected: PreviewPolicy, publication_id: str):
     if edition is None:
         raise PreviewUnavailable()
     with transaction.atomic():
+        from apps.precise_citations.integration import lock_dependencies
+
+        lock_dependencies(edition.case_id)
         case = Case.objects.select_for_update().get(pk=edition.case_id)
         try:
             cases._verify(case)
@@ -288,13 +291,16 @@ def filters(*, query: str = "", category: str = "", material: str = "", page: in
 @contextmanager
 def _media_boundary():
     from apps.casework.media_boundary import media_projection_boundary
+    from apps.delivery_queue.services import synthetic_queue_atomic
+    from apps.precise_citations.integration import answer_use_boundary
 
     bounds = []
     token = _RETURN_DEADLINES.set(bounds)
     try:
+        _start()
         # This collection owns filtered, emitted-only deadline tracking below.
         # Do not retain deadlines for candidates subsequently removed by browse.
-        with media_projection_boundary(retain_deadlines=False):
+        with synthetic_queue_atomic(), answer_use_boundary(), media_projection_boundary(retain_deadlines=False):
             yield
         # The atomic media epoch read can itself span a deadline. No authority
         # callbacks follow this final clock. Browse retains only emitted grants,
@@ -321,6 +327,9 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
         case_ids = PublicationEdition.objects.filter(
             pk__in=[g.publication_id for g in selected.publications]
         ).values_list("case_id", flat=True)
+        from apps.precise_citations.integration import prelock_cases
+
+        case_ids = prelock_cases(case_ids)
         list(Case.objects.filter(pk__in=case_ids).order_by("pk").select_for_update())
         for grant in selected.publications:
             try:

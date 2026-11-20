@@ -155,6 +155,9 @@ def scope(*, case_ids=None, subject_id=None, provider=None):
         )
     else:
         identities = _closure(case_ids or ())
+    from apps.precise_citations.integration import prelock_cases
+
+    identities = prelock_cases(identities)
     locked = {
         row.pk: row
         for row in Case.objects.filter(pk__in=identities).order_by("pk").select_for_update()

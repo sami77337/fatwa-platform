@@ -1,0 +1,1 @@
+{% if public_answer_media_enabled %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pm_open"><input type="hidden" name="case_ref" value="{{ recording_case_ref }}"><button>التسجيل والتفريغ المراجع</button></form>{% endif %}

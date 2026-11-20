@@ -7,3 +7,14 @@ input[type=password],code{direction:ltr}code,bdi,pre{overflow-wrap:anywhere;whit
 .actions{display:flex;gap:.6rem;flex-wrap:wrap}.actions form{margin:.2rem 0}small{display:block}table{width:100%;border-collapse:collapse}td,th{text-align:right;padding:.4rem;border-bottom:1px solid #ddd;overflow-wrap:anywhere}
 img,audio,video,iframe{max-width:100%}iframe{width:100%;min-height:24rem;border:1px solid #cdd7df}
 @media(max-width:480px){header,main{padding:.65rem}article,form{padding:.7rem}h1{font-size:1.45rem}}"""
+
+
+# Theme follows the reader's actual system/browser preference. No data or role changes.
+CSS += """
+@media(prefers-color-scheme:dark){
+:root{color-scheme:dark}body{background:#111c20;color:#e4eee9}a{color:#8ad8c1}
+article,form{background:#1b2b31;border-color:#617e79}input,textarea,select{background:#152429;color:#e4eee9;border-color:#617e79}
+button{background:#285c50;color:#fff;border-color:#8ad8c1}.notice{background:#302b1e;border-color:#dfbd75}
+td,th,iframe{border-color:#617e79}a:focus,button:focus,input:focus,textarea:focus{outline-color:#efc879}
+}
+"""

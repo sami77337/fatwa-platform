@@ -14,6 +14,9 @@ from apps.team_workspace.urls import urlpatterns as team_patterns
 from apps.timed_citations import views as timed_citations
 
 urlpatterns = [
+    path("", include("apps.staff_shell.urls")),
+    path("casework/precise-citations/", include("apps.precise_citations.urls")),
+    path("", include("apps.public_answer_media.urls")),
     path("casework/staff/library/<uuid:version_id>/file/", library_editor.file, name="library_staff_file"),
     path("casework/staff/library/<uuid:version_id>/download/", library_editor.file, {"download": True}, name="library_staff_download"),
     path("casework/staff/quality/", data_quality.index, name="data_quality"),

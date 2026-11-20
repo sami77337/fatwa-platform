@@ -1,0 +1,69 @@
+{
+  "schema": "fatwa.functional-continuation-checkpoint.v1",
+  "tested_sha": "210b1cc5b7b4fad2d3e62f8fd1d8588949e59016",
+  "tested_tree": "2184d26e8cd154d7eb3ad2f182d5b4f2a508f901",
+  "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44783590994",
+  "status": "PASS",
+  "postgres_majors": [
+    17,
+    18
+  ],
+  "completed_additional_original_ids": [
+    "283",
+    "286",
+    "287",
+    "288",
+    "289",
+    "291",
+    "348",
+    "350",
+    "351",
+    "352",
+    "353",
+    "354",
+    "355",
+    "356",
+    "361",
+    "373",
+    "374",
+    "375",
+    "385",
+    "386"
+  ],
+  "completed_additional_original_owner_points": 20,
+  "denominator": 556,
+  "completed_additional_percentage": 3.597122,
+  "previous_credited_count": 57,
+  "overlap_with_previous_ids": [],
+  "requested_10_to_12_percent_met": false,
+  "affected_tests_per_major": 478,
+  "protected_browser_tests_per_major": 13,
+  "prior_browser_journeys": 8,
+  "additional_browser_journeys": 5,
+  "nonempty_recovery_tables": 37,
+  "fresh_process_workflows": 7,
+  "fresh_process_denied_reads": 18,
+  "compatibility_workflows_passed": 18,
+  "artifact_verification": "Downloaded bytes checked against archive SHA-256; exact tested source, stage-log hashes, test identities, twelve JSON proofs plus one execution-log proof, screenshots, traces, original-file/archive hashes and encrypted recovery receipts verified independently.",
+  "artifacts": [
+    {
+      "postgres_major": 17,
+      "artifact_id": 14653706548,
+      "sha256": "2b5f80e69ffa294e8f2581bf66233b124b10729d11c7df75f63bfc47d8728c22",
+      "size": 36907862
+    },
+    {
+      "postgres_major": 18,
+      "artifact_id": 14653521814,
+      "sha256": "fb6a3d7420ed0e2068f0ede0754be824a14b0cccafef13a51328289905848ea0",
+      "size": 35273881
+    }
+  ],
+  "claim_boundary": "Evidence for this exact historical source only. Later source changes must re-execute all required stages. The original inventory/specification/decision bytes and previous 57-point plan remain unchanged.",
+  "release_state": {
+    "gate_b": "NOT_PASSED",
+    "gates_c_d_e": "HOLD",
+    "phase_01": "BLOCKED",
+    "deployment": "NOT_DEPLOYED"
+  }
+}

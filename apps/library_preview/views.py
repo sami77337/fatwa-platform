@@ -9,6 +9,8 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 
+from apps.public_answer_media.navigation import publication_recordings_url
+
 from . import services
 from .guard import safe_read
 
@@ -93,6 +95,7 @@ def detail(request, publication_id):
         {
             "edition": edition,
             "knowledge_url": _knowledge_url(publication_id),
+            "recordings_url": publication_recordings_url(publication_id),
             **_navigation(chosen),
         },
     )

@@ -61,6 +61,15 @@ NEW_WORKFLOWS = {
         "public_collections_collectionaction",
     ),
     "apps.case_lifecycle.recovery_support": ("case_lifecycle_lifecycleevent",),
+    "apps.canonical_search.recovery_support": ("canonical_search_searchgeneration", "canonical_search_searchdocument"),
+    "apps.public_answer_media.recovery_support": (
+        "public_answer_media_recordingtranscript", "public_answer_media_transcriptaction",
+        "public_answer_media_publicmediaedition", "public_answer_media_publicmediaaction",
+    ),
+    "apps.precise_citations.recovery_support": (
+        "precise_citations_citationset", "precise_citations_citationanchor", "precise_citations_citationreview",
+    ),
+    "apps.case_attachments.video_recovery": ("case_attachments_caseattachment",),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -74,6 +83,13 @@ RESTORED_DENIAL_CHECKS = {
         "missing_identity_provider": 3,
         "revoked_current_reader": 3,
     },
+    "apps.canonical_search.recovery_support": {"missing_authority": 1, "inactive_identity": 1},
+    "apps.public_answer_media.recovery_support": {
+        "missing_authority": 2, "missing_identity_provider": 2, "missing_media_rights": 2,
+        "revoked_current_reader": 2, "revoked_public_release_actor": 1,
+    },
+    "apps.precise_citations.recovery_support": {"missing_authority": 1, "withdrawn_source_cite": 1},
+    "apps.case_attachments.video_recovery": {"revoked_requester": 2, "revoked_current_reader": 2, "disabled_feature": 2},
 }
 
 # Keep the exact executed identities, including the assignment class's inherited
@@ -161,6 +177,41 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-completion/lifecycle-browser/result.json",
         "modern",
     ),
+    (
+        'apps.canonical_search.browser_tests.CanonicalSearchBrowserTests.test_native_literal_fts_fuzzy_exact_source_stale_rebuild_and_current_revocation',
+        '.local/qa/functional-continuation/canonical-search-browser/result.json',
+        "modern",
+    ),
+    (
+        'apps.canonical_search.browser_recordings.RecordingSearchBrowserTests.test_actual_fts_result_opens_reviewed_original_at_pinned_segment',
+        '.local/qa/functional-continuation/search-recording-browser/result.json',
+        "modern",
+    ),
+    (
+        'apps.public_answer_media.browser_tests.PublicAnswerMediaBrowserTests.test_native_transcript_revision_review_public_playback_seek_and_withdrawal',
+        '.local/qa/functional-continuation/public-answer-media-browser/result.json',
+        "modern",
+    ),
+    (
+        'apps.precise_citations.browser_tests.PreciseCitationBrowserTests.test_native_exact_phrase_review_original_export_and_withdrawal',
+        '.local/qa/functional-continuation/citations-browser/result.json',
+        "modern",
+    ),
+    (
+        'apps.case_attachments.video_browser_tests.RequesterVideoBrowserTests.test_native_requester_upload_playback_original_download_and_revocation',
+        '.local/qa/functional-continuation/requester-video-browser/result.json',
+        "modern",
+    ),
+    (
+        'apps.staff_shell.browser_tests.StaffPWABrowserTests.test_installable_staff_scope_requires_live_authorization_and_never_caches_cases',
+        '.local/qa/functional-continuation/staff-pwa-browser/result.json',
+        "modern",
+    ),
+    (
+        'apps.staff_shell.browser_tests.DarkModeBrowserTests.test_system_theme_switch_preserves_published_content_with_readable_dark_surfaces',
+        '.local/qa/functional-continuation/dark-mode-browser/result.json',
+        "modern",
+    ),
 )
 
 
@@ -200,8 +251,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["13"],
-        "Exactly 13 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["20"],
+        "Exactly 20 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -209,7 +260,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 13 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 20 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -398,10 +449,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 15
-        and len(expected_tables) == 37
+        and len(new_tables) == 25
+        and len(expected_tables) == 47
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 37 prior and new recovery tables are required",
+        "Exactly the 47 prior and new recovery tables are required",
     )
     require(
         all(
@@ -415,7 +466,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All seven fresh-process workflow result records are required",
+        "All eleven fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]
@@ -423,9 +474,9 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
             result.get("denial_checks") == expected
             and all(type(value) is int for value in result["denial_checks"].values())
             and type(result.get("denied_read_count")) is int
-            and result["denied_read_count"] == sum(expected.values()) == 9
+            and result["denied_read_count"] == sum(expected.values())
             and result.get("positive_reads_after_denial") is True,
-            "Restored library/lifecycle denial proof is incomplete or changed",
+            "Restored current-access denial proof is incomplete or changed",
         )
     require(
         any(

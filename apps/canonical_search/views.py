@@ -1,0 +1,224 @@
+"""Native Arabic forms; the complete response stays inside current source guards."""
+
+import uuid
+
+from django.core import signing
+from django.core.exceptions import SuspiciousOperation
+from django.db import DatabaseError
+from django.middleware.csrf import get_token
+from django.shortcuts import render
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.debug import sensitive_post_parameters
+
+from apps.casework import services as cases
+from apps.casework.models import Case
+from apps.casework_web.access import RequestDirectory, current_staff
+from apps.casework_web.guard import denied, private
+from apps.casework_web.views import InvalidForm, _provider
+from apps.delivery_queue.services import synthetic_queue_atomic
+from apps.editorial_workbench.reviewer_access import browser_proof
+from apps.intake_workflow.guards import SyntheticWriteDenied
+from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
+
+from . import policy, services
+
+SALT = "fatwa.canonical-search.native.v1"
+FIELDS = {
+    "cs_open": set(),
+    "cs_search": {"query", "mode", "kind", "page", "scope"},
+    "cs_rebuild": {"state"},
+    "cs_source": {"state"},
+}
+ACTIONS = frozenset(FIELDS)
+MODES = (
+    ("LITERAL", "مطابقة حرفية للعبارة الأصلية"),
+    ("FTS", "بحث نصي بالكلمات"),
+    ("FUZZY", "بحث تقريبي للأخطاء الكتابية"),
+)
+KINDS = (
+    ("ALL", "جميع النصوص المتاحة"),
+    ("QUESTION", "السؤال الأصلي"),
+    ("FOLLOWUP", "التعقيبات"),
+    ("ANSWER", "الجواب الحالي"),
+    ("TRANSCRIPT", "التفريغ المتاح"),
+    ("RECORDING_TRANSCRIPT", "تفريغ مراجع مرتبط بالتسجيل"),
+)
+
+
+def _form(request, action):
+    if (
+        request.content_type != "application/x-www-form-urlencoded"
+        or request.GET
+        or request.FILES
+        or set(request.POST) != FIELDS[action] | {"action", "case_ref", "csrfmiddlewaretoken"}
+        or any(len(request.POST.getlist(key)) != 1 for key in request.POST)
+    ):
+        raise InvalidForm("search_form_invalid")
+    return request.POST
+
+
+def _binding(request, base, case_ref):
+    actor = resolve_identity(base["provider"], base["subject_id"], case_key=case_ref)
+    return browser_proof(
+        request,
+        SALT,
+        "|".join((base["provider"].provider_id, actor.subject_id, actor.auth_epoch, case_ref)),
+    )
+
+
+def _state(request, base, values):
+    return signing.dumps(
+        {**values, "binding": _binding(request, base, values["case_ref"])},
+        salt=SALT,
+        compress=True,
+    )
+
+
+def _read_state(request, base, fields):
+    state = signing.loads(fields["state"], salt=SALT, max_age=900)
+    if (
+        type(state) is not dict
+        or state.get("case_ref") != fields["case_ref"]
+        or state.get("binding") != _binding(request, base, fields["case_ref"])
+    ):
+        raise InvalidForm("search_browser_binding")
+    return state
+
+
+def _page(request, base, *, search=None, selected=None, message=""):
+    action = "SEARCH" if search else ("OPEN" if selected else "VIEW")
+    scope = search["scope"] if search else "CASE"
+    with policy.boundary(**base, action=action, scope=scope) as context:
+        desk = services.desk_in_context(context, case_id=base["case_id"])
+        result = None
+        if search:
+            result = services.search_in_context(
+                context,
+                value=search["query"],
+                mode=search["mode"],
+                kind=search["kind"],
+                page=search["page"],
+            )
+            for row in result["results"]:
+                row["state"] = _state(
+                    request,
+                    base,
+                    {
+                        "case_ref": row["case_ref"],
+                        "generation_id": row["generation_id"],
+                        "document_id": row["document_id"],
+                    },
+                )
+        opened = (
+            services.open_in_context(context, case_id=base["case_id"], **selected)
+            if selected
+            else None
+        )
+        get_token(request)
+        state = _state(
+            request,
+            base,
+            {
+                "case_ref": desk["case_ref"],
+                "revision": desk["revision"],
+                "evidence_version": desk["evidence_version"],
+                "generation": desk["generation"],
+                "request_key": str(uuid.uuid4()),
+            },
+        )
+        return private(
+            render(
+                request,
+                "canonical_search/desk.html",
+                {
+                    "desk": desk,
+                    "state": state,
+                    "result": result,
+                    "opened": opened,
+                    "message": message,
+                    "modes": MODES,
+                    "kinds": KINDS,
+                    "values": search
+                    or {"query": "", "mode": "FTS", "kind": "ALL", "scope": "CASE", "page": 1},
+                },
+            )
+        )
+
+
+@sensitive_post_parameters("query", "state")
+@csrf_protect
+def workspace(request):
+    try:
+        policy.enabled()
+        action = request.POST.get("action", "")
+        if request.method != "POST" or action not in ACTIONS:
+            raise InvalidForm("search_form_invalid")
+        fields = _form(request, action)
+        directory = _provider()
+        actor = current_staff(request, directory, case_key=fields["case_ref"])
+        provider = RequestDirectory(
+            directory, actor, authenticated_provider_id=directory.provider_id
+        )
+        case = Case.objects.filter(public_ref=fields["case_ref"]).first()
+        if case is None:
+            return denied("search_case_unavailable", 404)
+        base = dict(
+            case_id=str(case.pk),
+            subject_id=actor.subject_id,
+            provider=provider,
+            synthetic_fixtures_only=True,
+        )
+        if action == "cs_search":
+            if not fields["page"].isascii() or not fields["page"].isdigit():
+                raise InvalidForm("search_page_invalid")
+            return _page(
+                request,
+                base,
+                search={
+                    "query": fields["query"],
+                    "mode": fields["mode"],
+                    "kind": fields["kind"],
+                    "page": int(fields["page"]),
+                    "scope": fields["scope"],
+                },
+            )
+        if action == "cs_source":
+            state = _read_state(request, base, fields)
+            if set(state) != {"binding", "case_ref", "generation_id", "document_id"}:
+                raise InvalidForm("search_result_state_invalid")
+            return _page(
+                request,
+                base,
+                selected={key: state[key] for key in ("generation_id", "document_id")},
+            )
+        if action == "cs_rebuild":
+            state = _read_state(request, base, fields)
+            if set(state) != {
+                "binding",
+                "case_ref",
+                "revision",
+                "evidence_version",
+                "generation",
+                "request_key",
+            }:
+                raise InvalidForm("search_rebuild_state_invalid")
+            # The command and its response are one unit. A final render denial
+            # rolls back the derived generation as well as its document rows.
+            with synthetic_queue_atomic():
+                services.rebuild(
+                    **base,
+                    expected_revision=state["revision"],
+                    expected_evidence_version=state["evidence_version"],
+                    expected_generation=state["generation"],
+                    request_key=state["request_key"],
+                )
+                return _page(request, base, message="اكتملت فهرسة النصوص المتاحة من النسخ الحالية.")
+        return _page(request, base)
+    except (InvalidForm, SuspiciousOperation, signing.BadSignature, KeyError, TypeError):
+        return denied("search_form_invalid", 400)
+    except IdentityUnavailable:
+        return denied("staff_identity_required", 403)
+    except cases.CaseConflict:
+        return denied("search_not_available_or_stale", 409)
+    except (DatabaseError, SyntheticWriteDenied):
+        return denied("search_store_unavailable", 503)
