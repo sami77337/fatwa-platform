@@ -14,7 +14,7 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.actions import JavaScript
 
 from .page_preview import PdfPageUnavailable, selected_page
-from .page_worker import produce
+from .page_worker import apply_resource_limits, produce
 
 
 def multipage_pdf():
@@ -41,6 +41,42 @@ class SelectedPageDerivativeTests(unittest.TestCase):
                 self.assertNotEqual(chosen, self.raw)
         self.assertEqual(sha256(self.raw).hexdigest(), original_sha)
         self.assertEqual(len(PdfReader(io.BytesIO(self.raw)).pages), 3)
+
+    def test_worker_requires_all_os_resource_limits(self):
+        fake = type(
+            "Resource",
+            (),
+            {
+                "RLIMIT_CPU": 1,
+                "RLIMIT_AS": 2,
+                "RLIMIT_FSIZE": 3,
+                "RLIMIT_NOFILE": 4,
+                "RLIMIT_CORE": 5,
+                "calls": [],
+                "setrlimit": staticmethod(lambda kind, value: Resource.calls.append((kind, value))),
+            },
+        )
+        with patch.dict("sys.modules", {"resource": fake}):
+            apply_resource_limits()
+        self.assertEqual(
+            fake.calls,
+            [(1, (3, 3)), (2, (268435456, 268435456)), (3, (1048576, 1048576)),
+             (4, (32, 32)), (5, (0, 0))],
+        )
+
+    def test_missing_os_resource_limits_are_not_silently_ignored(self):
+        import builtins
+
+        original = builtins.__import__
+
+        def no_resource(name, *args, **kwargs):
+            if name == "resource":
+                raise ImportError("unavailable")
+            return original(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=no_resource):
+            with self.assertRaises(ImportError):
+                apply_resource_limits()
 
     def test_worker_invocation_uses_sanitized_environment_and_fixed_cwd(self):
         selected = produce(self.raw, 2, 3)
