@@ -115,3 +115,57 @@ class ValidationTests(SimpleTestCase):
         with patch("apps.private_media.validation.subprocess.run", side_effect=OSError):
             with self.assertRaises(MediaValidationError):
                 validate(b"synthetic", "source.txt", "text/plain")
+
+    def test_parser_worker_receives_only_minimal_environment_and_fixed_cwd(self):
+        import json
+        import os
+        from pathlib import Path
+        from subprocess import CompletedProcess
+
+        expected = {"validated": True, "encoding": "UTF-8"}
+        with patch(
+            "apps.private_media.validation.subprocess.run",
+            return_value=CompletedProcess([], 0, stdout=json.dumps(expected)),
+        ) as run:
+            validate(b"synthetic", "source.txt", "text/plain")
+        kwargs = run.call_args.kwargs
+        self.assertEqual(kwargs["env"], {
+            "PATH": os.defpath,
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONHASHSEED": "0",
+        })
+        self.assertEqual(kwargs["cwd"], Path(__file__).resolve().parents[2])
+        self.assertNotIn("DATABASE_URL", kwargs["env"])
+        self.assertNotIn("SECRET_KEY", kwargs["env"])
+        self.assertNotIn("PYTHONPATH", kwargs["env"])
+
+    def test_pdf_worker_requires_all_resource_limits(self):
+        from types import SimpleNamespace
+        from .worker import _apply_pdf_resource_limits
+
+        calls = []
+        fake = SimpleNamespace(
+            RLIMIT_CPU=1, RLIMIT_AS=2, RLIMIT_FSIZE=3, RLIMIT_NOFILE=4, RLIMIT_CORE=5,
+            setrlimit=lambda kind, value: calls.append((kind, value)),
+        )
+        with patch.dict("sys.modules", {"resource": fake}):
+            _apply_pdf_resource_limits()
+        self.assertEqual(calls, [
+            (1, (3, 3)), (2, (268435456, 268435456)),
+            (3, (1048576, 1048576)), (4, (32, 32)), (5, (0, 0)),
+        ])
+
+    def test_pdf_worker_fails_closed_when_resource_limits_are_unavailable(self):
+        import builtins
+        from .worker import _apply_pdf_resource_limits
+
+        original = builtins.__import__
+        def no_resource(name, *args, **kwargs):
+            if name == "resource":
+                raise ImportError("unavailable")
+            return original(name, *args, **kwargs)
+        with patch("builtins.__import__", side_effect=no_resource):
+            with self.assertRaises(ImportError):
+                _apply_pdf_resource_limits()

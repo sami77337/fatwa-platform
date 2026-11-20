@@ -2,6 +2,8 @@
 
 import base64
 import json
+import os
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -61,6 +63,14 @@ def validate(raw: bytes, filename: str, media_type: str) -> ValidatedMedia:
             stderr=subprocess.DEVNULL,
             timeout=6,
             check=False,
+            cwd=Path(__file__).resolve().parents[2],
+            env={
+                "PATH": os.defpath,
+                "LANG": "C.UTF-8",
+                "LC_ALL": "C.UTF-8",
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONHASHSEED": "0",
+            },
         )
         if result.returncode != 0 or len(result.stdout) > 4096:
             raise ValueError

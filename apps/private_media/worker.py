@@ -214,18 +214,36 @@ def parse(raw, extension):
     return _audio(raw, extension)
 
 
+def _apply_pdf_resource_limits():
+    """Require all documented POSIX limits before parsing an untrusted PDF."""
+    import resource
+
+    required = (
+        ("RLIMIT_CPU", 3, 3),
+        ("RLIMIT_AS", 256 * 1024 * 1024, 256 * 1024 * 1024),
+        ("RLIMIT_FSIZE", 1 * 1024 * 1024, 1 * 1024 * 1024),
+        ("RLIMIT_NOFILE", 32, 32),
+        ("RLIMIT_CORE", 0, 0),
+    )
+    for name, soft, hard in required:
+        kind = getattr(resource, name)
+        resource.setrlimit(kind, (soft, hard))
+
+
 def main():
     try:
-        # POSIX CPU/address-space caps supplement the parent wall-clock timeout.
-        try:
-            import resource
-
-            resource.setrlimit(resource.RLIMIT_CPU, (3, 3))
-            resource.setrlimit(resource.RLIMIT_AS, (256 * 1024 * 1024, 256 * 1024 * 1024))
-        except ImportError:
-            pass
         data = json.loads(sys.stdin.read(300000))
+        if type(data) is not dict or set(data) != {"raw", "extension"}:
+            raise ValueError
+        if data["extension"] == ".pdf":
+            # PDF validation is part of the selected-page trust boundary. Never
+            # silently parse PDFs without the full resource policy.
+            _apply_pdf_resource_limits()
         raw = base64.b64decode(data["raw"], validate=True)
+        if type(data["extension"]) is not str or data["extension"] not in {
+            ".txt", ".pdf", ".jpg", ".jpeg", ".png", ".webp", ".mp3", ".m4a", ".wav"
+        }:
+            raise ValueError
         if not 1 <= len(raw) <= 192000:
             raise ValueError
         result = parse(raw, data["extension"])
