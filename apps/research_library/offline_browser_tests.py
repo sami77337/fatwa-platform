@@ -62,6 +62,38 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
         }""",
         )
 
+    def network_signal(self, page, cdp, *, offline):
+        # Pair actual context-wide request blocking with Chromium's dedicated
+        # connectivity emulation, including after document reload. No application
+        # JavaScript, cache entry or successful response is replaced by this test.
+        # https://chromedevtools.github.io/devtools-protocol/tot/Network/#method-overrideNetworkState
+        cdp.send(
+            "Network.overrideNetworkState",
+            {
+                "offline": offline,
+                "latency": 0,
+                "downloadThroughput": -1,
+                "uploadThroughput": -1,
+            },
+        )
+        self.wait_native(page, "offline => navigator.onLine === !offline", arg=offline)
+
+    def network_probe(self, page):
+        # This endpoint is explicitly excluded from all service-worker caches.
+        return page.evaluate(
+            """async path => {
+                try {
+                    const response = await fetch(path, {
+                        credentials: 'omit', cache: 'no-store', redirect: 'error'
+                    });
+                    return {reached: true, status: response.status};
+                } catch {
+                    return {reached: false};
+                }
+            }""",
+            ROOT + "catalog/",
+        )
+
     def setUp(self):
         super().setUp()
         # Source authoring/review is fixture setup. Local SAVE/READ/REMOVE/SYNC
@@ -245,6 +277,7 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
 
                     cdp = local.new_cdp_session(page)
                     cdp.send("Page.enable")
+                    proof["browser_version"] = cdp.send("Browser.getVersion")["product"]
                     manifest_result = cdp.send("Page.getAppManifest")
                     self.assertEqual(manifest_result.get("errors", []), [])
                     manifest = json.loads(manifest_result["data"])
@@ -271,13 +304,21 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     self.archive(page, proof)
                     self.capture(page, "selected-online", proof)
 
+                    self.assertEqual(self.network_probe(page), {"reached": True, "status": 200})
                     local.set_offline(True)
+                    self.network_signal(page, cdp, offline=True)
                     response = page.reload(wait_until="domcontentloaded")
                     self.assertEqual(response.status, 200)
+                    self.network_signal(page, cdp, offline=True)
                     self.wait_native(
                         page, "document.querySelectorAll('#saved article').length === 2"
                     )
                     self.assertFalse(page.evaluate("navigator.onLine"))
+                    self.assertEqual(self.network_probe(page), {"reached": False})
+                    proof["uncached_network_probe"] = {
+                        "online_before": 200,
+                        "offline_request_failed": True,
+                    }
                     self.assertEqual(self.card(page, "saved", "uncached").count(), 0)
                     self.assertIsNone(self.copy(page, "uncached"))
                     self.show(page, "text")
@@ -310,6 +351,9 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     proof["local_delete_preserved_other_copy"] = True
 
                     local.set_offline(False)
+                    self.network_signal(page, cdp, offline=False)
+                    self.assertEqual(self.network_probe(page), {"reached": True, "status": 200})
+                    proof["uncached_network_probe"]["online_after"] = 200
                     self.wait_native(
                         page,
                         "navigator.onLine && document.querySelectorAll('#available article').length === 3",
