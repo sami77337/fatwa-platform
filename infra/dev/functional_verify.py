@@ -11,6 +11,7 @@ from pathlib import Path
 
 LABELS = [
     "tests.wave7_foundation.test_runner_lifecycle",
+    "tests.casework.test_functional_continuation_receipt",
     "apps.case_assignments.tests",
     "apps.case_assignments.review_tests",
     "apps.case_organization.tests",

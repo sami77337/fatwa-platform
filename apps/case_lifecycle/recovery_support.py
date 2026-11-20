@@ -2,7 +2,9 @@
 
 import uuid
 from contextlib import contextmanager
+from dataclasses import replace
 
+from django.conf import settings
 from django.test import override_settings
 
 from apps.case_assignments.tests import Directory
@@ -119,28 +121,90 @@ def populate():
         }
 
 
+def _verify_available(pins, directory):
+    receipts = pins["cases"]
+    for receipt in receipts:
+        result = services.desk(**_common(receipt, directory))
+        if (
+            result["state"] != receipt["state"]
+            or _canonical(receipt) != receipt["canonical_sha256"]
+        ):
+            raise AssertionError("restored lifecycle/canonical pins changed")
+    actual = [[str(row.pk), row.sha256] for row in LifecycleEvent.objects.order_by("id")]
+    if not actual or actual != pins["tables"][TABLES[0]]:
+        raise AssertionError("restored lifecycle history changed")
+    common = {"subject_id": "mufti-a", "provider": directory, "synthetic_fixtures_only": True}
+    visible = services.inbox(**common, state="ALL")
+    if visible["counts"] != {"OPEN": 1, "CLOSED": 1, "ARCHIVED": 1}:
+        raise AssertionError("restored lifecycle visibility differs")
+    rows = cases.list_cases(**common)
+    with services.queue_projection(rows, **common) as normal:
+        if len(normal) != 1 or normal[0]["public_ref"] != receipts[2]["public_ref"]:
+            raise AssertionError("restored normal queue lifecycle differs")
+    return actual, rows
+
+
+def _deny_reads(receipt, rows, reason):
+    # Native requests resolve their current provider from configuration. Cached
+    # case DTOs and durable approval history must not substitute for that trust.
+    common = {
+        "subject_id": "mufti-a",
+        "provider": getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None),
+        "synthetic_fixtures_only": True,
+    }
+
+    def queue():
+        with services.queue_projection(rows, **common):
+            pass
+
+    count = 0
+    for reader in (
+        lambda: services.desk(**common, case_id=receipt["case_id"]),
+        lambda: services.inbox(**common, state="ALL"),
+        queue,
+    ):
+        try:
+            reader()
+        except cases.CaseConflict as exc:
+            if str(exc) != reason:
+                raise
+            count += 1
+        else:
+            raise AssertionError("restored lifecycle read survived missing or revoked trust")
+    return count
+
+
 def verify_restored(pins):
     receipts = pins["cases"]
     before = list(CaseEvent.objects.values()), list(LifecycleEvent.objects.values())
     with _fixture([row["public_ref"] for row in receipts]) as directory:
-        for receipt in receipts:
-            result = services.desk(**_common(receipt, directory))
-            if (
-                result["state"] != receipt["state"]
-                or _canonical(receipt) != receipt["canonical_sha256"]
-            ):
-                raise AssertionError("restored lifecycle/canonical pins changed")
-        actual = [[str(row.pk), row.sha256] for row in LifecycleEvent.objects.order_by("id")]
-        if not actual or actual != pins["tables"][TABLES[0]]:
-            raise AssertionError("restored lifecycle history changed")
-        common = {"subject_id": "mufti-a", "provider": directory, "synthetic_fixtures_only": True}
-        visible = services.inbox(**common, state="ALL")
-        if visible["counts"] != {"OPEN": 1, "CLOSED": 1, "ARCHIVED": 1}:
-            raise AssertionError("restored lifecycle visibility differs")
-        rows = cases.list_cases(**common)
-        with services.queue_projection(rows, **common) as normal:
-            if len(normal) != 1 or normal[0]["public_ref"] != receipts[2]["public_ref"]:
-                raise AssertionError("restored normal queue lifecycle differs")
+        actual, rows = _verify_available(pins, directory)
+        archived = receipts[1]
+        denied = {}
+        with override_settings(FATWA_CASE_LIFECYCLE_AUTHORITY=None):
+            denied["missing_authority"] = _deny_reads(
+                archived, rows, "lifecycle_authority_required"
+            )
+        with override_settings(FATWA_CASEWORK_IDENTITY_PROVIDER=None):
+            denied["missing_identity_provider"] = _deny_reads(
+                archived, rows, "lifecycle_identity_unavailable"
+            )
+        actor = directory.identities["mufti-a"]
+        try:
+            directory.identities["mufti-a"] = replace(actor, active=False)
+            denied["revoked_current_reader"] = _deny_reads(
+                archived, rows, "lifecycle_identity_unavailable"
+            )
+        finally:
+            directory.identities["mufti-a"] = actor
+        _verify_available(pins, directory)
     if before != (list(CaseEvent.objects.values()), list(LifecycleEvent.objects.values())):
         raise AssertionError("restored lifecycle readers wrote records")
-    return {"table_count": 1, "case_count": 3, "event_count": len(actual)}
+    return {
+        "table_count": 1,
+        "case_count": 3,
+        "event_count": len(actual),
+        "denied_read_count": sum(denied.values()),
+        "denial_checks": denied,
+        "positive_reads_after_denial": True,
+    }

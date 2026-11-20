@@ -9,6 +9,7 @@ import zipfile
 from datetime import datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from urllib.parse import urlsplit
 
 from django.test import LiveServerTestCase, override_settings
@@ -175,16 +176,14 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
             "external_requests": [],
             "page_errors": [],
             "packet_requests": [],
+            "profile_mode": "fresh_temporary_persistent",
         }
         origin, contexts = self.live_server_url, []
         try:
-            with sync_playwright() as playwright:
-                browser = playwright.chromium.launch(
-                    executable_path=os.environ["FATWA_FASTBUILD_BROWSER"],
-                    headless=True,
-                    chromium_sandbox=True,
-                    args=["--disable-dev-shm-usage"],
-                )
+            with (
+                TemporaryDirectory(prefix="offline-browser-profiles-") as profiles,
+                sync_playwright() as playwright,
+            ):
                 try:
 
                     def observe(request):
@@ -209,8 +208,17 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                             route.abort()
 
                     def context(label):
-                        value = browser.new_context(
-                            viewport={"width": 320, "height": 780}, accept_downloads=True
+                        # Installability is unavailable in incognito contexts.
+                        # Each actor gets a new owned on-disk profile, deleted
+                        # after this test, with the same protected Chromium.
+                        value = playwright.chromium.launch_persistent_context(
+                            user_data_dir=str(Path(profiles) / label),
+                            executable_path=os.environ["FATWA_FASTBUILD_BROWSER"],
+                            headless=True,
+                            chromium_sandbox=True,
+                            args=["--disable-dev-shm-usage"],
+                            viewport={"width": 320, "height": 780},
+                            accept_downloads=True,
                         )
                         value.route("**/*", local_only)
                         value.on("request", observe)
@@ -391,7 +399,6 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                         name = "trace.zip" if label == "offline" else "trace-source-editor.zip"
                         value.tracing.stop(path=str(OUT / name))
                         value.close()
-                    browser.close()
                 proof["status"] = "PASS"
         finally:
             (OUT / "result.json").write_text(

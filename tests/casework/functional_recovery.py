@@ -310,6 +310,36 @@ def drill(pg_bin):
                 if child.returncode:
                     raise AssertionError(child.stdout + child.stderr)
                 assert "RESTORED_NEW_WORKFLOWS_PASS" in child.stdout
+                restored_results = {}
+                for line in child.stdout.splitlines():
+                    try:
+                        observed = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if not isinstance(observed, dict) or "verified_restored_workflow" not in observed:
+                        continue
+                    name = observed["verified_restored_workflow"]
+                    assert name in ADDITIONAL_WORKFLOWS and name not in restored_results
+                    assert isinstance(observed.get("result"), dict)
+                    restored_results[name] = observed["result"]
+                assert set(restored_results) == set(ADDITIONAL_WORKFLOWS)
+                for name, checks in {
+                    "apps.research_library.recovery_support": {
+                        "missing_authority": 3,
+                        "missing_identity_provider": 3,
+                        "revoked_current_reader": 2,
+                        "revoked_public_release_actor": 1,
+                    },
+                    "apps.case_lifecycle.recovery_support": {
+                        "missing_authority": 3,
+                        "missing_identity_provider": 3,
+                        "revoked_current_reader": 3,
+                    },
+                }.items():
+                    observed = restored_results[name]
+                    assert observed["denial_checks"] == checks
+                    assert observed["denied_read_count"] == sum(checks.values())
+                    assert observed["positive_reads_after_denial"] is True
                 with service.connect(result["database"]) as db:
                     assert service.baseline(db) == before
                     assert service.references(db) == references
@@ -334,6 +364,7 @@ def drill(pg_bin):
                     "all_restored_originals_verified_after_readers": True,
                     "source_originals_unchanged": True,
                     "additional_workflows": list(additional),
+                    "restored_workflow_results": restored_results,
                     "encrypted": True,
                     "plaintext_dump_present": bool(list(root.rglob("database.dump"))),
                 }

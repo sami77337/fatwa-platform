@@ -41,6 +41,14 @@ class LibraryRecoveryTests(TransactionTestCase):
                     "decision_count": 5,
                     "public_version_count": 1,
                     "draft_denied_count": 2,
+                    "denied_read_count": 9,
+                    "denial_checks": {
+                        "missing_authority": 3,
+                        "missing_identity_provider": 3,
+                        "revoked_current_reader": 2,
+                        "revoked_public_release_actor": 1,
+                    },
+                    "positive_reads_after_denial": True,
                 },
             )
             encoded = json.dumps(pins)

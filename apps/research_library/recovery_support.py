@@ -3,15 +3,18 @@
 import json
 import uuid
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import timedelta
 from hashlib import sha256
 
+from django.conf import settings
 from django.test import override_settings
 from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
 from apps.experimental_publication.tests import Directory
+from apps.library_preview import services as preview
 from apps.library_preview.policy import PreviewPolicy
 
 from . import public, services
@@ -178,45 +181,102 @@ def populate():
         }
 
 
+def _verify_available(common, expected):
+    for label, record in expected.items():
+        actual = services.read_material(**common, version_id=record["version_id"])
+        if any(actual[key] != value for key, value in record.items()):
+            raise AssertionError("restored library edition changed")
+        if label.endswith("_draft"):
+            try:
+                services.file_content(**common, version_id=record["version_id"])
+            except cases.CaseConflict as exc:
+                if str(exc) != "library_use_unavailable":
+                    raise
+            else:
+                raise AssertionError("unapproved edition inherited file rights")
+        else:
+            raw = BOOK_BYTES if label == "book" else video()
+            for usage in ("READ", "DOWNLOAD"):
+                content = services.file_content(
+                    **common, version_id=record["version_id"], usage=usage
+                )
+                if content["raw"] != raw or content["sha256"] != sha256(raw).hexdigest():
+                    raise AssertionError("restored library original bytes changed")
+    with public.public_projection() as snapshot:
+        if set(snapshot.records) != {expected["video"]["version_id"]}:
+            raise AssertionError("restored library public rights changed")
+        recording = snapshot.read(expected["video"]["version_id"])
+        if (
+            recording["number"] != 1
+            or snapshot.content(recording["version_id"])["raw"] != video()
+            or snapshot.content(recording["version_id"], usage="DOWNLOAD")["raw"] != video()
+        ):
+            raise AssertionError("restored public recording changed")
+    result = services.browse(**common)
+    if result["total"] != 2 or {row["number"] for row in result["rows"]} != {2}:
+        raise AssertionError("restored current-edition browse changed")
+
+
+def _deny_private_reads(common, version_id, reason):
+    # A native request binds its current provider from configuration. Do not
+    # reuse the fixture's former provider after removing that configuration.
+    current = {**common, "provider": getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)}
+    count = 0
+    for reader in (services.read_material, services.file_content):
+        try:
+            reader(**current, version_id=version_id)
+        except cases.CaseConflict as exc:
+            if str(exc) != reason:
+                raise
+            count += 1
+        else:
+            raise AssertionError("restored library read survived missing or revoked trust")
+    return count
+
+
+def _deny_public_read(version_id):
+    try:
+        with public.public_projection() as snapshot:
+            snapshot.content(version_id)
+    except preview.PreviewUnavailable:
+        return 1
+    raise AssertionError("restored public source inherited a durable access grant")
+
+
 def verify_restored(pins):
     receipt, expected = pins["case"], pins["versions"]
     before = _row_pins(receipt["case_id"])
     if before != pins["tables"] or _canonical(receipt["case_id"]) != receipt["canonical_sha256"]:
         raise AssertionError("restored library row or canonical pins changed")
     with _fixture(receipt) as common:
-        for label, record in expected.items():
-            actual = services.read_material(**common, version_id=record["version_id"])
-            if any(actual[key] != value for key, value in record.items()):
-                raise AssertionError("restored library edition changed")
-            if label.endswith("_draft"):
-                try:
-                    services.file_content(**common, version_id=record["version_id"])
-                except cases.CaseConflict as exc:
-                    if str(exc) != "library_use_unavailable":
-                        raise
-                else:
-                    raise AssertionError("unapproved edition inherited file rights")
-            else:
-                raw = BOOK_BYTES if label == "book" else video()
-                for usage in ("READ", "DOWNLOAD"):
-                    content = services.file_content(
-                        **common, version_id=record["version_id"], usage=usage
-                    )
-                    if content["raw"] != raw or content["sha256"] != sha256(raw).hexdigest():
-                        raise AssertionError("restored library original bytes changed")
-        with public.public_projection() as snapshot:
-            if set(snapshot.records) != {expected["video"]["version_id"]}:
-                raise AssertionError("restored library public rights changed")
-            recording = snapshot.read(expected["video"]["version_id"])
-            if (
-                recording["number"] != 1
-                or snapshot.content(recording["version_id"])["raw"] != video()
-                or snapshot.content(recording["version_id"], usage="DOWNLOAD")["raw"] != video()
-            ):
-                raise AssertionError("restored public recording changed")
-        result = services.browse(**common)
-        if result["total"] != 2 or {row["number"] for row in result["rows"]} != {2}:
-            raise AssertionError("restored current-edition browse changed")
+        _verify_available(common, expected)
+        book_id, video_id = expected["book"]["version_id"], expected["video"]["version_id"]
+        denied = {}
+        with override_settings(FATWA_RESEARCH_LIBRARY_AUTHORITY=None):
+            denied["missing_authority"] = _deny_private_reads(
+                common, book_id, "library_authority_required"
+            ) + _deny_public_read(video_id)
+        with override_settings(FATWA_CASEWORK_IDENTITY_PROVIDER=None):
+            denied["missing_identity_provider"] = _deny_private_reads(
+                common, book_id, "case_access_denied"
+            ) + _deny_public_read(video_id)
+        directory = common["provider"]
+        reader = directory.identities["editor"]
+        try:
+            directory.identities["editor"] = replace(reader, active=False)
+            denied["revoked_current_reader"] = _deny_private_reads(
+                common, book_id, "case_access_denied"
+            )
+        finally:
+            directory.identities["editor"] = reader
+        publisher = directory.identities["publisher"]
+        try:
+            directory.identities["publisher"] = replace(publisher, active=False)
+            denied["revoked_public_release_actor"] = _deny_public_read(video_id)
+        finally:
+            directory.identities["publisher"] = publisher
+        # Re-open exact originals after restoring only current synthetic trust.
+        _verify_available(common, expected)
     if (
         _row_pins(receipt["case_id"]) != before
         or _canonical(receipt["case_id"]) != receipt["canonical_sha256"]
@@ -231,4 +291,7 @@ def verify_restored(pins):
         "decision_count": 5,
         "public_version_count": 1,
         "draft_denied_count": 2,
+        "denied_read_count": sum(denied.values()),
+        "denial_checks": denied,
+        "positive_reads_after_denial": True,
     }
