@@ -27,6 +27,7 @@ async function show(id) {
       reader.append(media);
     } else if (row.file.media_type === "text/plain") reader.append(element("pre", new TextDecoder("utf-8", {fatal: true}).decode(raw)));
     const file = element("a", "فتح الملف المحلي"); file.href = url; file.target = "_blank"; file.rel = "noopener"; reader.append(file);
+    const download = element("a", "تنزيل الملف المحلي"); download.href = url; download.download = row.file.filename; reader.append(download);
     reader.append(element("p", "SHA-256: " + row.file.sha256));
   }
   expiry = setTimeout(async () => { clearReader(); await list(); tell("انتهت صلاحية النسخة المحلية. أعد حفظها عند الاتصال إذا بقي الإذن قائمًا."); }, Math.max(1, Date.parse(value.expires_at) - Date.now()));

@@ -56,6 +56,7 @@ LABELS = [
 ]
 
 BROWSER_LABELS = [
+    "apps.research_library.offline_browser_tests",
     "tests.casework.test_functional_completion_browser",
     "apps.case_assignments.browser_tests",
     "apps.browser_audio.test_browser.BrowserAudioTests.test_pause_resume_preserves_one_recording_and_excludes_paused_time",
@@ -64,7 +65,6 @@ BROWSER_LABELS = [
     "apps.selected_exports.browser_tests",
     "apps.data_quality.browser_tests",
     "apps.research_library.browser_tests",
-    "apps.research_library.offline_browser_tests",
     "apps.material_import.browser_tests",
     "apps.public_collections.browser_tests",
     "apps.case_lifecycle.browser_tests",
@@ -127,7 +127,10 @@ def main():
         ),
     ]
     if args.browser:
-        stages.append(
+        # Surface native browser failures before the longer service/recovery
+        # stages. Completion still requires every unchanged mandatory stage.
+        stages.insert(
+            next(index for index, (name, _) in enumerate(stages) if name == "affected"),
             (
                 "browser",
                 [

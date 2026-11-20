@@ -193,7 +193,13 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     archive.read(row["archive_file"]), expected[row["material"]["version_id"]]
                 )
             self.assertIn("أرشيف المواد المختارة", archive.read("index.html").decode())
-        proof["archive"] = {"file": destination.name, "member_count": 2, "exact_originals": True}
+        proof["archive"] = {
+            "file": destination.name,
+            "sha256": sha256(destination.read_bytes()).hexdigest(),
+            "size": destination.stat().st_size,
+            "member_count": 2,
+            "exact_originals": True,
+        }
 
     def test_native_pwa_selection_offline_bytes_revocation_and_shortened_expiry(self):
         from playwright.sync_api import sync_playwright
@@ -331,16 +337,28 @@ class OfflineLibraryBrowserTests(LibraryFixture, LiveServerTestCase):
                     self.playable(page)
                     raw = base64.b64decode(self.copy(page, "video")["file_base64"])
                     self.assertEqual(raw, video())
-                    shown_hash = page.evaluate(
-                        """async () => {
-                            const url = document.querySelector('#reader a[href^="blob:"]').href;
-                            const raw = await (await fetch(url)).arrayBuffer();
-                            return [...new Uint8Array(await crypto.subtle.digest('SHA-256', raw))]
-                                .map(value => value.toString(16).padStart(2, '0')).join('');
-                        }"""
+                    local_download = page.get_by_role("link", name="تنزيل الملف المحلي", exact=True)
+                    self.assertEqual(
+                        local_download.get_attribute("href"),
+                        page.locator("#reader video").get_attribute("src"),
                     )
+                    # The native download reads the same displayed Blob without
+                    # relaxing connect-src for a page-script fetch(blob:).
+                    with page.expect_download() as waiting:
+                        local_download.click()
+                    download = waiting.value
+                    self.assertIsNone(download.failure())
+                    destination = OUT / "offline-original.webm"
+                    download.save_as(str(destination))
+                    self.assertEqual(destination.read_bytes(), video())
+                    shown_hash = sha256(destination.read_bytes()).hexdigest()
                     self.assertEqual(shown_hash, sha256(video()).hexdigest())
                     proof["offline_video_sha256"] = shown_hash
+                    proof["offline_download"] = {
+                        "file": destination.name,
+                        "sha256": shown_hash,
+                        "size": destination.stat().st_size,
+                    }
                     self.capture(page, "video-offline", proof)
                     self.card(page, "saved", "text").get_by_role(
                         "button", name="حذف هذه النسخة", exact=True
