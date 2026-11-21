@@ -209,7 +209,7 @@ class PreciseCitationBrowserTests(CitationFixture, LiveServerTestCase):
                                 "native reference print and download",
                                 "native source withdrawal",
                             ],
-                            "console_errors": errors,
+                            "page_errors": errors,
                             "external_requests": external,
                         },
                         ensure_ascii=False,
