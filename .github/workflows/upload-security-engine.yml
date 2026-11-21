@@ -35,15 +35,14 @@ jobs:
           # signatures, renamed CLD files or fallback download is accepted.
           # https://docs.clamav.net/manual/Usage/SignatureManagement.html
           python - <<'PY'
-          import getpass, os
+          import os
           from pathlib import Path
           root = Path(os.environ['RUNNER_TEMP']) / 'fatwa-upload-engine'
-          download = root / 'download'
-          download.mkdir(parents=True, exist_ok=True)
+          root.mkdir(parents=True, exist_ok=True)
           (root / 'snapshot').mkdir(exist_ok=True)
           (root / 'freshclam.conf').write_text('\n'.join([
-              'DatabaseDirectory ' + str(download),
-              'DatabaseOwner ' + getpass.getuser(),
+              'DatabaseDirectory /var/lib/clamav',
+              'DatabaseOwner clamav',
               'DatabaseMirror database.clamav.net',
               'Foreground yes', 'MaxAttempts 1',
               'ConnectTimeout 30', 'ReceiveTimeout 60',
@@ -51,13 +50,18 @@ jobs:
           ]))
           PY
           mkdir -p .local/qa/upload-security-engine
-          timeout 300 freshclam --config-file="$RUNNER_TEMP/fatwa-upload-engine/freshclam.conf" > .local/qa/upload-security-engine/freshclam.log 2>&1
+          # Use the distribution's confined paths and service account. The first
+          # hosted attempt could not open a runner-temp configuration; do not
+          # weaken AppArmor or change the official database verification.
+          sudo install -d -o clamav -g clamav -m 755 /var/lib/clamav
+          sudo install -o root -g root -m 644 "$RUNNER_TEMP/fatwa-upload-engine/freshclam.conf" /etc/clamav/freshclam.conf
+          sudo timeout 300 freshclam --config-file=/etc/clamav/freshclam.conf > .local/qa/upload-security-engine/freshclam.log 2>&1
           python - <<'PY'
           import os, shutil
           from pathlib import Path
           root = Path(os.environ['RUNNER_TEMP']) / 'fatwa-upload-engine'
           for name in ('main.cvd', 'daily.cvd', 'bytecode.cvd'):
-              source = root / 'download' / name
+              source = Path('/var/lib/clamav') / name
               if not source.is_file() or source.is_symlink():
                   raise SystemExit('Required official CVD snapshot unavailable')
               target = root / 'snapshot' / name
@@ -65,6 +69,11 @@ jobs:
               target.chmod(0o444)
           (root / 'snapshot').chmod(0o555)
           PY
+      - name: Retain updater diagnostics without changing confinement
+        if: always()
+        run: |
+          mkdir -p .local/qa/upload-security-engine
+          sudo journalctl -k --no-pager --grep='apparmor.*freshclam' > .local/qa/upload-security-engine/updater-confinement.log 2>&1 || true
       - name: Prove benign admission and EICAR rejection with the real engine
         if: always()
         run: |
