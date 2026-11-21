@@ -32,6 +32,7 @@ ACTIONS = {
     "research_collect",
     "research_save_search",
     "research_collection_add",
+    "research_collection_add_fatwa",
     "research_collection_save_search",
     "research_collection_note",
     "research_collection_remove",
@@ -235,6 +236,7 @@ def workspace(request):
                     "research_collection_archive": "ARCHIVE",
                     "research_collection_restore": "RESTORE",
                     "research_collection_add": "ADD",
+                    "research_collection_add_fatwa": "ADD",
                     "research_collection_note": "NOTE",
                     "research_collection_remove": "REMOVE",
                     "research_collection_move": "MOVE",
@@ -253,9 +255,13 @@ def workspace(request):
                         direction=fields.get("direction", ""),
                         item_id=state["item_id"],
                         search_id=state["search_id"],
-                        resource=Resource(**source["resource"])
-                        if action == "research_collection_add"
-                        else None,
+                        resource=(
+                            Resource(**source["resource"])
+                            if action == "research_collection_add"
+                            else collections.current_approved_resource(**common)
+                            if action == "research_collection_add_fatwa"
+                            else None
+                        ),
                         filters={k: v for k, v in source["filters"].items() if k != "page"}
                         if action == "research_collection_save_search"
                         else None,
@@ -279,6 +285,10 @@ def workspace(request):
                     expected_revision=state["collection_revision"],
                 )["opened"]
                 for item in opened:
+                    if item["kind"] == "APPROVED_FATWA":
+                        # This case-owned answer is not an editable reference.
+                        # Its current signed comparison is the authorized reader.
+                        continue
                     item["research_state"] = views._token(
                         binding,
                         result,

@@ -28,7 +28,7 @@ MAX_COLLECTIONS = 20
 MAX_ITEMS = 30
 MAX_SEARCHES = 20
 MAX_EVENTS = 256
-SUPPORTED = {"REFERENCE", "TRANSCRIPT", "KNOWLEDGE"}
+SUPPORTED = {"REFERENCE", "TRANSCRIPT", "KNOWLEDGE", "APPROVED_FATWA"}
 FILTER_KEYS = {"query", "kind", "edition_id", "printed_part", "printed_page"}
 ZERO = "0" * 64
 
@@ -248,6 +248,26 @@ def _title(resource, opened):
 
 
 @mutation_service
+def current_approved_resource(**common):
+    """Current case-owned approved answer only; add still rechecks on write."""
+    with _scope(**common) as (case, actor):
+        if case.stage != "ANSWERED" or not case.approved_answer_id:
+            raise cases.CaseConflict("research_approved_fatwa_unavailable")
+        answer = case.approved_answer
+        if (
+            answer is None
+            or answer.case_id != case.pk
+            or answer.evidence_version != case.evidence_version
+        ):
+            raise cases.CaseConflict("research_approved_fatwa_unavailable")
+        resource = Resource("APPROVED_FATWA", str(answer.pk), answer.text_sha256)
+        # No separate browse entitlement or implicit publication right; use
+        # the existing independent READ_TEXT and privacy checks immediately.
+        services.open_resource(**common, resource=resource)
+        return resource
+
+
+@mutation_service
 def list_collections(**common):
     with _scope(**common) as (case, actor):
         result = _pins(case)
@@ -288,6 +308,9 @@ def read_collection(*, collection_id, **common):
     ):
         collection, _ = _get(case, actor, common["provider"], collection_id)
         result = _pins(case, collection)
+        result["can_add_approved_fatwa"] = (
+            case.stage == "ANSWERED" and case.approved_answer_id is not None
+        )
         result["items"] = []
         permitted = []
         for row in collection.items.order_by("ordinal"):
