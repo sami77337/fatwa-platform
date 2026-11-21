@@ -10,7 +10,7 @@ from time import monotonic, time
 from unittest import TestCase
 from unittest.mock import patch
 
-from .clamav import ClamAVConfig, ClamAVScanner, DatabasePin
+from .clamav import ClamAVConfig, ClamAVScanner, DatabasePin, complete_report
 from .contract import ScanInput, ScannerUnavailable
 
 
@@ -147,6 +147,25 @@ class ClamAVAdapterContractTests(TestCase):
         self.assertEqual(result.status, "BLOCKED")
         self.assertTrue(result.complete)
         self.assertEqual((result.scanned_files, result.loaded_signatures), (1, 3))
+
+    def test_actual_154_report_keeps_aligned_end_date_without_accepting_partial_coverage(self):
+        # Exact benign report from real hosted run 44910119961 / artifact
+        # 14708539425. This parser replay is not a fresh engine execution.
+        raw = (Path(__file__).with_name("fixtures") / "clamav-1.5.4-clean.txt").read_bytes()
+        self.assertEqual(
+            sha256(raw).hexdigest(),
+            "ac4703a1d1cece9bbb4557eab8f3f397ce37d15c7a1532b940b7a1c7581c37fe",
+        )
+        path = "/tmp/fatwa-scan-kmvfz7cw/upload.original"
+        self.assertEqual(complete_report(raw, path, "1.5.4"), 3628232)
+        for bad in (
+            raw.replace(b"Scanned files: 1", b"Scanned files: 0"),
+            raw.replace(b"Known viruses: 3628232", b"Known viruses: 0"),
+            raw.replace(b"Infected files: 0", b"Infected files: 1"),
+            raw + b"WARNING: incomplete coverage\n",
+            raw + b"Scanned files: 1\n",
+        ):
+            self.assertIsNone(complete_report(bad, path, "1.5.4"))
 
     def test_post_process_signature_change_and_timeout_discard_clean_output(self):
         scanner = ClamAVScanner(self.config)

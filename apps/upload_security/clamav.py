@@ -393,7 +393,9 @@ def complete_report(raw, path, engine_version, *, infected=False):
         "Data read": amount + r" \(ratio [0-9]+\.[0-9]+:1\)",
         "Time": r"[0-9]+\.[0-9]+ sec \([0-9]+ m [0-9]+ s\)",
         "Start Date": r"[0-9]{4}:[0-9]{2}:[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}",
-        "End Date": r"[0-9]{4}:[0-9]{2}:[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}",
+        # Actual 1.5.4 output aligns this value with Start Date using two
+        # additional ASCII spaces. Preserve exact keys, fields and coverage.
+        "End Date": r"(?:  )?[0-9]{4}:[0-9]{2}:[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}",
     }
     seen = {}
     for line in lines[2:]:

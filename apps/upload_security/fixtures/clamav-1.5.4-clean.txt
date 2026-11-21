@@ -1,0 +1,13 @@
+/tmp/fatwa-scan-kmvfz7cw/upload.original: OK
+
+----------- SCAN SUMMARY -----------
+Known viruses: 3628232
+Engine version: 1.5.4
+Scanned directories: 0
+Scanned files: 1
+Infected files: 0
+Data scanned: 151 B
+Data read: 76 B (ratio 1.99:1)
+Time: 6.834 sec (0 m 6 s)
+Start Date: 2026:11:21 13:42:31
+End Date:   2026:11:21 13:42:38
