@@ -77,6 +77,25 @@ def meta(source, mid="synthetic-mid-1"):
     raise AssertionError(source)
 
 
+
+def instagram_comment(mid="synthetic-ig-comment-1", media="synthetic-ig-media-1", parent=None):
+    """One documented IG professional-account comment in a synthetic envelope."""
+    value = {
+        "id": mid,
+        "from": {"id": PERSON, "username": "synthetic-commenter"},
+        "media": {"id": media, "media_product_type": "FEED"},
+        "text": QUESTION,
+    }
+    if parent is not None:
+        value["parent_id"] = parent
+    return {
+        "object": "instagram",
+        "entry": [{"id": PAGE, "changes": [{"field": "comments", "value": value}]}],
+    }
+
+
+
+
 class MetaProjectionTests(SimpleTestCase):
     def read(self, source, payload=None):
         return project(
@@ -144,6 +163,52 @@ class MetaProjectionTests(SimpleTestCase):
         )
         with self.assertRaises(IntakeError):
             SourceContext("whatsapp", "synthetic-account", PAGE).validate()
+
+    def test_instagram_comment_is_original_media_scoped_without_scholarly_approval(self):
+        first = self.read("instagram", instagram_comment())
+        second = self.read(
+            "instagram", instagram_comment(mid="synthetic-ig-comment-2",
+                                             media="synthetic-other-media")
+        )
+        self.assertEqual(first.problem, "")
+        self.assertEqual(first.original_text, QUESTION)
+        self.assertEqual(first.message_id, "synthetic-ig-comment-1")
+        self.assertEqual(first.sender, PERSON)
+        self.assertEqual(first.display_name, "synthetic-commenter")
+        self.assertNotEqual(first.conversation, second.conversation)
+        self.assertFalse(first.parent_id)
+
+    def test_instagram_comment_replies_live_updates_and_bad_media_hold_for_review(self):
+        parent = self.read(
+            "instagram", instagram_comment(parent="synthetic-parent-comment")
+        )
+        self.assertEqual(parent.problem, "meta_reply_requires_review")
+        self.assertEqual(parent.original_text, QUESTION)
+        self.assertEqual(parent.parent_id, "synthetic-parent-comment")
+        live = instagram_comment()
+        live["entry"][0]["changes"][0]["field"] = "live_comments"
+        self.assertEqual(
+            self.read("instagram", live).problem,
+            "meta_unsupported_update_requires_review",
+        )
+        malformed = instagram_comment()
+        malformed["entry"][0]["changes"][0]["value"]["media"] = {}
+        self.assertEqual(
+            self.read("instagram", malformed).problem,
+            "invalid_or_incomplete_source",
+        )
+        own = instagram_comment()
+        own["entry"][0]["changes"][0]["value"]["from"]["id"] = PAGE
+        self.assertEqual(
+            self.read("instagram", own).problem,
+            "meta_page_self_event_requires_review",
+        )
+        ambiguous = instagram_comment()
+        ambiguous["entry"][0]["messaging"] = meta("instagram")["entry"][0]["messaging"]
+        self.assertEqual(
+            self.read("instagram", ambiguous).problem,
+            "meta_unsupported_update_requires_review",
+        )
 
     def test_duplicate_json_keys_fail_closed(self):
         row = project(
@@ -248,6 +313,37 @@ class SignedWebhookTests(TransactionTestCase):
         self.assertEqual(result["status"], "NEEDS_REVIEW")
         self.assertEqual(ReviewTicket.objects.count(), 1)
         self.assertFalse(Case.objects.exists())
+
+    def test_signed_instagram_comment_exact_capture_then_explicit_case_processing(self):
+        raw = encoded(instagram_comment())
+        accepted = self.post("instagram", raw)
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        self.assertFalse(Case.objects.exists())
+        self.assertFalse(EvidenceBinding.objects.exists())
+        receipt = SourceReceipt.objects.get(source="instagram")
+        self.assertEqual(bytes(receipt.raw), raw)
+        self.assertEqual(receipt.original_text, QUESTION)
+        self.assertEqual(len(receipt.conversation), 64)
+        result = intake.process(receipt_id=receipt.pk, synthetic_fixtures_only=True)
+        self.assertEqual(result["status"], "CREATED")
+        self.assertEqual(Case.objects.count(), 1)
+        case = Case.objects.get()
+        self.assertEqual(case.source.original_question, QUESTION)
+        self.assertIsNone(case.approved_answer_id)
+
+    def test_signed_instagram_parent_comment_stays_review_only_with_exact_bytes(self):
+        raw = encoded(instagram_comment(parent="synthetic-parent-comment"))
+        accepted = self.post("instagram", raw)
+        self.assertEqual(accepted.status_code, 200, accepted.content)
+        receipt = SourceReceipt.objects.get(source="instagram")
+        self.assertEqual(bytes(receipt.raw), raw)
+        self.assertEqual(receipt.parent_id, "synthetic-parent-comment")
+        self.assertEqual(receipt.problem, "meta_reply_requires_review")
+        result = intake.process(receipt_id=receipt.pk, synthetic_fixtures_only=True)
+        self.assertEqual(result["status"], "NEEDS_REVIEW")
+        self.assertFalse(Case.objects.exists())
+        self.assertFalse(EvidenceBinding.objects.exists())
+        self.assertEqual(ReviewTicket.objects.count(), 1)
 
     def test_telegram_secret_header_is_checked_not_hmac(self):
         data = telegram()

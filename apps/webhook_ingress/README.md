@@ -117,3 +117,28 @@ not silently bound to the configured sender or case. Other providers must not
 supply this phone key. No real phone number or WABA is provisioned in the
 current closed fixture profile. Meta's published Webhook envelope distinguishes
 these fields; see its maintained [WhatsApp Cloud API reference](https://www.postman.com/meta/whatsapp-business-platform/documentation/wlk6lh4/whatsapp-cloud-api).
+
+## Instagram media comments (distinct from direct messages)
+
+Meta documents the `instagram` `entry[].changes[]` `comments` field with
+`value.id` (comment ID), `value.from.id` (Instagram-scoped sender),
+`value.media.id` (media owner context) and `value.text` (original text).
+The single-event parser retains the exact original signed bytes, preserves
+the comment ID and sender, and derives an isolated conversation identifier
+from the configured professional-account ID **and** the media ID. Repeated
+titles, usernames, or comments on different media cannot become shared
+conversation rights. It accepts only the documented `comments` subset;
+`live_comments`, mentions, multi-entry notifications, missing media IDs,
+account-self events and comments with `parent_id` are held for independent
+review. A parent comment is not automatically declared a canonical follow-up
+or added to any existing case. Staff must use the separate authorized case
+processing and review APIs.
+
+Sources: [Meta Instagram webhook field reference](https://developers.facebook.com/docs/graph-api/webhooks/reference/instagram) and [Instagram webhook setup and required permissions](https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram/).
+A passing synthetic test proves only the supported parser and local
+authorization boundary; it does not attest live `instagram_manage_comments`
+approval, installed Page subscriptions, real account credentials, or delivery
+from Meta. The protected Chromium workflow now tests one signed single-event
+Instagram media comment alongside Messenger replay, and requires exact
+downloaded original bytes for both. The 55 existing product journeys are
+unchanged and remain separately required.

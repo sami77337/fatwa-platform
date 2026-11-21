@@ -19,14 +19,18 @@ from apps.source_case_intake.http_tests import DESK_SETTINGS
 from apps.source_case_intake.models import EvidenceBinding, SourceReceipt
 from tests.casework.test_http import Directory
 
-from .tests import ACCOUNT, PAGE, QUESTION, SECRET, URL, meta, profile
+from .tests import ACCOUNT, QUESTION, SECRET, URL, instagram_comment, meta, profile
 
+IG_ACCOUNT = "22222222-2222-4222-8222-222222222222"
+IG_URL = f"/casework/webhooks/{IG_ACCOUNT}/"
 OUT = Path(".local/qa/webhook-ingress/browser")
 FEATURES = {
     **DESK_SETTINGS,
     "ROOT_URLCONF": "config.campaign_urls",
     "FATWA_WEBHOOK_INGRESS_ENABLED": True,
-    "FATWA_WEBHOOK_INGRESS_PROFILES": {ACCOUNT: profile("messenger")},
+    "FATWA_WEBHOOK_INGRESS_PROFILES": {
+        ACCOUNT: profile("messenger"), IG_ACCOUNT: profile("instagram")
+    },
     "FATWA_CASEWORK_WEB_ENABLED": True,
 }
 
@@ -40,6 +44,12 @@ class SignedMetaBrowserTests(LiveServerTestCase):
 
         raw = json.dumps(meta("messenger"), ensure_ascii=False, separators=(",", ":")).encode()
         signature = "sha256=" + hmac.new(SECRET.encode(), raw, hashlib.sha256).hexdigest()
+        ig_raw = json.dumps(
+            instagram_comment(), ensure_ascii=False, separators=(",", ":")
+        ).encode()
+        ig_signature = "sha256=" + hmac.new(
+            SECRET.encode(), ig_raw, hashlib.sha256
+        ).hexdigest()
         directory = Directory()
         directory.grant(intake.REVIEW_SCOPE)
         errors, external = [], []
@@ -79,6 +89,14 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                     headers={**envelope, "X-Hub-Signature-256": "sha256=" + "0" * 64},
                 )
                 self.assertEqual(bad.status, 403)
+                instagram_event = context.request.post(
+                    base + IG_URL, data=ig_raw,
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Hub-Signature-256": ig_signature,
+                    },
+                )
+                self.assertEqual(instagram_event.status, 200, instagram_event.body())
 
                 page.goto(base + "/casework/staff/login/", wait_until="domcontentloaded")
                 page.locator("#credential").fill(directory.credential)
@@ -100,6 +118,21 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                 # no direct view invocation, forged cookie or test-only route.
                 click("مكتب استقبال المصادر", keyboard=True)
                 self.assertEqual(page.locator("#source-filter").count(), 1)
+                page.locator("#source-filter").select_option("instagram")
+                click("تصفية الأحداث")
+                self.assertEqual(page.locator("article[data-receipt]").count(), 1)
+                self.assertIn("synthetic-ig-comment-1", page.content())
+                self.assertNotIn(QUESTION, page.content())
+                click("فتح الحدث synthetic-ig-comment-1 من instagram")
+                self.assertEqual(page.locator("#source-question").inner_text(), QUESTION)
+                with page.expect_download() as instagram_download:
+                    page.get_by_role(
+                        "button", name="تنزيل الأصل الخام", exact=True
+                    ).click()
+                self.assertEqual(
+                    Path(instagram_download.value.path()).read_bytes(), ig_raw
+                )
+                click("الأحداث المحفوظة")
                 page.locator("#source-filter").select_option("messenger")
                 click("تصفية الأحداث", keyboard=True)
                 self.assertEqual(page.locator("article[data-receipt]").count(), 1)
@@ -129,6 +162,7 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                 vanished = page.goto(base + "/casework/staff/", wait_until="domcontentloaded")
                 self.assertEqual(vanished.status, 200)
                 self.assertNotIn("synthetic-mid-1", page.content())
+                self.assertNotIn("synthetic-ig-comment-1", page.content())
                 self.assertNotIn(QUESTION, page.content())
                 self.assertEqual(errors, [])
                 self.assertEqual(external, [])
@@ -140,6 +174,8 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                         "sandbox": sandbox,
                         "provider_contact": False,
                         "signed_raw_capture": True,
+                        "instagram_comment_source_exact": True,
+                        "instagram_raw_download_exact": True,
                         "same_event_replay_count": 1,
                         "invalid_signature_status": bad.status,
                         "source_view_original_exact": True,
@@ -159,6 +195,7 @@ class SignedMetaBrowserTests(LiveServerTestCase):
         # ORM belongs outside the synchronous Playwright/async event-loop context.
         # Keep the exact replay, no-case-creation and no-evidence assertions.
         self.assertEqual(SourceReceipt.objects.filter(source="messenger").count(), 1)
-        self.assertEqual(SourceReceipt.objects.count(), 1)
+        self.assertEqual(SourceReceipt.objects.filter(source="instagram").count(), 1)
+        self.assertEqual(SourceReceipt.objects.count(), 2)
         self.assertFalse(Case.objects.exists())
         self.assertFalse(EvidenceBinding.objects.exists())

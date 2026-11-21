@@ -112,6 +112,39 @@ def _facebook(entry, projection, context):
     projection.original_text = text(value["message"])
 
 
+
+def _instagram_comments(entry, projection, context):
+    """One IG professional-account media comment, not an inferred mention/reply."""
+    change = _one(entry.get("changes"), projection)
+    if change is None:
+        return
+    if change.get("field") != "comments":
+        projection.problem = "meta_unsupported_update_requires_review"
+        return
+    value = change["value"]
+    if type(value) is not dict or type(value.get("from")) is not dict:
+        raise IntakeError("meta_comment_invalid")
+    comment = identifier(value["id"])
+    media = identifier(value["media"]["id"])
+    sender = identifier(value["from"]["id"])
+    projection.event_id = projection.message_id = comment
+    projection.sender = sender
+    name = value["from"].get("username")
+    projection.display_name = name[:256] if type(name) is str else ""
+    projection.conversation = _conversation(context.conversation, media)
+    if sender == context.conversation:
+        projection.problem = "meta_page_self_event_requires_review"
+        return
+    # Retain the precise original bytes and text without importing a new case.
+    projection.original_text = text(value["text"])
+    if "parent_id" in value:
+        # The parent may be a comment by a different user, or a thread to which
+        # this case has no current entitlement. Keep it for independent review.
+        projection.parent_id = identifier(value["parent_id"])
+        projection.problem = "meta_reply_requires_review"
+
+
+
 def _whatsapp(entry, projection, context):
     change = _one(entry.get("changes"), projection)
     if change is None:
@@ -156,8 +189,17 @@ def project_meta(data, projection, context):
     entry = _entry(data, context, projection)
     if entry is None:
         return
-    if context.source in {"messenger", "instagram"}:
+    if context.source == "messenger":
         _messaging(entry, projection, context)
+    elif context.source == "instagram":
+        has_messages = "messaging" in entry
+        has_changes = "changes" in entry
+        if has_messages == has_changes:
+            projection.problem = "meta_unsupported_update_requires_review"
+        elif has_messages:
+            _messaging(entry, projection, context)
+        else:
+            _instagram_comments(entry, projection, context)
     elif context.source == "facebook":
         _facebook(entry, projection, context)
     elif context.source == "whatsapp":

@@ -83,6 +83,8 @@ jobs:
           assert result['external_requests'] == []
           assert result['page_errors'] == []
           assert result['current_review_scope_revoked'] is True
+          assert result['instagram_comment_source_exact'] is True
+          assert result['instagram_raw_download_exact'] is True
           for name in ('trace.zip', 'source-320.png', 'source-1280.png'):
               assert (folder / name).is_file()
               assert (folder / name).stat().st_size > 0
