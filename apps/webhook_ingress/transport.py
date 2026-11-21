@@ -11,6 +11,7 @@ import re
 from uuid import UUID
 
 from django.conf import settings
+from django.core.exceptions import RequestDataTooBig
 
 from apps.source_case_intake.adapters import IntakeError, SourceContext
 
@@ -86,7 +87,7 @@ def _notification(request, secret):
     # Request body is read before any JSON decoding, normalization or logging.
     try:
         raw = request.body
-    except (ValueError, OverflowError, OSError):
+    except (RequestDataTooBig, ValueError, OverflowError, OSError):
         return ("webhook_body_unavailable", 413)
     if not isinstance(raw, bytes) or not 1 <= len(raw) <= 262144:
         return ("webhook_body_bound", 413)

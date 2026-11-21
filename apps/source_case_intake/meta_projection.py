@@ -101,8 +101,11 @@ def _facebook(entry, projection, context):
     projection.sender = sender
     projection.display_name = value["from"].get("name", "")[:256] if type(value["from"].get("name")) is str else ""
     projection.conversation = _conversation(context.conversation, post)
-    # Meta parent_id can name a *post*, not another imported comment. Never
-    # infer FOLLOWUP correlation or create a guessed canonical relation.
+    # Meta parent_id can name a post or a different comment. Preserve the
+    # original and require human thread review, never infer FOLLOWUP linkage.
+    if "parent_id" in value or "parent_comment_id" in value:
+        projection.problem = "meta_reply_requires_review"
+        return
     if "attachments" in value or "photo" in value or "video" in value:
         projection.problem = "meta_media_or_action_requires_review"
         return

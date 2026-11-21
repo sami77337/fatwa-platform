@@ -4,13 +4,16 @@ import hashlib
 import hmac
 from copy import deepcopy
 
+from django.db import IntegrityError, transaction
 from django.test import RequestFactory, SimpleTestCase, TransactionTestCase, override_settings
 
 from apps.casework.models import Case
+from apps.source_case_intake import http_tests as source_http
 from apps.source_case_intake import services as intake
 from apps.source_case_intake.adapters import SourceContext, project
 from apps.source_case_intake.models import EvidenceBinding, ReviewTicket, SourceReceipt
 from apps.source_case_intake.simulators import raw as encoded, telegram
+from tests.casework.test_http import post
 from .views import callback
 
 ACCOUNT = "11111111-1111-4111-8111-111111111111"
@@ -110,6 +113,9 @@ class MetaProjectionTests(SimpleTestCase):
         fb = meta("facebook")
         fb["entry"][0]["changes"][0]["value"]["verb"] = "edit"
         self.assertEqual(self.read("facebook", fb).problem, "meta_nonnew_comment_requires_review")
+        reply = meta("facebook")
+        reply["entry"][0]["changes"][0]["value"]["parent_id"] = "synthetic-post"
+        self.assertEqual(self.read("facebook", reply).problem, "meta_reply_requires_review")
         wa = meta("whatsapp")
         wa["entry"][0]["changes"][0]["value"]["statuses"] = [{"status": "read"}]
         self.assertEqual(self.read("whatsapp", wa).problem, "meta_status_or_error_requires_review")
@@ -254,3 +260,64 @@ class SignedWebhookTests(TransactionTestCase):
             )
         self.assertEqual(response.status_code, 404)
         self.assertFalse(SourceReceipt.objects.exists())
+
+    def test_sql_insert_guard_rejects_unapproved_sources_accounts_and_tampered_hashes(self):
+        body = encoded(meta("messenger"))
+        fields = {
+            "source": "messenger",
+            "account": "synthetic-platform-account",
+            "event_id": "synthetic-guard-event",
+            "event_key": hashlib.sha256(b"guard-event").hexdigest(),
+            "message_id": "synthetic-guard-message",
+            "message_key": hashlib.sha256(b"guard-message").hexdigest(),
+            "conversation": "synthetic-conversation",
+            "sender": PERSON,
+            "requester_key": "source:synthetic-guard",
+            "raw": body,
+            "sha256": hashlib.sha256(body).hexdigest(),
+            "attachments": [],
+        }
+        for change in (
+            {"source": "unsupported"},
+            {"account": "real-account-without-approval"},
+            {"sha256": "0" * 64},
+        ):
+            with self.subTest(change=list(change)):
+                with self.assertRaises(IntegrityError), transaction.atomic():
+                    SourceReceipt.objects.create(**{**fields, **change})
+        self.assertFalse(SourceReceipt.objects.exists())
+
+
+@override_settings(**source_http.DESK_SETTINGS)
+class MetaReviewInboxTests(TransactionTestCase):
+    """End-to-end native staff filter; never a source-to-case permission grant."""
+
+    setUp = source_http.SourceDeskHTTPTests.setUp
+
+    def test_signed_source_receipt_only_visible_to_independent_review_scope(self):
+        body = encoded(meta("messenger"))
+        receipt = intake.capture(
+            raw=body,
+            context=SourceContext("messenger", "synthetic-platform-account", PAGE),
+            synthetic_fixtures_only=True,
+        )
+        fields = {
+            "action": "source_filter", "source": "messenger",
+            "state": "pending", "page": "1",
+        }
+        response = post(self.client, source_http.PATH, fields, self.page)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertContains(response, str(receipt.pk))
+        self.assertContains(response, "Messenger")
+        self.assertNotContains(response, self.held["receipt_id"])
+        old_source = post(
+            self.client, source_http.PATH,
+            {**fields, "source": "youtube"}, self.page
+        )
+        self.assertNotContains(old_source, str(receipt.pk))
+        self.directory.grant(self.root["public_ref"])
+        withdrawn = post(
+            self.client, source_http.PATH,
+            {**fields, "source": "all"}, self.page
+        )
+        self.assertNotContains(withdrawn, str(receipt.pk))

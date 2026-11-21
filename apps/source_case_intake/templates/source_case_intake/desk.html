@@ -27,6 +27,10 @@
     <option value="telegram" {% if inbox.source_filter == "telegram" %}selected{% endif %}>Telegram</option>
     <option value="youtube" {% if inbox.source_filter == "youtube" %}selected{% endif %}>YouTube</option>
     <option value="website" {% if inbox.source_filter == "website" %}selected{% endif %}>الموقع</option>
+    <option value="facebook" {% if inbox.source_filter == "facebook" %}selected{% endif %}>Facebook</option>
+    <option value="messenger" {% if inbox.source_filter == "messenger" %}selected{% endif %}>Messenger</option>
+    <option value="instagram" {% if inbox.source_filter == "instagram" %}selected{% endif %}>Instagram</option>
+    <option value="whatsapp" {% if inbox.source_filter == "whatsapp" %}selected{% endif %}>WhatsApp</option>
   </select>
   <label for="state-filter">حالة الاستقبال</label>
   <select id="state-filter" name="state">

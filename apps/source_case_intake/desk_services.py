@@ -90,7 +90,7 @@ def inbox(
     """Only scoped bound cases; unbound receipts require explicit review scope."""
     actor = _actor(subject_id, provider, synthetic_fixtures_only)
     if (
-        source not in {"all", "telegram", "youtube", "website"}
+        source not in {"all", "telegram", "youtube", "website", "facebook", "messenger", "instagram", "whatsapp"}
         or state not in {"all", "review", "pending", "bound", "held", "files"}
         or type(page) is not int
         or not 1 <= page <= 10000

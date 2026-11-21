@@ -20,8 +20,10 @@ during this recovery.
 - Telegram: require the exact configured
   \`X-Telegram-Bot-Api-Secret-Token\` on POST (never claim HMAC for Telegram).
   No Telegram GET verification.
-- No credentials, proofs, tokens, raw bodies, names or phone numbers are placed
-  into URI query strings, logs or successful HTTP responses. The receipt is
+- No credentials, raw bodies, sender IDs or phone numbers are deliberately
+  placed in URLs, logs or responses. Meta verification mandates the
+  `hub.verify_token` query parameter for a one-time subscription handshake:
+  reverse proxies must redact that field from access logs. The receipt is
   committed before a 200; a failed write returns 503 so the provider may retry.
 - Signed **single** Meta events are conservatively projected as Facebook Page
   feed comments, Messenger DMs, Instagram DMs and WhatsApp Cloud text messages.
@@ -29,6 +31,14 @@ during this recovery.
   Multiple events, edits, echoes, media, statuses and ambiguous sources remain
   immutable original-byte receipts with an explicit review reason; they do not
   fabricate a question or attachment.
+- The historical PostgreSQL insert trigger originally listed only the old
+  three source types. Migration `source_case_intake.0005_meta_source_guard`
+  expands *only* the whitelisted synthetic provider names without dropping
+  SHA-256, raw-size, immutable-ledger, account or evidence guards. Reversal is
+  blocked if Meta receipts still exist rather than silently losing their use.
+- The existing staff source inbox now has distinct Facebook, Messenger,
+  Instagram and WhatsApp filters. Current independent review permission is
+  still required for every unbound receipt, including raw original access.
 - The transport invokes \`source_case_intake.capture\` only, **never**
   \`process\`, \`ingest\`, \`resolve_review\`, a Mufti approval, or publication.
   Existing unique event/raw digests retain replay/conflict behavior. Staff
