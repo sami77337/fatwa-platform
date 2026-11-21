@@ -18,7 +18,9 @@ def answer_use_boundary():
     guards = []
     token = _USES.set((*_USES.get(), guards))
     try:
-        yield
+        # Composed readers may retain these same guards for a later coordinated
+        # callback/byte/pure-pin phase. Existing callers keep all exit checks.
+        yield guards
         # Closed child contexts leave no out-of-order transaction or ContextVar
         # on the stack. Repeat every callback first, then every pure pin last.
         for guard in guards:

@@ -223,11 +223,22 @@ def submit_reply(*, token, text, expected_revision, attachment=None, synthetic_f
     from apps.private_media.validation import MediaValidationError
 
     attachments._enabled()
+    from apps.upload_security import integration as scans
+    from apps.upload_security import services as scan_receipts
+
+    scans.requester_files(
+        raw_files=[attachment["raw"]],
+        token=token,
+        expected_revision=expected_revision,
+        synthetic_fixtures_only=synthetic_fixtures_only,
+        allow_clarification=True,
+    )
     media = attachments._validate(**attachment)
     try:
         storage = configured_storage()
         with (
             binding_locks(storage, [media.sha256]),
+            scan_receipts.boundary(),
             delivery._token_case(token, synthetic_fixtures_only),
         ):
             reply = cases.add_followup(

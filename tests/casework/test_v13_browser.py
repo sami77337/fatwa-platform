@@ -109,10 +109,36 @@ class V13Harness(V12Harness):
     def respect_budget_window(self):
         # Native PDF/audio requests must settle before the read-only counter
         # snapshot; otherwise a legitimate in-flight read changes that snapshot.
-        for context in getattr(self, "browser_contexts", []):
-            for page in context.pages:
+        for context_index, context in enumerate(getattr(self, "browser_contexts", [])):
+            for page_index, page in enumerate(context.pages):
                 if not page.is_closed():
+                    # Keep the existing readiness condition and timeout. A
+                    # failed native PDF/audio wait must retain its exact page
+                    # identity and protected trace instead of a bare timeout.
+                    with (OUT / "budget-readiness.jsonl").open("a") as diagnostic:
+                        diagnostic.write(
+                            json.dumps(
+                                {
+                                    "context": context_index,
+                                    "page": page_index,
+                                    "path": urlsplit(page.url).path,
+                                    "state": "waiting-for-networkidle",
+                                }
+                            )
+                            + "\n"
+                        )
                     page.wait_for_load_state("networkidle")
+                    with (OUT / "budget-readiness.jsonl").open("a") as diagnostic:
+                        diagnostic.write(
+                            json.dumps(
+                                {
+                                    "context": context_index,
+                                    "page": page_index,
+                                    "state": "networkidle",
+                                }
+                            )
+                            + "\n"
+                        )
         return super().respect_budget_window()
 
     def capture(self, page, label):
@@ -417,6 +443,7 @@ class V13ConnectedBrowserTests(V13Harness, LiveServerTestCase):
             pg_bin = str(Path(dump).parent)
         self.assertTrue((Path(pg_bin) / "pg_dump").is_file())
         OUT.mkdir(parents=True, exist_ok=True)
+        (OUT / "budget-readiness.jsonl").write_text("")
         self.errors, self.external = [], []
         edition, _ = bootstrap_catalog()
         directory = Directory()
@@ -476,10 +503,14 @@ class V13ConnectedBrowserTests(V13Harness, LiveServerTestCase):
                             "--use-file-for-fake-audio-capture=" + str(fake_microphone),
                         ],
                     )
+                    traced_contexts = []
                     try:
                         staff, requester, reviewer = [
                             self.context(browser).new_page() for _ in range(3)
                         ]
+                        for context in self.browser_contexts:
+                            context.tracing.start(screenshots=True, snapshots=True, sources=True)
+                            traced_contexts.append(context)
                         self.initial_audio_case(requester, directory, recording_rights)
                         self.login(staff, "M" * 64)
                         self.clarify_and_reply(staff, requester, self.source, files)
@@ -534,7 +565,21 @@ class V13ConnectedBrowserTests(V13Harness, LiveServerTestCase):
                         self.assertEqual(self.errors, [])
                         browser_version = browser.version
                     finally:
-                        browser.close()
+                        failed = sys.exc_info()[0] is not None
+                        trace_errors = []
+                        try:
+                            for index, context in enumerate(traced_contexts):
+                                try:
+                                    context.tracing.stop(path=str(OUT / f"trace-{index}.zip"))
+                                except Exception as error:
+                                    trace_errors.append(type(error).__name__)
+                            (OUT / "trace-diagnostics.json").write_text(
+                                json.dumps({"errors": trace_errors, "journey_failed": failed})
+                            )
+                            if trace_errors and not failed:
+                                self.fail("V13 protected journey trace could not be retained")
+                        finally:
+                            browser.close()
                 self.server_thread.terminate()
                 self.assertFalse(self.server_thread.is_alive())
                 key_file = Path(keys) / "backup.key"

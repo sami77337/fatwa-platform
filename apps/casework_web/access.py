@@ -1,6 +1,8 @@
 """Short-lived, CSRF-bound staff sessions from the existing trusted directory."""
+
 import json
 import re
+from dataclasses import replace
 from datetime import datetime, timedelta
 from hmac import compare_digest
 
@@ -14,6 +16,7 @@ from apps.mufti_review.identity import (
     resolve_identity,
     validate_identity,
 )
+from apps.staff_sessions import integration as sessions
 
 COOKIE = "fatwa_casework_staff"
 SALT = "fatwa.casework.staff.v1"
@@ -33,27 +36,49 @@ class RequestDirectory(MuftiIdentityProvider):
         self._provider = provider
         self._subject = authenticated.subject_id
         self._epoch = authenticated.auth_epoch
+        self._until = authenticated.valid_until
+        self._session = sessions.capture(provider, authenticated, surface="CASEWORK")
+
+    def _check_deadline(self):
+        if self._until <= timezone.now():
+            raise IdentityUnavailable("request_session_expired")
 
     def authenticate(self, credential):
         raise IdentityUnavailable("request_directory_cannot_authenticate")
 
     def projection_epoch(self):
         """Optional pure identity revision for composed readers that require it."""
+        self._check_deadline()
         method = getattr(self._provider, "projection_epoch", None)
         if not callable(method) or self._provider.provider_id != self.provider_id:
             raise IdentityUnavailable("request_identity_snapshot_required")
         epoch = method()
         if type(epoch) is not str or not 1 <= len(epoch) <= 65536:
             raise IdentityUnavailable("request_identity_snapshot_required")
-        return repr((id(self._provider), self.provider_id, self._subject, self._epoch, epoch))
+        self._check_deadline()
+        return repr(
+            (
+                id(self._provider),
+                self.provider_id,
+                self._subject,
+                self._epoch,
+                self._until.isoformat(),
+                sessions.projection(self._session),
+                epoch,
+            )
+        )
 
     def resolve(self, subject_id):
+        self._check_deadline()
         if subject_id != self._subject or self._provider.provider_id != self.provider_id:
             raise IdentityUnavailable("request_identity_changed")
         identity = resolve_identity(self._provider, subject_id)
         if identity.auth_epoch != self._epoch or self._provider.provider_id != self.provider_id:
             raise IdentityUnavailable("request_identity_changed")
-        return identity
+        self._check_deadline()
+        return sessions.resolve(
+            self._session, replace(identity, valid_until=min(identity.valid_until, self._until))
+        )
 
 
 def _binding(request, provider, subject, epoch, until):
@@ -62,7 +87,7 @@ def _binding(request, provider, subject, epoch, until):
     )
 
 
-def set_staff_cookie(request, response, provider, identity):
+def set_staff_cookie(request, response, provider, identity, *, mfa_grant=None):
     validate_identity(identity)
     until = min(identity.valid_until, timezone.now() + timedelta(seconds=TTL)).isoformat()
     values = {
@@ -74,9 +99,24 @@ def set_staff_cookie(request, response, provider, identity):
             request, provider.provider_id, identity.subject_id, identity.auth_epoch, until
         ),
     }
+    sessions.issue_cookie(
+        request,
+        values,
+        provider,
+        identity,
+        surface="CASEWORK",
+        deadline=datetime.fromisoformat(until),
+        mfa_grant=mfa_grant,
+    )
     response.set_signed_cookie(
-        COOKIE, json.dumps(values, separators=(",", ":")), salt=SALT, max_age=TTL,
-        httponly=True, samesite="Strict", path="/casework/", secure=False,
+        COOKIE,
+        json.dumps(values, separators=(",", ":")),
+        salt=SALT,
+        max_age=TTL,
+        httponly=True,
+        samesite="Strict",
+        path="/casework/",
+        secure=False,
     )
     return response
 
@@ -89,14 +129,16 @@ def current_staff(request, provider, *, case_key=None):
         values = json.loads(saved)
         if (
             type(values) is not dict
-            or set(values) != {"provider", "subject", "epoch", "until", "binding"}
+            or set(values)
+            != {"provider", "subject", "epoch", "until", "binding"} | sessions.fields()
             or any(type(value) is not str for value in values.values())
             or HEX.fullmatch(values["binding"]) is None
         ):
             raise ValueError("invalid_cookie")
         until = datetime.fromisoformat(values["until"])
         if (
-            not timezone.is_aware(until) or until.utcoffset() != timedelta(0)
+            not timezone.is_aware(until)
+            or until.utcoffset() != timedelta(0)
             or until <= timezone.now()
         ):
             raise ValueError("expired_cookie")
@@ -108,6 +150,11 @@ def current_staff(request, provider, *, case_key=None):
         )
         if not compare_digest(expected, values["binding"]):
             raise ValueError("browser_binding_missing")
-        return identity
+        sessions.current_cookie(
+            request, values, provider, identity, surface="CASEWORK", deadline=until
+        )
+        # The browser's shorter deadline remains authoritative after a slow
+        # directory callback and through every later request-bound resolution.
+        return validate_identity(replace(identity, valid_until=min(identity.valid_until, until)))
     except (ValueError, TypeError, KeyError, AttributeError, RecursionError) as exc:
         raise IdentityUnavailable("casework_session_not_authorized") from exc

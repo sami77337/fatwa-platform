@@ -1,0 +1,122 @@
+{
+  "schema": "fatwa.functional-continuation-checkpoint.v1",
+  "status": "EXECUTION_PASS_WITH_POST_RUN_VISUAL_FINDING",
+  "tested_sha": "ac8f5170b82767d759bd656fe9c2ea33cf48fc9f",
+  "tree_sha": "3ea9c17e4fcf2e5f80416c3e57b5810184e0a49c",
+  "workflow_run": 44885715061,
+  "workflow_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44885715061",
+  "scope_plan_sha256": "6031574b6281832c363c5b683f50af69f0fddb604204916469a7837afa11296a",
+  "original_inventory": {
+    "path": "docs/product/v14_scope_evidence/matrix.json",
+    "sha256": "0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487",
+    "denominator": 556,
+    "unit": "original_owner_point",
+    "other_inventory_clauses": 479,
+    "specification_path": "docs/product/v12_scope_evidence/specifications.json",
+    "specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
+    "decision_path": "docs/product/v12_scope_evidence/decisions.json",
+    "decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931"
+  },
+  "original_ids": [
+    "25",
+    "55",
+    "219",
+    "220",
+    "234",
+    "255",
+    "272",
+    "273",
+    "274",
+    "283",
+    "286",
+    "287",
+    "288",
+    "289",
+    "291",
+    "348",
+    "350",
+    "351",
+    "352",
+    "353",
+    "354",
+    "355",
+    "356",
+    "361",
+    "373",
+    "374",
+    "375",
+    "385",
+    "386",
+    "418",
+    "449",
+    "543",
+    "550",
+    "553",
+    "556"
+  ],
+  "receipt_completed_additional_original_owner_points": 35,
+  "receipt_percentage": 6.294964,
+  "functional_groups": 12,
+  "prior_original_points": 57,
+  "affected_tests_per_postgres_major": 614,
+  "protected_browser_journeys_per_major": 20,
+  "prior_browser_journeys": 8,
+  "additional_browser_journeys": 12,
+  "browser_json_proofs": 19,
+  "browser_log_only_proofs": 1,
+  "restored_nonempty_tables": 47,
+  "fresh_process_helpers": 11,
+  "fresh_process_current_trust_denials": 37,
+  "release_state": {
+    "gate_b": "NOT_PASSED",
+    "gates_c_d_e": "HOLD",
+    "phase_01": "BLOCKED",
+    "deployment": "NOT_DEPLOYED"
+  },
+  "artifact_verification": [
+    {
+      "postgres_major": 17,
+      "job_id": 136790430814,
+      "artifact_id": 14700108241,
+      "archive_sha256": "96bc2c19e2b923737f31bc6a8e25dffdc0d2e4d0659d3c518cf6ec0b0774f43a",
+      "size_bytes": 53999267,
+      "downloaded_and_independently_verified": true,
+      "exact_stage_hashes_and_source_ids": true,
+      "exact_runtime_native_playback_and_restore_checks": true,
+      "screenshot_count": 128
+    },
+    {
+      "postgres_major": 18,
+      "job_id": 136790430717,
+      "artifact_id": 14699453738,
+      "archive_sha256": "40707a5b491f4e002e474f44120d7be5308a172f8acc97e91ecb9b2755cfdbb0",
+      "size_bytes": 53355568,
+      "downloaded_and_independently_verified": true,
+      "exact_stage_hashes_and_source_ids": true,
+      "exact_runtime_native_playback_and_restore_checks": true,
+      "screenshot_count": 128
+    }
+  ],
+  "workflow_observation": {
+    "total": 18,
+    "all_latest_results": "success",
+    "b6_initial_attempt": {
+      "job_id": 136790430809,
+      "result": "BLOCKED_BEFORE_BROWSER_JOURNEYS",
+      "observed_reason": "DevTools port file absent within unchanged 12-second startup limit; root cause unknown",
+      "artifact_id": 14699178563,
+      "artifact_sha256": "9c899408776a5034bea938fc16b641c51b59c6a30f497faf58a13bb124e6c1e0"
+    },
+    "b6_action": "One isolated retry of the failed job on identical code and unchanged security/deadlines passed; initial evidence retained."
+  },
+  "post_execution_visual_findings": [
+    {
+      "finding": "Public audio controls were not visibly sized in archived screenshots although actual keyboard playback and seeking passed. The shared audio height:auto rule could collapse the control surface.",
+      "repair_local_commit": "0a20c84",
+      "additional_teaching_geometry_commit": "c99c00a",
+      "status": "REPAIR_IMPLEMENTED_NEW_PROTECTED_RUN_REQUIRED",
+      "acceptance_boundary": "Do not use prior playback-only proof as final visual-control usability acceptance. The next browser run requires visible bounded controls at both widths."
+    }
+  ],
+  "not_a_current_head_certificate": true
+}

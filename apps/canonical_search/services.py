@@ -2,6 +2,9 @@
 
 import uuid
 from contextlib import contextmanager
+from datetime import datetime
+from functools import reduce
+from operator import and_, or_
 
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramWordSimilarity
 from django.db import connection
@@ -26,7 +29,13 @@ def _body(row):
     for field in row._meta.fields:
         if field.name not in excluded:
             value = getattr(row, field.attname)
-            result[field.attname] = str(value) if isinstance(value, uuid.UUID) else value
+            result[field.attname] = (
+                str(value)
+                if isinstance(value, uuid.UUID)
+                else value.isoformat()
+                if isinstance(value, datetime)
+                else value
+            )
     return result
 
 
@@ -233,7 +242,7 @@ def fuzzy_threshold():
                 )
 
 
-def _queryset(ids, value, mode):
+def _queryset(ids, value, mode, expansions=None):
     normalized, tokens = query(value, mode)
     rows = SearchDocument.objects.filter(pk__in=ids)
     if mode == "LITERAL":
@@ -241,7 +250,23 @@ def _queryset(ids, value, mode):
             score=Value(1.0, output_field=FloatField())
         )
     if mode == "FTS":
-        expression = SearchQuery(normalized, config="simple", search_type="plain")
+        expression = (
+            reduce(
+                and_,
+                [
+                    reduce(
+                        or_,
+                        [
+                            SearchQuery(term, config="simple", search_type="plain")
+                            for term in (token, *expansions.get(token, ()))
+                        ],
+                    )
+                    for token in tokens
+                ],
+            )
+            if expansions
+            else SearchQuery(normalized, config="simple", search_type="plain")
+        )
         return rows.filter(vector=expression).annotate(
             score=SearchRank("vector", expression, cover_density=True)
         )
@@ -251,8 +276,10 @@ def _queryset(ids, value, mode):
     return rows.annotate(score=scores[0] if len(scores) == 1 else Least(*scores))
 
 
-def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1):
+def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1, expansions=None):
     query(value, mode)
+    if expansions is not None and mode != "FTS":
+        raise cases.CaseConflict("search_dictionary_fts_only")
     if kind not in KINDS or type(page) is not int or not 1 <= page <= MAX_RESULTS // PAGE_SIZE:
         raise cases.CaseConflict("search_query_invalid")
     allowed, cases_by_document, statuses = {}, {}, []
@@ -263,7 +290,7 @@ def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1):
             if kind == "ALL" or source.kind == kind:
                 allowed[identifier] = source
                 cases_by_document[identifier] = case
-    rows = _queryset(list(allowed), value, mode).order_by(
+    rows = _queryset(list(allowed), value, mode, expansions).order_by(
         "-score", "generation__case_id", "ordinal", "pk"
     )
     if mode == "FUZZY":

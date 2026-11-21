@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إدارة الصلاحيات التشغيلية</title><link rel="stylesheet" href="/casework/casework.css"></head>
+<body><main><h1>إدارة الصلاحيات التشغيلية</h1>
+<p>الرفض الصريح يتقدم على السماح. كل تغيير محفوظ بسبب ونسخة مستقلة، ويتطلب تفويض الإدارة الحالي.</p>
+{% block content %}{% endblock %}
+<form id="ps-back" method="post">{% csrf_token %}<input type="hidden" name="action" value="ps_open"><button type="submit">قائمة الصلاحيات</button></form>
+<p><a href="{% if request.path == '/casework/operations/permissions/' %}/casework/operations/{% else %}/casework/staff/{% endif %}">العودة إلى المكتب</a></p>
+</main></body></html>

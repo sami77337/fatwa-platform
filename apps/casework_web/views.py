@@ -185,6 +185,14 @@ def staff_login(request):
     try:
         fields = _form(request, {"credential"})
         provider = _provider()
+        from apps.staff_mfa import integration as mfa
+
+        if mfa.enabled():
+            from apps.staff_mfa.views import begin
+
+            return begin(
+                request, provider=provider, surface="CASEWORK", credential=fields["credential"]
+            )
         identity = authenticate_identity(provider, fields["credential"])
         rotate_token(request)
         response = HttpResponse(status=303, headers={"Location": BASE + "staff/"})

@@ -33,7 +33,7 @@ def index(request):
         raise preview.InvalidFilter()
     with public.public_projection() as snapshot:
         latest = {}
-        for row in snapshot.records.values():
+        for row in snapshot.search_records():
             if row["id"] not in latest or row["number"] > latest[row["id"]]["number"]:
                 latest[row["id"]] = row
         rows = sorted(
@@ -63,6 +63,7 @@ def index(request):
                 "previous": int(page) - 1,
                 "next": int(page) + 1,
                 "offline_enabled": getattr(settings, "FATWA_RESEARCH_LIBRARY_OFFLINE_ENABLED", False) is True,
+                "material_api_enabled": getattr(settings, "FATWA_MATERIAL_API_ENABLED", False) is True,
             },
         )
 

@@ -19,10 +19,11 @@ from apps.casework.models import Case
 from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _provider
-from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.editorial_workbench.reviewer_access import browser_proof
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from . import formats, policy, roundtrip, services
 
@@ -291,7 +292,21 @@ def workspace(request):
         # Single commands and their rendered receipt commit together. APPLY has
         # intentionally separate group transactions, including external locks;
         # its already committed partial results must survive a later error.
-        with nullcontext() if action == "mi_apply" else synthetic_queue_atomic():
+        uploaded_raw = None
+        if action == "mi_upload":
+            if fields["synthetic"] != "yes":
+                raise InvalidForm("import_synthetic_ack")
+            upload = request.FILES["source_file"]
+            if upload.size > formats.MAX_BYTES:
+                raise InvalidForm("import_file_size")
+            uploaded_raw = upload.read(formats.MAX_BYTES + 1)
+            scans.import_source(
+                raw=uploaded_raw,
+                filename=upload.name,
+                namespace=fields["namespace"],
+                **changed,
+            )
+        with nullcontext() if action == "mi_apply" else scan_receipts.boundary():
             if action == "mi_upload":
                 if fields["synthetic"] != "yes":
                     raise InvalidForm("import_synthetic_ack")
@@ -299,7 +314,7 @@ def workspace(request):
                 if upload.size > formats.MAX_BYTES:
                     raise InvalidForm("import_file_size")
                 batch = services.stage(
-                    raw=upload.read(formats.MAX_BYTES + 1),
+                    raw=uploaded_raw,
                     filename=upload.name,
                     namespace=fields["namespace"],
                     provenance=fields["provenance"],

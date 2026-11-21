@@ -62,6 +62,9 @@ def _projection_expiry_guard():
 
 def _permits_source(case, source, usage):
     try:
+        from apps.data_privacy.resource_hooks import reference as privacy
+
+        privacy(case, source)
         rights = _rights_services()
         return (
             rights is None
@@ -78,9 +81,22 @@ def _require_source(case, source, usage):
 
 
 def _readable_sources(case):
+    from apps.data_privacy import services as privacy
+    from apps.data_privacy.integration import source as privacy_source
+
     rights = _rights_services()
-    if rights is None:
-        return None
+    if rights is None and not privacy.enabled():
+        # Recorded source labels remain enforceable even when the flag is off.
+        if not django_apps.is_installed("apps.source_rights"):
+            return None
+        from apps.source_rights.models import SourceVersion
+
+        if not any(privacy.recorded("SOURCE_VERSION", str(pk)) for pk in SourceVersion.objects.filter(
+            sourceregistration__case=case, heading__isnull=False
+        ).values_list("pk", flat=True)):
+            return None
+    if not django_apps.is_installed("apps.source_rights"):
+        return {}
     from apps.source_rights.models import SourceVersion
 
     allowed = {}
@@ -91,6 +107,7 @@ def _readable_sources(case):
     ):
         heading = version.heading
         try:
+            privacy_source("SOURCE_VERSION", version.pk, action="SEARCH")
             source = _source(heading.edition_id, heading.source_row_id)
             if _permits_source(case, source, "READ"):
                 allowed.setdefault(heading.edition_id, set()).add(heading.source_row_id)
@@ -167,6 +184,9 @@ def _search_sources_for_rights_review(
 def _search_sources_for_locked_case(
     case, *, query="", edition_id=None, printed_part="", printed_page=None, enforce_rights=True
 ):
+    from apps.data_privacy.integration import current as privacy
+
+    privacy("CASE", case.pk, action="SEARCH")
     _enabled()
     if type(query) is not str or len(query) > 100:
         raise cases.CaseConflict("invalid_citation_query")

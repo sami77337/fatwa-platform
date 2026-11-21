@@ -1,0 +1,65 @@
+{
+  "schema": "fatwa.search-governance.local-validation.v1",
+  "status": "LOCAL_SERVICE_HTTP_RECOVERY_PASS_PROTECTED_BROWSER_AND_ENCRYPTED_RESTORE_PENDING",
+  "original_owner_ids": [
+    "222",
+    "247"
+  ],
+  "original_inventory_path": "docs/product/v14_scope_evidence/matrix.json",
+  "original_inventory_sha256": "0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487",
+  "local_postgresql": {
+    "17": {
+      "status": "PASS",
+      "tests": 61,
+      "new_governance_tests": 17,
+      "seconds": 51.637,
+      "log_sha256": "fe597353fb50b15f3ee4eb5eca36b58892dd7158dec62cd87f7c1b199abb5aae",
+      "labels": [
+        "apps.canonical_search.tests",
+        "apps.canonical_search.test_http",
+        "apps.canonical_search.test_recordings",
+        "apps.canonical_search.test_rights",
+        "apps.canonical_search.test_recovery",
+        "apps.canonical_search.test_governance",
+        "apps.canonical_search.test_governance_http",
+        "apps.canonical_search.test_governance_recovery"
+      ]
+    },
+    "18": {
+      "status": "PASS",
+      "tests": 61,
+      "new_governance_tests": 17,
+      "seconds": 52.496,
+      "log_sha256": "6845599f65c372451afdffe69edbe08ef3b8f8eb47f91bead6c64bdd6169632d",
+      "labels": [
+        "apps.canonical_search.tests",
+        "apps.canonical_search.test_http",
+        "apps.canonical_search.test_recordings",
+        "apps.canonical_search.test_rights",
+        "apps.canonical_search.test_recovery",
+        "apps.canonical_search.test_governance",
+        "apps.canonical_search.test_governance_http",
+        "apps.canonical_search.test_governance_recovery"
+      ]
+    }
+  },
+  "browser_test": "apps.canonical_search.browser_governance.SearchGovernanceBrowserTests.test_native_versioned_dictionary_independent_review_actual_fts_shadow_and_retirement",
+  "browser_artifact": ".local/qa/functional-continuation/search-governance-browser/result.json",
+  "browser_status": "NOT_RUN_LOCAL_OS_SANDBOX_BOUNDARY",
+  "recovery_helper": "apps.canonical_search.governance_recovery_support",
+  "recovery_denial_checks": {
+    "missing_authority": 2,
+    "missing_identity_provider": 2,
+    "disabled_feature": 2,
+    "revoked_current_reader": 2
+  },
+  "whole_point_credit": 0,
+  "production": "NOT_DEPLOYED",
+  "gates": {
+    "B": "NOT_PASSED",
+    "C": "HOLD",
+    "D": "HOLD",
+    "E": "HOLD",
+    "Phase01": "BLOCKED"
+  }
+}

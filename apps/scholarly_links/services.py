@@ -7,6 +7,7 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass, field
 from hashlib import sha256
 
+from django.apps import apps as installed_apps
 from django.conf import settings
 from django.db import connection
 
@@ -14,6 +15,8 @@ from apps.answer_media import services as media
 from apps.answer_media.models import AnswerPart
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision, Case, CaseDecision
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.editorial_search.query_terms import normalize_editorial_search
 from apps.mufti_review.identity import _ref, resolve_identity
@@ -156,6 +159,8 @@ class ProjectionGuard:
     case_ids: tuple = ()
     fingerprint: str = ""
     part_pins: dict = field(default_factory=dict)
+    privacy_guard: object = None
+    privacy_search: bool = False
 
     def freeze(self, locked):
         self.case_ids = tuple(sorted(str(key) for key in locked))
@@ -222,6 +227,46 @@ class ProjectionGuard:
         except Exception as exc:
             raise cases.CaseConflict("scholarly_authority_unavailable") from exc
         _enabled()
+        if self.privacy_guard is not None:
+            # Native composition calls check() again after rendering. Retain
+            # these exact uses after the service context closes, with no new
+            # policy or identity callback after the existing domain pins.
+            self.privacy_guard.final_pins()
+
+
+def _privacy(guard, kind, identifier, *, required=True):
+    """Privacy is an independent veto for the actual scholarly/operational actor."""
+    try:
+        privacy.original(kind, identifier, provider=guard.provider, actor=guard.actor)
+        if getattr(guard, "privacy_search", False):
+            privacy.original(
+                kind, identifier, provider=guard.provider, actor=guard.actor, action="SEARCH"
+            )
+    except PrivacyDenied:
+        if required:
+            raise
+        return False
+    return True
+
+
+def _question_readable(case, guard):
+    # A CASE search grant never grants searching a separately classified
+    # receipt, transcript or attachment copied into its original evidence.
+    for kind, label in (
+        ("SOURCE_RECEIPT", "source_case_intake.EvidenceBinding"),
+        ("TRANSCRIPT_LINK", "transcript_case_links.TranscriptLink"),
+        ("ATTACHMENT", "case_attachments.CaseAttachment"),
+    ):
+        if not installed_apps.is_installed("apps." + label.split(".")[0]):
+            continue
+        identifiers = (
+            installed_apps.get_model(label)
+            .objects.filter(evidence__case=case, evidence__version=1)
+            .values_list("pk", flat=True)
+        )
+        if any(not _privacy(guard, kind, identifier, required=False) for identifier in identifiers):
+            return False
+    return True
 
 
 def _graph_lock():
@@ -233,7 +278,14 @@ def _graph_lock():
 
 @contextmanager
 def _scope(
-    subject_id, provider, synthetic_fixtures_only, case_ids=None, *, graph=False, projection=False
+    subject_id,
+    provider,
+    synthetic_fixtures_only,
+    case_ids=None,
+    *,
+    graph=False,
+    projection=False,
+    privacy_search=False,
 ):
     _enabled()
     cases._guard(synthetic_fixtures_only)
@@ -249,8 +301,10 @@ def _scope(
     if type(epoch) is not str or not 1 <= len(epoch) <= 128:
         raise cases.CaseConflict("scholarly_policy_snapshot_required")
     guard = ProjectionGuard(provider, actor, provider_id, policy, epoch, [])
+    guard.privacy_search = privacy_search
     requested = {_uuid(value) for value in case_ids} if case_ids is not None else None
-    with synthetic_queue_atomic(), ExitStack() as stack:
+    with privacy.projection() as privacy_guard, synthetic_queue_atomic(), ExitStack() as stack:
+        guard.privacy_guard = privacy_guard
         if graph or projection:
             # The SQL guard uses the same order, including for direct SQL writes.
             # This serializes directed graph changes across three or more cases.
@@ -276,9 +330,16 @@ def _scope(
             guard.freeze(frozen)
         locked = {}
         for case_id in identities:
-            case, checked = stack.enter_context(
-                cases._staff_case(case_id, subject_id, provider, True)
-            )
+            if projection and not _privacy(guard, "CASE", case_id, required=requested is not None):
+                continue
+            try:
+                case, checked = stack.enter_context(
+                    cases._staff_case(case_id, subject_id, provider, True)
+                )
+            except PrivacyDenied:
+                if not projection or requested is not None:
+                    raise
+                continue
             if (checked.auth_epoch, checked.case_keys) != (actor.auth_epoch, actor.case_keys):
                 raise cases.CaseConflict("scholarly_projection_changed")
             locked[case.pk] = case
@@ -381,6 +442,7 @@ def _source(part_id, case, guard):
     )
     if part is None:
         raise cases.CaseConflict("lesson_source_unavailable")
+    _privacy(guard, "ANSWER_PART", part.pk)
     guard.permit(case, case, "READ_MEDIA", "LESSON", part.pk, part.sha256)
     snapshot = _source_snapshot(part)
     guard.part_pins[str(part.pk)] = snapshot
@@ -395,6 +457,10 @@ def _lesson(version, locked, guard, *, required=True):
         if required:
             raise cases.CaseConflict("lesson_unavailable")
         return None
+    if not _privacy(guard, "LESSON_VERSION", version.pk, required=required) or not _privacy(
+        guard, "SERIES_VERSION", version.series_version_id, required=required
+    ):
+        return None
     if not guard.permit(
         case, case, "READ_LESSON", "LESSON", version.pk, version.sha256, required=required
     ):
@@ -403,12 +469,15 @@ def _lesson(version, locked, guard, *, required=True):
     _verified(version.series_version)
     if version.category.case_id != case.pk or version.series_version.series_id != lesson.series_id:
         raise cases.CaseConflict("lesson_history_invalid")
-    if version.source_part_id:
+    source_visible = bool(version.source_part_id) and _privacy(
+        guard, "ANSWER_PART", version.source_part_id, required=False
+    )
+    if source_visible:
         current = _source_snapshot(version.source_part)
         if current != version.source_snapshot:
             raise cases.CaseConflict("lesson_source_changed")
         guard.part_pins[str(version.source_part_id)] = current
-    elif version.source_snapshot:
+    elif not version.source_part_id and version.source_snapshot:
         raise cases.CaseConflict("lesson_source_changed")
     return {
         "id": str(lesson.pk),
@@ -424,9 +493,9 @@ def _lesson(version, locked, guard, *, required=True):
         "series_title": version.series_version.title,
         "series_version_id": str(version.series_version_id),
         "teachers": version.series_version.teachers,
-        "source": version.source_snapshot,
-        "source_available": bool(version.source_part_id),
-        "can_read_media": bool(version.source_part_id)
+        "source": version.source_snapshot if source_visible else {},
+        "source_available": source_visible,
+        "can_read_media": source_visible
         and guard.permit(
             case,
             case,
@@ -858,42 +927,60 @@ def propose_lesson_link(
         _span(version, start_ms, end_ms)
         guard.permit(source, target, "PROPOSE", "LESSON", version.pk, version.sha256)
         answer = _answer(source)
-        old = _replay(
-            CaseLessonLink,
-            command_id,
-            guard,
-            {
-                "case_id": source.pk,
-                "answer_id": answer.pk,
-                "lesson_version_id": version.pk,
-                "reason": reason,
-                "start_ms": start_ms,
-                "end_ms": end_ms,
-            },
+        row, _created = _append_lesson_link_locked(
+            source=source,
+            target=target,
+            version=version,
+            answer=answer,
+            guard=guard,
+            reason=reason,
+            command_id=command_id,
+            start_ms=start_ms,
+            end_ms=end_ms,
         )
-        if old is not None:
-            return old
-        if CaseLessonLink.objects.filter(case=source).count() >= MAX_LINKS:
-            raise cases.CaseConflict("scholarly_relation_limit")
-        for prior in CaseLessonLink.objects.filter(
-            answer=answer, lesson_version=version, start_ms=start_ms, end_ms=end_ms
-        ):
-            if _status(prior)[0] not in {"REJECT", "WITHDRAW"}:
-                raise cases.CaseConflict("scholarly_relation_exists")
-        return _save(
-            CaseLessonLink(
-                case=source,
-                answer=answer,
-                answer_sha256=answer.text_sha256,
-                lesson_version=version,
-                target_case_revision=target.revision,
-                target_evidence_version=target.evidence_version,
-                start_ms=start_ms,
-                end_ms=end_ms,
-                reason=reason,
-                **_audit(guard, source, command_id),
-            )
+        return row
+
+
+def _append_lesson_link_locked(
+    *, source, target, version, answer, guard, reason, command_id, start_ms, end_ms
+):
+    """Immutable persistence only; the caller owns exact scope/grants and source locks."""
+    old = _replay(
+        CaseLessonLink,
+        command_id,
+        guard,
+        {
+            "case_id": source.pk,
+            "answer_id": answer.pk,
+            "lesson_version_id": version.pk,
+            "reason": reason,
+            "start_ms": start_ms,
+            "end_ms": end_ms,
+        },
+    )
+    if old is not None:
+        return old, False
+    if CaseLessonLink.objects.filter(case=source).count() >= MAX_LINKS:
+        raise cases.CaseConflict("scholarly_relation_limit")
+    for prior in CaseLessonLink.objects.filter(
+        answer=answer, lesson_version=version, start_ms=start_ms, end_ms=end_ms
+    ):
+        if _status(prior)[0] not in {"REJECT", "WITHDRAW"}:
+            raise cases.CaseConflict("scholarly_relation_exists")
+    return _save(
+        CaseLessonLink(
+            case=source,
+            answer=answer,
+            answer_sha256=answer.text_sha256,
+            lesson_version=version,
+            target_case_revision=target.revision,
+            target_evidence_version=target.evidence_version,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            reason=reason,
+            **_audit(guard, source, command_id),
         )
+    ), True
 
 
 def _endpoints(link):
@@ -981,50 +1068,69 @@ def review_link(
         source, target = locked[source_id], locked[target_id]
         _pins(source, expected_revision, expected_evidence_version)
         _pins(target, expected_target_revision, expected_target_evidence_version)
-        state, history = _verify_link(link)
+        _verify_link(link)
         guard.permit(source, target, action, kind, link.pk, link.sha256)
         if action == "APPROVE":
             if isinstance(link, CaseLessonLink):
                 _lesson(link.lesson_version, locked, guard)
             else:
                 _answer(target, link.target_answer_id, approved=True)
-        old = _replay(
-            LinkDecision,
-            command_id,
-            guard,
-            {
-                "relation_id": link.pk if link_kind == "RELATION" else None,
-                "lesson_link_id": link.pk if link_kind == "LESSON" else None,
-                "action": action,
-                "note": note,
-            },
+        row, _created = _append_link_decision_locked(
+            source=source,
+            target=target,
+            link=link,
+            action=action,
+            note=note,
+            command_id=command_id,
+            expected_sequence=expected_sequence,
+            guard=guard,
         )
-        if old is not None:
-            return old
-        if len(history) != _integer(expected_sequence, zero=True):
-            raise cases.CaseConflict("scholarly_review_changed")
-        allowed = (
-            {"APPROVE", "REJECT"}
-            if state == "PROPOSED"
-            else {"WITHDRAW"}
-            if state == "APPROVE"
-            else set()
+        return row
+
+
+def _append_link_decision_locked(
+    *, source, target, link, action, note, command_id, expected_sequence, guard
+):
+    """Persist a checked transition; never grants review authority or changes an answer."""
+    state, history = _verify_link(link)
+    is_relation = isinstance(link, CaseRelation)
+    old = _replay(
+        LinkDecision,
+        command_id,
+        guard,
+        {
+            "relation_id": link.pk if is_relation else None,
+            "lesson_link_id": None if is_relation else link.pk,
+            "action": action,
+            "note": note,
+        },
+    )
+    if old is not None:
+        return old, False
+    if len(history) != _integer(expected_sequence, zero=True):
+        raise cases.CaseConflict("scholarly_review_changed")
+    allowed = (
+        {"APPROVE", "REJECT"}
+        if state == "PROPOSED"
+        else {"WITHDRAW"}
+        if state == "APPROVE"
+        else set()
+    )
+    if action not in allowed or (action == "APPROVE" and _cycle(link)):
+        raise cases.CaseConflict("scholarly_review_unavailable")
+    return _save(
+        LinkDecision(
+            relation=link if is_relation else None,
+            lesson_link=None if is_relation else link,
+            sequence=len(history) + 1,
+            previous_sha256=history[-1].sha256 if history else link.sha256,
+            target_case_revision=target.revision,
+            target_evidence_version=target.evidence_version,
+            action=action,
+            note=note,
+            **_audit(guard, source, command_id),
         )
-        if action not in allowed or (action == "APPROVE" and _cycle(link)):
-            raise cases.CaseConflict("scholarly_review_unavailable")
-        return _save(
-            LinkDecision(
-                relation=link if link_kind == "RELATION" else None,
-                lesson_link=link if link_kind == "LESSON" else None,
-                sequence=len(history) + 1,
-                previous_sha256=history[-1].sha256 if history else link.sha256,
-                target_case_revision=target.revision,
-                target_evidence_version=target.evidence_version,
-                action=action,
-                note=note,
-                **_audit(guard, source, command_id),
-            )
-        )
+    ), True
 
 
 def _link_projection(link, current, locked, guard):
@@ -1032,11 +1138,16 @@ def _link_projection(link, current, locked, guard):
     source, target = locked.get(source_id), locked.get(target_id)
     if source is None or target is None:
         return None
+    is_relation = isinstance(link, CaseRelation)
+    answer_ids = (
+        (link.source_answer_id, link.target_answer_id) if is_relation else (link.answer_id,)
+    )
+    if any(not _privacy(guard, "ANSWER", value, required=False) for value in answer_ids):
+        return None
     state, history = _verify_link(link)
     # READ is explicit for links too; no sensitive decision grants are inferred.
     if not guard.permit(source, target, "READ_LINK", kind, link.pk, link.sha256, required=False):
         return None
-    is_relation = isinstance(link, CaseRelation)
     lesson = None if is_relation else _lesson(link.lesson_version, locked, guard, required=False)
     if not is_relation and lesson is None:
         return None
@@ -1067,8 +1178,8 @@ def _link_projection(link, current, locked, guard):
         "created_at": link.created_at,
         "created_by": link.subject_id,
         "lesson": lesson,
-        "start_ms": None if is_relation else link.start_ms,
-        "end_ms": None if is_relation else link.end_ms,
+        "start_ms": None if is_relation or not lesson["source_available"] else link.start_ms,
+        "end_ms": None if is_relation or not lesson["source_available"] else link.end_ms,
         "target_revision": target.revision,
         "target_evidence_version": target.evidence_version,
         "can_approve": outgoing
@@ -1098,6 +1209,8 @@ def _catalog(locked, guard):
     for series in LessonSeries.objects.filter(case_id__in=locked).order_by("created_at", "id"):
         current = _latest(SeriesVersion, "series", series)
         owner = locked[series.case_id]
+        if not _privacy(guard, "SERIES_VERSION", current.pk, required=False):
+            continue
         if not guard.permit(
             owner, owner, "READ_LESSON", "SERIES", current.pk, current.sha256, required=False
         ):
@@ -1107,20 +1220,22 @@ def _catalog(locked, guard):
             str(value) for value in series.lessons.values_list("id", flat=True)
         }:
             raise cases.CaseConflict("lesson_order_invalid")
-        for position, lesson_id in enumerate(current.lesson_order, 1):
+        for lesson_id in current.lesson_order:
             version = _latest(LessonVersion, "lesson_id", _uuid(lesson_id))
             row = _lesson(version, locked, guard, required=False)
             if row is None:
                 continue
+            rows.append(row)
+            lessons.append(row)
+        complete_order = len(rows) == len(current.lesson_order)
+        for position, row in enumerate(rows, 1):
             row.update(
                 position=position,
-                can_move_up=position > 1,
-                can_move_down=position < len(current.lesson_order),
+                can_move_up=complete_order and position > 1,
+                can_move_down=complete_order and position < len(rows),
                 owner_revision=owner.revision,
                 owner_evidence_version=owner.evidence_version,
             )
-            rows.append(row)
-            lessons.append(row)
         series_rows.append(
             {
                 "id": str(series.pk),
@@ -1177,6 +1292,8 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
                 .select_related("answer")
                 .order_by("-answer__revision")[:16]
             ):
+                if not _privacy(guard, "ANSWER", decision.answer_id, required=False):
+                    continue
                 targets.append(
                     {
                         "case_id": str(target.pk),
@@ -1193,7 +1310,7 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             .select_related("manifest__answer")
             .order_by("manifest__answer__revision", "ordinal")[:128]
         ):
-            if guard.permit(
+            if _privacy(guard, "ANSWER_PART", part.pk, required=False) and guard.permit(
                 current, current, "READ_MEDIA", "LESSON", part.pk, part.sha256, required=False
             ):
                 guard.part_pins[str(part.pk)] = _source_snapshot(part)
@@ -1216,7 +1333,8 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             "revision": current.revision,
             "evidence_version": current.evidence_version,
             "has_answer": latest_answer is not None
-            and latest_answer.evidence_version == current.evidence_version,
+            and latest_answer.evidence_version == current.evidence_version
+            and _privacy(guard, "ANSWER", latest_answer.pk, required=False),
             "series": catalog,
             "own_series": [row for row in catalog if row["owner_case_id"] == str(current.pk)],
             "lessons": lessons,
@@ -1292,6 +1410,7 @@ def open_lesson_media(
     ) as (locked, guard):
         _lesson(version, locked, guard)
         owner = locked[version.lesson.series.case_id]
+        _privacy(guard, "ANSWER_PART", version.source_part_id)
         guard.permit(
             owner, owner, "READ_MEDIA", "LESSON", version.source_part_id, version.source_part.sha256
         )
@@ -1326,7 +1445,9 @@ def search(
     for value in (series_id, lesson_id, category_id):
         if value:
             _uuid(value)
-    with _scope(subject_id, provider, synthetic_fixtures_only, projection=True) as (locked, guard):
+    with _scope(
+        subject_id, provider, synthetic_fixtures_only, projection=True, privacy_search=True
+    ) as (locked, guard):
         catalog, lessons = _catalog(locked, guard)
         allowed_lessons = {row["id"]: row for row in lessons}
         category_choices = {(row["category_id"], row["category"]) for row in lessons}
@@ -1359,12 +1480,17 @@ def search(
         found = []
         for current in locked.values():
             latest = current.answers.order_by("-revision").first()
+            answer_readable = latest is not None and _privacy(
+                guard, "ANSWER", latest.pk, required=False
+            )
             haystack = normalize_editorial_search(
                 " ".join(
                     [
                         current.public_ref,
-                        current.source.original_question,
-                        latest.text if latest else "",
+                        current.source.original_question
+                        if _question_readable(current, guard)
+                        else "",
+                        latest.text if answer_readable else "",
                     ]
                 )
             )

@@ -1,7 +1,9 @@
 """Native CSRF-protected delivery controls; trusted identity/verifiers are server-only."""
 
 import json
+from contextlib import nullcontext
 
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
 from django.http import HttpResponse
@@ -20,7 +22,7 @@ from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 
 from . import desk as control
-from . import services
+from . import publication_proposal, retries, services
 
 ACTIONS = {
     "composite_open",
@@ -28,6 +30,10 @@ ACTIONS = {
     "composite_stage",
     "composite_reconcile",
     "composite_receipt",
+    "composite_choice",
+    "composite_retry_export",
+    "composite_retry_stage",
+    "composite_publication_proposal",
 }
 
 
@@ -48,14 +54,26 @@ def desk(request):
             raise InvalidForm("invalid_composite_action")
         action = request.POST["action"]
         required = {"action", "case_ref"}
-        if action != "composite_open":
+        if action not in {"composite_open", "composite_choice"}:
             required |= {"revision", "evidence_version", "plan_sha256"}
-        if action in {"composite_stage", "composite_receipt", "composite_reconcile"}:
+        if action == "composite_choice":
+            required |= {"selection_mode", "confirm"}
+        elif "selection_mode" in request.POST:
+            required.add("selection_mode")
+        if action in {
+            "composite_stage",
+            "composite_receipt",
+            "composite_reconcile",
+            "composite_retry_stage",
+            "composite_publication_proposal",
+        }:
             required.add("confirm")
-        if action in {"composite_stage", "composite_receipt"}:
+        if action in {"composite_stage", "composite_receipt", "composite_retry_stage"}:
             required.add("response_json")
         if action == "composite_receipt":
             required.add("part_id")
+        if action in {"composite_retry_export", "composite_retry_stage"}:
+            required |= {"part_id", "parent_intent", "request_id"}
         values = _form(request, required)
         if request.FILES:
             raise InvalidForm("unexpected_upload")
@@ -73,30 +91,60 @@ def desk(request):
         if selected is None:
             return _page(request, code=404, error="القضية غير متاحة لهذا المكتب.")
         common["case_id"] = selected["case_id"]
-        notice = ""
-        if action != "composite_open":
-            if "confirm" in required and values["confirm"] != "yes":
-                raise InvalidForm("confirmation_required")
-            result = control.apply_desk_action(
-                **common,
-                action=action,
-                revision=_integer(values["revision"]),
-                evidence_version=_integer(values["evidence_version"]),
-                plan_sha256=values["plan_sha256"],
-                response_json=values.get("response_json", ""),
-                part_id=values.get("part_id", ""),
+        boundary = (
+            publication_proposal.boundary(**common, selection_mode=values.get("selection_mode"))
+            if action == "composite_publication_proposal"
+            else (
+                retries.boundary(**common, selection_mode=values.get("selection_mode"))
+                if retries.enabled()
+                else (
+                    services.choice_boundary(**common, selection_mode=values.get("selection_mode"))
+                    if getattr(settings, "FATWA_COMPOSITE_CHOICES_ENABLED", False) is True
+                    else nullcontext()
+                )
             )
-            if action == "composite_export":
-                response = HttpResponse(
-                    json.dumps(result, ensure_ascii=False, indent=2),
-                    content_type="application/json; charset=utf-8",
+        )
+        with boundary:
+            notice = ""
+            proposal = None
+            if action == "composite_choice" and values["confirm"] != "yes":
+                raise InvalidForm("selection_confirmation_required")
+            if action not in {"composite_open", "composite_choice"}:
+                if "confirm" in required and values["confirm"] != "yes":
+                    raise InvalidForm("confirmation_required")
+                result = control.apply_desk_action(
+                    **common,
+                    action=action,
+                    revision=_integer(values["revision"]),
+                    evidence_version=_integer(values["evidence_version"]),
+                    plan_sha256=values["plan_sha256"],
+                    response_json=values.get("response_json", ""),
+                    part_id=values.get("part_id", ""),
+                    parent_intent=values.get("parent_intent", ""),
+                    request_id=values.get("request_id", ""),
+                    selection_mode=values.get("selection_mode"),
                 )
-                response["Content-Disposition"] = (
-                    'attachment; filename="synthetic-composite-plan.json"'
-                )
-                return private(response)
-            notice = result
-        return _page(request, desk=control.read_delivery_desk(**common), notice=notice)
+                if action in {"composite_export", "composite_retry_export"}:
+                    response = HttpResponse(
+                        json.dumps(result, ensure_ascii=False, indent=2),
+                        content_type="application/json; charset=utf-8",
+                    )
+                    response["Content-Disposition"] = (
+                        'attachment; filename="synthetic-composite-plan.json"'
+                    )
+                    return private(response)
+                if action == "composite_publication_proposal":
+                    proposal = result
+                else:
+                    notice = result
+            return _page(
+                request,
+                desk=control.read_delivery_desk(
+                    **common, selection_mode=values.get("selection_mode")
+                ),
+                notice=notice,
+                publication_proposal=proposal,
+            )
     except IdentityUnavailable:
         return _page(request, code=403, error="يلزم دخول المفتي المخوّل ونطاق القضية الحالي.")
     except (InvalidForm, InvalidSignedResponse, SuspiciousOperation):

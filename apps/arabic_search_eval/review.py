@@ -126,7 +126,11 @@ def validate_bundle(bundle):
 
 
 def _current(case):
-    return EvaluationRevision.objects.filter(case=case).order_by("-number").first()
+    return (
+        EvaluationRevision.objects.filter(case=case, engine="TITLE_WORDS")
+        .order_by("-number")
+        .first()
+    )
 
 
 def _verify(row):
@@ -222,7 +226,9 @@ def decide(
         raise cases.CaseConflict("evaluation_explicit_review_required")
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         _permit(case, actor, provider, action)
-        row = EvaluationRevision.objects.filter(case=case, pk=cases._uuid(revision_id)).first()
+        row = EvaluationRevision.objects.filter(
+            case=case, engine="TITLE_WORDS", pk=cases._uuid(revision_id)
+        ).first()
         if (
             row is None
             or _current(case).pk != row.pk
@@ -274,7 +280,9 @@ def decide(
 def history(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         _permit(case, actor, provider, "VIEW")
-        rows = list(EvaluationRevision.objects.filter(case=case).order_by("-number"))
+        rows = list(
+            EvaluationRevision.objects.filter(case=case, engine="TITLE_WORDS").order_by("-number")
+        )
         decisions = {r.revision_id: r for r in EvaluationDecision.objects.filter(revision__in=rows)}
         for r in rows:
             r._review_decisions = [decisions[r.pk]] if r.pk in decisions else []

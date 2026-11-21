@@ -19,6 +19,8 @@ from apps.delivery_queue.services import _canonical
 from apps.platform_recovery.integration import mutation_context, mutation_service
 from apps.private_media.storage import StoredOriginal, configured_storage, read_original
 from apps.private_media.validation import MediaValidationError
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from .authority import LibraryAuthority
 from .models import LibraryBlob, LibraryDecision, LibraryItem, LibraryVersion
@@ -87,6 +89,7 @@ def validate_material(payload, file_bytes=b"", filename="", media_type=""):
         if filename or media_type:
             raise cases.CaseConflict("library_file_invalid")
         return None
+    scans.require_bytes(file_bytes)
     try:
         parsed = validate_file(file_bytes, filename, media_type)
     except MediaValidationError as exc:
@@ -210,6 +213,7 @@ def _version_state(version_id):
 
 
 def _raw(blob):
+    scan_receipts.require(blob.sha256, blob.size)
     try:
         return read_original(
             StoredOriginal(
@@ -226,6 +230,8 @@ def _raw(blob):
 
 class Boundary:
     def __init__(self, case, actor, provider):
+        from apps.private_media.links import retain_projection
+
         self.case, self.actor, self.provider = case, actor, provider
         self.namespace = provider.provider_id
         self.identity_state = identity_snapshot(provider)
@@ -238,6 +244,7 @@ class Boundary:
             [actor.valid_until],
         )
         self.heads = {}
+        retain_projection(self.final_pins)
 
     def watch(self, row):
         self.versions.setdefault(str(row.pk), _version_state(row.pk))
@@ -285,9 +292,12 @@ def staff_boundary(
     **unused,
 ):
     enabled()
-    with delivery._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (
-        case,
-        actor,
+    with (
+        scan_receipts.boundary(),
+        delivery._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (
+            case,
+            actor,
+        ),
     ):
         if expected_revision is not None:
             cases._versions(case, expected_revision, expected_evidence_version)
@@ -326,10 +336,21 @@ def _permit(case, actor, provider, action, *, namespace="", external_id="", vers
             scope.permissions.append(values)
     _permit_raw(snapshot[0], values)
     assert_policy_snapshot(snapshot)
+    if version_digest and action in {"VIEW", "READ", "CITE", "DOWNLOAD", "OFFLINE", "EXPORT", "REVIEW", "APPROVE", "RELEASE"}:
+        from apps.data_privacy.integration import original as privacy
+
+        identifier = LibraryVersion.objects.filter(item__case=case, digest=version_digest).values_list("pk", flat=True).get()
+        privacy(
+            "LIBRARY_VERSION", identifier, provider=provider, actor=actor,
+            action="EXPORT" if action in {"DOWNLOAD", "OFFLINE", "EXPORT"}
+            else "PUBLISH" if action == "RELEASE" else "READ",
+        )
 
 
 def _watch(row, *, file=False):
     _verify(row)
+    if row.blob_id:
+        scan_receipts.require(row.blob_id, row.blob.size)
     for decision in row.decisions.order_by("sequence"):
         _verify(decision)
     for scope in _SCOPES.get():
@@ -428,6 +449,13 @@ def write_material(
     key = cases._uuid(request_key)
     if type(expected_version) is not int or not 0 <= expected_version < 64:
         raise cases.CaseConflict("library_expected_version_invalid")
+    scans.library_file(
+        raw=file_bytes,
+        namespace=namespace,
+        external_id=external_id,
+        expected_version=expected_version,
+        **base,
+    )
     parsed = validate_material(payload, file_bytes, filename, media_type)
     request_hash = _digest(
         {
@@ -441,9 +469,12 @@ def write_material(
             "expected_version": expected_version,
         }
     )
-    with material_bindings([file_bytes] if parsed else []) as storage, staff_boundary(**base) as (
-        case,
-        actor,
+    with (
+        material_bindings([file_bytes] if parsed else []) as storage,
+        staff_boundary(**base) as (
+            case,
+            actor,
+        ),
     ):
         provider = base["provider"]
         _permit(case, actor, provider, "EDIT", namespace=namespace, external_id=external_id)
@@ -725,10 +756,14 @@ def decide(
 
 @mutation_service
 def browse(*, query="", kind="", page=1, **base):
+    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
     _text(query, 160)
     if kind not in {"", *KINDS} or type(page) is not int or not 1 <= page <= 8:
         raise cases.CaseConflict("library_filter_invalid")
     with staff_boundary(**base) as (case, actor):
+        privacy("CASE", case.pk, provider=base["provider"], actor=actor, action="SEARCH")
         _SCOPES.get()[-1].heads[str(case.pk)] = head_fingerprint(case.pk)
         _permit(case, actor, base["provider"], "VIEW")
         items = list(
@@ -744,8 +779,9 @@ def browse(*, query="", kind="", page=1, **base):
             _watch(row)
             try:
                 _permit(case, actor, base["provider"], "VIEW", **_fields(row))
+                privacy("LIBRARY_VERSION", row.pk, provider=base["provider"], actor=actor, action="SEARCH")
             except cases.CaseConflict as exc:
-                if str(exc) != "library_action_denied":
+                if str(exc) != "library_action_denied" and not isinstance(exc, PrivacyDenied):
                     raise
                 # A denied item contributes neither text nor counts. Remove the
                 # declined check from final callbacks; identity/epoch stays pinned.

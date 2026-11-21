@@ -1,0 +1,2 @@
+<p>نوع المصدر <bdi>{{ row.kind }}</bdi>؛ النسخة {{ row.pin.version }}؛ بصمة النص <bdi><code>{{ row.pin.text_sha256 }}</code></bdi>.</p>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="cs_source"><input type="hidden" name="case_ref" value="{{ desk.case_ref }}"><input type="hidden" name="state" value="{{ row.state }}"><button>فتح النص الأصلي ونسخته المحددة</button></form>

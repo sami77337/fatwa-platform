@@ -6,6 +6,8 @@ from apps.case_attachments import services as attachments
 from apps.case_attachments.models import CaseAttachment
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import resolve_identity
 from apps.platform_recovery.integration import mutation_service
@@ -45,11 +47,23 @@ def _actor(subject_id, provider, ack):
     return resolve_identity(provider, subject_id)
 
 
-def _summary(row):
+def _linked_files(row, actor, provider):
+    identifiers = []
+    for binding in AttachmentBinding.objects.filter(receipt=row).values("pk", "attachment_id"):
+        try:
+            privacy.staff("ATTACHMENT", binding["attachment_id"], actor=actor, provider=provider)
+        except PrivacyDenied:
+            continue
+        identifiers.append(binding["pk"])
+    return AttachmentBinding.objects.filter(pk__in=identifiers)
+
+
+def _summary(row, actor, provider):
+    privacy.staff("SOURCE_RECEIPT", row.pk, actor=actor, provider=provider)
     result = intake._result(row)
     result.pop("token")
     disposition = row.review_notes.filter(kind__in=["HOLD", "REOPEN"]).order_by("-sequence").first()
-    linked_files = AttachmentBinding.objects.filter(receipt=row).count()
+    linked_files = _linked_files(row, actor, provider).count()
     return {
         **result,
         **intake._origin(row),
@@ -62,6 +76,7 @@ def _summary(row):
 
 
 @mutation_service
+@privacy.projected
 def inbox(
     *,
     subject_id,
@@ -90,6 +105,19 @@ def inbox(
     if can_review:
         scope |= Q(evidencebinding__isnull=True)
     rows = SourceReceipt.objects.filter(scope)
+    admitted = []
+    for receipt in rows.select_related("evidencebinding__case"):
+        try:
+            privacy.staff("SOURCE_RECEIPT", receipt.pk, actor=actor, provider=provider, action="SEARCH")
+            privacy.staff("SOURCE_RECEIPT", receipt.pk, actor=actor, provider=provider)
+            binding = EvidenceBinding.objects.filter(receipt=receipt).first()
+            if binding:
+                privacy.staff("CASE", binding.case_id, actor=actor, provider=provider, action="SEARCH")
+                privacy.staff("CASE", binding.case_id, actor=actor, provider=provider)
+        except PrivacyDenied:
+            continue
+        admitted.append(receipt.pk)
+    rows = rows.filter(pk__in=admitted)
     if query.strip():
         rows = rows.filter(
             Q(message_id__icontains=query.strip())
@@ -149,13 +177,17 @@ def inbox(
 
 
 @mutation_service
+@privacy.projected
 def detail(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, candidates=True):
-    _actor(subject_id, provider, synthetic_fixtures_only)
+    actor = _actor(subject_id, provider, synthetic_fixtures_only)
     with synthetic_queue_atomic():
         row = intake._receipt(receipt_id)
         intake._lock(row.source, row.account)
         binding = EvidenceBinding.objects.filter(receipt=row).select_related("case").first()
-        summary = _summary(row)
+        if binding:
+            privacy.staff("CASE", binding.case_id, actor=actor, provider=provider)
+        privacy.staff("SOURCE_RECEIPT", row.pk, actor=actor, provider=provider)
+        summary = _summary(row, actor, provider)
         notes = list(
             row.review_notes.order_by("sequence").values(
                 "sequence", "kind", "text", "subject_id", "created_at"
@@ -171,7 +203,7 @@ def detail(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, c
                     "candidates": [],
                     "declared_files": row.attachments,
                     "linked_files": list(
-                        AttachmentBinding.objects.filter(receipt=row).values(
+                        _linked_files(row, actor, provider).values(
                             "source_file_id",
                             "attachment_id",
                             "attachment__filename",
@@ -205,6 +237,14 @@ def detail(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, c
                 .order_by("created_at")
                 .values("id", "public_ref", "revision", "evidence_version")[:64]
             )
+            visible_targets = []
+            for target in targets:
+                try:
+                    privacy.staff("CASE", target["id"], actor=actor, provider=provider)
+                except PrivacyDenied:
+                    continue
+                visible_targets.append(target)
+            targets = visible_targets
         return {
             "receipt": summary,
             "notes": notes,
@@ -222,7 +262,7 @@ def timeline(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     """Canonical evidence order, retaining origin and file associations without copying facts."""
     _actor(subject_id, provider, synthetic_fixtures_only)
     with synthetic_queue_atomic():
-        with cases._staff_case(case_id, subject_id, provider, True) as (case, _):
+        with cases._staff_case(case_id, subject_id, provider, True) as (case, actor):
             origins = {
                 b.evidence_id: b.receipt
                 for b in EvidenceBinding.objects.filter(case=case).select_related("receipt")
@@ -237,19 +277,21 @@ def timeline(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             }
             items = []
             for evidence in case.evidence.order_by("version"):
+                if not privacy.evidence_allowed(evidence):
+                    continue
                 row = origins.get(evidence.pk)
                 item = {
                     "version": evidence.version,
                     "text": evidence.text,
                     "created_at": evidence.created_at,
-                    "origin": _summary(row) if row else None,
+                    "origin": _summary(row, actor, provider) if row else None,
                 }
                 file = files.get(evidence.pk)
                 if file:
                     item["file"] = metadata[str(file.pk)]
                     source_file = source_files.get(file.pk)
                     if source_file:
-                        item["origin"] = _summary(source_file.receipt)
+                        item["origin"] = _summary(source_file.receipt, actor, provider)
                         item["source_file_id"] = source_file.source_file_id
                 items.append(item)
             return {

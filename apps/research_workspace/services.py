@@ -275,6 +275,9 @@ def search(
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
         citations._projection_expiry_guard(),
     ):
+        from apps.data_privacy.integration import staff as privacy
+
+        privacy("CASE", case.pk, provider=provider, actor=actor, action="SEARCH")
         editions = [
             e
             for e in ReferenceEdition.objects.select_related("work")

@@ -1,6 +1,7 @@
 """Native local fixture actions over canonical case + existing composite queue only."""
 
 import os
+from dataclasses import replace
 from hmac import compare_digest
 
 from django.conf import settings
@@ -15,6 +16,7 @@ from apps.composite_delivery.models import CompositeDelivery
 from apps.delivery_queue import approval_adapter
 from apps.delivery_queue import services as queue
 from apps.delivery_queue.models import DeliveryIntent
+from apps.mufti_review.identity import validate_identity
 from apps.platform_recovery.integration import mutation_service
 
 from .fixtures import MAX_LEASES, PilotFixture
@@ -47,8 +49,16 @@ def _fixture(ack):
 def _operator(fixture, case, subject_id, provider, action):
     actor = cases._identity(provider, subject_id, case)
     trusted = cases._identity(fixture.identity_provider, subject_id, case)
-    if actor != trusted or provider.provider_id != fixture.identity_provider.provider_id:
+    # The request-bound identity may have the browser's shorter lifetime.
+    # Every other claim must match; current directory lookup never extends it.
+    if (
+        replace(actor, valid_until=trusted.valid_until) != trusted
+        or provider.provider_id != fixture.identity_provider.provider_id
+    ):
         raise cases.CaseConflict("pilot_identity_changed")
+    actor = validate_identity(
+        replace(actor, valid_until=min(actor.valid_until, trusted.valid_until))
+    )
     try:
         allowed = fixture.operator_authority.permits(
             provider_id=provider.provider_id,
@@ -59,7 +69,7 @@ def _operator(fixture, case, subject_id, provider, action):
         )
     except Exception as exc:
         raise cases.CaseConflict("pilot_operator_denied") from exc
-    if allowed is not True or timezone.now() >= fixture.expires_at:
+    if allowed is not True or timezone.now() >= min(fixture.expires_at, actor.valid_until):
         raise cases.CaseConflict("pilot_operator_denied")
     return actor
 

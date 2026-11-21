@@ -24,6 +24,8 @@ TABS = (
         "التنظيم والملاحظات الداخلية",
         "FATWA_CASE_ORGANIZATION_ENABLED",
     ),
+    ("identities", "ir_open", "الأشخاص وهويات المصدر", "FATWA_IDENTITY_REGISTRY_ENABLED"),
+    ("development_taxonomy", "dt_open", "التصنيف الفقهي ومراجعة النقل", "FATWA_DEVELOPMENT_TAXONOMY_ENABLED"),
     ("origins", "source_timeline", "أصل الأحداث وتسلسلها", "FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED"),
     ("attachments", "attachment_list", "مرفقات الوقائع", "FATWA_CASE_ATTACHMENTS_ENABLED"),
     ("rights", "rights_desk", "حقوق المصادر ومراجعتها", "FATWA_SOURCE_RIGHTS_ENABLED"),
@@ -43,11 +45,14 @@ TABS = (
     ("recordings", "pm_open", "التسجيل والتفريغ المراجع", "FATWA_PUBLIC_ANSWER_MEDIA_ENABLED"),
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
     ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
+    ("publication_schedules", "ps_open", "مواعيد نشر النسخ المراجعة", "FATWA_PUBLICATION_SCHEDULES_ENABLED"),
+    ("publication_destinations", "pd_open", "سجلات النشر المستقلة للوجهات", "FATWA_PUBLICATION_DESTINATIONS_ENABLED"),
     ("publication", "pub_open", "نسخة النشر المستقلة", "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED"),
     ("reports", "reports_open", "بلاغات المحتوى ومراجعتها", "FATWA_CONTENT_REPORTS_ENABLED"),
     ("quality", "quality_case", "جودة بيانات القضية", "FATWA_DATA_QUALITY_ENABLED"),
     ("exports", "exports_open", "تصدير المواد المختارة", "FATWA_SELECTED_EXPORTS_ENABLED"),
     ("scholarly", "scholarly_open", "الدروس والعلاقات اليدوية", "FATWA_SCHOLARLY_LINKS_ENABLED"),
+    ("public_teaching", "pt_open", "مواد العلماء والدروس المنشورة", "FATWA_PUBLIC_TEACHING_ENABLED"),
     ("public_knowledge", "pk_open", "صفحات العلماء والترجمات", "FATWA_PUBLIC_KNOWLEDGE_ENABLED"),
     ("library", "rl_open", "مكتبة المصادر والنسخ", "FATWA_RESEARCH_LIBRARY_ENABLED"),
     ("material_import", "mi_open", "مركز استيراد المواد", "FATWA_MATERIAL_IMPORT_ENABLED"),
@@ -57,6 +62,16 @@ TABS = (
 
 
 def _active(action):
+    if action.startswith("ir_"):
+        return "identities"
+    if action.startswith("ps_"):
+        return "publication_schedules"
+    if action.startswith("pd_"):
+        return "publication_destinations"
+    if action.startswith("dt_"):
+        return "development_taxonomy"
+    if action.startswith("pt_"):
+        return "public_teaching"
     if action.startswith("precise_"):
         return "precise_citations"
     if action.startswith("pm_"):
@@ -114,6 +129,8 @@ def _metadata(common, snapshot):
         case,
         _,
     ):
+        from apps.data_privacy.integration import allowed
+
         if (case.revision, case.evidence_version) != (
             snapshot["revision"],
             snapshot["evidence_version"],
@@ -140,6 +157,8 @@ def _metadata(common, snapshot):
                     "evidence__version",
                 )
             ):
+                if not allowed("ATTACHMENT", row["id"]):
+                    continue
                 attachments.append(
                     {
                         "id": str(row["id"]),
@@ -156,13 +175,20 @@ def _metadata(common, snapshot):
                 )
         manifest = None
         if snapshot["latest_answer"] and apps.is_installed("apps.answer_media"):
-            from apps.answer_media.models import AnswerManifest
+            from apps.answer_media.models import AnswerManifest, AnswerPart
 
             manifest = (
                 AnswerManifest.objects.filter(answer_id=snapshot["latest_answer"]["id"])
                 .values("sha256", "part_count")
                 .first()
             )
+            if manifest and any(
+                not allowed("ANSWER_PART", identifier)
+                for identifier in AnswerPart.objects.filter(
+                    manifest_id=snapshot["latest_answer"]["id"]
+                ).values_list("pk", flat=True)
+            ):
+                manifest = None
         release = {
             "recorded": False,
             "enabled": getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True

@@ -1,0 +1,28 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ editor.subject }}</bdi> — <bdi>{{ editor.role }}</bdi></p>
+<h2>التفريغ والتحرير — <bdi>{{ editor.public_ref }}</bdi></h2>
+<p>يبقى الجواب والتسجيل الأصليان محفوظين. كل تحرير نسخة مستقلة تحتاج مراجعة؛ ما يمس المعنى يحال إلى مفتي مخول.</p>
+{% if editor.saved %}<p role="status" id="ops-transcript-saved">حُفظ الإجراء بهوية المستخدم الحالي مع بقاء الأصل والتاريخ.</p>{% endif %}
+<section id="ops-transcript-sources" aria-label="التسجيلات المتاحة للتحرير">
+{% for part in editor.parts %}<article data-part="{{ part.id }}">
+<h3>التسجيل {{ part.ordinal }}</h3><p>المدة الموثقة {{ part.duration_ms }} مللي ثانية.</p>
+{% if part.can_audio %}<form method="post" action="/casework/operations/" target="_blank" class="ops-transcript-audio">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ editor.public_ref }}"><input type="hidden" name="part_id" value="{{ part.id }}"><input type="hidden" name="part_sha256" value="{{ part.sha256 }}"><button name="action" value="transcript_audio">الاستماع إلى الأصل في نافذة مستقلة</button></form>{% endif %}
+{% if part.can_edit %}<form method="post" action="/casework/operations/" class="ops-transcript-save">
+{% csrf_token %}<input type="hidden" name="action" value="transcript_save"><input type="hidden" name="case_ref" value="{{ editor.public_ref }}"><input type="hidden" name="part_id" value="{{ part.id }}"><input type="hidden" name="part_sha256" value="{{ part.sha256 }}"><input type="hidden" name="version" value="{{ part.version }}"><input type="hidden" name="revision" value="{{ editor.revision }}"><input type="hidden" name="evidence_version" value="{{ editor.evidence_version }}"><input type="hidden" name="command_id" value="{{ editor.command_id }}">
+<label>نص التفريغ<textarea name="text" required maxlength="10000" rows="7">{{ part.text }}</textarea></label>
+<label>نوع التغيير<select name="change_kind" required><option value="EDITORIAL">تفريغ أو تنسيق يحفظ المعنى</option><option value="MEANING_REVIEW">تغيير يحتاج مراجعة المعنى من مفتي</option></select></label>
+<label>سبب التحرير<textarea name="note" required maxlength="1000" rows="2"></textarea></label>
+<details class="ops-transcript-segments"><summary>مقاطع مؤقتة موثقة — اختياري</summary><p>انسخ عبارة فريدة من النص وأدخل وقتها الأصلي بالمللي ثانية. لا يستنتج النظام توافقًا زمنيًا.</p>
+{% for item in part.segment_inputs %}<fieldset><legend>المقطع {{ forloop.counter }}</legend><label>العبارة الدقيقة<input name="quote_{{ item.index }}" value="{{ item.quote }}" maxlength="10000"></label><label>البداية بالمللي ثانية<input type="number" min="0" name="start_ms_{{ item.index }}" value="{{ item.start_ms }}"></label><label>النهاية بالمللي ثانية<input type="number" min="1" name="end_ms_{{ item.index }}" value="{{ item.end_ms }}"></label></fieldset>{% endfor %}
+</details><button>حفظ نسخة تفريغ جديدة للمراجعة</button></form>{% endif %}
+</article>{% empty %}<p id="ops-transcript-empty">لا تسجيلات حالية متاحة وفق صلاحيات القراءة والتحرير.</p>{% endfor %}
+</section>
+<section id="ops-transcript-history" aria-label="نسخ التفريغ وقراراتها">
+{% for row in editor.transcripts %}<article data-transcript="{{ row.id }}"><h3>نسخة التفريغ {{ row.number }}</h3><p>المحرر: <bdi>{{ row.subject_id }}</bdi> — {% if row.change_kind == "MEANING_REVIEW" %}تحتاج مراجعة المعنى من مفتي{% else %}تحرير يحفظ المعنى{% endif %}</p><p class="original">{{ row.text|linebreaksbr }}</p><p>السبب: {{ row.note }}</p>
+<ul>{% for event in row.history %}<li data-decision="{{ event.action }}"><bdi>{{ event.subject_id }}</bdi> — {% if event.action == "APPROVE_MEANING" %}اعتماد المعنى من مفتي{% elif event.action == "REVIEW" %}مراجعة تحريرية مستقلة{% else %}سحب التفريغ{% endif %}: {{ event.note }}</li>{% empty %}<li>تنتظر مراجعة مستقلة.</li>{% endfor %}</ul>
+{% if row.options %}<form method="post" action="/casework/operations/" class="ops-transcript-decision">{% csrf_token %}<input type="hidden" name="action" value="transcript_decide"><input type="hidden" name="case_ref" value="{{ editor.public_ref }}"><input type="hidden" name="transcript_id" value="{{ row.id }}"><input type="hidden" name="transcript_digest" value="{{ row.digest }}"><input type="hidden" name="sequence" value="{{ row.action_count }}"><input type="hidden" name="command_id" value="{{ editor.command_id }}"><input type="hidden" name="revision" value="{{ editor.revision }}"><input type="hidden" name="evidence_version" value="{{ editor.evidence_version }}"><label>سبب القرار<textarea name="note" maxlength="1000" required rows="2"></textarea></label><label><input type="checkbox" name="confirmed" value="yes" required>أؤكد المراجعة والإجراء على هذه النسخة المحددة.</label>{% for action in row.options %}<button name="decision" value="{{ action }}">{% if action == "APPROVE_MEANING" %}اعتماد المعنى بصفتي مفتيًا{% elif action == "REVIEW" %}تسجيل مراجعة تحريرية مستقلة{% else %}سحب التفريغ مع حفظ تاريخه{% endif %}</button>{% endfor %}</form>{% endif %}
+</article>{% endfor %}
+</section>
+<form method="post" action="/casework/operations/" id="ops-transcripts-back">{% csrf_token %}<button name="action" value="queue">العودة إلى قائمة التشغيل</button></form>
+{% endblock %}

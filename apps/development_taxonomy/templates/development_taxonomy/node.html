@@ -1,0 +1,1 @@
+<li><details open><summary>{{ node.name }}</summary><p>معرّف ثابت: <code>{{ node.id }}</code></p><p class="original">المعنى المحدد: {{ node.definition }}</p>{% if node.children %}<ol>{% for child in node.children %}{% include "development_taxonomy/node.html" with node=child %}{% endfor %}</ol>{% endif %}</details></li>

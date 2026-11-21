@@ -25,6 +25,7 @@ from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.library_preview import services as preview
 from apps.library_preview.guard import safe_read
 from apps.mufti_review.identity import IdentityUnavailable
+from apps.private_media.links import protect
 
 from . import public, services
 from .boundaries import enabled
@@ -259,6 +260,7 @@ def _file_response(request, data):
     return private(response, head=request.method == "HEAD")
 
 
+@protect
 @_private_read
 def staff_audio(request, part_id=None, transcript_id=None):
     if part_id is not None:

@@ -11,6 +11,8 @@ from apps.private_media.storage import configured_storage
 from apps.private_media.validation import MAX_BYTES as MAX_BYTES
 from apps.private_media.validation import MediaValidationError, validate
 from apps.private_media.video import validate_file
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from .models import CaseAttachment
 from .storage_bindings import binding_locks, raw_for_owner, stored_fields
@@ -24,6 +26,7 @@ def _enabled():
 
 
 def _validate(raw, filename, media_type):
+    scans.require_bytes(raw)
     try:
         if media_type in {"video/webm", "video/mp4"}:
             if getattr(settings, "FATWA_CASE_ATTACHMENTS_VIDEO_ENABLED", False) is not True:
@@ -37,13 +40,21 @@ def _validate(raw, filename, media_type):
 @mutation_service
 def upload(*, token, raw, filename, media_type, expected_revision, synthetic_fixtures_only=False):
     _enabled()
+    scans.requester_files(
+        raw_files=[raw],
+        token=token,
+        expected_revision=expected_revision,
+        synthetic_fixtures_only=synthetic_fixtures_only,
+    )
     media = _validate(raw, filename, media_type)
     storage = configured_storage()
     with (
         binding_locks(storage, [media.sha256]),
+        scan_receipts.boundary(),
         cases._token_case(token, synthetic_fixtures_only) as case,
     ):
         cases._versions(case, expected_revision)
+        scan_receipts.require(media.sha256, media.size)
         if case.stage == "NEEDS_CLARIFICATION":
             raise cases.CaseConflict("requester_clarification_still_required")
         if CaseAttachment.objects.filter(case=case).count() >= MAX_ATTACHMENTS:
@@ -111,6 +122,8 @@ def _check(row):
 
 
 def _list(case):
+    from apps.data_privacy.integration import allowed
+
     rows = (
         CaseAttachment.objects.filter(case=case)
         .select_related("evidence", "event")
@@ -118,12 +131,17 @@ def _list(case):
     )
     result = []
     for row in rows:
+        if not allowed("ATTACHMENT", row.pk):
+            continue
         _check(row)
         result.append(_metadata(row))
     return {"public_ref": case.public_ref, "revision": case.revision, "attachments": result}
 
 
 def _read(case, attachment_id):
+    from apps.data_privacy.integration import current
+
+    current("ATTACHMENT", attachment_id)
     row = (
         CaseAttachment.objects.filter(case=case, pk=cases._uuid(attachment_id))
         .select_related("evidence", "event")
@@ -135,6 +153,7 @@ def _read(case, attachment_id):
 
 
 @mutation_service
+@scan_receipts.projected
 def requester_list(*, token, synthetic_fixtures_only=False):
     _enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
@@ -142,6 +161,7 @@ def requester_list(*, token, synthetic_fixtures_only=False):
 
 
 @mutation_service
+@scan_receipts.projected
 def requester_read(*, token, attachment_id, synthetic_fixtures_only=False):
     _enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
@@ -149,6 +169,7 @@ def requester_read(*, token, attachment_id, synthetic_fixtures_only=False):
 
 
 @mutation_service
+@scan_receipts.projected
 def staff_list(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
@@ -156,6 +177,7 @@ def staff_list(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
 
 
 @mutation_service
+@scan_receipts.projected
 def staff_read(*, case_id, subject_id, provider, attachment_id, synthetic_fixtures_only=False):
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):

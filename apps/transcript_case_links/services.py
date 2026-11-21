@@ -7,6 +7,8 @@ from apps.casework import services as cases
 from apps.casework.models import CaseEvidence
 from apps.fast8_transcript_queue.workbench.services import restore_bundle, review
 from apps.platform_recovery.integration import mutation_service
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from .models import TranscriptLink, TranscriptUpload
 
@@ -17,6 +19,12 @@ def _entries(raw):
     if type(raw) is not bytes or not 1 <= len(raw) <= MAX_BUNDLE:
         raise cases.CaseConflict("transcript_bundle_size")
     try:
+        scans.require_bytes(raw)
+        if scans.active([raw]):
+            from apps.fast8_transcript_queue.workbench.services import _read_archive
+
+            for member in _read_archive(raw).values():
+                scans.require_bytes(member)
         document = restore_bundle(raw, synthetic_fixtures_only=True)
         _, _, queue, error = review(document)
         if queue is None or error:
@@ -42,8 +50,18 @@ def _summary(case, upload, entries):
 
 @mutation_service
 def preview(*, case_id, subject_id, provider, bundle, synthetic_fixtures_only=False):
-    entries = _entries(bundle)
-    with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
+    scans.transcript_bundle(
+        raw=bundle,
+        case_id=case_id,
+        subject_id=subject_id,
+        provider=provider,
+        synthetic_fixtures_only=synthetic_fixtures_only,
+    )
+    with (
+        scan_receipts.boundary(),
+        cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
+    ):
+        entries = _entries(bundle)
         existing = TranscriptUpload.objects.filter(
             case=case,
             sha256=sha256(bundle).hexdigest(),
@@ -80,6 +98,7 @@ def _upload(case, actor, provider, upload_id):
     ).first()
     if upload is None or sha256(bytes(upload.bundle)).hexdigest() != upload.sha256:
         raise cases.CaseConflict("transcript_upload_unavailable")
+    scans.require_bytes(bytes(upload.bundle))
     return upload
 
 
@@ -156,6 +175,10 @@ def read_links(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             .select_related("upload", "evidence", "event")
             .order_by("evidence__version")
         ):
+            from apps.data_privacy.integration import allowed as privacy_allowed
+
+            if not privacy_allowed("TRANSCRIPT_LINK", link.pk):
+                continue
             raw = bytes(link.upload.bundle)
             if sha256(raw).hexdigest() != link.upload.sha256:
                 raise cases.CaseConflict("transcript_binding_inconsistent")

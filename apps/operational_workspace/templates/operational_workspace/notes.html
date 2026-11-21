@@ -1,0 +1,14 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ notes.subject }}</bdi> — <bdi>{{ notes.role }}</bdi></p>
+<h2>الملاحظات الداخلية — <bdi>{{ notes.public_ref }}</bdi></h2>
+<p>تبقى الملاحظات في سجل داخلي مستقل عن أصل السؤال والجواب المعتمد. يُضاف التصحيح كملاحظة جديدة مع بقاء السابقة محفوظة.</p>
+{% if notes.saved %}<p id="ops-note-saved" role="status">حُفظت الملاحظة الداخلية.</p>{% endif %}
+{% if notes.can_read %}<section id="ops-note-history" aria-label="سجل الملاحظات الداخلية">
+{% for item in notes.history %}<article data-note-version="{{ item.version }}"><h3>الملاحظة في الإصدار {{ item.version }}</h3><p><bdi>{{ item.subject_id }}</bdi> — {{ item.created_at|date:"Y-m-d H:i" }}</p><p class="original">{{ item.note }}</p></article>{% empty %}<p>لا توجد ملاحظات داخلية محفوظة.</p>{% endfor %}
+</section>{% else %}<p id="ops-notes-unreadable">صلاحيتك الحالية لا تتيح قراءة سجل الملاحظات.</p>{% endif %}
+{% if notes.can_add %}<form method="post" action="/casework/operations/" id="ops-note-add">{% csrf_token %}
+<input type="hidden" name="action" value="add_note"><input type="hidden" name="case_ref" value="{{ notes.public_ref }}"><input type="hidden" name="revision" value="{{ notes.revision }}"><input type="hidden" name="evidence_version" value="{{ notes.evidence_version }}"><input type="hidden" name="metadata_version" value="{{ notes.metadata_version }}"><input type="hidden" name="command_id" value="{{ notes.command_id }}">
+<label for="ops-note-text">ملاحظة داخلية جديدة</label><textarea name="note" id="ops-note-text" rows="5" maxlength="2000" required></textarea><button>حفظ الملاحظة</button></form>{% endif %}
+<form method="post" action="/casework/operations/" id="ops-back">{% csrf_token %}<input type="hidden" name="action" value="queue"><button name="filter" value="all">العودة إلى قائمة التشغيل</button></form>
+{% endblock %}

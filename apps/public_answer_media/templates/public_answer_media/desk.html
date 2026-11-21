@@ -1,4 +1,4 @@
-{% extends "casework/base.html" %}
+{% extends "casework/base.html" %}{% load private_media_links %}
 {% block title %}التسجيل والتفريغ المراجع{% endblock %}
 {% block content %}
 <h2>التسجيل والتفريغ المراجع</h2>
@@ -6,9 +6,9 @@
 <p>استمع إلى الأصل أثناء التصحيح. تبقى كل نسخة محفوظة مع صاحب التعديل وتاريخه؛ لا يغيّر التفريغ التسجيل أو الجواب المعتمد.</p>
 {% if message %}<p role="status">{{ message }}</p>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><button>العودة إلى القضية</button></form>
-{% for part in result.parts %}
+{% for part in result.parts %}{% private_media_url part.audio_url as private_audio_url %}
 <section class="recording-source" data-part-id="{{ part.id }}"><h3>تسجيل الجواب · المرفق {{ part.ordinal }}</h3>
-<audio class="library-player" controls preload="metadata" src="{{ part.audio_url }}">التسجيل غير قابل للتشغيل في هذا المتصفح.</audio>
+<audio class="library-player" controls preload="metadata" src="{{ private_audio_url }}">التسجيل غير قابل للتشغيل في هذا المتصفح.</audio>
 <p>إن تعذر التشغيل، أعد التحقق من صلاحية الوصول. لا يبدأ الصوت تلقائيًا.</p>
 <form class="transcript-save" method="post" action="/casework/staff/">
 {% include "public_answer_media/pins.html" %}<input type="hidden" name="action" value="pm_save_transcript"><input type="hidden" name="part_id" value="{{ part.id }}"><input type="hidden" name="expected_version" value="{{ part.version }}">

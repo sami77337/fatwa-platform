@@ -69,7 +69,11 @@ class CanonicalSearchHTTPTests(SearchFixture, TransactionTestCase):
         self.assertIn("no-store", found["Cache-Control"])
         opened = self.submit("cs_source", found, state=self.result_state(found))
         self.assertEqual(opened.status_code, 200, opened.content)
-        self.assertContains(opened, self.question)
+        self.assertEqual(opened.context["opened"]["text"], self.question)
+        self.assertEqual(
+            "".join(part["text"] for part in opened.context["opened"]["navigation"]["parts"]),
+            self.question,
+        )
         literal = self.query(opened, "المعاملات", "LITERAL")
         self.assertContains(literal, "0 نتيجة متاحة")
         fuzzy = self.query(literal, "المعاملاتت", "FUZZY")

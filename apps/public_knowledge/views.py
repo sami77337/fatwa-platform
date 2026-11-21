@@ -10,7 +10,9 @@ from django.urls import reverse
 
 from apps.library_preview import services as preview
 from apps.library_preview.guard import safe_read
+from apps.library_preview.navigation import teaching_catalog_url
 from apps.public_answer_media.navigation import publication_recordings_url
+from apps.public_reader_tools.navigation import publication_tools_url
 
 from . import public, services
 
@@ -76,6 +78,7 @@ def _page(request, template, snapshot, *, title, path, crumbs=(), description=""
             "description": description,
             "canonical": _origin() + path if _origin() else "",
             "breadcrumbs": breadcrumbs,
+            "teaching_url": teaching_catalog_url(),
             **context,
         },
     )
@@ -89,7 +92,7 @@ def _query(request):
 @safe_read
 def index(request):
     _query(request)
-    with public.projection() as snapshot:
+    with public.projection(search=True) as snapshot:
         _decorate(snapshot)
         return _page(
             request,
@@ -162,7 +165,9 @@ def topic(request, series_id):
 @safe_read
 def lesson(request, series_id):
     _query(request)
-    with public.projection() as snapshot:
+    from apps.public_teaching.navigation import knowledge_projection, lesson_links
+
+    with knowledge_projection() as (snapshot, teaching):
         _decorate(snapshot)
         row = snapshot.lesson(series_id)
         return _page(
@@ -174,6 +179,7 @@ def lesson(request, series_id):
             path=_url("lesson", series_id),
             crumbs=[{"title": row["title"], "url": row["url"]}],
             lesson=row,
+            recordings=lesson_links(snapshot, teaching, series_id),
         )
 
 
@@ -250,6 +256,7 @@ def publication_page(request, publication_id, language="ar"):
             missing_translation=missing,
             original_url=original_url,
             recordings_url=publication_recordings_url(publication_id),
+            reader_tools_url=publication_tools_url(publication_id),
             original_canonical=_origin() + original_url if _origin() else "",
             related=related,
             lessons=lessons,
@@ -263,7 +270,7 @@ def sitemap(request):
     origin = _origin()
     if not origin:
         raise preview.PreviewUnavailable()
-    with public.projection() as snapshot:
+    with public.projection(search=True) as snapshot:
         _decorate(snapshot)
         urls = {_url("index"): None}
         for row in snapshot.scholars.values():

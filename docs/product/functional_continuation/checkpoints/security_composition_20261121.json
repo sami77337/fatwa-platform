@@ -1,0 +1,96 @@
+{
+  "schema": "fatwa.security-composition-checkpoint.v1",
+  "focused_checks": [
+    {
+      "name": "overview-privacy-fixed",
+      "postgres_major": 17,
+      "tests": 58,
+      "seconds": 123.32,
+      "tested_sha": "6613caaed344695e73c744398963148a40985564",
+      "status": "PASS",
+      "log_sha256": "4e50222abd3a6ce8e6ae454069b5362c463f7a6d13eb0bdea0480b276ecf58bf",
+      "log_file": "overview-privacy-fixed-pg17.log",
+      "protected_browser_claim": false
+    },
+    {
+      "name": "overview-privacy-fixed",
+      "postgres_major": 18,
+      "tests": 58,
+      "seconds": 123.792,
+      "tested_sha": "6613caaed344695e73c744398963148a40985564",
+      "status": "PASS",
+      "log_sha256": "b5793bef26c9869313159ce41e6b9dd8b09af7a76bbbd63a45c49a0c9f26fb17",
+      "log_file": "overview-privacy-fixed-pg18.log",
+      "protected_browser_claim": false
+    },
+    {
+      "name": "permissions-composed",
+      "postgres_major": 17,
+      "tests": 45,
+      "seconds": 43.004,
+      "tested_sha": "6d10f3c7c2f0d7c8b8657fedcfb4101c8328b1b7",
+      "status": "PASS",
+      "log_sha256": "22810504fec59ca6c31f584549364de956661a405c795b7418152cd04e0bf67c",
+      "log_file": "permissions-composed-pg17.log",
+      "protected_browser_claim": false
+    },
+    {
+      "name": "permissions-composed",
+      "postgres_major": 18,
+      "tests": 45,
+      "seconds": 43.879,
+      "tested_sha": "6d10f3c7c2f0d7c8b8657fedcfb4101c8328b1b7",
+      "status": "PASS",
+      "log_sha256": "25df7f7215f1be3598b7934dd5ed35a08b25d73fbf7ab020be76b806c0f71960",
+      "log_file": "permissions-composed-pg18.log",
+      "protected_browser_claim": false
+    },
+    {
+      "name": "upload-security-current-session-composition",
+      "postgres_major": 17,
+      "tests": 55,
+      "seconds": 43.484,
+      "tested_base_sha": "6d10f3c7c2f0d7c8b8657fedcfb4101c8328b1b7",
+      "test_commit": "093f930913bf82211d747bf636d9f7c0e6598df1",
+      "status": "PASS",
+      "log_sha256": "7ea673251d0a35a4c65de023006934558ff5da453b0cf8a75b9d4adbb773ea69",
+      "log_file": "upload-security-session-final-pg17.log",
+      "protected_browser_claim": false,
+      "real_engine_verified": false
+    },
+    {
+      "name": "upload-security-current-session-composition",
+      "postgres_major": 18,
+      "tests": 55,
+      "seconds": 43.508,
+      "tested_base_sha": "6d10f3c7c2f0d7c8b8657fedcfb4101c8328b1b7",
+      "test_commit": "093f930913bf82211d747bf636d9f7c0e6598df1",
+      "status": "PASS",
+      "log_sha256": "36ef1e05100d4ff0983d6315a085349ca0931d5e253fc0ae13fe9e614ed8867e",
+      "log_file": "upload-security-session-final-pg18.log",
+      "protected_browser_claim": false,
+      "real_engine_verified": false
+    }
+  ],
+  "hosted_previous_head": {
+    "tested_sha": "f45c4a2cce7daf1d5c34ed5d1dc43afcb2d473e3",
+    "success": 18,
+    "failed": 1,
+    "functional_run": "https://github.com/sami77337/fatwa-platform/actions/runs/44906587361",
+    "failure": "Private unclassified-work browser expected RTL HTML on the correct JSON denial. Fixed locally with exact JSON assertion; not yet rerun."
+  },
+  "current_plan": {
+    "candidates": 103,
+    "certified_additional_points": 0,
+    "actual_engine_evidence": "PENDING",
+    "native_journeys": "PENDING",
+    "encrypted_93_table_drill": "PENDING",
+    "registered_service_discovery_count": 1405,
+    "registered_browser_identity_count": 51
+  },
+  "boundaries": {
+    "main_merged": false,
+    "production_deployed": false,
+    "overall_completion_claim": false
+  }
+}

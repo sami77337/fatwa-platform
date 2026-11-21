@@ -1,0 +1,36 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+{% if staff_sessions_url %}<p><a href="{{ staff_sessions_url }}">جلسات الحساب</a></p>{% endif %}
+{% if staff_mfa_url %}<p><a href="{{ staff_mfa_url }}">التحقق الإضافي</a></p>{% endif %}
+{% if record_lifecycle_url %}<p><a href="{{ record_lifecycle_url }}">حذف المواد واستعادتها</a></p>{% endif %}
+{% if privacy_management_url %}<p><a href="{{ privacy_management_url }}">تصنيف الخصوصية</a></p>{% endif %}
+{% if permissions_management_url %}<p><a href="{{ permissions_management_url }}">إدارة الصلاحيات</a></p>{% endif %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ queue.subject }}</bdi> — <bdi>{{ queue.role }}</bdi></p>
+<p>القائمة والأعداد تعرض الحالات والإجراءات المسموح لك بقراءتها حاليًا.</p>
+<nav aria-label="قوائم الإجراءات" id="ops-filters">
+{% for filter in queue.filters %}<form method="post" action="/casework/operations/">{% csrf_token %}<input type="hidden" name="action" value="queue"><button name="filter" value="{{ filter.key }}" aria-pressed="{% if filter.key == queue.selected_filter %}true{% else %}false{% endif %}">{{ filter.label }} <span data-filter-count="{{ filter.key }}">{{ filter.count }}</span></button></form>{% endfor %}
+</nav>
+{% if queue.coordination_cases %}<details id="ops-coordination-index"><summary>إدارة الأولوية والتعيين</summary>
+{% for row in queue.coordination_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><p>{{ row.priority }} — <bdi>{{ row.primary|default:"طابور مشترك" }}</bdi></p><button name="action" value="coordination">الأولوية والتعيين {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+{% if queue.metadata_cases %}<details id="ops-metadata-index"><summary>إدارة البيانات التنظيمية للقضايا المخولة</summary>
+{% for row in queue.metadata_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="metadata_editor">إدارة بيانات {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+{% if queue.lesson_cases %}<details id="ops-lessons-index"><summary>روابط الدروس للقضايا المخولة</summary>
+{% for row in queue.lesson_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="lesson_links">ربط الدروس — {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+{% if queue.transcript_cases %}<details id="ops-transcripts-index"><summary>التفريغ والتحرير للقضايا المخولة</summary>
+{% for row in queue.transcript_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="transcript_editor">التفريغ والتحرير — {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+<section id="ops-queue" aria-label="قضايا تحتاج إجراء">
+{% if queue.publication_cases %}<details id="ops-publication-index"><summary>إدارة نسخ النشر للقضايا المخولة</summary>
+{% for row in queue.publication_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="publication_manager">إدارة النشر — {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+{% for row in queue.rows %}<article data-case-ref="{{ row.public_ref }}"><h2><bdi>{{ row.public_ref }}</bdi></h2><p>{{ row.stage }} — الوقائع {{ row.evidence_version }}</p>
+{% for section in row.pending %}<section data-section="{{ section.key }}"><h3>{{ section.label }}</h3><ul>{% for reason in section.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+<form method="post" action="/casework/operations/">{% csrf_token %}<input type="hidden" name="action" value="detail"><input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="section" value="{{ section.key }}">عرض تفاصيل {{ section.label }}</button></form></section>{% endfor %}
+{% if row.notes_available %}<form method="post" action="/casework/operations/" class="ops-notes-open">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="notes">الملاحظات الداخلية</button></form>{% endif %}
+</article>{% empty %}<p id="ops-empty">لا توجد إجراءات متاحة ضمن هذا المرشح والصلاحيات الحالية.</p>{% endfor %}
+</section>
+<form method="post" action="/casework/operations/logout/" id="ops-logout">{% csrf_token %}<button>تسجيل الخروج</button></form>
+{% endblock %}

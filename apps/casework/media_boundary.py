@@ -61,21 +61,17 @@ def pin_media_deadline(deadline):
         scope[0] = deadline if scope[0] is None else min(scope[0], deadline)
 
 
-@contextmanager
-def media_projection_boundary(*, retain_deadlines=True):
-    """Check once at each enclosing return boundary, without another permits loop."""
-    from .services import CaseConflict
+class MediaProjectionPin:
+    """Retain the same pure policy/deadline checks after an inner context exits."""
 
-    scope = []
-    token = _SCOPES.set((*_SCOPES.get(), scope))
-    earliest = [None]
-    deadline_token = _DEADLINES.set(
-        (*_DEADLINES.get(), earliest) if retain_deadlines else _DEADLINES.get()
-    )
-    try:
-        yield
-        if scope:
-            policy, epoch = scope
+    def __init__(self, scope, earliest, scan_pin):
+        self.scope, self.earliest, self.scan_pin = scope, earliest, scan_pin
+
+    def final_pins(self):
+        from .services import CaseConflict
+
+        if self.scope:
+            policy, epoch = self.scope
             if (
                 getattr(settings, "FATWA_RESEARCH_WORKSPACE_RIGHTS", None) is not policy
                 or _epoch(policy) != epoch
@@ -83,8 +79,27 @@ def media_projection_boundary(*, retain_deadlines=True):
                 raise CaseConflict("media_policy_changed")
         # The final atomic epoch lookup may span a deadline without changing it.
         # This runs inside _staff_case transaction.atomic, before commit/return.
-        if earliest[0] is not None and earliest[0] <= timezone.now():
+        if self.earliest[0] is not None and self.earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
+        self.scan_pin.check()
+
+
+@contextmanager
+def media_projection_boundary(*, retain_deadlines=True):
+    """Check once at each enclosing return boundary, without another permits loop."""
+    scope = []
+    token = _SCOPES.set((*_SCOPES.get(), scope))
+    earliest = [None]
+    deadline_token = _DEADLINES.set(
+        (*_DEADLINES.get(), earliest) if retain_deadlines else _DEADLINES.get()
+    )
+    from apps.upload_security.services import projection as scan_projection
+
+    try:
+        with scan_projection() as scan_pin:
+            pin = MediaProjectionPin(scope, earliest, scan_pin)
+            yield pin
+            pin.final_pins()
     finally:
         _DEADLINES.reset(deadline_token)
         _SCOPES.reset(token)

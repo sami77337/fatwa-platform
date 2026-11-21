@@ -24,7 +24,7 @@ from apps.source_rights.models import (
 )
 from apps.transcript_case_links.models import TranscriptLink
 
-from . import sources
+from . import governance_pins, sources
 from .authority import SearchAuthority
 from .recordings import RecordingSources
 
@@ -159,22 +159,45 @@ class Scope:
         self.source_policy = transcript_snapshot(self.case_ids)
         self.recordings = RecordingSources(self.case_ids, provider, actor)
         self.index_state = history(self.case_ids)
+        self.governance = governance_pins.Pins(self.case_ids)
         self.expected_generations, self.expected_documents = set(), set()
         self.documents = {}
+        self.extra_permissions = set()
 
     def permit(self, case):
+        self._permit(case, self.action)
+
+    def require(self, case, action):
+        if action not in {"VIEW", "REBUILD", "SEARCH", "OPEN"} | governance_pins.ACTIONS:
+            raise cases.CaseConflict("search_scope_invalid")
+        if action in governance_pins.ACTIONS:
+            governance_pins.enabled()
+            governance_pins.require_configured_identity(self.provider)
+        self._permit(case, action)
+        self.extra_permissions.add((str(case.pk), action))
+
+    def _permit(self, case, action):
         try:
             result = self.initial[0].permits(
                 provider_id=self.provider.provider_id,
                 subject_id=self.actor.subject_id,
                 auth_epoch=self.actor.auth_epoch,
                 case_ref=case.public_ref,
-                action=self.action,
+                action=action,
             )
         except Exception as exc:
             raise cases.CaseConflict("search_authority_unavailable") from exc
         if result is not True:
             raise cases.CaseConflict("search_action_denied")
+        from apps.data_privacy.integration import staff as privacy
+
+        privacy(
+            "CASE",
+            case.pk,
+            provider=self.provider,
+            actor=self.actor,
+            action="SEARCH" if action in {"SEARCH", "REBUILD"} else "READ",
+        )
 
     def read(self, case):
         result = self._read(case)
@@ -183,7 +206,11 @@ class Scope:
 
     def _read(self, case):
         result = sources.read(
-            case, self.actor, self.provider, transcripts_available=self.source_policy[0]
+            case,
+            self.actor,
+            self.provider,
+            transcripts_available=self.source_policy[0],
+            privacy_action="SEARCH" if self.action in {"SEARCH", "REBUILD"} else "READ",
         ) + self.recordings.read(case)
         if len(result) > sources.MAX_DOCUMENTS:
             raise cases.CaseConflict("search_document_capacity")
@@ -202,6 +229,8 @@ class Scope:
                 current = {row.key: row for row in self._read(case)}
                 if current != self.documents[str(case.pk)]:
                     raise cases.CaseConflict("search_current_sources_changed")
+        for case_id, action in sorted(self.extra_permissions):
+            self._permit(self.cases[case_id], action)
         fresh = resolve_identity(self.provider, self.actor.subject_id)
         if _actor(fresh) != _actor(self.actor) or timezone.now() >= self.actor.valid_until:
             raise cases.CaseConflict("search_identity_changed")
@@ -220,6 +249,7 @@ class Scope:
         actual = history(self.case_ids)
         if (tuple(sorted(actual[0])), tuple(sorted(actual[1]))) != expected:
             raise cases.CaseConflict("search_index_changed")
+        self.governance.finish()
 
 
 @mutation_context
@@ -227,11 +257,25 @@ class Scope:
 def boundary(
     *, case_id, subject_id, provider, action="VIEW", scope="CASE", synthetic_fixtures_only=False
 ):
-    if action not in {"VIEW", "REBUILD", "SEARCH", "OPEN"} or scope not in {"CASE", "SCOPED"}:
+    if action not in {
+        "VIEW",
+        "REBUILD",
+        "SEARCH",
+        "OPEN",
+    } | governance_pins.ACTIONS or scope not in {"CASE", "SCOPED"}:
         raise cases.CaseConflict("search_scope_invalid")
+    if action in governance_pins.ACTIONS:
+        governance_pins.enabled()
+        governance_pins.require_configured_identity(provider)
+        if scope != "CASE":
+            raise cases.CaseConflict("search_dictionary_case_scope_required")
     enabled()
     cases._guard(synthetic_fixtures_only)
-    with synthetic_queue_atomic(), ExitStack() as stack:
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
+    with projection(), synthetic_queue_atomic(), ExitStack() as stack:
         identity = identity_snapshot(provider)
         initial = snapshot()
         actor = resolve_identity(provider, subject_id)
@@ -244,10 +288,25 @@ def boundary(
         stack.enter_context(_projection_expiry_guard())
         locked = {}
         for pk in ids:
-            case, current = stack.enter_context(cases._staff_case(pk, subject_id, provider, True))
+            try:
+                privacy(
+                    "CASE",
+                    pk,
+                    provider=provider,
+                    actor=actor,
+                    action="SEARCH" if action in {"SEARCH", "REBUILD"} else "READ",
+                )
+                case, current = stack.enter_context(
+                    cases._staff_case(pk, subject_id, provider, True)
+                )
+            except PrivacyDenied:
+                continue
             if _actor(current) != _actor(actor):
                 raise cases.CaseConflict("search_identity_changed")
             locked[str(pk)] = case
+        if str(cases._uuid(case_id)) not in locked:
+            raise cases.CaseConflict("search_case_scope_unavailable")
+        ids = [case.pk for case in locked.values()]
         # Take the source/index snapshot only after all canonical locks are held.
         # This admits an exact idempotent replay after a concurrent rebuild.
         # Earlier identity callbacks cannot leave stale in-memory case pointers.

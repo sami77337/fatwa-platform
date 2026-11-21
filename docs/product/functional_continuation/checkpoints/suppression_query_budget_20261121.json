@@ -1,0 +1,36 @@
+{
+  "schema": "fatwa.focused-regression-checkpoint.v1",
+  "tested_sha": "72befaf8217cc18fbd5cfd448ad7bcc522669938",
+  "certifies_complete_plan": false,
+  "test_labels": [
+    "apps.record_suppression.tests",
+    "apps.record_suppression.test_readers",
+    "apps.record_suppression.test_http",
+    "apps.record_suppression.test_sessions",
+    "apps.record_suppression.test_recovery",
+    "apps.library_preview.tests.PreviewTests",
+    "tests.casework.test_campaign.CampaignProfileTests"
+  ],
+  "reason": "The previous exact read-cost gate required fewer than 100 queries and observed 117. Retaining one target-less empty-store final pin lowered it to 100 and still failed the unchanged gate. Avoiding only a second immediate identical absence query inside an active retained projection lowers it to 90. Each source admission still reads current SQL and the final guard still rejects newly recorded policy after authority callbacks.",
+  "no_budget_or_authority_relaxation": true,
+  "runs": [
+    {
+      "postgres_major": 17,
+      "tests": 48,
+      "result": "PASS",
+      "seconds": 60.413,
+      "library_queries": 90,
+      "required_queries_less_than": 100,
+      "log_sha256": "436185dd67648cbaae4dcb0c30135ea5b1da329dadcb044ef3085b053df0d849"
+    },
+    {
+      "postgres_major": 18,
+      "tests": 48,
+      "result": "PASS",
+      "seconds": 60.36,
+      "library_queries": 90,
+      "required_queries_less_than": 100,
+      "log_sha256": "05511536d0fe454bec5c2a4d9767cc7841fef8a6d76f3f44a05a48aa3db6531a"
+    }
+  ]
+}

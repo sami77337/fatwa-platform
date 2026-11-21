@@ -63,12 +63,13 @@ def _canonical(receipt):
 
 
 def populate():
+    seed_key = uuid.uuid4().hex
     receipts = [
         cases.intake_case(
             original_question="سؤال استعادة دورة حياة اصطناعي " + suffix,
-            requester_id="lifecycle-recovery-" + suffix,
-            source_event_id="lifecycle-recovery-" + suffix,
-            idempotency_key="lifecycle-recovery-" + suffix,
+            requester_id="lifecycle-recovery-" + seed_key + "-" + suffix,
+            source_event_id="lifecycle-recovery-" + seed_key + "-" + suffix,
+            idempotency_key="lifecycle-recovery-" + seed_key + "-" + suffix,
             synthetic_fixtures_only=True,
         )
         for suffix in ("closed", "archived", "reopened")

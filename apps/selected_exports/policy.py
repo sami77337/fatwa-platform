@@ -158,6 +158,9 @@ def boundary(
     ):
         initial = _snapshot(case, kinds)
         permit(case, actor, provider, action)
+        from apps.data_privacy.integration import staff as privacy
+
+        privacy("CASE", case.pk, provider=provider, actor=actor, action="EXPORT")
         yield case, actor
         enabled()
         permit(case, actor, provider, action)

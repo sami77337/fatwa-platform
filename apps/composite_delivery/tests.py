@@ -169,6 +169,34 @@ class CompositeTests(CaseDeliveryFixture, TransactionTestCase):
         self.assertEqual(DeliveryIntent.objects.count(), 0)
         self.assertEqual(CompositeDelivery.objects.count(), 0)
 
+    @override_settings(FATWA_ANSWER_LINKS_ENABLED=True)
+    def test_explicit_link_capability_is_required_and_exact_authored_url_is_resolved(self):
+        self.directory.projection_epoch = lambda: repr((self.directory.refs, self.directory.role, self.directory.epoch))
+        original = "https://youtu.be/aB3dE6gH9_k"
+        draft = media.save_multipart_answer(**self.staff(), text="نص مع رابط اختاره المفتي",
+            files=[], links=[{"url": original, "label": "مرجع فيديو اصطناعي"}],
+            expected_revision=1, expected_evidence_version=1)
+        cases.record_decision(**self.staff(), answer_id=draft["answers"][-1]["id"],
+            action="APPROVE", expected_revision=draft["revision"], expected_evidence_version=1)
+        self.assertEqual(self.request()["plan"]["status"], "REQUIRES_HUMAN_DECISION")
+        with self.assertRaises(queue.QueueConflict):
+            self.stage()
+        self.assertEqual(DeliveryIntent.objects.count(), 0)
+        self.profile = replace(self.profile,
+            capabilities=replace(self.profile.capabilities, supported=self.profile.capabilities.supported | {"link"}),
+            allowed_mime=self.profile.allowed_mime | {"text/uri-list"})
+        self.stage()
+        first = self.reserve()
+        self.outcome(first, self.resolve(first), "DELIVERED")
+        link_lease = self.reserve()
+        resolved = self.resolve(link_lease)
+        self.assertEqual(resolved["kind"], "YOUTUBE_LINK")
+        self.assertEqual(resolved["raw"], original.encode())
+        self.assertEqual(resolved["metadata"]["availability"], "UNVERIFIED")
+        self.outcome(link_lease, resolved, "DELIVERED")
+        self.assertTrue(self.status()["delivery_verified"])
+        self.assertIsNone(self.reserve())
+
     def test_failure_partial_uncertainty_never_retries_completed_or_failed_parts(self):
         self.approve()
         self.stage()
@@ -375,7 +403,7 @@ class CompositeTests(CaseDeliveryFixture, TransactionTestCase):
         try:
             call_command("migrate", "composite_delivery", "0001", verbosity=0)
         finally:
-            call_command("migrate", "composite_delivery", "0002", verbosity=0)
+            call_command("migrate", "composite_delivery", verbosity=0)
         self.assertEqual(original, list(CompositeDelivery.objects.values()))
         with self.assertRaises(IntegrityError), transaction.atomic():
             CompositeDelivery.objects.update(manifest_sha256="a" * 64)

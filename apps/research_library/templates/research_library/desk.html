@@ -1,4 +1,4 @@
-{% extends "casework/base.html" %}
+{% extends "casework/base.html" %}{% load private_media_links %}
 {% block title %}مكتبة المصادر والنسخ{% endblock %}
 {% block content %}
 <h2>مكتبة المصادر والنسخ</h2>
@@ -16,13 +16,13 @@
 <p class="original">{{ selected.payload.description }}</p>
 {% if selected.payload.recorded_text %}<h4>النص المحفوظ في هذه النسخة</h4><div class="original">{{ selected.payload.recorded_text }}</div>{% endif %}
 {% if selected.file %}<p>ملف هذه النسخة: <bdi>{{ selected.file.filename }}</bdi> · {{ selected.file.size }} بايت.</p>
-{% if 'READ' in selected.allowed_uses %}
-{% if selected.payload.kind == 'AUDIO' %}<audio class="library-player" controls preload="metadata" src="/casework/staff/library/{{ selected.version_id }}/file/"><a href="/casework/staff/library/{{ selected.version_id }}/file/">فتح التسجيل</a></audio>
-{% elif selected.payload.kind == 'VIDEO' %}<video class="library-player" controls preload="metadata" width="280" src="/casework/staff/library/{{ selected.version_id }}/file/"><a href="/casework/staff/library/{{ selected.version_id }}/file/">فتح التسجيل المرئي</a></video>
-{% elif selected.payload.kind == 'IMAGE' %}<img class="library-player" width="280" src="/casework/staff/library/{{ selected.version_id }}/file/" alt="{{ selected.payload.title }}">
-{% else %}<p><a href="/casework/staff/library/{{ selected.version_id }}/file/">فتح ملف النسخة المصرح بقراءتها</a></p>{% endif %}
+{% if 'READ' in selected.allowed_uses %}{% private_media_url '/casework/staff/library/'|add:selected.version_id|add:'/file/' as private_file_url %}
+{% if selected.payload.kind == 'AUDIO' %}<audio class="library-player" controls preload="metadata" src="{{ private_file_url }}"><a href="{{ private_file_url }}">فتح التسجيل</a></audio>
+{% elif selected.payload.kind == 'VIDEO' %}<video class="library-player" controls preload="metadata" width="280" src="{{ private_file_url }}"><a href="{{ private_file_url }}">فتح التسجيل المرئي</a></video>
+{% elif selected.payload.kind == 'IMAGE' %}<img class="library-player" width="280" src="{{ private_file_url }}" alt="{{ selected.payload.title }}">
+{% else %}<p><a href="{{ private_file_url }}">فتح ملف النسخة المصرح بقراءتها</a></p>{% endif %}
 {% else %}<p>الملف محفوظ، ولم تُتح قراءة محتواه لهذه الهوية الآن.</p>{% endif %}
-{% if 'DOWNLOAD' in selected.allowed_uses %}<p><a href="/casework/staff/library/{{ selected.version_id }}/download/">تنزيل الملف المصرح به</a></p>{% endif %}
+{% if 'DOWNLOAD' in selected.allowed_uses %}{% private_media_url '/casework/staff/library/'|add:selected.version_id|add:'/download/' 'DOWNLOAD' as private_download_url %}<p><a href="{{ private_download_url }}">تنزيل الملف المصرح به</a></p>{% endif %}
 {% else %}<p>مرجع وصفي: لا توجد نسخة رقمية مرفقة. بياناته وموضعه المتاح محفوظان للاقتباس.</p>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_edit"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><input type="hidden" name="version_id" value="{{ selected.version_id }}"><button>إعداد نسخة جديدة من هذه البيانات</button></form>
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="rl_item"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><label>نسخ المصدر المحفوظة<select name="version_id">{% for version in selected.versions %}<option value="{{ version.version_id }}" {% if version.version_id == selected.version_id %}selected{% endif %}>{{ version.number }} — {{ version.payload.edition_label }}</option>{% endfor %}</select></label><button>فتح النسخة المحددة</button></form>

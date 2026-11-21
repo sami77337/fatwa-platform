@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from dataclasses import asdict
 from hashlib import sha256
 
+from apps.data_privacy import integration as privacy
 from apps.delivery_planner.approval import CurrentEvidence
 from apps.delivery_planner.planner import Capabilities
 from apps.delivery_planner.trusted_identity import SignedApprovalReceipt, canonical_plan_sha256
@@ -56,6 +57,10 @@ def _current(case):
     if case.stage != "ANSWERED" or case.approved_answer_id is None:
         raise cases.CaseConflict("current_mufti_approval_required")
     answer = case.approved_answer
+    # A case envelope grant cannot authorize its exact human answer. Both the
+    # text-only and composite adapters reuse this boundary before constructing
+    # a signed plan, reserving a part or resolving bytes for that plan.
+    privacy.source("ANSWER", answer.pk)
     decision = answer.decision
     if (
         decision.action != "APPROVE"
@@ -358,9 +363,20 @@ def _requester_delivery_locked(case, verifier):
     if case.stage != "ANSWERED":
         result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
         return result
-    cases._answer_citations(case.approved_answer)
-    cases._answer_annotations(case.approved_answer)
-    manifest = cases._answer_manifest(case.approved_answer)
+    from apps.data_privacy.integration import source as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
+    try:
+        privacy("ANSWER", case.approved_answer_id)
+        cases._answer_citations(case.approved_answer)
+        cases._answer_annotations(case.approved_answer)
+        manifest = cases._answer_manifest(case.approved_answer)
+    except PrivacyDenied:
+        # Case access can remain valid while the exact answer or one of its
+        # sources/parts is unavailable. Return no part count or source detail,
+        # while keeping the independent requester conversation usable.
+        result["delivery_status"] = "EVIDENCE_UNAVAILABLE"
+        return result
     if manifest and manifest["requires_human_delivery"]:
         result["delivery_status"] = "UNSUPPORTED_MEDIA_REQUIRES_HUMAN_ACTION"
         return result

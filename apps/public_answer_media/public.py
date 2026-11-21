@@ -6,6 +6,8 @@ from django.conf import settings
 
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.experimental_publication.models import PublicationEdition
 from apps.library_preview import services as preview
@@ -25,6 +27,26 @@ from .models import PublicMediaEdition
 
 class OptionalMediaUnavailable(preview.PreviewUnavailable):
     """Only an independently revalidated text-only response may replace this view."""
+
+
+class PublicBoundary(Boundary):
+    """Retain the original-use purpose for each actual release actor's callbacks."""
+
+    @contextmanager
+    def publisher(self, actor):
+        from apps.data_privacy import services as classification
+
+        principal = (
+            classification.staff_principal(self.provider, actor)
+            if classification.enabled()
+            else None
+        )
+        with privacy.published_sources(principal):
+            yield
+
+    def _media(self, actor, part):
+        with self.publisher(actor):
+            return super()._media(actor, part)
 
 
 def _base_state(case_id):
@@ -87,11 +109,21 @@ def _public_dto(row, part, transcript, actions):
 
 
 def _candidate(guard, row):
+    privacy.public("PUBLIC_MEDIA", row.pk)
     release = row.actions.filter(action="RELEASE").first()
     if release is None:
         raise cases.CaseConflict("recording_public_release_required")
     actor = guard.actor(release.subject_id, release.auth_epoch, release.provider_id)
-    row, part, raw, transcript, actions = services._edition(guard, actor, row.pk, released=True)
+    targets = [
+        ("PUBLICATION", row.publication_id),
+        ("ANSWER_PART", row.part_id),
+    ]
+    if row.transcript_id:
+        targets.append(("RECORDING_TRANSCRIPT", row.transcript_id))
+    for kind, identifier in targets:
+        privacy.staff(kind, identifier, provider=guard.provider, actor=actor, action="PUBLISH")
+    with guard.publisher(actor):
+        row, part, raw, transcript, actions = services._edition(guard, actor, row.pk, released=True)
     return (
         _public_dto(row, part, transcript, actions),
         raw,
@@ -116,6 +148,7 @@ def _check_optional(guard, *, callbacks=False, pure=False):
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def publication_projection(publication_id, *, include_media=True, required_media_id=None):
     """Keep this context open through actual render or actual bounded file assembly.
@@ -168,9 +201,14 @@ def publication_projection(publication_id, *, include_media=True, required_media
                     if candidates:
                         try:
                             directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
-                            guard = Boundary(case, directory)
+                            guard = PublicBoundary(case, directory)
                             for row in candidates:
-                                dto, raw, filename = _candidate(guard, row)
+                                try:
+                                    dto, raw, filename = _candidate(guard, row)
+                                except PrivacyDenied:
+                                    # No private-copy existence indicator, optional
+                                    # attachment notice, count, link or file row.
+                                    continue
                                 rows.append(dto)
                                 files[dto["id"]] = {
                                     "raw": raw,

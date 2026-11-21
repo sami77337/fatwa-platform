@@ -14,7 +14,7 @@ from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import IdentityUnavailable, _ref, resolve_identity
 from apps.platform_recovery.integration import mutation_service
 
-from .models import ACTIONS, AssignmentEvent
+from .models import ADMIN_ACTIONS, MUFTI_ACTIONS, AssignmentEvent
 
 MAX_EVENTS = 256
 MAX_PARTICIPANTS = 16
@@ -26,6 +26,8 @@ LABELS = {
     "ADD_CONTRIBUTOR": "سجل مفتيًا مساهمًا",
     "ADD_REVIEWER": "سجل مفتيًا مراجعًا",
     "REMOVE_PARTICIPANT": "أنهى المشاركة التنسيقية",
+    "SET_PRIMARY": "عيّن المفتي الأساسي بتفويض إداري صريح",
+    "CLEAR_PRIMARY": "أعاد القضية إلى القائمة المشتركة بتفويض إداري صريح",
 }
 
 
@@ -50,6 +52,14 @@ def _digest(event):
             "previous_sha256",
         )
     )
+    if event.action in ADMIN_ACTIONS:
+        payload += "|" + "|".join(
+            (
+                event.actor_role,
+                hashlib.sha256(event.reason.encode("utf-8")).hexdigest(),
+                str(event.command_id),
+            )
+        )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -69,6 +79,15 @@ def _transition(primary, participants, action, actor, target):
             raise cases.CaseConflict("assignment_transfer_unavailable")
         primary = target
         participants.pop(target, None)
+    elif action == "SET_PRIMARY":
+        if target == primary:
+            raise cases.CaseConflict("assignment_already_recorded")
+        primary = target
+        participants.pop(target, None)
+    elif action == "CLEAR_PRIMARY":
+        if primary is None or target != primary:
+            raise cases.CaseConflict("assignment_clear_unavailable")
+        primary = None
     elif action in {"ADD_CONTRIBUTOR", "ADD_REVIEWER"}:
         role = "CONTRIBUTOR" if action == "ADD_CONTRIBUTOR" else "REVIEWER"
         if target == primary or (actor != primary and target != actor):
@@ -93,6 +112,7 @@ def _read(case, provider_id):
         raise cases.CaseConflict("assignment_history_limit")
     primary, participants, previous = None, {}, ZERO_HASH
     for sequence, event in enumerate(events, start=1):
+        administrative = event.action in ADMIN_ACTIONS
         if (
             event.sequence != sequence
             or event.previous_sha256 != previous
@@ -104,6 +124,20 @@ def _read(case, provider_id):
                 _ref(value) for value in (event.subject_id, event.target_subject, event.provider_id)
             )
             or not _ref(event.auth_epoch, 64)
+            or (
+                administrative
+                and (
+                    event.actor_role not in {"MUFTI", "ORGANIZER", "ORGANIZER_ADMIN"}
+                    or event.command_id is None
+                    or type(event.reason) is not str
+                    or not 1 <= len(event.reason) <= 2000
+                    or not event.reason.strip()
+                )
+            )
+            or (
+                not administrative
+                and (event.actor_role != "" or event.reason != "" or event.command_id is not None)
+            )
         ):
             raise cases.CaseConflict("assignment_history_invalid")
         primary, participants = _transition(
@@ -184,6 +218,8 @@ def _projection(events, primary, participants, actor, candidates):
                 "label": LABELS[event.action],
                 "actor": event.subject_id,
                 "target": event.target_subject,
+                "actor_role": event.actor_role or "MUFTI",
+                "reason": event.reason,
                 "created_at": event.created_at,
             }
             for event in events
@@ -281,7 +317,7 @@ def change_assignment(
     _enabled()
     provider_id = provider.provider_id
     if (
-        action not in ACTIONS
+        action not in MUFTI_ACTIONS
         or type(expected_assignment_version) is not int
         or not 0 <= expected_assignment_version <= MAX_EVENTS
     ):

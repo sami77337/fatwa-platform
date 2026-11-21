@@ -1,0 +1,21 @@
+{% extends "library_preview/base.html" %}
+{% block title %}{{ publication.title }} — أدوات القارئ{% endblock %}
+{% block metadata %}<link rel="stylesheet" href="{% url 'public_reader_style' %}"><script src="{% url 'public_reader_script' %}" defer></script>{% endblock %}
+{% block content %}
+<article><h1>{{ publication.title }}</h1><p>{{ publication.category }} · النسخة المنشورة {{ publication.number }}</p><div class="body" id="reader-answer">{{ publication.body|linebreaksbr }}</div></article>
+<section aria-labelledby="reader-actions"><h2 id="reader-actions">أدوات القارئ</h2>
+<p>الحفظ يضع مرجعًا على هذا الجهاز فقط؛ لا يحفظ الجواب أو مرفقاته دون اتصال ولا يضمن المزامنة مع جهاز آخر.</p>
+<div class="reader-tools">
+{% if 'SAVE_REFERENCE' in actions %}<button type="button" data-save-reference="{% url 'public_reader_reference' descriptor.publication_id %}">حفظ المرجع على هذا الجهاز</button>{% endif %}
+{% if 'SHARE_LINK' in actions %}<button type="button" data-share-link="{% url 'public_reader_share' descriptor.publication_id %}">نسخ رابط النسخة العامة</button>{% endif %}
+{% if 'PRINT' in actions %}<a href="{% url 'public_reader_print' descriptor.publication_id %}">فتح نسخة الطباعة المسموح بها</a>{% endif %}
+{% if 'DOWNLOAD_TEXT' in actions %}<a href="{% url 'public_reader_download' descriptor.publication_id %}" download>تنزيل نسخة النص المسموح بها</a>{% endif %}
+{% if not actions %}<p>لا توجد أدوات متاحة ضمن الإذن الحالي.</p>{% endif %}
+</div>
+<p id="reader-tool-status" role="status" aria-live="polite"></p>
+<label id="share-output" hidden>رابط عام لا ينقل صلاحيات خاصة<input id="share-url" type="url" readonly></label>
+<p><a href="{% url 'public_reader_saved' %}">المراجع المحفوظة على هذا الجهاز</a> · <a href="{{ descriptor.url }}">العودة إلى صفحة الفتوى</a></p>
+<noscript><p>الحفظ المحلي ونسخ الرابط يحتاجان إلى JavaScript. تظل روابط الطباعة والتنزيل المصرح بها متاحة.</p></noscript>
+</section>
+{% if publication.references %}<section><h2>الإحالات المصرح بعرضها</h2>{% for source in publication.references %}<p>{{ source.heading_title }} · {{ source.work_title }}</p>{% endfor %}</section>{% endif %}
+{% endblock %}

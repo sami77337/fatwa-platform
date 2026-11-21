@@ -1,0 +1,18 @@
+<form class="teaching-save" data-kind="{{ kind.value }}" method="post" action="/casework/staff/">
+{% include "public_teaching/pins.html" %}<input type="hidden" name="action" value="pt_save"><input type="hidden" name="kind" value="{{ kind.value }}">
+<label>الهوية التي يجري إصدار نسخة جديدة لها<select name="item_id"><option value="">هوية جديدة</option>{% for row in result.versions %}{% if row.kind == kind.value and row.latest %}<option value="{{ row.item_id }}">{{ row.title }} · النسخة {{ row.number }}</option>{% endif %}{% endfor %}</select></label>
+<label>رقم آخر نسخة محفوظة لهذه الهوية؛ صفر عند الإنشاء<input name="expected_version" type="number" min="0" max="63" value="0" required></label>
+<label>العنوان المصرح بعرضه<input name="title" maxlength="160" required></label><label>وصف عام دون بيانات داخلية<textarea name="summary" maxlength="2000"></textarea></label>
+{% if kind.value == 'SCHOLAR_MATERIAL' %}
+<label>العالم صاحب النسبة<select name="profile" required><option value="">اختر نسخة ملف عام متاحة</option>{% for choice in result.choices.profiles %}<option value="{{ choice.selection }}">{{ choice.label }}</option>{% endfor %}</select></label>
+<label>المادة العامة ونسختها<select name="material" required><option value="">اختر المصدر المحدد</option>{% for choice in result.choices.materials %}<option value="{{ choice.selection }}">{{ choice.label }}</option>{% endfor %}</select></label>
+<label>بيان النسبة الذي سيراه القارئ<textarea name="attribution" maxlength="1000" required></textarea></label><p>لا تُستنتج هوية الشيخ بمطابقة اسم المؤلف. هذه نسبة بشرية صريحة تحتاج مراجعة واعتمادًا مستقلين.</p>
+{% elif kind.value == 'LESSON' %}
+<label>نسخة الدرس ذات الأصل المسجل<select name="lesson" required><option value="">اختر الدرس والنسخة المعروضة للمراجعة</option>{% for choice in result.choices.lessons %}<option value="{{ choice.selection }}">{{ choice.label }}</option>{% endfor %}</select></label><p>ستخص الإتاحة التسجيل الأصلي المثبت لهذه النسخة فقط. نشر بطاقة الدرس وحده لا يمنح إذن إتاحة التسجيل.</p>
+{% else %}
+<label>السلسلة وترتيبها الموثق<select name="series" required><option value="">اختر نسخة ترتيب محددة</option>{% for choice in result.choices.series %}<option value="{{ choice.selection }}">{{ choice.label }}</option>{% endfor %}</select></label>
+<label>موضوع السلسلة المسموح بنشره<input name="topic" maxlength="160"></label><label>أسماء المعلمين المختارة للنشر، كل اسم موثق في سطر<textarea name="teachers" maxlength="1000"></textarea></label>
+<label>الدروس المتاحة ضمن هذا الإصدار؛ تُحفظ بالترتيب الموثق<select name="members" multiple size="6" required>{% for choice in result.choices.members %}<option value="{{ choice.selection }}">{{ choice.label }}</option>{% endfor %}</select></label><p>اختر دروس هذه السلسلة فقط. لا تُفترض دروس ناقصة ولا اكتمال السلسلة، وتبقى هوية كل درس مستقلة عن ترتيبه.</p>
+{% endif %}
+<label>سبب الإدخال وما يحتاج إلى المراجعة<textarea name="note" maxlength="1000" required></textarea></label><label><input type="checkbox" name="confirmed" value="yes" required> أؤكد اختيار هذه النسخ والنسبة أو الترتيب يدويًا؛ لا أطلب نشرًا تلقائيًا.</label><button type="submit">حفظ نسخة تحتاج إلى مراجعة</button>
+</form>

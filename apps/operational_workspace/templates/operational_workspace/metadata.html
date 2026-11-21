@@ -1,0 +1,23 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ metadata.subject }}</bdi> — <bdi>{{ metadata.role }}</bdi></p>
+<h2>البيانات التنظيمية والتصنيف — <bdi>{{ metadata.public_ref }}</bdi></h2>
+<p>نسخة البيانات {{ metadata.metadata_version }} — الوقائع {{ metadata.evidence_version }}</p>
+{% if metadata.saved %}<p id="ops-metadata-saved" role="status">حُفظ التغيير التنظيمي.</p>{% endif %}
+<section aria-labelledby="ops-tags-title"><h3 id="ops-tags-title">الوسوم</h3>
+{% if metadata.can_edit_tags %}<form method="post" action="/casework/operations/" id="ops-tags-form">{% csrf_token %}{% include "operational_workspace/metadata_pins.html" %}<input type="hidden" name="action" value="metadata_tags"><label for="ops-tags">وسم واحد في كل سطر، حتى 16 وسمًا</label><textarea id="ops-tags" name="tags" rows="4" maxlength="800">{{ metadata.tags_text }}</textarea><button>حفظ الوسوم</button></form>{% else %}<p id="ops-tags-readonly">{% for tag in metadata.tags %}{{ tag }}{% if not forloop.last %}، {% endif %}{% empty %}لا توجد وسوم محفوظة.{% endfor %}</p>{% endif %}
+</section>
+<section aria-labelledby="ops-types-title"><h3 id="ops-types-title">نوع السؤال</h3>
+{% if metadata.can_edit_types %}<form method="post" action="/casework/operations/" id="ops-types-form">{% csrf_token %}{% include "operational_workspace/metadata_pins.html" %}<input type="hidden" name="action" value="metadata_types"><fieldset><legend>الأنواع التي تنطبق على السؤال</legend>{% for type in metadata.type_options %}<label><input type="checkbox" name="question_types" value="{{ type.key }}"{% if type.selected %} checked{% endif %}>{{ type.label }}</label>{% endfor %}</fieldset><button>حفظ نوع السؤال</button></form>{% else %}<ul id="ops-types-readonly">{% for type in metadata.type_options %}{% if type.selected %}<li>{{ type.label }}</li>{% endif %}{% endfor %}</ul>{% endif %}
+</section>
+<section id="ops-classification" aria-labelledby="ops-classification-title"><h3 id="ops-classification-title">التصنيف الفقهي التجريبي</h3>
+<p>اختر مفاهيم من نسخة راجعها إنسان. ربط التصنيف لا يغير أصل الجواب أو اعتماده.</p>
+{% if metadata.current_classification %}<p id="ops-classification-current">تصنيف محفوظ بواسطة <bdi>{{ metadata.current_classification.subject_id }}</bdi> — {% if metadata.current_classification.current %}مرتبط بالجواب الحالي{% else %}تغير الجواب أو الوقائع بعد التصنيف{% endif %}</p>{% endif %}
+{% for version in metadata.classifications %}<article data-version="{{ version.id }}"><h4>{{ version.title }} — النسخة {{ version.number }}</h4><p>{{ version.provenance }}</p>
+{% if version.can_bind %}<form method="post" action="/casework/operations/" class="ops-classification-form">{% csrf_token %}<input type="hidden" name="action" value="metadata_classify"><input type="hidden" name="case_ref" value="{{ metadata.public_ref }}"><input type="hidden" name="revision" value="{{ metadata.revision }}"><input type="hidden" name="evidence_version" value="{{ metadata.evidence_version }}"><input type="hidden" name="command_id" value="{{ metadata.command_id }}"><input type="hidden" name="classification_version" value="{{ metadata.classification_version }}"><input type="hidden" name="version_id" value="{{ version.id }}"><input type="hidden" name="version_digest" value="{{ version.digest }}">
+<label>التصنيف الأساسي<select name="primary" required><option value="">اختر المفهوم الأساسي</option>{% for node in version.nodes %}<option value="{{ node.id }}"{% if metadata.current_classification.version_id == version.id and metadata.current_classification.primary == node.id %} selected{% endif %}>{{ node.path }}</option>{% endfor %}</select></label>
+<fieldset><legend>تصنيفات إضافية، حتى 12 مفهومًا</legend>{% for node in version.nodes %}<label><input type="checkbox" name="additional" value="{{ node.id }}"{% if metadata.current_classification.version_id == version.id and node.id in metadata.current_classification.additional %} checked{% endif %}>{{ node.path }}</label>{% endfor %}</fieldset>
+<label>سبب التصنيف<textarea name="reason" maxlength="2000" required></textarea></label><label><input type="checkbox" name="confirmed" value="yes" required>راجعت اختيار المفاهيم لهذه القضية</label><button>حفظ التصنيف</button></form>{% else %}<p>النسخة متاحة للقراءة. لا تتوفر صلاحية ربطها بهذا الجواب حاليًا.</p><ul>{% for node in version.nodes %}<li>{{ node.path }}</li>{% endfor %}</ul>{% endif %}</article>{% empty %}<p id="ops-classification-empty">لا توجد نسخة مراجعة متاحة ضمن الصلاحيات الحالية.</p>{% endfor %}
+</section>
+<form method="post" action="/casework/operations/" id="ops-metadata-back">{% csrf_token %}<button name="action" value="queue">العودة إلى قائمة التشغيل</button></form>
+{% endblock %}

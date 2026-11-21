@@ -1,0 +1,11 @@
+{% extends 'data_privacy/base.html' %}
+{% block content %}
+<section id="privacy-catalog" data-total="{{ catalog.total }}"><h2>المواد المسموح بإدارة تصنيفها</h2>
+<p>تظهر هنا هويات المواد المصرح بها لإدارة التصنيف. نصوصها وملفاتها تتطلب إذن قراءة مستقلًا.</p>
+{% for row in catalog.rows %}<article data-privacy-target="{{ row.id }}" data-kind="{{ row.kind }}">
+<h3>{{ row.kind }}{% if row.case_ref %} · {{ row.case_ref }}{% endif %}</h3>
+<p>معرّف المادة: <code>{{ row.id }}</code></p><p class="state">{% if row.level %}{{ row.level }}{% else %}لم يصنف بعد{% endif %}</p>
+{% if row.source_changed %}<p>تغيّرت هوية المصدر؛ يلزم قرار تصنيف جديد.</p>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="privacy_inspect"><input type="hidden" name="kind" value="{{ row.kind }}"><input type="hidden" name="identifier" value="{{ row.id }}"><button type="submit">فتح سجل التصنيف</button></form>
+</article>{% empty %}<p>لا توجد مواد مسموح بعرض سجل تصنيفها حاليًا.</p>{% endfor %}</section>
+{% endblock %}

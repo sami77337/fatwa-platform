@@ -158,6 +158,7 @@ def _answer(guard, pin, usage):
     ).first()
     if row is None or row.text_sha256 != cases._digest(row.text) or row.revision != pin["number"]:
         raise cases.CaseConflict("precise_citation_source_unavailable")
+    guard.original(case.pk, "ANSWER", row.pk, action=usage)
     content, raw, file, identity = row.text, b"", None, row.text_sha256
     if pin["part_id"]:
         from apps.answer_media.models import AnswerPart
@@ -338,6 +339,7 @@ def choices(guard, owner_case_id):
     for key in guard.locked:
         try:
             guard.actor(key)
+            guard.original(key, "CASE", key, action="SEARCH")
         except cases.CaseConflict:
             continue
         allowed.append(key)
@@ -348,6 +350,7 @@ def choices(guard, owner_case_id):
     ):
         try:
             case, actor = guard.actor(row.item.case_id)
+            guard.original(case.pk, "LIBRARY_VERSION", row.pk, action="SEARCH")
             policy = library.policy_snapshot()
             # Exclusions are probed without retaining a denied operation inside
             # an open source boundary. Successful selections are rechecked below.
@@ -387,6 +390,7 @@ def choices(guard, owner_case_id):
         case_id__in=allowed, decision__action="APPROVE"
     ).order_by("pk")[:64]:
         try:
+            guard.original(row.case_id, "ANSWER", row.pk, action="SEARCH")
             guard.permit(row.case_id, "CITE_SOURCE", "ANSWER", row.pk, row.text_sha256)
             guard.permit(row.case_id, "READ_SOURCE", "ANSWER", row.pk, row.text_sha256)
         except cases.CaseConflict:
@@ -402,6 +406,7 @@ def choices(guard, owner_case_id):
 
         for part in AnswerPart.objects.filter(manifest__answer=row).order_by("ordinal"):
             try:
+                guard.original(row.case_id, "ANSWER_PART", part.pk, action="SEARCH")
                 guard.permit(row.case_id, "CITE_SOURCE", "ANSWER_PART", part.pk, part.sha256)
                 guard.permit(row.case_id, "READ_SOURCE", "ANSWER_PART", part.pk, part.sha256)
             except cases.CaseConflict:

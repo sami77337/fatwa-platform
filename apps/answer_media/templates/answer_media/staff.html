@@ -1,19 +1,23 @@
 {% extends "casework/base.html" %}
 {% block title %}جواب متعدد الأجزاء{% endblock %}
+{% block extra_head %}{% if related %}<script type="module" src="/casework/staff/answer-media/related.mjs"></script>{% endif %}{% endblock %}
 {% block content %}
 <h2>جواب بشري متعدد الأجزاء</h2><p>{{ selected.public_ref }} · الوقائع {{ selected.evidence_version }}</p>
 <p>هذه ملفات الجواب التي ينشئها المفتي، وليست مرفقات السائل أو أدلة جديدة. تبقى الأصول والإصدارات السابقة محفوظة.</p>
 {% if saved %}<p role="status">حُفظ الإجراء.</p>{% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><button>العودة إلى القضية والاعتماد</button></form>
 {% if selected.status != 'NEEDS_CLARIFICATION' %}
+{% if related %}<div class="mufti-layout" id="answer-editor-layout">{% include "answer_media/related.html" %}<section class="mufti-task" aria-label="مسودة الجواب المستقلة">{% endif %}
 <form method="post" action="/casework/staff/" enctype="multipart/form-data">{% csrf_token %}
 <input type="hidden" name="action" value="answer_media_save"><input type="hidden" name="case_ref" value="{{ selected.public_ref }}"><input type="hidden" name="revision" value="{{ selected.revision }}"><input type="hidden" name="evidence_version" value="{{ selected.evidence_version }}">
 <label for="multipart-text">نص الجواب البشري</label><textarea id="multipart-text" name="text" maxlength="16000" required>{{ selected.current_text }}</textarea>
 <label for="answer-file">ملف جواب أو تسجيل صوتي اصطناعي (حتى 192000 بايت)</label><input id="answer-file" name="answer_file" type="file" accept=".txt,.pdf,.jpg,.jpeg,.png,.webp,.mp3,.m4a,.wav">
 {% if audio_capture_enabled %}{% include "browser_audio/capture.html" with audio_input_name="answer_file" %}{% endif %}
+{% if links_enabled %}<fieldset><legend>رابط YouTube اختياري</legend><label for="youtube-url">الرابط الخارجي</label><input id="youtube-url" name="youtube_url" type="url" maxlength="200" placeholder="https://www.youtube.com/watch?v=…"><label for="youtube-label">وصف بشري للرابط</label><input id="youtube-label" name="youtube_label" maxlength="200"><p>يُحفظ الرابط كجزء مستقل. الصيغ المقبولة: رابط مشاهدة YouTube بمعرّف الفيديو، أو youtu.be، دون معاملات إضافية. لا تنزيل أو تضمين أو تحقق من توفر الفيديو أو محتواه.</p></fieldset>{% endif %}
 <label for="retain-parts">أجزاء أحدث إصدار</label><select id="retain-parts" name="retain"><option value="yes">أحتفظ بالملفات السابقة وأضيف الملف بعدَها</option><option value="no">أستبدل قائمة الأجزاء في إصدار جديد</option></select>
 <label><input type="checkbox" name="synthetic_only" value="yes" required>هذه مواد اصطناعية؛ أؤكد ترتيب الأجزاء وأعلم أن الحفظ يبطل اعتماد النسخة السابقة.</label>
-<p>نص الجواب هو الجزء الأول، ثم الملفات المحتفظ بها بترتيبها، ثم الملف الجديد. الحد ثمانية أجزاء. كل حفظ ينشئ إصدارًا جديدًا يحتاج اعتمادًا بشريًا. لا يُدّعى وجود فحص برمجيات خبيثة.</p><button>حفظ إصدار متعدد الأجزاء</button></form>
+<p>نص الجواب هو الجزء الأول، ثم الأجزاء المحتفظ بها بترتيبها، ثم الملف الجديد والرابط الجديد إن وُجدا. الحد ثمانية أجزاء. كل حفظ ينشئ إصدارًا جديدًا يحتاج اعتمادًا بشريًا. لا يُدّعى وجود فحص برمجيات خبيثة.</p><button>حفظ إصدار متعدد الأجزاء</button></form>
+{% if related %}</section></div>{% endif %}
 {% else %}<p>أكمل رد السائل على الاستيضاح قبل تحرير الجواب.</p>{% endif %}
 {% if selected.latest_package and selected.status != 'NEEDS_CLARIFICATION' %}
 <details id="answer-part-order"><summary>ترتيب الملفات أو استبعاد ملف من النسخة الجديدة</summary>

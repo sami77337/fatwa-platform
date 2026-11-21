@@ -1,0 +1,28 @@
+{% extends "casework/base.html" %}{% block title %}سجلات النشر المستقلة للوجهات{% endblock %}{% block content %}
+<h2>سجلات النشر المستقلة للوجهات</h2>
+<p id="destination-simulation" data-external-publication-verified="false">هذه محاكاة ببيانات تجريبية. لم يُنشر شيء على موقع أو قناة خارجية. التوقيع يثبت نتيجة المحاكي المحدد فقط، ولا يتيح إرسال رابط إلى المستفتي.</p>
+<p>القضية <bdi>{{ result.case_ref }}</bdi> · الوقائع {{ result.evidence_version }} · إصدار القضية {{ result.revision }}</p>
+{% if message %}<p role="status">{{ message }}</p>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><button>العودة إلى القضية</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pd_open"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><button>تحديث سجلات المحاكاة</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="case_ref" value="{{ result.case_ref }}"><button>تحرير نسخة عامة ومراجعتها قبل اختيارها للوجهة</button></form>
+{% for record in result.records %}<section data-destination="{{ record.destination }}" data-record-id="{{ record.id }}">
+<h3>{{ record.label }} · سجل مستقل للمحاكاة</h3><p>ملف القدرة الحالي <bdi>{{ record.profile_revision }}</bdi></p>
+{% if record.current_published %}<p class="destination-current" data-current-version="{{ record.current_published.number }}">آخر نسخة متاحة بنتيجة نشر محاكى ناجحة: النسخة {{ record.current_published.number }}، أصل النشر {{ record.current_published.source_number }}.</p>{% else %}<p class="destination-current" data-current-version="">لا توجد نسخة متاحة بنتيجة نشر محاكى ناجحة لهذه الوجهة.</p>{% endif %}
+{% if record.choices %}<form class="destination-select" method="post" action="/casework/staff/">{% include "publication_destinations/pins.html" %}
+<input type="hidden" name="action" value="pd_select"><input type="hidden" name="destination" value="{{ record.destination }}"><input type="hidden" name="expected_version" value="{{ record.expected_version }}">
+<label>نسخة عامة بعينها سبق اعتمادها<select name="source_selection" required>{% for source in record.choices %}<option value="{{ source.selection }}">النسخة {{ source.number }} · {{ source.title }}</option>{% endfor %}</select></label>
+{% include "publication_destinations/confirmation.html" %}<button>اختيار نسخة جديدة لهذه الوجهة</button></form>
+<details class="destination-source-preview"><summary>معاينة النسخ العامة المتاحة قبل الاختيار</summary>{% for source in record.choices %}<article><h4>النسخة {{ source.number }} · {{ source.title }}</h4><p>{{ source.category }}</p><div class="original">{{ source.body }}</div></article>{% endfor %}</details>{% endif %}
+{% for row in record.versions %}<article data-destination-version="{{ row.id }}" data-version="{{ row.number }}" data-state="{{ row.state }}">
+<h4>نسخة الوجهة {{ row.number }} · أصل النشر {{ row.source_number }}</h4><p class="destination-state">{{ row.state_label }}</p>
+{% if row.copy %}<h5>{{ row.copy.title }}</h5><p>{{ row.copy.category }}</p><div class="original destination-public-copy">{{ row.copy.body }}</div>{% endif %}
+<details><summary>سجل هذه النسخة المحفوظ</summary><ol>{% for event in row.history %}<li>{{ event.label }} · <bdi>{{ event.actor }}</bdi> · {{ event.note }} · <time dir="ltr" datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'Y-m-d H:i' }}</time></li>{% empty %}<li>محاكاة: حُفظ الاختيار ولم تبدأ المراجعة.</li>{% endfor %}</ol></details>
+{% for option in row.options %}<form class="destination-decision" data-command="{{ option.command }}" method="post" action="/casework/staff/">{% include "publication_destinations/pins.html" %}
+<input type="hidden" name="action" value="pd_decide"><input type="hidden" name="version_id" value="{{ row.id }}"><input type="hidden" name="expected_events" value="{{ row.event_count }}"><input type="hidden" name="command" value="{{ option.command }}">
+{% include "publication_destinations/confirmation.html" %}<button>{{ option.label }}</button></form>{% endfor %}
+{% if row.can_observe %}<details><summary>إدخال نتيجة المحاكي الموقعة للخطة المحددة</summary><p>قبول الطلب لا يعني النشر. تُرفض النتيجة إذا لم تطابق النسخة والوجهة والخطة والمفتاح المعتمد حاليًا.</p>
+<form class="destination-provider-event" method="post" action="/casework/staff/">{% include "publication_destinations/pins.html" %}<input type="hidden" name="action" value="pd_provider_event"><input type="hidden" name="version_id" value="{{ row.id }}"><input type="hidden" name="expected_events" value="{{ row.event_count }}"><label>مستند النتيجة الموقعة<textarea name="envelope" maxlength="12000" required spellcheck="false" dir="ltr"></textarea></label>{% include "publication_destinations/confirmation.html" %}<button>تسجيل نتيجة المحاكاة الموقعة</button></form></details>{% endif %}
+</article>{% empty %}<p>لا يوجد سجل نسخة لهذه الوجهة بعد.</p>{% endfor %}
+</section>{% endfor %}
+{% endblock %}

@@ -1,0 +1,223 @@
+{
+  "schema": "fatwa.integration-observation.v1",
+  "tested_sha": "066e381dc62726a3ac7b1a732f8d467914929c26",
+  "run_id": 44912040938,
+  "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44912040938",
+  "complete_plan_certified": false,
+  "affected_services_and_hosted_restore": "NOT_REACHED_AFTER_BROWSER_FAILURE",
+  "browser_runs": [
+    {
+      "postgres_major": 17,
+      "runtime": "postgres (PostgreSQL) 17.12 (Ubuntu 17.12-1.pgdg26.04+1)",
+      "artifact_id": 14710687185,
+      "archive_sha256": "d7076f4bd298f2d27be4c2224ce4389a206cf3e1f11708dd66504ef5b691d1e4",
+      "browser_log_sha256": "9ca845a957b421983afc8afb7001002297b8254a10b510f4f34171f8770f773d",
+      "executed": 53,
+      "passed": 52,
+      "failed": 1,
+      "failure": "apps.record_suppression.browser_tests.RecordSuppressionBrowserTests.test_native_preview_soft_delete_current_denials_and_audited_restore",
+      "observed": "requester.reload() returned 200; expected 404",
+      "new_native_proofs": {
+        "staff-mfa": {
+          "result_sha256": "9616b80b834103d9610ceb85deef153a435c98390748a3224efaf9dbed54c8ae",
+          "result": {
+            "status": "PASS",
+            "sandbox": true,
+            "widths": [
+              320,
+              1280
+            ],
+            "actual_roles": [
+              "MUFTI",
+              "ORGANIZER_ADMIN"
+            ],
+            "native_primary_only_denied": true,
+            "real_totp_confirmed": true,
+            "setup_secret_not_redisplayed": true,
+            "wrong_totp_denied": true,
+            "revoked_factor_denied_copied_session": true,
+            "no_bootstrap_after_revocation": true,
+            "native_recovery_replacement_confirmed": true,
+            "recovery_consumed": 1,
+            "sessions_with_two_factors": 3,
+            "current_policy_revocation_denied": true,
+            "positive_read_after_denial": true,
+            "original_bytes_preserved": true,
+            "keyboard_submit": true,
+            "external_requests": [],
+            "page_errors": [],
+            "production_assurance": "NOT_EVALUATED",
+            "phishing_resistant": false
+          }
+        },
+        "upload-security": {
+          "result_sha256": "b4b423e1391fb6087c56e6ed116611b12dd466c13869e46e3bcea8e29592334e",
+          "result": {
+            "status": "PASS",
+            "sandbox": true,
+            "protected_browser": true,
+            "scanner_mode": "SYNTHETIC",
+            "real_engine_verified": false,
+            "widths": [
+              320,
+              1280
+            ],
+            "screenshots": [
+              "unavailable-kept-draft-320.png",
+              "unavailable-kept-draft-1280.png",
+              "blocked-retry-kept-draft-320.png",
+              "blocked-retry-kept-draft-1280.png",
+              "clean-reply-and-original-320.png",
+              "clean-reply-and-original-1280.png",
+              "revoked-original-320.png",
+              "revoked-original-1280.png"
+            ],
+            "traces": [
+              "trace-requester.zip"
+            ],
+            "external_requests": [],
+            "page_errors": [],
+            "browser": "157.0.8103.78",
+            "native_file_picker": true,
+            "unavailable_preserves_draft": true,
+            "blocked_retry_is_sticky": true,
+            "canonical_reply_and_file_atomic": true,
+            "literal_original_bytes_preserved": true,
+            "native_original_download": true,
+            "original_sha256": "9a3f41807eaf61bc6580a791e6e54d5e93fcb9fa8934e32f57b6d5f07ba72a8d",
+            "late_scan_revocation_http": 404,
+            "fresh_scan_configuration_required": true,
+            "protected_routes": [
+              "/casework/status/",
+              "/casework/status/attachments/<id>/"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "postgres_major": 18,
+      "runtime": "postgres (PostgreSQL) 18.7 (Ubuntu 18.7-1.pgdg26.04+5)",
+      "artifact_id": 14710448901,
+      "archive_sha256": "9cdc75d9598092b22257bb40880138cd98df955879e25dd92537f47d72b90aed",
+      "browser_log_sha256": "f97d54a9c3d2f10233147afebb869a504a02019d8fc340e6bb795a47e81ba8f2",
+      "executed": 53,
+      "passed": 52,
+      "failed": 1,
+      "failure": "apps.record_suppression.browser_tests.RecordSuppressionBrowserTests.test_native_preview_soft_delete_current_denials_and_audited_restore",
+      "observed": "requester.reload() returned 200; expected 404",
+      "new_native_proofs": {
+        "staff-mfa": {
+          "result_sha256": "9616b80b834103d9610ceb85deef153a435c98390748a3224efaf9dbed54c8ae",
+          "result": {
+            "status": "PASS",
+            "sandbox": true,
+            "widths": [
+              320,
+              1280
+            ],
+            "actual_roles": [
+              "MUFTI",
+              "ORGANIZER_ADMIN"
+            ],
+            "native_primary_only_denied": true,
+            "real_totp_confirmed": true,
+            "setup_secret_not_redisplayed": true,
+            "wrong_totp_denied": true,
+            "revoked_factor_denied_copied_session": true,
+            "no_bootstrap_after_revocation": true,
+            "native_recovery_replacement_confirmed": true,
+            "recovery_consumed": 1,
+            "sessions_with_two_factors": 3,
+            "current_policy_revocation_denied": true,
+            "positive_read_after_denial": true,
+            "original_bytes_preserved": true,
+            "keyboard_submit": true,
+            "external_requests": [],
+            "page_errors": [],
+            "production_assurance": "NOT_EVALUATED",
+            "phishing_resistant": false
+          }
+        },
+        "upload-security": {
+          "result_sha256": "b4b423e1391fb6087c56e6ed116611b12dd466c13869e46e3bcea8e29592334e",
+          "result": {
+            "status": "PASS",
+            "sandbox": true,
+            "protected_browser": true,
+            "scanner_mode": "SYNTHETIC",
+            "real_engine_verified": false,
+            "widths": [
+              320,
+              1280
+            ],
+            "screenshots": [
+              "unavailable-kept-draft-320.png",
+              "unavailable-kept-draft-1280.png",
+              "blocked-retry-kept-draft-320.png",
+              "blocked-retry-kept-draft-1280.png",
+              "clean-reply-and-original-320.png",
+              "clean-reply-and-original-1280.png",
+              "revoked-original-320.png",
+              "revoked-original-1280.png"
+            ],
+            "traces": [
+              "trace-requester.zip"
+            ],
+            "external_requests": [],
+            "page_errors": [],
+            "browser": "157.0.8103.78",
+            "native_file_picker": true,
+            "unavailable_preserves_draft": true,
+            "blocked_retry_is_sticky": true,
+            "canonical_reply_and_file_atomic": true,
+            "literal_original_bytes_preserved": true,
+            "native_original_download": true,
+            "original_sha256": "9a3f41807eaf61bc6580a791e6e54d5e93fcb9fa8934e32f57b6d5f07ba72a8d",
+            "late_scan_revocation_http": 404,
+            "fresh_scan_configuration_required": true,
+            "protected_routes": [
+              "/casework/status/",
+              "/casework/status/attachments/<id>/"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "corrections_pending_fresh_hosted_run": [
+    "Current material refusal on requester GET preserves 404 instead of the absent-login 200 response; original content was already withheld.",
+    "The library SQL budget remains less than 100. Fresh-admission/final checks are retained while immediate duplicate empty-store reads are removed.",
+    "Strict scope accounting preserves the old row387 exclusion as historical provenance and no longer excludes its separately implemented reversible-deletion candidate.",
+    "V13 PG18 networkidle timeout now retains protected traces and exact readiness metadata; no timeout/readiness/budget assertion was relaxed."
+  ],
+  "strict_106_inventory_verifier": {
+    "source_sha": "356c2587f8530e60383bde49daeee21a8961d635",
+    "tests": 9,
+    "seconds": 90.716,
+    "result": "PASS",
+    "log_sha256": "300c254f428ad1ddf210ff8c129a7e473c82dcdcaabaccdbc6fdd883505c9600",
+    "is_runtime_feature_evidence": false
+  },
+  "limited_visual_review": {
+    "scope": "Four actual PG17 screenshots from this exact artifact; visible controls and readable flow at the captured widths, not a final design or full accessibility audit.",
+    "images": [
+      {
+        "file": "admin-confirm-enrollment-320.png",
+        "sha256": "bacc85905193c2b64a63480741b71a50cfc325ebc9ed163ee98ce06ffafea1bc"
+      },
+      {
+        "file": "admin-two-factors-complete-1280.png",
+        "sha256": "c258ca4db2be4d5899fe8afb39956ffb007ac011995c703606dbaa29b329af62"
+      },
+      {
+        "file": "clean-reply-and-original-320.png",
+        "sha256": "b42fd709604b75dd322b4db8bba72b74b9b03fd40a8a4a4d67017c6e963c88e7"
+      },
+      {
+        "file": "unavailable-kept-draft-1280.png",
+        "sha256": "4ade645dd04740ea73104f1bd54af18b4052f91288b342c0b1868b658c5aadcf"
+      }
+    ]
+  }
+}

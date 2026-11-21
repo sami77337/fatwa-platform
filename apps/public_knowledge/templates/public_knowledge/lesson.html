@@ -2,5 +2,6 @@
 <article itemscope itemtype="https://schema.org/CreativeWork"><h1 itemprop="name">{{ lesson.title }}</h1><p>بيانات درس مراجعة · نسخة الدرس {{ lesson.lesson_version }} · نسخة العرض {{ lesson.version }}</p>{% if lesson.summary %}<p class="body" itemprop="description">{{ lesson.summary|linebreaksbr }}</p>{% endif %}
 {% for scholar in lesson.scholars %}<p>المعلم: <a itemprop="author" href="{{ scholar.url }}">{{ scholar.name }}</a></p>{% endfor %}
 <p>هذه بيانات تعريفية مصرح بها. لا تمنح إتاحة الملفات الأصلية أو الصوت الخاص.</p></article>
+{% if recordings %}<section aria-labelledby="lesson-recordings"><h2 id="lesson-recordings">التسجيلات المتاحة لهذا الدرس</h2><ul>{% for recording in recordings %}<li><a href="{{ recording.url }}">{{ recording.title }}</a> · النسخة {{ recording.version }}</li>{% endfor %}</ul></section>{% endif %}
 {% if lesson.topics %}<section><h2>الموضوعات</h2>{% for topic in lesson.topics %}<p><a href="{{ topic.url }}">{{ topic.title }}</a></p>{% endfor %}</section>{% endif %}
 {% endblock %}

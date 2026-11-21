@@ -18,6 +18,7 @@ from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 from apps.platform_recovery.integration import mutation_service
+from apps.private_media.links import protect
 
 from . import services
 from .models import LibraryVersion
@@ -262,7 +263,17 @@ def workspace(request):
         common = _common(request, fields["case_ref"])
         file = request.FILES.get("source_file") if action == "rl_save" else None
         raw = file.read(192001) if file else b""
-        with services.material_bindings([raw] if raw else []), synthetic_queue_atomic():
+        if raw:
+            services.scans.library_file(
+                raw=raw,
+                namespace=fields["namespace"],
+                external_id=fields["external_id"],
+                expected_version=_zero(fields["expected_version"]),
+                **common,
+                expected_revision=_integer(fields["revision"]),
+                expected_evidence_version=_integer(fields["evidence_version"]),
+            )
+        with services.material_bindings([raw] if raw else []), services.scan_receipts.boundary():
             if action == "rl_search":
                 return _page(
                     request,
@@ -328,6 +339,7 @@ def workspace(request):
         return denied("library_store_unavailable", 503)
 
 
+@protect
 @mutation_service
 def file(request, version_id, download=False):
     try:

@@ -1,0 +1,9 @@
+<div id="ai-citation-result" data-ai-result="1" data-next-state="{{ next_state }}" data-run-id="{{ result.id }}" data-run-status="{{ result.status }}">
+<p role="status" tabindex="-1">{{ message }}</p>
+{% if result.provider_mode == 'SYNTHETIC' %}<p>موفر اختبار اصطناعي؛ لا يثبت جودة Luna أو صحة استدلال علمي.</p>{% endif %}
+<ol class="ai-candidates">{% for entry in result.candidates %}<li><p>{{ entry.reference }}</p><blockquote class="original">{{ entry.selected }}</blockquote>
+<form method="post" action="/casework/ai-citations/">{% csrf_token %}<input name="action" type="hidden" value="open"><input name="state" type="hidden" value="{{ entry.open_state }}"><button data-ai-submit disabled>فتح النص الأصلي وموضعه</button></form>
+<form method="post" action="/casework/ai-citations/">{% csrf_token %}<input name="action" type="hidden" value="select"><input name="state" type="hidden" value="{{ entry.select_state }}"><button data-ai-submit disabled>اختيار هذا الموضع للنموذج اليدوي</button></form></li>{% empty %}<li>لا توجد مواضع قابلة للاختيار في هذه النتيجة.</li>{% endfor %}</ol>
+{% if opened %}<section class="ai-original" aria-label="النص الأصلي"><h3>{{ opened.reference }}</h3><blockquote id="ai-citation-original" class="original">{{ opened.before }}<mark>{{ opened.selected }}</mark>{{ opened.after }}</blockquote></section>{% endif %}
+{% if handoff %}<div data-ai-handoff="1" hidden><input name="selection" value="{{ handoff.selection }}"><input name="mode" value="{{ handoff.mode }}"><input name="start" value="{{ handoff.start }}"><input name="end" value="{{ handoff.end }}"></div><p>نُقل المصدر والموضع إلى نموذج الإحالة بعد اختيارك. حدد عبارة الجواب وموضعها ثم عاين المصدر وأضف الإحالة بنفسك؛ لم يُحفظ الجواب.</p>{% endif %}
+</div>

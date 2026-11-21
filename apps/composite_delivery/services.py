@@ -5,6 +5,7 @@ Capabilities are supplied by reviewed server configuration, never client fields.
 """
 
 import os
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 
@@ -29,6 +30,45 @@ from apps.platform_recovery.integration import mutation_service
 from .models import CompositeDelivery
 
 SIMULATOR_PROVIDER = "composite-simulator"
+
+
+def _choice_identity(provider):
+    from apps.casework_web.access import RequestDirectory
+    from apps.research_library.services import identity_snapshot
+
+    configured = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
+    if provider is not configured and not (
+        isinstance(provider, RequestDirectory) and provider._provider is configured
+    ):
+        raise cases.CaseConflict("composite_current_directory_required")
+    return identity_snapshot(provider), identity_snapshot(configured)
+
+
+@contextmanager
+def choice_boundary(
+    *, case_id, subject_id, provider, selection_mode=None, synthetic_fixtures_only=False
+):
+    """Keep explicit selection pins and current identity through native render."""
+    from apps.answer_media.editor_boundary import EditorBoundary
+
+    _enabled()
+    if getattr(settings, "FATWA_COMPOSITE_CHOICES_ENABLED", False) is not True:
+        raise cases.CaseConflict("composite_selection_disabled")
+    trust = _choice_identity(provider)
+    before = EditorBoundary(provider)
+    with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (
+        case,
+        actor,
+    ):
+        prepared = _prepare(case, subject_id, provider, selection_mode)
+        yield
+        _enabled()
+        if getattr(settings, "FATWA_COMPOSITE_CHOICES_ENABLED", False) is not True:
+            raise cases.CaseConflict("composite_selection_disabled")
+        _reader(case, subject_id, provider, prepared)(case.public_ref)
+        before.check(cases._identity(provider, subject_id, case))
+        if _choice_identity(provider) != trust:
+            raise cases.CaseConflict("composite_choice_identity_changed")
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +116,7 @@ def _profile_hash(profile):
     return _hash([caps, profile.max_media_bytes, sorted(profile.allowed_mime)])
 
 
-def _prepare(case, subject_id, provider):
+def _prepare(case, subject_id, provider, selection_mode=None):
     # The canonical current-answer check includes current CITE rights. Every
     # bound plan, export and outcome reuses this path under the same case lock.
     decision, answer, base = legacy._current(case)
@@ -84,6 +124,30 @@ def _prepare(case, subject_id, provider):
     manifest = media.manifest_for_locked_answer(answer)
     if manifest is None:
         raise cases.CaseConflict("composite_manifest_required")
+    existing = CompositeDelivery.objects.filter(decision=decision).first()
+    if selection_mode is None:
+        selection_mode = existing.selection_mode if existing else "ALL"
+    if selection_mode not in {"ALL", "TEXT_ONLY"}:
+        raise cases.CaseConflict("composite_selection_invalid")
+    if existing and existing.selection_mode != selection_mode:
+        raise cases.CaseConflict("composite_selection_already_bound")
+    if selection_mode == "TEXT_ONLY":
+        if getattr(settings, "FATWA_COMPOSITE_CHOICES_ENABLED", False) is not True:
+            raise cases.CaseConflict("composite_selection_disabled")
+        selected = [part for part in manifest["parts"] if part["kind"] == "TEXT"]
+        if (
+            len(selected) != 1
+            or selected[0]["ordinal"] != 1
+            or not any(part["kind"] == "AUDIO" for part in manifest["parts"])
+        ):
+            raise cases.CaseConflict("text_only_requires_approved_text_and_audio")
+        manifest = {
+            **manifest,
+            "parts": selected,
+            "selection_mode": selection_mode,
+            "omitted_parts": [part for part in manifest["parts"] if part["kind"] != "TEXT"],
+            "_choice_identity_pin": _choice_identity(provider),
+        }
     origin = cases._delivery_origin_for_locked_case(case)
     profile = _profile(origin["channel"])
     capability_sha = _profile_hash(profile)
@@ -93,7 +157,13 @@ def _prepare(case, subject_id, provider):
     parts = tuple(
         Part(
             p["ordinal"],
-            {"TEXT": "text", "FILE": "document", "AUDIO": "audio", "IMAGE": "image"}[p["kind"]],
+            {
+                "TEXT": "text",
+                "FILE": "document",
+                "AUDIO": "audio",
+                "IMAGE": "image",
+                "YOUTUBE_LINK": "link",
+            }[p["kind"]],
             p["sha256"],
             len(answer.text) if p["kind"] == "TEXT" else p["size"],
         )
@@ -142,6 +212,18 @@ def _prepare(case, subject_id, provider):
                 reason,
             ]
         )
+        if selection_mode == "TEXT_ONLY":
+            # The explicit omission choice is signed alongside the complete
+            # approved manifest; it cannot reuse approval for an all-part plan.
+            key = _hash(
+                [
+                    "composite-selection.v1",
+                    selection_mode,
+                    manifest["sha256"],
+                    manifest["omitted_parts"],
+                    key,
+                ]
+            )
         steps.append(replace(step, action=action, reason=reason, idempotency_key=key))
     plan = replace(
         plan,
@@ -157,7 +239,7 @@ def _prepare(case, subject_id, provider):
 
 def _reader(case, subject_id, provider, prepared):
     def read(case_key):
-        fresh = _prepare(case, subject_id, provider)
+        fresh = _prepare(case, subject_id, provider, prepared[1].get("selection_mode", "ALL"))
         if case_key != case.public_ref or fresh != prepared:
             raise cases.CaseConflict("composite_context_changed")
         return fresh[3]
@@ -166,11 +248,13 @@ def _reader(case, subject_id, provider, prepared):
 
 
 @mutation_service
-def prepare_composite_delivery(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+def prepare_composite_delivery(
+    *, case_id, subject_id, provider, selection_mode=None, synthetic_fixtures_only=False
+):
     """Read-only full plan; unsupported parts remain visible for human action."""
     _enabled()
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
-        prepared = _prepare(case, subject_id, provider)
+        prepared = _prepare(case, subject_id, provider, selection_mode)
         decision, manifest, capability_sha, evidence, plan = prepared
         _reader(case, subject_id, provider, prepared)(case.public_ref)
         return {
@@ -180,6 +264,8 @@ def prepare_composite_delivery(*, case_id, subject_id, provider, synthetic_fixtu
             "manifest_sha256": manifest["sha256"],
             "capability_sha256": capability_sha,
             "parts": manifest["parts"],
+            "selection_mode": manifest.get("selection_mode", "ALL"),
+            "omitted_parts": manifest.get("omitted_parts", []),
             "evidence": asdict(evidence),
             "plan": asdict(plan),
             "plan_sha256": canonical_plan_sha256(plan),
@@ -188,12 +274,19 @@ def prepare_composite_delivery(*, case_id, subject_id, provider, synthetic_fixtu
 
 @mutation_service
 def stage_composite_delivery(
-    *, case_id, subject_id, provider, receipt, verify_receipt, synthetic_fixtures_only=False
+    *,
+    case_id,
+    subject_id,
+    provider,
+    receipt,
+    verify_receipt,
+    selection_mode=None,
+    synthetic_fixtures_only=False,
 ):
     """Signed return approval stages all parts atomically in the existing queue."""
     _enabled()
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
-        prepared = _prepare(case, subject_id, provider)
+        prepared = _prepare(case, subject_id, provider, selection_mode)
         decision, manifest, capability_sha, evidence, plan = prepared
         if (
             not isinstance(receipt, SignedApprovalReceipt)
@@ -217,6 +310,7 @@ def stage_composite_delivery(
                 approval_id=receipt.receipt_id,
                 manifest_sha256=manifest["sha256"],
                 capability_sha256=capability_sha,
+                selection_mode=manifest.get("selection_mode", "ALL"),
             )
         _bound(case, subject_id, provider)
         read(case.public_ref)
@@ -266,6 +360,19 @@ def reserve_composite_part(
             verify_receipt=verify_receipt,
             read_current_evidence=read,
         )
+        if lease is None:
+            from . import retries
+
+            if retries.present(binding):
+                lease = retries.reserve_next(
+                    case=case,
+                    subject_id=subject_id,
+                    provider=provider,
+                    binding=binding,
+                    worker_id=worker_id,
+                    verify_worker=verify_worker,
+                    verify_receipt=verify_receipt,
+                )
         read(case.public_ref)
         return lease
 
@@ -285,10 +392,26 @@ def resolve_composite_part(
             DeliveryIntent.objects.select_for_update()
             .filter(
                 pk=lease.intent_key,
-                approval=binding.approval,
             )
             .first()
         )
+        if intent is not None and intent.approval_id != binding.approval_id:
+            from . import retries
+            from .models import CompositeRetry
+
+            if not CompositeRetry.objects.filter(
+                delivery=binding, approval_id=intent.approval_id
+            ).exists():
+                raise queue.QueueConflict("active_composite_lease_required")
+
+            return retries.resolve_locked(
+                case=case,
+                subject_id=subject_id,
+                provider=provider,
+                lease=lease,
+                intent=intent,
+                verify_receipt=verify_receipt,
+            )
         if intent is None or intent.state != "LEASED" or intent.lease_expires_at <= timezone.now():
             raise queue.QueueConflict("active_composite_lease_required")
         queue._authenticate_attempt(intent, lease)
@@ -323,7 +446,16 @@ def record_composite_event(
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         binding, prepared = _bound(case, subject_id, provider)
         if getattr(event, "plan_fingerprint", None) != binding.approval.plan_fingerprint:
-            raise cases.CaseConflict("composite_provider_plan_mismatch")
+            from . import retries
+
+            return retries.record_locked(
+                case=case,
+                subject_id=subject_id,
+                provider=provider,
+                lease=lease,
+                event=event,
+                verifier=verifier,
+            )
         result = record_signed_provider_event(lease=lease, event=event, verifier=verifier)
         _reader(case, subject_id, provider, prepared)(case.public_ref)
         return result
@@ -335,6 +467,18 @@ def composite_status(*, case_id, subject_id, provider, verifier, synthetic_fixtu
     _enabled()
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         binding, prepared = _bound(case, subject_id, provider)
+        from . import retries
+
+        if retries.enabled() or retries.present(binding):
+            with retries.boundary(
+                case_id=case_id,
+                subject_id=subject_id,
+                provider=provider,
+                synthetic_fixtures_only=synthetic_fixtures_only,
+            ):
+                result = retries.status_locked(binding, verifier)
+                _reader(case, subject_id, provider, prepared)(case.public_ref)
+                return result
         fingerprint = binding.approval.plan_fingerprint
         summary = queue.summarize_plan(fingerprint)
         audit = audit_provider_reported_delivery(plan_fingerprint=fingerprint, verifier=verifier)
@@ -394,5 +538,19 @@ def reconcile_composite_timeouts(*, case_id, subject_id, provider, synthetic_fix
         changed = queue.quarantine_expired_leases(
             plan_fingerprint=binding.approval.plan_fingerprint,
         )
+        from . import retries
+
+        if retries.present(binding):
+            with retries.boundary(
+                case_id=case_id,
+                subject_id=subject_id,
+                provider=provider,
+                synthetic_fixtures_only=synthetic_fixtures_only,
+            ):
+                for chain in retries.chains(binding, retries._verifier()):
+                    if chain["history"]:
+                        changed += queue.quarantine_expired_leases(
+                            plan_fingerprint=chain["leaf"].plan_fingerprint
+                        )
         _reader(case, subject_id, provider, prepared)(case.public_ref)
         return {"unresolved_parts": len(changed), "automatic_retry": False}

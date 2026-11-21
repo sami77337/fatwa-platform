@@ -54,9 +54,14 @@ def anchor(text, *, start, end, phrase, source, previous_id="", correction_reaso
 
 
 def current(guard, case_id):
-    row, _ = guard.permit(case_id, "READ")
+    from apps.data_privacy.integration import staff_case
+
+    row, actor = guard.permit(case_id, "READ")
     row.refresh_from_db()
-    return cases._staff(row)
+    # This DTO also consumes the original question and copied intake evidence,
+    # so retain the same exact-source gates as the canonical case reader.
+    with staff_case(row, actor, guard.provider):
+        return cases._staff(row)
 
 
 def verify_set(row):
@@ -102,6 +107,7 @@ def read_locked(guard, *, case_id, set_id, usage="READ", require_review=False):
     )
     if row is None:
         raise cases.CaseConflict("precise_citation_set_unavailable")
+    guard.original(case_id, "ANSWER", row.answer_id, action=usage)
     entries, review = verify_set(row)
     if require_review and (review is None or review.action != "APPROVE"):
         raise cases.CaseConflict("precise_citation_human_review_required")
@@ -150,6 +156,22 @@ def read_locked(guard, *, case_id, set_id, usage="READ", require_review=False):
     }
 
 
+def saved_projection(guard, case_id, record):
+    """A new revision awaits explicit classification; a write grants no content read."""
+    from apps.data_privacy.services import PrivacyDenied
+
+    try:
+        guard.original(case_id, "ANSWER", record.answer_id)
+    except PrivacyDenied:
+        return {
+            "id": str(record.pk),
+            "answer_id": str(record.answer_id),
+            "answer_revision": record.answer.revision,
+            "classification_required": True,
+        }
+    return read_locked(guard, case_id=case_id, set_id=record.pk)
+
+
 @mutation_service
 def save(
     *,
@@ -182,7 +204,7 @@ def save(
                 or replay.subject_id != actor.subject_id
             ):
                 raise cases.CaseConflict("precise_citation_request_conflict")
-            return read_locked(guard, case_id=case.pk, set_id=replay.pk)
+            return saved_projection(guard, case.pk, replay)
         cases._versions(case, expected_revision, expected_evidence_version)
         if case.stage == "NEEDS_CLARIFICATION":
             raise cases.CaseConflict("requester_clarification_still_required")
@@ -266,7 +288,7 @@ def save(
         guard.written(case.pk)
         # The new canonical revision is intentional; existing library source rows
         # and use decisions retain their original pins, including this same case.
-        return read_locked(guard, case_id=case.pk, set_id=record.pk)
+        return saved_projection(guard, case.pk, record)
 
 
 @mutation_service
