@@ -97,11 +97,11 @@ def reviewed_selector(
     ) as guard:
         version = taxonomy._version(guard, version_id, reviewed=True)
         guard.permit(
-            version.tree_id, "SEARCH",
+            version.tree.case_id, "SEARCH",
             {"kind": "TREE", "id": str(version.tree_id), "digest": version.tree.digest},
         )
         guard.permit(
-            version.tree_id, "READ",
+            version.tree.case_id, "READ",
             {"kind": "VERSION", "id": str(version.pk), "digest": version.digest},
         )
         yield Selection(guard, version, selected_id, descendants)
