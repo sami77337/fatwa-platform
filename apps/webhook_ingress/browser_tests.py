@@ -74,16 +74,11 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                     accepted = context.request.post(base + URL, data=raw, headers=envelope)
                     self.assertEqual(accepted.status, 200, accepted.body())
                     self.assertEqual(accepted.body(), b"OK")
-                self.assertEqual(SourceReceipt.objects.filter(source="messenger").count(), 1)
-                self.assertFalse(Case.objects.exists())
-                self.assertFalse(EvidenceBinding.objects.exists())
-
                 bad = context.request.post(
                     base + URL, data=raw,
                     headers={**envelope, "X-Hub-Signature-256": "sha256=" + "0" * 64},
                 )
                 self.assertEqual(bad.status, 403)
-                self.assertEqual(SourceReceipt.objects.count(), 1)
 
                 page.goto(base + "/casework/staff/login/", wait_until="domcontentloaded")
                 page.locator("#credential").fill(directory.credential)
@@ -156,5 +151,9 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                 context.close()
             finally:
                 browser.close()
+        # ORM belongs outside the synchronous Playwright/async event-loop context.
+        # Keep the exact replay, no-case-creation and no-evidence assertions.
+        self.assertEqual(SourceReceipt.objects.filter(source="messenger").count(), 1)
         self.assertEqual(SourceReceipt.objects.count(), 1)
+        self.assertFalse(Case.objects.exists())
         self.assertFalse(EvidenceBinding.objects.exists())
