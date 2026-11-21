@@ -15,6 +15,7 @@ from apps.answer_media import tests as answer_tests
 from apps.answer_media.models import AnswerPart
 from apps.casework import services as cases
 from apps.casework.models import CaseDecision
+from apps.casework_web import access
 from apps.composite_delivery import services as composite
 from apps.composite_delivery.models import CompositeDelivery
 from apps.delivery_planner.planner import Capabilities
@@ -156,6 +157,56 @@ class PilotTests(TransactionTestCase):
             {"action": action, "confirm": "yes", **pins, **extra},
             page,
         )
+
+    def test_shorter_browser_deadline_preserves_native_pilot_read_without_granting_approval(self):
+        home = self.login()
+        actor = access.current_staff(home.wsgi_request, self.directory)
+        self.assertLess(actor.valid_until, self.directory.current.valid_until)
+        proxy = access.RequestDirectory(
+            self.directory, actor, authenticated_provider_id=self.directory.provider_id
+        )
+        with cases._staff_case(self.receipt["case_id"], actor.subject_id, proxy, True) as (case, _):
+            authorized = services._operator(self.fixture, case, actor.subject_id, proxy, "OPEN")
+            self.assertEqual(authorized, actor)
+        page = self.open(home)
+        self.assertIn("يلزم اعتماد بشري حالي", page.content.decode())
+        self.assertNotIn(b'value="pilot_authorize"', page.content)
+        self.assertEqual(CaseDecision.objects.count(), 0)
+        self.assertEqual(DeliveryIntent.objects.count(), 0)
+
+    def test_last_operator_callback_cannot_outlive_the_shorter_browser_deadline(self):
+        until = timezone.now() + timedelta(seconds=2)
+        actor = replace(self.directory.current, valid_until=until)
+        proxy = access.RequestDirectory(
+            self.directory, actor, authenticated_provider_id=self.directory.provider_id
+        )
+        original = self.operator.permits
+        observed = []
+        elapsed = patch(
+            "apps.pilot_workbench.services.timezone.now", return_value=until + timedelta(seconds=1)
+        )
+
+        def expire_after_policy(**values):
+            observed.append(values["action"])
+            allowed = original(**values)
+            elapsed.start()
+            return allowed
+
+        try:
+            with (
+                patch.object(self.operator, "permits", side_effect=expire_after_policy),
+                self.assertRaises(cases.CaseConflict),
+                cases._staff_case(self.receipt["case_id"], actor.subject_id, proxy, True) as (
+                    case,
+                    _,
+                ),
+            ):
+                services._operator(self.fixture, case, actor.subject_id, proxy, "OPEN")
+        finally:
+            elapsed.stop()
+        self.assertEqual(observed, ["OPEN"])
+        self.assertEqual(DeliveryIntent.objects.count(), 0)
+        self.assertEqual(CaseDecision.objects.count(), 0)
 
     def test_native_permission_and_per_part_reports_without_json_or_auto_approval(self):
         page = self.open(self.login())

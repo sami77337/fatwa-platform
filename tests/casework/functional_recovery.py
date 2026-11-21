@@ -46,6 +46,7 @@ ADDITIONAL_WORKFLOWS = (
     "apps.operational_workspace.coordination_recovery_support",
     "apps.ai_gateway.recovery_support",
     "apps.private_media.recovery_support",
+    "apps.operational_workspace.transcript_recovery_support",
 )
 
 

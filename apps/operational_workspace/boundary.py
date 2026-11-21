@@ -48,7 +48,12 @@ from apps.development_taxonomy.models import (
 )
 from apps.experimental_publication.models import PublicationAction, PublicationEdition
 from apps.platform_recovery.integration import mutation_context
-from apps.public_answer_media.models import RecordingTranscript, TranscriptAction
+from apps.public_answer_media.models import (
+    PublicMediaAction,
+    PublicMediaEdition,
+    RecordingTranscript,
+    TranscriptAction,
+)
 from apps.scholarly_links.models import (
     CaseLessonLink,
     CaseRelation,
@@ -102,6 +107,17 @@ LESSON_ACTIONS = frozenset(
         "WITHDRAW_LESSON_LINK",
     }
 )
+TRANSCRIPT_SECTION_ACTIONS = frozenset({"READ_TRANSCRIPT_EDITOR"})
+TRANSCRIPT_ACTIONS = frozenset(
+    {
+        "READ_RECORDING_TRANSCRIPT",
+        "EDIT_RECORDING_TRANSCRIPT",
+        "REVIEW_RECORDING_TRANSCRIPT",
+        "APPROVE_TRANSCRIPT_MEANING",
+        "WITHDRAW_RECORDING_TRANSCRIPT",
+        "READ_RECORDING_AUDIO",
+    }
+)
 
 
 def note_feature_enabled():
@@ -122,6 +138,14 @@ def lesson_feature_enabled():
     return (
         getattr(settings, "FATWA_OPERATIONAL_LESSON_LINKS_ENABLED", False) is True
         and getattr(settings, "FATWA_SCHOLARLY_LINKS_ENABLED", False) is True
+    )
+
+
+def transcript_feature_enabled():
+    return (
+        getattr(settings, "FATWA_OPERATIONAL_TRANSCRIPTS_ENABLED", False) is True
+        and getattr(settings, "FATWA_PUBLIC_ANSWER_MEDIA_ENABLED", False) is True
+        and getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True
     )
 
 
@@ -191,6 +215,8 @@ def source_rows(case_ids):
         PublicationAction.objects.filter(edition__case_id__in=case_ids),
         RecordingTranscript.objects.filter(case_id__in=case_ids),
         TranscriptAction.objects.filter(transcript__case_id__in=case_ids),
+        PublicMediaEdition.objects.filter(case_id__in=case_ids),
+        PublicMediaAction.objects.filter(edition__case_id__in=case_ids),
         LessonCategory.objects.filter(case_id__in=case_ids),
         series,
         SeriesVersion.objects.filter(series__in=series),
@@ -264,6 +290,7 @@ class Guard:
         self.metadata_feature = metadata_feature_enabled()
         self.coordination_feature = coordination_feature_enabled()
         self.lesson_feature = lesson_feature_enabled()
+        self.transcript_feature = transcript_feature_enabled()
         self.deadline = min(actor.valid_until, deadline) if deadline else actor.valid_until
         self.permissions, self.profiles, self.derived_reads = [], {}, []
         self.adapters = []
@@ -278,7 +305,12 @@ class Guard:
 
     def permit(self, case, action, section, *, required=False):
         if (
-            action not in ACTIONS | NOTE_ACTIONS | METADATA_ACTIONS | LESSON_SECTION_ACTIONS
+            action
+            not in ACTIONS
+            | NOTE_ACTIONS
+            | METADATA_ACTIONS
+            | LESSON_SECTION_ACTIONS
+            | TRANSCRIPT_SECTION_ACTIONS
             or case.pk not in self.locked
         ):
             raise cases.CaseConflict("operational_action_unavailable")
@@ -288,6 +320,8 @@ class Guard:
             raise cases.CaseConflict("operational_metadata_unavailable")
         if action in LESSON_SECTION_ACTIONS and not self.lesson_feature:
             raise cases.CaseConflict("operational_lesson_links_unavailable")
+        if action in TRANSCRIPT_SECTION_ACTIONS and not self.transcript_feature:
+            raise cases.CaseConflict("operational_transcripts_unavailable")
         return self._permission(
             case,
             action,
@@ -312,6 +346,12 @@ class Guard:
                     action in LESSON_ACTIONS
                     and self.lesson_feature
                     and resource.get("kind") in {"CASE_LESSON_VERSION", "CASE_LESSON_LINK"}
+                )
+                or (
+                    action in TRANSCRIPT_ACTIONS
+                    and self.transcript_feature
+                    and resource.get("kind")
+                    in {"CASE_RECORDING_SOURCE", "CASE_RECORDING_TRANSCRIPT"}
                 )
             )
             if type(resource) is dict
@@ -393,12 +433,16 @@ class Guard:
             PriorityEvent,
             CaseLessonLink,
             LinkDecision,
+            RecordingTranscript,
+            TranscriptAction,
         }:
             raise cases.CaseConflict("operational_append_unavailable")
         if model is LinkDecision:
             if row.relation_id is not None or row.lesson_link_id is None:
                 raise cases.CaseConflict("operational_append_unavailable")
             case_id = row.lesson_link.case_id
+        elif model is TranscriptAction:
+            case_id = row.transcript.case_id
         else:
             case_id = row.case_id
         table = model._meta.db_table
@@ -445,6 +489,12 @@ class Guard:
 
     def finish(self):
         self.callbacks()
+        # Finish external byte readers for all adapters before any final pure
+        # authority/source checks. One callback cannot invalidate a prior reader.
+        for adapter in self.adapters:
+            reader = getattr(adapter, "external_reads", None)
+            if reader is not None:
+                reader()
         for adapter in self.adapters:
             adapter.final_pins()
         current = policy()
@@ -455,6 +505,7 @@ class Guard:
             or metadata_feature_enabled() != self.metadata_feature
             or coordination_feature_enabled() != self.coordination_feature
             or lesson_feature_enabled() != self.lesson_feature
+            or transcript_feature_enabled() != self.transcript_feature
             or getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None) is not self.directory
             or getattr(settings, "FATWA_COMPOSITE_DELIVERY_CAPABILITIES", None)
             is not self.capabilities
@@ -494,6 +545,12 @@ def scope(*, subject_id, provider, synthetic_fixtures_only=False, session_deadli
     with synthetic_queue_atomic():
         with connection.cursor() as cursor:
             cursor.execute("SELECT pg_advisory_xact_lock(546131, 1)")
+        from apps.precise_citations.integration import prelock_cases
+
+        # Dependency locks do not extend visible operational case scope.
+        prelock_cases(
+            Case.objects.filter(public_ref__in=actor.case_keys).values_list("pk", flat=True)
+        )
         locked = {
             row.pk: row
             for row in Case.objects.select_for_update()

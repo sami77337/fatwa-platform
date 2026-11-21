@@ -196,7 +196,7 @@ def _transcript(guard, actor, transcript_id, *, reviewed=False):
     )
     if expected_segments != row.segments:
         raise cases.CaseConflict("recording_segments_invalid")
-    guard.actor(row.subject_id, row.auth_epoch, row.provider_id)
+    guard.editorial_actor(row.subject_id, row.auth_epoch, row.provider_id)
     guard.permit(actor, "READ_TRANSCRIPT", _resource(part, row))
     actions = list(row.actions.order_by("sequence"))
     previous = row.digest
@@ -210,7 +210,8 @@ def _transcript(guard, actor, transcript_id, *, reviewed=False):
         review = next((a for a in actions if a.action == needed), None)
         if review is None or any(a.action == "WITHDRAW" for a in actions):
             raise cases.CaseConflict("recording_review_required")
-        reviewer = guard.actor(review.subject_id, review.auth_epoch, review.provider_id)
+        resolver = guard.actor if needed == "APPROVE_MEANING" else guard.editorial_actor
+        reviewer = resolver(review.subject_id, review.auth_epoch, review.provider_id)
         guard.permit(
             reviewer,
             "REVIEW_MEANING" if needed == "APPROVE_MEANING" else "REVIEW_TRANSCRIPT",
@@ -262,6 +263,106 @@ def _replay(model, guard, actor, request_key, request_digest):
     return row
 
 
+def _append_transcript_locked(
+    *,
+    guard,
+    actor,
+    part,
+    pins,
+    text,
+    segments,
+    change_kind,
+    note,
+    expected_version,
+    request_key,
+    request_digest,
+):
+    """Append one pinned derivative under an admitted caller's held case lock.
+
+    Admission, exact action grants and before/after snapshots belong to the
+    enclosing boundary. The public MUFTI service and operational facade share
+    the same replay, revision and source validation here.
+    """
+    _text(text, 10000)
+    _text(note, 1000)
+    _count(expected_version)
+    if change_kind not in {"EDITORIAL", "MEANING_REVIEW"}:
+        raise cases.CaseConflict("recording_change_kind_invalid")
+    validated = segments_for_text(text, segments, pins["duration_ms"])
+    replay = _replay(RecordingTranscript, guard, actor, request_key, request_digest)
+    if replay:
+        if replay.case_id != guard.case.pk or replay.part_id != part.pk:
+            raise cases.CaseConflict("recording_idempotency_conflict")
+        row, _, _, actions = _transcript(guard, actor, replay.pk)
+        return row, actions, False
+    previous = RecordingTranscript.objects.filter(part=part).order_by("-number").first()
+    if (previous.number if previous else 0) != expected_version or expected_version >= 64:
+        raise cases.CaseConflict("recording_transcript_version_changed")
+    row = _seal(
+        RecordingTranscript(
+            case=guard.case,
+            part=part,
+            number=expected_version + 1,
+            previous=previous,
+            source_pins=pins,
+            text=text,
+            text_sha256=sha256(text.encode()).hexdigest(),
+            segments=validated,
+            change_kind=change_kind,
+            note=note,
+            **_record_fields(guard, actor, request_key, request_digest),
+        )
+    )
+    return row, [], True
+
+
+def _append_transcript_action_locked(
+    *,
+    guard,
+    actor,
+    row,
+    actions,
+    action,
+    note,
+    confirmed,
+    expected_actions,
+    request_key,
+    request_digest,
+):
+    """Append a review/withdrawal; meaning approval always requires actual MUFTI."""
+    if action not in TRANSCRIPT_ACTIONS or confirmed is not True:
+        raise cases.CaseConflict("recording_review_confirmation_required")
+    if action == "APPROVE_MEANING" and actor.role != "MUFTI":
+        raise cases.CaseConflict("recording_meaning_mufti_required")
+    _text(note, 1000)
+    _count(expected_actions, 2)
+    replay = _replay(TranscriptAction, guard, actor, request_key, request_digest)
+    if replay:
+        if replay.transcript_id != row.pk:
+            raise cases.CaseConflict("recording_idempotency_conflict")
+        return replay, False
+    if len(actions) != expected_actions or any(a.action == "WITHDRAW" for a in actions):
+        raise cases.CaseConflict("recording_review_state_changed")
+    needed = "APPROVE_MEANING" if row.change_kind == "MEANING_REVIEW" else "REVIEW"
+    if action != "WITHDRAW" and (
+        action != needed
+        or actions
+        or (row.provider_id, row.subject_id) == (guard.provider.provider_id, actor.subject_id)
+    ):
+        raise cases.CaseConflict("recording_independent_review_required")
+    event = _seal(
+        TranscriptAction(
+            transcript=row,
+            sequence=len(actions) + 1,
+            previous_digest=actions[-1].digest if actions else row.digest,
+            action=action,
+            note=note,
+            **_record_fields(guard, actor, request_key, request_digest),
+        )
+    )
+    return event, True
+
+
 @mutation_service
 def save_transcript(
     *, part_id, text, segments, change_kind, note, expected_version, request_key, **common
@@ -289,34 +390,23 @@ def save_transcript(
     with staff_boundary(**common) as (guard, actor):
         part, pins, _ = _source(guard, actor, part_id)
         guard.permit(actor, "EDIT_TRANSCRIPT", _resource(part))
-        validated = segments_for_text(text, segments, pins["duration_ms"])
-        replay = _replay(RecordingTranscript, guard, actor, request_key, request_digest)
-        if replay:
-            if replay.case_id != guard.case.pk:
-                raise cases.CaseConflict("recording_idempotency_conflict")
-            row, _, _, actions = _transcript(guard, actor, replay.pk)
-            return _transcript_dto(row, actions)
-        previous = RecordingTranscript.objects.filter(part=part).order_by("-number").first()
-        if (previous.number if previous else 0) != expected_version or expected_version >= 64:
-            raise cases.CaseConflict("recording_transcript_version_changed")
         guard.before_write()
-        row = _seal(
-            RecordingTranscript(
-                case=guard.case,
-                part=part,
-                number=expected_version + 1,
-                previous=previous,
-                source_pins=pins,
-                text=text,
-                text_sha256=sha256(text.encode()).hexdigest(),
-                segments=validated,
-                change_kind=change_kind,
-                note=note,
-                **_record_fields(guard, actor, request_key, request_digest),
-            )
+        row, actions, created = _append_transcript_locked(
+            guard=guard,
+            actor=actor,
+            part=part,
+            pins=pins,
+            text=text,
+            segments=segments,
+            change_kind=change_kind,
+            note=note,
+            expected_version=expected_version,
+            request_key=request_key,
+            request_digest=request_digest,
         )
-        guard.freeze_after_write()
-        return _transcript_dto(row, [])
+        if created:
+            guard.freeze_after_write()
+        return _transcript_dto(row, actions)
 
 
 @mutation_service
@@ -341,6 +431,8 @@ def review_transcript(
         ]
     )
     with staff_boundary(**common) as (guard, actor):
+        if action == "APPROVE_MEANING" and actor.role != "MUFTI":
+            raise cases.CaseConflict("recording_meaning_mufti_required")
         row, part, _, actions = _transcript(guard, actor, transcript_id)
         permission = {
             "REVIEW": "REVIEW_TRANSCRIPT",
@@ -348,33 +440,22 @@ def review_transcript(
             "WITHDRAW": "WITHDRAW_TRANSCRIPT",
         }[action]
         guard.permit(actor, permission, _resource(part, row))
-        replay = _replay(TranscriptAction, guard, actor, request_key, request_digest)
-        if replay:
-            if replay.transcript_id != row.pk:
-                raise cases.CaseConflict("recording_idempotency_conflict")
-            return _transcript_dto(row, actions)
-        if len(actions) != expected_actions or any(a.action == "WITHDRAW" for a in actions):
-            raise cases.CaseConflict("recording_review_state_changed")
-        needed = "APPROVE_MEANING" if row.change_kind == "MEANING_REVIEW" else "REVIEW"
-        if action != "WITHDRAW" and (
-            action != needed
-            or actions
-            or (row.provider_id, row.subject_id) == (guard.provider.provider_id, actor.subject_id)
-        ):
-            raise cases.CaseConflict("recording_independent_review_required")
         guard.before_write()
-        event = _seal(
-            TranscriptAction(
-                transcript=row,
-                sequence=len(actions) + 1,
-                previous_digest=actions[-1].digest if actions else row.digest,
-                action=action,
-                note=note,
-                **_record_fields(guard, actor, request_key, request_digest),
-            )
+        event, created = _append_transcript_action_locked(
+            guard=guard,
+            actor=actor,
+            row=row,
+            actions=actions,
+            action=action,
+            note=note,
+            confirmed=confirmed,
+            expected_actions=expected_actions,
+            request_key=request_key,
+            request_digest=request_digest,
         )
-        guard.freeze_after_write()
-        return _transcript_dto(row, [*actions, event])
+        if created:
+            guard.freeze_after_write()
+        return _transcript_dto(row, [*actions, event] if created else actions)
 
 
 def _publication(guard, publication_id):
@@ -498,6 +579,8 @@ def _options(guard, actor, row, actions, *, media_edition=False):
     )
     result = []
     for command in proposed:
+        if command == "APPROVE_MEANING" and actor.role != "MUFTI":
+            continue
         permission = (
             {"REVIEW": "REVIEW_MEDIA", "RELEASE": "RELEASE_MEDIA", "WITHDRAW": "WITHDRAW_MEDIA"}
             if media_edition

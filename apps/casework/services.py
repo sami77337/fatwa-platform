@@ -127,6 +127,35 @@ def _answer_timed(answer, *, actor=None, provider=None):
     return earliest
 
 
+class AnswerUseBundle:
+    """Existing canonical source guards retained for coordinated outer checks.
+
+    These references grant no identity, source or operation. The original
+    contexts still run their ordinary exit checks. A composed boundary can
+    repeat all callbacks, then all byte checks, then every pure pin together.
+    """
+
+    def __init__(self, citation_guards, media_pin, earliest):
+        self.citation_guards, self.media_pin, self.earliest = citation_guards, media_pin, earliest
+
+    def callbacks(self):
+        for guard in self.citation_guards:
+            for source in guard.libraries.values():
+                source.check_permissions()
+            guard.callbacks()
+
+    def verify_bytes(self):
+        for guard in self.citation_guards:
+            guard.verify_bytes()
+
+    def final_pins(self):
+        for guard in self.citation_guards:
+            guard.final_pins(verify_files=False)
+        self.media_pin.final_pins()
+        if self.earliest[0] is not None and self.earliest[0] <= timezone.now():
+            raise CaseConflict("timed_grant_expired")
+
+
 @contextmanager
 def _answer_use_boundary():
     # Private audio/PDF annotation uses contribute here. Book collections keep their
@@ -139,8 +168,8 @@ def _answer_use_boundary():
     from .media_boundary import media_projection_boundary
 
     try:
-        with answer_use_boundary(), media_projection_boundary():
-            yield
+        with answer_use_boundary() as citation_guards, media_projection_boundary() as media_pin:
+            yield AnswerUseBundle(citation_guards, media_pin, earliest)
         if earliest[0] is not None and earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
     finally:

@@ -176,3 +176,8 @@ D067 production OWNER_POLICY_HOLD is preserved. Historical permission rows remai
 non-granting; this finite explicit development seam does not accept or activate the
 production U03 policy. Gate B NOT_PASSED; C/D/E HOLD; Phase01 BLOCKED;
 NOT_DEPLOYED. No real-user operation or external message is performed.
+# Transcript editing
+
+The independently default-off organizer transcript editor and its exact current
+rights are documented in [TRANSCRIPTS.md](TRANSCRIPTS.md). Original scholarly
+authors and meaning approvers remain MUFTI-only.

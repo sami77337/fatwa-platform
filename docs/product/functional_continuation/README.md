@@ -8,7 +8,7 @@ The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed 2
 
 The later `ac8f5170b82767d759bd656fe9c2ea33cf48fc9f` checkpoint passed614 affected tests,20 protected browser journeys and47-table encrypted restore on each PostgreSQL major. All18 workflows ultimately passed; one B6 browser-startup attempt first stopped before any journey and its unchanged isolated retry passed. Subsequent screenshot review found invisible native audio controls despite keyboard playback. `checkpoints/ac8f517.json` records both the successful execution and that finding. The current source fixes control height and strengthens actual visible-control assertions; it still requires fresh hosted execution.
 
-The current plan contains **91 implemented candidates in 34 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
+The current plan contains **92 implemented candidates in 35 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
 
 ## Selected groups
 
@@ -51,7 +51,9 @@ The current plan contains **91 implemented candidates in 34 functional groups**,
 
 | الروابط المؤقتة للوسائط الخاصة وعزل الجلسات والأغراض | 383 | `apps/private_media/SIGNED_LINKS_PLAN.md` | `private-media-links-browser/{originals,library,recordings}/result.json`؛ الثلاثة مطلوبة |
 
-The source extract preserves75 exact specification objects and36 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
+| تحرير المنظّم للتفريغ مع حصر اعتماد المعنى بالمفتي | 97 | `apps/operational_workspace/TRANSCRIPTS.md` | `operational-transcripts-browser/result.json` |
+
+The source extract preserves76 exact specification objects and36 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
 
 ## What the continuation adds
 
@@ -71,9 +73,9 @@ Stable classification IDs and development fixtures do not establish the owner's 
 
 ## Required integrated evidence
 
-The explicit registries require **44 exact protected browser identities**: eight inherited and36 continuation journeys. Forty-three emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
+The explicit registries require **45 exact protected browser identities**: eight inherited and37 continuation journeys. Forty-four emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
 
-The encrypted drill must restore **84 nonempty tables**:22 inherited and62 additionally covered tables, with **32 explicit fresh-process helper results and193 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The newest four tables preserve priority history and three sealed AI audit/derivative tables. Organizer metadata and lesson links reuse existing immutable journals; destination histories retain their three independently covered tables. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
+The encrypted drill must restore **84 nonempty tables**:22 inherited and62 additionally covered tables, with **33 explicit fresh-process helper results and206 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The newest four tables preserve priority history and three sealed AI audit/derivative tables. Organizer metadata and lesson links reuse existing immutable journals; destination histories retain their three independently covered tables. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
 
 Native workflows execute through `config.campaign_urls`. Actual media bytes, play/seek, readable print/export output, offline network failure, current revocation and independently reviewed state transitions are required where applicable. Local tests do not certify a protected browser pass. Browser protection may not be disabled to satisfy evidence.
 

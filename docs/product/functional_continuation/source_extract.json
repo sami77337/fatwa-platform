@@ -2,7 +2,7 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 75,
+  "specification_count": 76,
   "note": "Exact source objects copied from the pinned specification and decision inventories for 70 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
@@ -828,6 +828,17 @@
       "owner_points_source": "330، 331، 332، 383، 409، 410، 411، 413، 414",
       "source_spec_lines_unverified": "1956–1957",
       "parsed_index": 415,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U03-016",
+      "unit": "3",
+      "title": "Transcript Review",
+      "original_text": "16. Transcript Review\nإذا وُجد تفريغ لجواب صوتي، يمكن للمنظم مراجعة أخطاء التفريغ والتنسيق دون تغيير المعنى الشرعي.",
+      "source_scope_treatment": "تفصيل U03 ينتظر قرار المالك",
+      "owner_points_source": "97",
+      "source_spec_lines_unverified": "368–369",
+      "parsed_index": 89,
       "acceptance": "HOLD"
     }
   ],

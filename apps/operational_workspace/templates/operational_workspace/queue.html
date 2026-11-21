@@ -14,6 +14,9 @@
 {% if queue.lesson_cases %}<details id="ops-lessons-index"><summary>روابط الدروس للقضايا المخولة</summary>
 {% for row in queue.lesson_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="lesson_links">ربط الدروس — {{ row.public_ref }}</button></form>{% endfor %}
 </details>{% endif %}
+{% if queue.transcript_cases %}<details id="ops-transcripts-index"><summary>التفريغ والتحرير للقضايا المخولة</summary>
+{% for row in queue.transcript_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="transcript_editor">التفريغ والتحرير — {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
 <section id="ops-queue" aria-label="قضايا تحتاج إجراء">
 {% for row in queue.rows %}<article data-case-ref="{{ row.public_ref }}"><h2><bdi>{{ row.public_ref }}</bdi></h2><p>{{ row.stage }} — الوقائع {{ row.evidence_version }}</p>
 {% for section in row.pending %}<section data-section="{{ section.key }}"><h3>{{ section.label }}</h3><ul>{% for reason in section.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>

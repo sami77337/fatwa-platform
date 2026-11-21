@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 91,
-  "implemented_scope_candidates": 91,
+  "candidate_count": 92,
+  "implemented_scope_candidates": 92,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 16.37,
+  "candidate_percentage": 16.55,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -3402,6 +3402,73 @@
         "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "organizer_recording_transcripts",
+      "title_ar": "تحرير المنظم لتفريغ التسجيل مع مراجعة المعنى المستقلة",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/TRANSCRIPTS.md",
+      "baseline_gap": "Recovered transcript services admitted only MUFTI identities; no native actual-organizer editorial workflow was present.",
+      "service_test_labels": [
+        "apps.operational_workspace.test_transcripts",
+        "apps.operational_workspace.test_transcript_sources",
+        "apps.operational_workspace.test_transcript_recovery"
+      ],
+      "service_test_classes": [
+        "apps.operational_workspace.test_transcripts.OperationalTranscriptTests",
+        "apps.operational_workspace.test_transcript_sources.OperationalTranscriptSourceTests",
+        "apps.operational_workspace.test_transcript_recovery.OperationalTranscriptRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_transcripts.OperationalTranscriptsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-transcripts-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.transcript_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Reuses immutable transcript/action journals already counted; fixture includes two editorial versions, review, actual Mufti meaning approval and withdrawal. Thirteen independent current-access denials follow restore."
+      },
+      "points": [
+        {
+          "original_id": "97",
+          "original_text": "يمكنه إدارة التفريغ والتحرير.",
+          "direct_spec_ids": [
+            "SPEC-U03-016",
+            "SPEC-U11-019"
+          ],
+          "decision_ids": [
+            "D-029",
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 99
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Actual ORGANIZER identities create recording transcript derivative versions, independently review and withdraw them through native CSRF forms, exact source-version CAS and separate current per-resource operational/media grants. Only an actual MUFTI can approve meaning; canonical approved answers, original audio and precise/timed source permissions are preserved and rechecked after the final callbacks. Restored editorial history cannot supply present authorization."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -4034,6 +4101,12 @@
       "from": "NO_TEMPORARY_PRIVATE_URL_IMPLEMENTATION_IN_RECOVERED_SOURCE",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Issue short-lived per-object byte URLs bound to the current browser/session, exact source version/content, purpose and key generation. Every GET/HEAD/Range rechecks the real domain reader, current rights, source bytes and final session/source/expiry pins. Native staff, requester portal, library, recording and citation entry points use signed URLs; a ticket never grants independent access, and all unsigned private byte readers deny when enabled."
+    },
+    {
+      "original_id": "97",
+      "from": "ACTUAL_ORGANIZER_EDITORIAL_WORKFLOW_ABSENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual ORGANIZER identities create recording transcript derivative versions, independently review and withdraw them through native CSRF forms, exact source-version CAS and separate current per-resource operational/media grants. Only an actual MUFTI can approve meaning; canonical approved answers, original audio and precise/timed source permissions are preserved and rechecked after the final callbacks. Restored editorial history cannot supply present authorization."
     }
   ],
   "verified_checkpoints": [

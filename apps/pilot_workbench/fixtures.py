@@ -103,7 +103,7 @@ class _ReturnPermissionFixture:
             synthetic_fixtures_only=True,
         )
         if (
-            current != actor
+            replace(actor, valid_until=current.valid_until) != current
             or fresh != prepared
             or self._fixture.operator_authority.permits(
                 provider_id=provider_id,
@@ -118,6 +118,11 @@ class _ReturnPermissionFixture:
         if len(self._issued) >= MAX_ISSUED:
             raise cases.CaseConflict("pilot_permission_capacity")
         now = timezone.now()
+        # A browser-bound actor can expire before the trusted directory row.
+        # Neither a fresh canonical read nor a policy callback renews that deadline.
+        until = min(actor.valid_until, current.valid_until, self._fixture.expires_at)
+        if now >= until:
+            raise cases.CaseConflict("pilot_canonical_permission_expired")
         evidence = prepared["evidence"]
         receipt = SignedApprovalReceipt(
             **{
@@ -135,9 +140,7 @@ class _ReturnPermissionFixture:
             decision="APPROVE_RETURN_TO_ORIGIN",
             receipt_id="pilot-" + secrets.token_hex(16),
             issued_at=now.isoformat(),
-            expires_at=min(
-                now + timedelta(minutes=4), actor.valid_until, self._fixture.expires_at
-            ).isoformat(),
+            expires_at=min(now + timedelta(minutes=4), until).isoformat(),
             issuer="synthetic-pilot-return-fixture",
             audience="synthetic-pilot-composite",
             key_id="ephemeral-pilot",

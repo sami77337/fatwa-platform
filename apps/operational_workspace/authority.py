@@ -42,6 +42,14 @@ class OperationalAuthority(ABC):
         resources. ScholarlyAuthority independently checks the same endpoints
         and immutable resource. Link approval is no scholarly answer approval,
         and these actions grant no media bytes or other relation kinds.
+
+        The independently default-off transcript editor uses READ_TRANSCRIPT_EDITOR
+        on its section and READ_RECORDING_TRANSCRIPT, EDIT_RECORDING_TRANSCRIPT,
+        REVIEW_RECORDING_TRANSCRIPT, WITHDRAW_RECORDING_TRANSCRIPT and
+        READ_RECORDING_AUDIO on exact CASE_RECORDING_SOURCE / CASE_RECORDING_TRANSCRIPT
+        resources. APPROVE_TRANSCRIPT_MEANING additionally requires actual MUFTI,
+        regardless of a true policy result. AnswerMediaAuthority and TimedMediaRights
+        remain independent. Derivative editing never changes the original answer.
         """
         raise NotImplementedError
 

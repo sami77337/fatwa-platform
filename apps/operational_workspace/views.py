@@ -14,7 +14,16 @@ from apps.casework_web.guard import private
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.platform_recovery.integration import MaintenanceUnavailable
 
-from . import access, coordination_views, identity, lesson_links, metadata, notes, services
+from . import (
+    access,
+    coordination_views,
+    identity,
+    lesson_links,
+    metadata,
+    notes,
+    services,
+    transcripts,
+)
 from .boundary import policy
 
 BASE = access.BASE
@@ -73,6 +82,28 @@ def integer(request, name):
 
 def optional_integer(request, name):
     return None if request.POST.get(name) in (None, "") else integer(request, name)
+
+
+def transcript_segments(request):
+    text, result = request.POST.get("text", ""), []
+    for index in range(6):
+        quote, start, end = (
+            request.POST.get(f"{name}_{index}", "") for name in ("quote", "start_ms", "end_ms")
+        )
+        if not quote and not start and not end:
+            continue
+        if not quote or text.count(quote) != 1:
+            raise CaseConflict("operational_transcript_quote_ambiguous")
+        offset = text.index(quote)
+        result.append(
+            {
+                "char_start": offset,
+                "char_end": offset + len(quote),
+                "start_ms": integer(request, f"start_ms_{index}"),
+                "end_ms": integer(request, f"end_ms_{index}"),
+            }
+        )
+    return result
 
 
 @csrf_protect
@@ -158,6 +189,95 @@ def workspace(request):
             form(request, {"action", "case_ref"})
             with notes.projection(case_ref=request.POST.get("case_ref"), **common) as result:
                 response = render(request, "operational_workspace/notes.html", {"notes": result})
+        elif action == "transcript_editor":
+            form(request, {"action", "case_ref"})
+            with transcripts.projection(case_ref=request.POST.get("case_ref"), **common) as result:
+                response = render(
+                    request, "operational_workspace/transcripts.html", {"editor": result}
+                )
+        elif action == "transcript_save":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "part_id",
+                    "part_sha256",
+                    "text",
+                    "change_kind",
+                    "note",
+                    "version",
+                    "command_id",
+                    "revision",
+                    "evidence_version",
+                    *(
+                        f"{name}_{index}"
+                        for index in range(6)
+                        for name in ("quote", "start_ms", "end_ms")
+                    ),
+                },
+            )
+            with transcripts.save(
+                case_ref=request.POST.get("case_ref"),
+                part_id=request.POST.get("part_id"),
+                part_sha256=request.POST.get("part_sha256"),
+                text=request.POST.get("text"),
+                segments=transcript_segments(request),
+                change_kind=request.POST.get("change_kind"),
+                note=request.POST.get("note"),
+                expected_version=integer(request, "version"),
+                command_id=request.POST.get("command_id"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/transcripts.html", {"editor": result}
+                )
+        elif action == "transcript_decide":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "transcript_id",
+                    "transcript_digest",
+                    "decision",
+                    "note",
+                    "confirmed",
+                    "sequence",
+                    "command_id",
+                    "revision",
+                    "evidence_version",
+                },
+            )
+            with transcripts.decide(
+                case_ref=request.POST.get("case_ref"),
+                transcript_id=request.POST.get("transcript_id"),
+                transcript_digest=request.POST.get("transcript_digest"),
+                action=request.POST.get("decision"),
+                note=request.POST.get("note"),
+                confirmed=request.POST.get("confirmed") == "yes",
+                expected_actions=integer(request, "sequence"),
+                command_id=request.POST.get("command_id"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/transcripts.html", {"editor": result}
+                )
+        elif action == "transcript_audio":
+            form(request, {"action", "case_ref", "part_id", "part_sha256"})
+            with transcripts.audio_projection(
+                case_ref=request.POST.get("case_ref"),
+                part_id=request.POST.get("part_id"),
+                part_sha256=request.POST.get("part_sha256"),
+                **common,
+            ) as result:
+                response = HttpResponse(result["raw"], content_type=result["media_type"])
+                response["Content-Disposition"] = f'inline; filename="{result["filename"]}"'
+                response["Content-Length"] = str(len(result["raw"]))
         elif action == "lesson_links":
             form(request, {"action", "case_ref"})
             with lesson_links.projection(case_ref=request.POST.get("case_ref"), **common) as result:

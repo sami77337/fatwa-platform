@@ -14,6 +14,7 @@ LABELS = [
     "tests.casework.test_functional_continuation_receipt",
     "tests.casework.test_editor_profile_compatibility",
     "tests.casework.test_session_deadline",
+    "tests.casework.test_campaign.CampaignProfileTests",
     "apps.case_assignments.tests",
     "apps.case_assignments.review_tests",
     "apps.case_organization.tests",
@@ -26,6 +27,7 @@ LABELS = [
     "apps.mufti_workspace.tests",
     "apps.mufti_workspace.workflow_tests",
     "apps.mufti_workspace.journey_tests",
+    "apps.pilot_workbench.tests",
     "apps.research_workspace.tests",
     "apps.research_workspace.test_source_rights",
     "apps.requester_portal.tests",
@@ -140,6 +142,9 @@ LABELS = [
     "apps.private_media.test_signed_citation_links",
     "apps.private_media.test_signed_entrypoints",
     "apps.private_media.test_link_recovery",
+    "apps.operational_workspace.test_transcripts",
+    "apps.operational_workspace.test_transcript_sources",
+    "apps.operational_workspace.test_transcript_recovery",
 ]
 
 BROWSER_LABELS = [
@@ -183,6 +188,7 @@ BROWSER_LABELS = [
     "apps.operational_workspace.browser_coordination",
     "apps.ai_gateway.browser_tests",
     "apps.private_media.browser_tests",
+    "apps.operational_workspace.browser_transcripts",
 ]
 
 
