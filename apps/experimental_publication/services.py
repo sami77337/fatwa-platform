@@ -474,7 +474,12 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
     # Keep every authorized case locked through projection, final collection
     # validation and filtering. The existing queue unit retains its ownership
     # preflight; it does not create a second authorization path.
-    with synthetic_queue_atomic(), ExitStack() as stack:
+    from apps.precise_citations.integration import answer_use_boundary
+
+    with synthetic_queue_atomic(), answer_use_boundary(), ExitStack() as stack:
+        from apps.precise_citations.integration import prelock_cases
+
+        prelock_cases([row["case_id"] for row in scoped])
         locked = {}
         for row in sorted(scoped, key=lambda row: row["case_id"]):
             locked[row["case_id"]] = stack.enter_context(

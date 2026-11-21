@@ -10,6 +10,7 @@ from apps.platform_recovery.integration import mutation_service
 from apps.private_media.storage import configured_storage
 from apps.private_media.validation import MAX_BYTES as MAX_BYTES
 from apps.private_media.validation import MediaValidationError, validate
+from apps.private_media.video import validate_file
 
 from .models import CaseAttachment
 from .storage_bindings import binding_locks, raw_for_owner, stored_fields
@@ -24,6 +25,10 @@ def _enabled():
 
 def _validate(raw, filename, media_type):
     try:
+        if media_type in {"video/webm", "video/mp4"}:
+            if getattr(settings, "FATWA_CASE_ATTACHMENTS_VIDEO_ENABLED", False) is not True:
+                raise cases.CaseConflict("case_attachment_video_disabled")
+            return validate_file(raw, filename, media_type)
         return validate(raw, filename, media_type)
     except MediaValidationError as exc:
         raise cases.CaseConflict(str(exc)) from exc

@@ -1,0 +1,9 @@
+{% extends "public_collections/base.html" %}
+{% block title %}{{ collection.title }}{% endblock %}
+{% block content %}
+<nav aria-label="مسار الصفحة"><a href="{% url 'public_collections:index' %}">الموضوعات والمجموعات</a>{% if collection.parent %} · <a href="{{ collection.parent.url }}">{{ collection.parent.title }}</a>{% endif %}</nav>
+<h1>{{ collection.title }}</h1><p>{{ collection.kind_label }} · النسخة {{ collection.version }} · آخر تحرير {{ collection.updated_at|date:"c" }}</p>
+<p class="original">{{ collection.introduction }}</p><p>اختيار وترتيب بشري لمواد مستقلة. الإتاحة الحالية لكل مادة شرط لبقاء هذه الصفحة متاحة.</p>
+{% if children %}<section><h2>الموضوعات الفرعية</h2><ul>{% for child in children %}<li><a href="{{ child.url }}">{{ child.title }}</a></li>{% endfor %}</ul></section>{% endif %}
+<section><h2>المواد بالترتيب المختار</h2>{% include "public_collections/cards.html" with cards=collection.members %}</section>
+{% endblock %}

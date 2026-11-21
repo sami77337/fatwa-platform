@@ -38,6 +38,8 @@ class CaseAttachment(models.Model):
                         "audio/mpeg",
                         "audio/mp4",
                         "audio/wav",
+                        "video/webm",
+                        "video/mp4",
                     )
                 ),
                 name="ca_type",

@@ -6,6 +6,20 @@ from django.conf import settings
 
 def connected_navigation(request):
     return {
+        "precise_citations_navigation": apps.is_installed("apps.precise_citations")
+        and getattr(settings, "FATWA_PRECISE_CITATIONS_ENABLED", False) is True,
+        "public_answer_media_navigation": apps.is_installed("apps.public_answer_media")
+        and getattr(settings, "FATWA_PUBLIC_ANSWER_MEDIA_ENABLED", False) is True,
+        "canonical_search_navigation": apps.is_installed("apps.canonical_search")
+        and getattr(settings, "FATWA_CANONICAL_SEARCH_ENABLED", False) is True,
+        "material_import_navigation": apps.is_installed("apps.material_import")
+        and getattr(settings, "FATWA_MATERIAL_IMPORT_ENABLED", False) is True,
+        "public_collections_navigation": apps.is_installed("apps.public_collections")
+        and getattr(settings, "FATWA_PUBLIC_COLLECTIONS_ENABLED", False) is True,
+        "lifecycle_enabled": apps.is_installed("apps.case_lifecycle")
+        and getattr(settings, "FATWA_CASE_LIFECYCLE_ENABLED", False) is True,
+        "research_library_navigation": apps.is_installed("apps.research_library")
+        and getattr(settings, "FATWA_RESEARCH_LIBRARY_ENABLED", False) is True,
         "public_knowledge_navigation": apps.is_installed("apps.public_knowledge")
         and getattr(settings, "FATWA_PUBLIC_KNOWLEDGE_ENABLED", False) is True,
         "selected_exports_navigation": apps.is_installed("apps.selected_exports")

@@ -1,0 +1,3 @@
+{% extends "casework/base.html" %}{% block title %}مرجع الجواب وإحالاته للطباعة{% endblock %}{% block content %}
+<h2>الجواب — الإصدار {{ record.answer_revision }}</h2><p>مراجعة الإحالات: {{ record.review.actor }} · {{ record.review.created_at|date:'c' }}</p><p class="original">{{ record.answer_text }}</p><h3>المراجع والمواضع</h3><ol>{% for entry in record.entries %}<li><q>{{ entry.phrase }}</q> (موضع الجواب {{ entry.start }}–{{ entry.end }})<p>{{ entry.reference }}</p><p>{{ entry.limitation }}</p>{% if entry.correction_reason %}<p>تصحيح مراجع: {{ entry.correction_reason }}</p>{% endif %}</li>{% endfor %}</ol><p>لا تمنح هذه النسخة حق فتح المصادر الخاصة؛ تظل النسخ والمواضع على هويتها الأصلية.</p>
+{% endblock %}

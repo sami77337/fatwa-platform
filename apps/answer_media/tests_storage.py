@@ -9,6 +9,7 @@ from dataclasses import replace
 from threading import Event
 from unittest.mock import patch
 
+from django.apps import apps
 from django.core.management import call_command
 from django.db import DatabaseError, IntegrityError, connection, connections, transaction
 from django.db.models.query import QuerySet
@@ -279,7 +280,17 @@ class StorageBindingTests(TransactionTestCase):
 
         with connection.execute_wrapper(capture):
             self.assertFalse(live_references("private-filesystem-v1", "0" * 64 + ".blob"))
-        self.assertEqual(len(queries), 2)
+        # A missing blob must check the current schema and every registered
+        # durable owner, including immutable library originals when installed.
+        schema_queries = [sql for sql in queries if "FROM pg_catalog.pg_class" in sql]
+        self.assertEqual(len(schema_queries), 1)
+        owner_queries = [sql for sql in queries if sql not in schema_queries]
+        expected_tables = {"case_attachments_caseattachment", "answer_media_answerpart"}
+        if apps.is_installed("apps.research_library"):
+            expected_tables.add("research_library_libraryblob")
+        self.assertEqual(len(owner_queries), len(expected_tables))
+        for table in expected_tables:
+            self.assertEqual(sum(f'FROM "{table}"' in sql for sql in owner_queries), 1)
         self.assertTrue(all("FOR UPDATE" not in sql for sql in queries))
         with patch(
             "apps.case_attachments.storage_bindings.apps.is_installed",

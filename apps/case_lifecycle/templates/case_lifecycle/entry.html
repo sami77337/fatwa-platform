@@ -1,0 +1,3 @@
+{% if lifecycle_enabled %}
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="lc_open"><input type="hidden" name="case_ref" value="{{ lifecycle_case_ref }}"><button>دورة حياة القضية</button></form>
+{% endif %}

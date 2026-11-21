@@ -1,0 +1,9 @@
+{% extends "library_preview/base.html" %}
+{% block title %}المكتبة — المصادر والنسخ المتاحة{% endblock %}
+{% block content %}
+<h1>المصادر والنسخ المتاحة</h1><p>الكتاب ونسخته وملفه هويات مختلفة. تظهر هنا المواد التي ما زال السماح بعرضها قائمًا.</p>
+{% if offline_enabled %}<p><a href="{% url 'research_library:offline' %}">اختيار مواد للقراءة دون اتصال وإعداد الأرشيف</a></p>{% endif %}
+<form method="get"><label for="library-query">ابحث بالعنوان أو المصدر أو صاحب المادة</label><input id="library-query" name="q" value="{{ query }}" maxlength="160"><label for="library-kind">نوع المادة</label><select id="library-kind" name="kind"><option value="">جميع المواد</option>{% for code,label in kinds.items %}<option value="{{ code }}" {% if kind == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button>بحث</button></form>
+{% for row in rows %}<article><h2><a href="{{ row.url }}">{{ row.title }}</a></h2><p>{{ row.work_title }} · {{ row.edition_label|default:"طبعة غير موصوفة" }} · {{ row.creator }}</p><p>{{ row.description }}</p>{% if not row.file %}<p>بيانات مصدر متاحة؛ لا يوجد ملف مصرح بقراءته هنا.</p>{% endif %}</article>{% empty %}<p>لا توجد مواد متاحة ضمن هذا البحث الآن.</p>{% endfor %}
+<nav aria-label="صفحات المواد">{% if page > 1 %}<a href="?q={{ query|urlencode }}&amp;kind={{ kind|urlencode }}&amp;page={{ previous }}">السابق</a>{% endif %}{% if has_next %}<a href="?q={{ query|urlencode }}&amp;kind={{ kind|urlencode }}&amp;page={{ next }}">التالي</a>{% endif %}</nav>
+{% endblock %}

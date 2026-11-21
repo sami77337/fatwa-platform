@@ -236,6 +236,9 @@ def projection():
             scholarly_boundary = stack.enter_context(scholarly.scope(case_ids=case_ids))
             if scholarly_boundary:
                 case_ids = list(scholarly_boundary.locked)
+            from apps.precise_citations.integration import prelock_cases
+
+            case_ids = prelock_cases(case_ids)
             list(Case.objects.filter(pk__in=case_ids).order_by("pk").select_for_update())
             source_state = services._canonical(case_ids)
             history_state = _history_state(case_ids)

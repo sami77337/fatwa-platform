@@ -2,6 +2,7 @@
 
 from hmac import compare_digest
 
+from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
 from django.http import HttpResponse
@@ -36,6 +37,7 @@ def _page(request, result, *, token=None, is_staff=False, preview=None):
                 "result": result,
                 "is_staff": is_staff,
                 "preview": preview,
+                "video_upload_enabled": getattr(settings, "FATWA_CASE_ATTACHMENTS_VIDEO_ENABLED", False) is True,
                 "upload_proof": workspace._binding(
                     request, token, f"attachment:{result['public_ref']}:{result['revision']}"
                 )

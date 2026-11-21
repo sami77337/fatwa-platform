@@ -27,6 +27,38 @@ OWNERS = {
     "ATTACHMENT": ("case_attachments", "CaseAttachment"),
     "ANSWER_PART": ("answer_media", "AnswerPart"),
 }
+# These immutable owners participate in GC/recovery, but are not eligible for
+# the legacy case-attachment/answer storage-conversion command above.
+REFERENCE_ONLY_OWNERS = {
+    "research_library_libraryblob": ("research_library", "LibraryBlob"),
+}
+
+
+def durable_owner_models(*, tables=None):
+    """Resolve every known durable owner against this exact database schema.
+
+    Old profiles without a library schema keep their existing contract. A schema
+    present without its app, or an installed owner without its table, fails closed.
+    """
+    if any(not apps.is_installed("apps." + label) for label, _ in OWNERS.values()):
+        raise cases.CaseConflict("media_owner_schema_unavailable")
+    try:
+        models = [apps.get_model(label, name) for label, name in OWNERS.values()]
+        tables = set(connection.introspection.table_names()) if tables is None else set(tables)
+        for table, (label, name) in REFERENCE_ONLY_OWNERS.items():
+            installed = apps.is_installed("apps." + label)
+            if installed or table in tables:
+                if not installed or table not in tables:
+                    raise cases.CaseConflict("media_owner_schema_unavailable")
+                model = apps.get_model(label, name)
+                if model._meta.db_table != table:
+                    raise cases.CaseConflict("media_owner_schema_unavailable")
+                models.append(model)
+        if any(model._meta.db_table not in tables for model in models):
+            raise cases.CaseConflict("media_owner_schema_unavailable")
+        return models
+    except LookupError as exc:
+        raise cases.CaseConflict("media_owner_schema_unavailable") from exc
 
 
 def reference(row):
@@ -111,13 +143,7 @@ def live_references(backend, key=None):
     """
     if isinstance(backend, StoredOriginal) and key is None:
         backend, key = backend.backend, backend.key
-    if any(not apps.is_installed("apps." + label) for label, _ in OWNERS.values()):
-        raise cases.CaseConflict("media_owner_schema_unavailable")
-    try:
-        models = [apps.get_model(label, name) for label, name in OWNERS.values()]
-    except LookupError as exc:
-        raise cases.CaseConflict("media_owner_schema_unavailable") from exc
-    for model in models:
+    for model in durable_owner_models():
         if model.objects.filter(storage_backend=backend, storage_key=key).exists():
             return True
     return False

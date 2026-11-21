@@ -104,8 +104,9 @@ def populate():
         )
         result = services.run_job(**common, job_id=job["id"], request_key=uuid.uuid4())
         assert result["state"] == "READY"
-        downloaded = services.download(**common, job_id=job["id"], request_key=uuid.uuid4())
-        pins.update(job_id=job["id"], sha256=downloaded["sha256"])
+        download_request = uuid.uuid4()
+        downloaded = services.download(**common, job_id=job["id"], request_key=download_request)
+        pins.update(job_id=job["id"], sha256=downloaded["sha256"], download_request=str(download_request))
         assert all(model.objects.exists() for model in (ExportJob, ExportEvent, ExportArtifact))
     return pins
 
@@ -113,7 +114,9 @@ def populate():
 def verify_restored(pins):
     common, configuration = _configuration(pins)
     with configuration:
-        result = services.download(**common, job_id=pins["job_id"], request_key=uuid.uuid4())
+        # A replay rechecks current rights and exact bytes without appending a
+        # new DOWNLOAD audit to the restored snapshot being compared by the drill.
+        result = services.download(**common, job_id=pins["job_id"], request_key=pins["download_request"])
         assert result["sha256"] == pins["sha256"]
         assert services.status(**common, job_id=pins["job_id"])["state"] == "READY"
         try:
@@ -124,7 +127,7 @@ def verify_restored(pins):
             pass
         with override_settings(FATWA_SELECTED_EXPORTS_AUTHORITY=None):
             try:
-                services.download(**common, job_id=pins["job_id"], request_key=uuid.uuid4())
+                services.download(**common, job_id=pins["job_id"], request_key=pins["download_request"])
                 raise AssertionError("Restoration must not fabricate export authority")
             except cases.CaseConflict:
                 pass

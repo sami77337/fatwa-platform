@@ -27,7 +27,12 @@ from django.conf import settings
 from django.db import connection
 from psycopg import sql
 
-from apps.case_attachments.storage_bindings import OWNERS
+from apps.case_attachments.storage_bindings import (
+    OWNERS,
+    REFERENCE_ONLY_OWNERS,
+    durable_owner_models,
+)
+from apps.casework.services import CaseConflict
 from apps.intake_workflow.contracts import CONTRACT_VERSION, SOURCE_CONFIG_ID, SYNTHETIC_SCOPE
 from apps.intake_workflow.guards import require_owned_database
 from apps.private_media.filesystem import BACKEND, FileSystemStorage
@@ -319,7 +324,8 @@ def baseline(db):
 
 
 def references(db):
-    # Reuse the V9 durable-owner registry and fail closed if its contract grows.
+    # Keep storage conversion closed to its two original owner kinds. Optional
+    # immutable source owners have a separate explicit GC/recovery contract.
     try:
         registered = {
             apps.get_model(label, model)._meta.db_table for label, model in OWNERS.values()
@@ -327,13 +333,18 @@ def references(db):
     except LookupError:
         raise RecoveryError("media_owner_registry_unavailable") from None
     require(registered == set(OWNER_TABLES), "media_owner_registry_changed")
+    try:
+        models = durable_owner_models(tables=table_names(db))
+    except CaseConflict:
+        raise RecoveryError("media_owner_registry_unavailable") from None
     result = []
-    for table in OWNER_TABLES:
+    for model in models:
+        table, primary_key = model._meta.db_table, model._meta.pk.column
         rows = db.execute(
             sql.SQL(
-                "SELECT id,storage_backend,storage_key,sha256,size,original "
-                "FROM public.{} ORDER BY id"
-            ).format(sql.Identifier(table))
+                "SELECT {},storage_backend,storage_key,sha256,size,original "
+                "FROM public.{} ORDER BY {}"
+            ).format(sql.Identifier(primary_key), sql.Identifier(table), sql.Identifier(primary_key))
         )
         for owner_id, backend, key, sha, size, inline in rows:
             original = StoredOriginal(
@@ -504,7 +515,9 @@ def verify_bundle(bundle, expected_manifest_sha256, *, _files=None):
     keys = set()
     for item in manifest["references"]:
         require(
-            item["table"] in OWNER_TABLES and DIGEST.fullmatch(item["sha256"]),
+            item["table"] in {*OWNER_TABLES, *REFERENCE_ONLY_OWNERS}
+            and item["table"] in manifest["baseline"]["tables"]
+            and DIGEST.fullmatch(item["sha256"]),
             "manifest_reference_invalid",
         )
         if item["backend"] == BACKEND:

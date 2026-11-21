@@ -12,12 +12,14 @@ on:
       - 'tests/acceptance/fastbuild/**'
       - 'tests/research_bridge/**'
       - 'docs/product/functional_completion/**'
+      - 'docs/product/functional_continuation/**'
       - 'infra/dev/v14_verify.py'
       - 'requirements*.txt'
       - 'pyproject.toml'
       - '.github/workflows/functional-completion.yml'
       - 'infra/dev/functional_verify.py'
       - 'infra/dev/functional_scope_receipt.py'
+      - 'infra/dev/functional_continuation_receipt.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -59,7 +61,7 @@ jobs:
           sudo apt-get update -qq
           sudo install -d /etc/postgresql-common
           printf 'create_main_cluster = false\n' | sudo tee /etc/postgresql-common/createcluster.conf
-          sudo apt-get install -y --no-install-recommends "postgresql-$PG_EXPECTED_MAJOR"
+          sudo apt-get install -y --no-install-recommends "postgresql-$PG_EXPECTED_MAJOR" ffmpeg
           printf '/usr/lib/postgresql/%s/bin\n' "$PG_EXPECTED_MAJOR" >> "$GITHUB_PATH"
       - uses: actions/setup-node@v4
         with:
@@ -82,6 +84,11 @@ jobs:
         if: always()
         with:
           name: functional-completion-pg${{ matrix.postgres }}
-          path: .local/qa/functional-completion
+          path: |
+            .local/qa/functional-completion
+            .local/qa/functional-continuation
+            .local/qa/library-operations
+            .local/qa/case-assignments/browser
+            .local/qa/v6-casework/browser
           include-hidden-files: true
           if-no-files-found: error

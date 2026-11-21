@@ -24,6 +24,21 @@ def private(response):
         "default-src 'none'; style-src 'self'; form-action 'self'; "
         "base-uri 'none'; frame-ancestors 'none'"
     )
+    if getattr(response, "_allow_library_media", False) is True:
+        response["Content-Security-Policy"] += "; media-src 'self'; img-src 'self'"
+    if getattr(response, "_allow_library_offline", False) is True:
+        response["Content-Security-Policy"] += (
+            "; script-src 'self'; worker-src 'self'; connect-src 'self'; "
+            "manifest-src 'self'; media-src 'self' blob:; img-src 'self' blob:"
+        )
+    if (
+        getattr(response, "_allow_recording_player", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+    ):
+        policy = response["Content-Security-Policy"]
+        if "script-src" not in policy:
+            response["Content-Security-Policy"] = policy + "; script-src 'self'"
     response["X-Frame-Options"] = "DENY"
     return response
 

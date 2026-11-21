@@ -8,11 +8,17 @@ from apps.casework_web import requester_intake
 from apps.data_quality import views as data_quality
 from apps.pdf_citations import views as pdf_citations
 from apps.requester_team_journey.views import requester, staff
+from apps.research_library import editor as library_editor
 from apps.research_workspace.views import styles as research_styles
 from apps.team_workspace.urls import urlpatterns as team_patterns
 from apps.timed_citations import views as timed_citations
 
 urlpatterns = [
+    path("", include("apps.staff_shell.urls")),
+    path("casework/precise-citations/", include("apps.precise_citations.urls")),
+    path("", include("apps.public_answer_media.urls")),
+    path("casework/staff/library/<uuid:version_id>/file/", library_editor.file, name="library_staff_file"),
+    path("casework/staff/library/<uuid:version_id>/download/", library_editor.file, {"download": True}, name="library_staff_download"),
     path("casework/staff/quality/", data_quality.index, name="data_quality"),
     path("casework/staff/pdf-citations/<uuid:citation_id>/document/", pdf_citations.document, name="pdf_document"),
     path("casework/staff/pdf-citations/<uuid:citation_id>/review-document/", pdf_citations.review_document, name="pdf_review_document"),
@@ -22,6 +28,8 @@ urlpatterns = [
     path("casework/staff/timed-citations/<uuid:citation_id>/audio/", timed_citations.audio, name="timed_audio"),
     path("casework/staff/timed-citations/<uuid:citation_id>/review-audio/", timed_citations.review_audio, name="timed_review_audio"),
     path("research-workspace.css", research_styles, name="research_styles"),
+    path("library-preview/materials/", include("apps.research_library.routes")),
+    path("library-preview/collections/", include("apps.public_collections.routes")),
     path("library-preview/knowledge/", include("apps.public_knowledge.routes")),
     path("library-preview/", include("apps.library_preview.routes")),
     path(

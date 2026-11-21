@@ -1,0 +1,29 @@
+{% extends "casework/base.html" %}
+{% block title %}دورة حياة القضية{% endblock %}
+{% block content %}
+<h1>دورة حياة القضية <bdi>{{ lifecycle.public_ref }}</bdi></h1>
+<p><strong id="lifecycle-state" data-state="{{ lifecycle.state }}">{{ lifecycle.state_label }}</strong> · إصدار دورة الحياة {{ lifecycle.version }}</p>
+<p>نسخة السجل {{ lifecycle.revision }} · نسخة الوقائع {{ lifecycle.evidence_version }}</p>
+<p>الإغلاق ينهي المتابعة الحالية، والأرشفة تبقي القضية خارج القائمة المعتادة. يبقى السؤال والجواب والتاريخ محفوظًا، ويعيد التعقيب الجديد فتح القضية نفسها.</p>
+<p>استعادة المؤرشف تعيده إلى القضايا المغلقة. إعادة الفتح إجراء مستقل، ولا تغيّر اعتماد الجواب أو إثباتات التوصيل والنشر.</p>
+{% if notice %}<p role="status">{{ notice }}</p>{% endif %}
+<nav aria-label="التنقل في دورة الحياة">
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ lifecycle.public_ref }}"><button>فتح القضية الأصلية</button></form>
+<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="lc_inbox"><button>القضايا المغلقة والأرشيف</button></form>
+</nav>
+{% if lifecycle.close_blocked %}<p role="status">{{ lifecycle.close_blocked }}</p>{% endif %}
+<section aria-label="إجراءات دورة الحياة">
+{% for item in lifecycle.actions %}
+<form method="post" action="/casework/staff/" data-lifecycle-action="{{ item.action }}">
+{% csrf_token %}<input type="hidden" name="action" value="{{ item.form_action }}"><input type="hidden" name="case_ref" value="{{ lifecycle.public_ref }}"><input type="hidden" name="revision" value="{{ lifecycle.revision }}"><input type="hidden" name="evidence_version" value="{{ lifecycle.evidence_version }}"><input type="hidden" name="version" value="{{ lifecycle.version }}"><input type="hidden" name="command_id" value="{{ command_id }}">
+<h2>{{ item.label }}</h2>
+<label for="reason-{{ item.action }}">سبب الإجراء</label><textarea id="reason-{{ item.action }}" name="reason" maxlength="1000" required></textarea>
+{% if item.without_delivery %}<p>لا توجد خطة توصيل لهذه القضية. هذا الخيار لا يثبت أن الجواب أُرسل أو وصل أو قُرئ.</p><label><input type="checkbox" name="without_delivery" value="yes" required> أختار الإغلاق دون ادعاء توصيل الجواب</label>{% elif item.action == "CLOSE" %}<input type="hidden" name="without_delivery" value="no"><p>توجد إثباتات تسليم متحققة للنسخة الحالية. لا تثبت قراءة الجواب أو سماعه.</p>{% endif %}
+<label><input type="checkbox" name="confirm" value="yes" required> أؤكد حفظ هذا الإجراء وسببه</label><button>{{ item.label }}</button>
+</form>
+{% empty %}<p>لا توجد إجراءات متاحة ضمن الحالة والصلاحية الحالية.</p>{% endfor %}
+</section>
+<section id="lifecycle-history"><h2>سجل دورة الحياة</h2>
+{% for event in lifecycle.history %}<article data-lifecycle-version="{{ event.version }}"><h3>{{ event.label }} · {{ event.state_label }}</h3><p>{{ event.reason }}</p><p>{{ event.actor }} · <time dir="ltr" datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:'Y-m-d H:i' }} {{ event.created_at|date:'T' }}</time></p><p>نسخة السجل {{ event.case_revision }} · نسخة الوقائع {{ event.evidence_version }}</p>{% if event.no_delivery_claim %}<p>إغلاق باختيار صريح دون ادعاء توصيل الجواب.</p>{% endif %}</article>{% empty %}<p>لم يُسجل إجراء إغلاق أو أرشفة بعد.</p>{% endfor %}
+</section>
+{% endblock %}

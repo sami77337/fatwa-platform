@@ -28,6 +28,7 @@ TABS = (
     ("attachments", "attachment_list", "مرفقات الوقائع", "FATWA_CASE_ATTACHMENTS_ENABLED"),
     ("rights", "rights_desk", "حقوق المصادر ومراجعتها", "FATWA_SOURCE_RIGHTS_ENABLED"),
     ("research", "research_open", "البحث في مصادر القضية", "FATWA_RESEARCH_WORKSPACE_ENABLED"),
+    ("canonical_search", "cs_open", "البحث العربي والفهرس", "FATWA_CANONICAL_SEARCH_ENABLED"),
     (
         "collections",
         "research_collections",
@@ -35,9 +36,11 @@ TABS = (
         "FATWA_RESEARCH_COLLECTIONS_ENABLED",
     ),
     ("citations", "citations", "الإحالات العلمية", "FATWA_CASE_CITATIONS_ENABLED"),
+    ("precise_citations", "precise_open", "توثيق العبارات ونسخ المصادر", "FATWA_PRECISE_CITATIONS_ENABLED"),
     ("timed", "timed_desk", "الإحالات الزمنية الخاصة", "FATWA_TIMED_CITATIONS_ENABLED"),
     ("pdf", "pdf_desk", "مواضع PDF الخاصة", "FATWA_PDF_CITATIONS_ENABLED"),
     ("answer", "answer_media", "أجزاء الجواب والإتاحة", "FATWA_ANSWER_MEDIA_ENABLED"),
+    ("recordings", "pm_open", "التسجيل والتفريغ المراجع", "FATWA_PUBLIC_ANSWER_MEDIA_ENABLED"),
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
     ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
     ("publication", "pub_open", "نسخة النشر المستقلة", "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED"),
@@ -46,10 +49,28 @@ TABS = (
     ("exports", "exports_open", "تصدير المواد المختارة", "FATWA_SELECTED_EXPORTS_ENABLED"),
     ("scholarly", "scholarly_open", "الدروس والعلاقات اليدوية", "FATWA_SCHOLARLY_LINKS_ENABLED"),
     ("public_knowledge", "pk_open", "صفحات العلماء والترجمات", "FATWA_PUBLIC_KNOWLEDGE_ENABLED"),
+    ("library", "rl_open", "مكتبة المصادر والنسخ", "FATWA_RESEARCH_LIBRARY_ENABLED"),
+    ("material_import", "mi_open", "مركز استيراد المواد", "FATWA_MATERIAL_IMPORT_ENABLED"),
+    ("public_collections", "pc_open", "المجموعات العلمية والموضوعات", "FATWA_PUBLIC_COLLECTIONS_ENABLED"),
+    ("lifecycle", "lc_open", "إغلاق القضية وأرشفتها", "FATWA_CASE_LIFECYCLE_ENABLED"),
 )
 
 
 def _active(action):
+    if action.startswith("precise_"):
+        return "precise_citations"
+    if action.startswith("pm_"):
+        return "recordings"
+    if action.startswith("cs_"):
+        return "canonical_search"
+    if action.startswith("mi_"):
+        return "material_import"
+    if action.startswith("pc_"):
+        return "public_collections"
+    if action.startswith("lc_"):
+        return "lifecycle"
+    if action.startswith("rl_"):
+        return "library"
     if action.startswith("pk_"):
         return "public_knowledge"
     if action.startswith(("scholarly_", "lesson_", "relation_")):
