@@ -87,3 +87,18 @@ Fixture tests are not evidence of a real provider delivery. Run the dedicated
 \`Meta and Telegram signed intake\` workflow on PostgreSQL 17/18; keep the
 functional-completion registry and existing 55 browser journeys unchanged
 until a reviewed candidate and fresh full-head acceptance are registered.
+
+## Additional protected Chromium journey
+
+`apps.webhook_ingress.browser_tests.SignedMetaBrowserTests` is a real
+sandboxed Chromium test on **both** isolated PostgreSQL majors in the dedicated
+signed-intake workflow. It submits a cryptographically signed synthetic Meta
+payload over HTTP, verifies bounded exact replay and rejected forged signature,
+logs in through the actual staff route, filters the immutable receipt, opens the
+original text and downloads the original bytes, checks Arabic RTL/overflow at
+320px and 1280px, then withdraws the separate source-review grant and verifies
+the previously visible event disappears. Two screenshots and a Playwright trace
+plus success-only `result.json` are required for each major. Do not credit this
+journey until actual GitHub Actions and the downloaded archive have passed.
+The existing 55-journey functional scope is unchanged; this is an additional
+independent browser gate, not a substitute for the whole exact-head receipt.

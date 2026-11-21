@@ -57,6 +57,36 @@ jobs:
             --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
             python manage.py test apps.webhook_ingress.tests apps.source_case_intake.tests \
               --noinput --verbosity 2 2>&1 | tee ".local/qa/webhook-ingress/pg$PG_EXPECTED_MAJOR.log"
+      - name: Install pinned Chromium driver for protected source review
+        run: |
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+      - name: Protected native signed-source browser on exact isolated major
+        env:
+          FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+          FATWA_BROWSER_SANDBOX: '1'
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python infra/dev/with_casework_postgres.py \
+            --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" \
+            --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
+            python manage.py test apps.webhook_ingress.browser_tests \
+              --noinput --verbosity 2 2>&1 | tee ".local/qa/webhook-ingress/browser-pg$PG_EXPECTED_MAJOR.log"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          folder = Path('.local/qa/webhook-ingress/browser')
+          result = json.loads((folder / 'result.json').read_text())
+          assert result['head_sha'] == os.environ['EXPECTED_SHA']
+          assert result['sandbox'] is True
+          assert result['native_rtl_widths'] == [320, 1280]
+          assert result['external_requests'] == []
+          assert result['page_errors'] == []
+          assert result['current_review_scope_revoked'] is True
+          for name in ('trace.zip', 'source-320.png', 'source-1280.png'):
+              assert (folder / name).is_file()
+              assert (folder / name).stat().st_size > 0
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
