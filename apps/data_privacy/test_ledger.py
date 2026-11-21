@@ -5,8 +5,9 @@ from dataclasses import replace
 from unittest.mock import patch
 
 from django.conf import settings
-from django.db import IntegrityError, transaction
-from django.test import TransactionTestCase, override_settings
+from django.db import IntegrityError, connection, transaction
+from django.http import HttpResponse
+from django.test import RequestFactory, TransactionTestCase, override_settings
 
 from apps.casework.models import Case, CaseEvent, CaseEvidence, CaseSource
 
@@ -77,6 +78,21 @@ class ClassificationLedgerTests(PrivacyFixture, TransactionTestCase):
             self.read(principal=public)
         self.allow(self.target, "PUBLIC", "READ", principal=public)
         self.assertEqual(self.read(principal=public)["level"], "PUBLIC")
+
+    def test_public_copy_uses_its_real_publisher_without_granting_original_read(self):
+        from . import integration
+
+        self.classify(level="CONFIDENTIAL")
+        self.allow(self.target, "CONFIDENTIAL", "PUBLISH")
+        with integration.projection(), integration.published_sources(self.principal()):
+            self.assertEqual(integration.original_action("READ"), "PUBLISH")
+            self.assertEqual(
+                integration.source("CASE", self.target.identifier)["level"], "CONFIDENTIAL"
+            )
+        self.assertEqual(integration.original_action("READ"), "READ")
+        for principal in (self.principal(), services.public_principal()):
+            with self.assertRaises(services.PrivacyDenied):
+                self.read(principal=principal)
 
     def test_each_staff_read_requires_current_exact_classification_grant(self):
         self.classify()
@@ -166,3 +182,37 @@ class ClassificationLedgerTests(PrivacyFixture, TransactionTestCase):
             ):
                 with self.assertRaises(services.PrivacyDenied):
                     self.read()
+
+    def test_response_boundary_keeps_authentication_and_external_calls_outside_transactions(self):
+        from .integration import PrivacyResponses
+
+        self.classify()
+        self.allow(self.target, "CONFIDENTIAL", "READ")
+
+        def endpoint(request):
+            self.assertFalse(connection.in_atomic_block)
+            self.assertEqual(self.read()["level"], "CONFIDENTIAL")
+            self.assertFalse(connection.in_atomic_block)
+            return HttpResponse("authorized synthetic output")
+
+        response = PrivacyResponses(endpoint)(RequestFactory().get("/casework/staff/"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"authorized synthetic output")
+        self.assertFalse(connection.in_atomic_block)
+
+    def test_response_boundary_discards_output_when_policy_changes_after_short_read(self):
+        from .integration import PrivacyResponses
+
+        self.classify()
+        key = self.allow(self.target, "CONFIDENTIAL", "READ")
+
+        def endpoint(request):
+            self.read()
+            self.assertFalse(connection.in_atomic_block)
+            del self.authority.grants[key]
+            return HttpResponse("private text prepared before revocation")
+
+        response = PrivacyResponses(endpoint)(RequestFactory().get("/casework/staff/"))
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn(b"private text", response.content)
+        self.assertFalse(connection.in_atomic_block)

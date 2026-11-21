@@ -7,13 +7,14 @@ from functools import wraps
 from django.apps import apps
 
 READERS = ContextVar("privacy_current_source_readers", default=())
+SOURCE_USES = ContextVar("privacy_current_original_uses", default=())
 
 
 @contextmanager
-def projection():
+def projection(*, atomic=True):
     from .services import projection as boundary
 
-    with boundary() as guard:
+    with boundary(atomic=atomic) as guard:
         yield guard
 
 
@@ -78,6 +79,25 @@ def using(principal):
         yield
     finally:
         READERS.reset(token)
+
+
+@contextmanager
+def published_sources(principal):
+    """A public copy consumes originals only through its current real publisher."""
+    token = SOURCE_USES.set((*SOURCE_USES.get(), "PUBLISH"))
+    try:
+        with using(principal):
+            yield
+    finally:
+        SOURCE_USES.reset(token)
+
+
+def original_action(action="READ"):
+    return SOURCE_USES.get()[-1] if SOURCE_USES.get() else action
+
+
+def source(kind, identifier, *, action="READ"):
+    return current(kind, identifier, action=original_action(action))
 
 
 def current(kind, identifier, *, action="READ"):
@@ -189,7 +209,9 @@ class PrivacyResponses:
         from .services import PrivacyDenied
 
         try:
-            with projection() as guard:
+            # Retain final response pins without holding a database transaction
+            # around authentication or an external candidate provider.
+            with projection(atomic=False) as guard:
                 response = self.get_response(request)
                 if getattr(response, "streaming", False) and guard.uses:
                     raise PrivacyDenied("privacy_buffered_projection_required")

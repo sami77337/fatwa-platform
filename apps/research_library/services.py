@@ -329,6 +329,15 @@ def _permit(case, actor, provider, action, *, namespace="", external_id="", vers
             scope.permissions.append(values)
     _permit_raw(snapshot[0], values)
     assert_policy_snapshot(snapshot)
+    if version_digest and action in {"VIEW", "READ", "CITE", "DOWNLOAD", "OFFLINE", "EXPORT", "REVIEW", "APPROVE", "RELEASE"}:
+        from apps.data_privacy.integration import staff as privacy
+
+        identifier = LibraryVersion.objects.filter(item__case=case, digest=version_digest).values_list("pk", flat=True).get()
+        privacy(
+            "LIBRARY_VERSION", identifier, provider=provider, actor=actor,
+            action="EXPORT" if action in {"DOWNLOAD", "OFFLINE", "EXPORT"}
+            else "PUBLISH" if action == "RELEASE" else "READ",
+        )
 
 
 def _watch(row, *, file=False):
@@ -728,10 +737,14 @@ def decide(
 
 @mutation_service
 def browse(*, query="", kind="", page=1, **base):
+    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
     _text(query, 160)
     if kind not in {"", *KINDS} or type(page) is not int or not 1 <= page <= 8:
         raise cases.CaseConflict("library_filter_invalid")
     with staff_boundary(**base) as (case, actor):
+        privacy("CASE", case.pk, provider=base["provider"], actor=actor, action="SEARCH")
         _SCOPES.get()[-1].heads[str(case.pk)] = head_fingerprint(case.pk)
         _permit(case, actor, base["provider"], "VIEW")
         items = list(
@@ -747,8 +760,9 @@ def browse(*, query="", kind="", page=1, **base):
             _watch(row)
             try:
                 _permit(case, actor, base["provider"], "VIEW", **_fields(row))
+                privacy("LIBRARY_VERSION", row.pk, provider=base["provider"], actor=actor, action="SEARCH")
             except cases.CaseConflict as exc:
-                if str(exc) != "library_action_denied":
+                if str(exc) != "library_action_denied" and not isinstance(exc, PrivacyDenied):
                     raise
                 # A denied item contributes neither text nor counts. Remove the
                 # declined check from final callbacks; identity/epoch stays pinned.

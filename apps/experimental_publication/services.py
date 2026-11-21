@@ -155,6 +155,10 @@ def _append_action_locked(*, case, edition, actor, provider, action, reviewed, b
     if action in existing or "WITHDRAW" in existing:
         raise cases.CaseConflict("publication_transition_invalid")
     if action != "WITHDRAW":
+        from apps.data_privacy.integration import current as privacy
+
+        privacy("PUBLICATION", edition.pk, action="PUBLISH" if action == "APPROVE" else "READ")
+        privacy("ANSWER", edition.answer_id, action="PUBLISH")
         answer, decision = _approved(case, edition)
         if edition.citations != _citation_snapshot(answer):
             raise cases.CaseConflict("publication_citation_source_changed")
@@ -186,6 +190,9 @@ def _append_action_locked(*, case, edition, actor, provider, action, reviewed, b
 
 
 def _projection(edition, *, editorial=False, rights_usage="READ"):
+    from apps.data_privacy.integration import current as privacy
+
+    privacy("PUBLICATION", edition.pk)
     _verify(edition)
     if not editorial:
         _require_publication_sources(edition.case, edition.citations)
@@ -251,6 +258,9 @@ def create_edition(
         expected_evidence_version=expected_evidence_version,
     ) as (case, identity):
         answer, decision = _approved(case)
+        from apps.data_privacy.integration import current as privacy
+
+        privacy("ANSWER", answer.pk, action="PUBLISH")
         if source_edition_id is not None:
             _correction_source(case, source_edition_id)
         number = PublicationEdition.objects.filter(case=case).count() + 1
@@ -272,6 +282,13 @@ def create_edition(
             provider_id=provider.provider_id,
             auth_epoch=identity.auth_epoch,
         )
+        from apps.data_privacy.services import enabled as privacy_enabled
+
+        if privacy_enabled():
+            # The creator knows the submitted inputs. A new saved copy still
+            # needs its own human label before any subsequent read or release.
+            return {"id": str(edition.pk), "number": edition.number,
+                    "classification_required": True}
         return _projection(edition, editorial=True)
 
 
@@ -342,10 +359,12 @@ def editorial_case(*, edition_id, subject_id, provider, synthetic_fixtures_only=
 
 @mutation_service
 def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+    from apps.data_privacy.integration import allowed as privacy_allowed
+
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         current = None
-        if case.approved_answer_id:
+        if case.approved_answer_id and privacy_allowed("ANSWER", case.approved_answer_id):
             answer, _ = _approved(case)
             current = {"text": answer.text, "revision": answer.revision}
         rows = list(
@@ -354,6 +373,7 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             .prefetch_related("actions")
             .order_by("-number")
         )
+        rows = [row for row in rows if privacy_allowed("PUBLICATION", row.pk)]
         latest_number = rows[0].number if rows else 0
         latest_published = next(
             (e for e in rows if any(a.action == "APPROVE" for a in e.actions.all())), None
@@ -511,6 +531,10 @@ def library_catalog(
 
 
 def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, page=None):
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
     _enabled()
     cases._text(query, optional=True)
     cases._text(category, optional=True)
@@ -527,16 +551,21 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
     # preflight; it does not create a second authorization path.
     from apps.precise_citations.integration import answer_use_boundary
 
-    with synthetic_queue_atomic(), answer_use_boundary(), ExitStack() as stack:
+    with projection(), synthetic_queue_atomic(), answer_use_boundary(), ExitStack() as stack:
         from apps.precise_citations.integration import prelock_cases
 
         prelock_cases([row["case_id"] for row in scoped])
         locked = {}
         for row in sorted(scoped, key=lambda row: row["case_id"]):
-            locked[row["case_id"]] = stack.enter_context(
-                cases._staff_case(row["case_id"], subject_id, provider, True)
-            )
+            try:
+                context = stack.enter_context(cases._staff_case(row["case_id"], subject_id, provider, True))
+                privacy("CASE", context[0].pk, provider=provider, actor=context[1], action="SEARCH")
+                locked[row["case_id"]] = context
+            except PrivacyDenied:
+                continue
         for row in scoped:
+            if row["case_id"] not in locked:
+                continue
             case, actor = locked[row["case_id"]]
             # Withdrawal never resurrects an older publication.
             edition = (
@@ -547,6 +576,7 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
             if edition is None or edition.actions.filter(action="WITHDRAW").exists():
                 continue
             try:
+                privacy("PUBLICATION", edition.pk, provider=provider, actor=actor, action="SEARCH")
                 _approved(case, edition)
                 _verify(edition)
                 if edition.citations != _citation_snapshot(edition.answer):

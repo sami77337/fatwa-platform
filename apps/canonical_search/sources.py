@@ -140,19 +140,24 @@ def _document(case, kind, source_id, text, source_sha256, version, label, **extr
     return Document(kind, str(source_id), pin, text, label)
 
 
-def read(case, actor, provider, *, transcripts_available):
+def read(case, actor, provider, *, transcripts_available, privacy_action="READ"):
+    from apps.data_privacy.integration import allowed as privacy_allowed
+    from apps.data_privacy.integration import evidence_allowed
+
     source = CaseSource.objects.get(case=case)
-    result = [
-        _document(
-            case,
-            "QUESTION",
-            case.pk,
-            source.original_question,
-            source.question_sha256,
-            1,
-            "السؤال الأصلي المحفوظ",
+    result = []
+    if evidence_allowed(case.evidence.get(version=1), action=privacy_action):
+        result.append(
+            _document(
+                case,
+                "QUESTION",
+                case.pk,
+                source.original_question,
+                source.question_sha256,
+                1,
+                "السؤال الأصلي المحفوظ",
+            )
         )
-    ]
     links = list(
         TranscriptLink.objects.filter(case=case)
         .select_related("upload")
@@ -162,7 +167,7 @@ def read(case, actor, provider, *, transcripts_available):
     # turn it into an ordinary requester follow-up or bypass source text rights.
     linked_evidence = {row.evidence_id for row in links}
     for row in CaseEvidence.objects.filter(case=case, version__gt=1).order_by("version"):
-        if row.pk not in linked_evidence:
+        if row.pk not in linked_evidence and evidence_allowed(row, action=privacy_action):
             result.append(
                 _document(
                     case,
@@ -175,7 +180,11 @@ def read(case, actor, provider, *, transcripts_available):
                 )
             )
     answer = AnswerRevision.objects.filter(case=case).order_by("-revision").first()
-    if answer and answer.evidence_version == case.evidence_version:
+    if (
+        answer
+        and answer.evidence_version == case.evidence_version
+        and privacy_allowed("ANSWER", answer.pk, action=privacy_action)
+    ):
         approved = case.approved_answer_id == answer.pk
         result.append(
             _document(
@@ -192,6 +201,8 @@ def read(case, actor, provider, *, transcripts_available):
         )
     if transcripts_available:
         for row in links:
+            if not privacy_allowed("TRANSCRIPT_LINK", row.pk, action=privacy_action):
+                continue
             resource = Resource(
                 "TRANSCRIPT",
                 str(row.pk),

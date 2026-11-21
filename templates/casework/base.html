@@ -4,6 +4,7 @@
 <body><header><a href="#main">انتقل إلى المحتوى</a><h1>رحلة السؤال والجواب</h1><p class="notice">بيئة تجريبية محلية لبيانات اصطناعية فقط.</p><nav aria-label="التنقل"><a href="/casework/">إرسال سؤال تجريبي</a><a href="/casework/status/">متابعة سؤالي</a><a href="/casework/staff/">مكتب الشيخ</a>{% if library_preview_navigation %}<a href="/library-preview/">معاينة المكتبة التجريبية</a>{% endif %}</nav></header>
 <main id="main"{% if mufti_workspace %} class="mufti-main"{% endif %}>
 {% if staff_sessions_url %}<p><a href="{{ staff_sessions_url }}">جلسات الحساب</a></p>{% endif %}
+{% if privacy_management_url %}<p><a href="{{ privacy_management_url }}">تصنيف الخصوصية</a></p>{% endif %}
 {% if staff_pwa_enabled %}<p data-staff-install-status>يمكن تثبيت المكتب من قائمة المتصفح عند توفر الخيار. يلزم الاتصال للعمليات الخاصة.</p>{% endif %}
 {% if source_desk_navigation %}<nav aria-label="الاستقبال التجريبي"><form method="post" action="/casework/staff/">{% csrf_token %}<button name="action" value="source_inbox">مكتب استقبال المصادر</button></form></nav>{% endif %}
 {% if mufti_workspace %}

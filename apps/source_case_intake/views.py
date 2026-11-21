@@ -250,7 +250,11 @@ def desk(request):
                 != fields["case_ref"]
             ):
                 raise InvalidForm("source_case_context_mismatch")
-            raw = services.staff_raw(receipt_id=fields["receipt_id"], **common)
+            raw = services.staff_raw(
+                receipt_id=fields["receipt_id"],
+                usage="READ" if action == "source_raw_view" else "EXPORT",
+                **common,
+            )
             if action == "source_raw_view":
                 try:
                     original, encoding = raw.decode("utf-8"), "UTF-8 كما حُفظ"

@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.library_preview import services as preview
 from apps.platform_recovery.integration import mutation_context
@@ -51,6 +52,10 @@ class Snapshot:
         row = self.read(version_id)
         if usage not in {"PUBLIC_CONTENT", "DOWNLOAD", "OFFLINE", "EXPORT", "CITE"} or usage not in row["uses"]:
             raise preview.PreviewUnavailable()
+        privacy.public(
+            "LIBRARY_VERSION", version_id,
+            action="EXPORT" if usage in {"DOWNLOAD", "OFFLINE", "EXPORT"} else "READ",
+        )
         if usage != "PUBLIC_CONTENT":
             policy, release_values = self.authorizations[str(version_id)]
             values = {**release_values, "action": usage}
@@ -87,6 +92,7 @@ def _actor(event, row, directory, policy):
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def public_projection():
     try:
@@ -122,12 +128,15 @@ def public_projection():
                 if "REVOKE" in actions or "WITHDRAW" in actions:
                     continue
                 try:
+                    privacy.public("LIBRARY_VERSION", row.pk)
                     approval = services._approval(row, "PUBLIC_METADATA")
                     release = actions["RELEASE"]
                     checked = []
                     for event in (actions["REVIEW"], approval, release):
                         actor, values = _actor(event, row, directory, policy)
                         checked.append((actor, values, row))
+                    privacy.staff("LIBRARY_VERSION", row.pk, provider=directory,
+                                  actor=checked[-1][0], action="PUBLISH")
                     actors.extend(checked)
                 except (cases.CaseConflict, KeyError):
                     continue

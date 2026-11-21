@@ -394,28 +394,39 @@ def staff_origins(*, case_id, subject_id, provider, synthetic_fixtures_only=Fals
     """Authorized desk projection; source IDs are text, never trusted HTML/URLs."""
     _guard(synthetic_fixtures_only)
     with cases._staff_case(case_id, subject_id, provider, True) as (case, _):
+        from apps.data_privacy.integration import allowed as privacy_allowed
+
         bindings = EvidenceBinding.objects.filter(case=case).select_related("receipt", "evidence")
         return [
             {
                 **_origin(b.receipt),
                 "evidence_version": b.evidence.version,
                 "attachments": list(
-                    AttachmentBinding.objects.filter(receipt=b.receipt).values(
+                    item for item in AttachmentBinding.objects.filter(receipt=b.receipt).values(
                         "source_file_id", "attachment_id"
-                    )
+                    ) if privacy_allowed("ATTACHMENT", item["attachment_id"])
                 ),
             }
             for b in bindings.order_by("evidence__version")
+            if privacy_allowed("SOURCE_RECEIPT", b.receipt_id)
         ]
 
 
 @mutation_service
-def staff_raw(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False):
+def staff_raw(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, usage="EXPORT"):
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.integration import staff as privacy
+
     _guard(synthetic_fixtures_only)
+    if usage not in {"READ", "EXPORT"}:
+        raise IntakeError("source_raw_usage_invalid")
     row = _receipt(receipt_id)
     bound = EvidenceBinding.objects.filter(receipt=row).first()
     if bound:
-        with cases._staff_case(bound.case_id, subject_id, provider, True):
+        with cases._staff_case(bound.case_id, subject_id, provider, True) as (_, actor):
+            privacy("SOURCE_RECEIPT", row.pk, actor=actor, provider=provider, action=usage)
             return bytes(row.raw)
-    _reviewer(provider, subject_id)
-    return bytes(row.raw)
+    with projection():
+        actor = _reviewer(provider, subject_id)
+        privacy("SOURCE_RECEIPT", row.pk, actor=actor, provider=provider, action=usage)
+        return bytes(row.raw)

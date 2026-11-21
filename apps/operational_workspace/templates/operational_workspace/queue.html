@@ -1,6 +1,7 @@
 {% extends "operational_workspace/base.html" %}
 {% block content %}
 {% if staff_sessions_url %}<p><a href="{{ staff_sessions_url }}">جلسات الحساب</a></p>{% endif %}
+{% if privacy_management_url %}<p><a href="{{ privacy_management_url }}">تصنيف الخصوصية</a></p>{% endif %}
 <p id="ops-actor">المستخدم الحالي: <bdi>{{ queue.subject }}</bdi> — <bdi>{{ queue.role }}</bdi></p>
 <p>القائمة والأعداد تعرض الحالات والإجراءات المسموح لك بقراءتها حاليًا.</p>
 <nav aria-label="قوائم الإجراءات" id="ops-filters">

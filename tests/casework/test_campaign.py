@@ -36,6 +36,8 @@ class CampaignProfileTests(SimpleTestCase):
         self.assertFalse(campaign_review.FATWA_STAFF_SESSIONS_ENABLED)
         self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_AUTHORITY)
         self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_RUNTIME_EPOCH)
+        self.assertFalse(campaign_review.FATWA_DATA_PRIVACY_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_DATA_PRIVACY_AUTHORITY)
         self.assertFalse(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_ENABLED)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_KEY)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_EPOCH)

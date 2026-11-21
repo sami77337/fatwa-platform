@@ -75,3 +75,20 @@ The integrated entry is `/casework/staff/quality/`; forms use the existing
 `/casework/staff/` dispatcher actions `quality_open` and `quality_case`.
 The isolated development profile is `apps.data_quality.settings`.
 Production gates and deployment status are unchanged.
+
+## Current source classification
+
+With privacy enforcement, a case and its original intake receipt must be readable,
+and the case must independently permit `SEARCH`, before pagination or counts are
+built. A directly selected hidden case is denied. All source pins remain live
+through the last diagnostic callbacks and rendering.
+
+Canonical diagnostics first authorize their actual answer/evidence inputs.
+An inaccessible child source leaves one generic `NOT_CHECKED` result, with no
+source identifier, content or child count. It cannot become a technical defect,
+an empty successful report or a successful integrity claim. Allowed sources still
+use the existing immutable-record and file checks. This module provides no export
+endpoint or classification-management permission.
+
+`apps.data_quality.privacy_tests` covers absent classification, separate search
+permission, direct selection, late withdrawal, and hidden answer diagnostics.

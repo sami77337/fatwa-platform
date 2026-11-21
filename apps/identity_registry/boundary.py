@@ -12,6 +12,8 @@ from django.utils import timezone
 from apps.casework import services as cases
 from apps.casework.models import Case, CaseSource
 from apps.casework_web.access import RequestDirectory
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import resolve_identity
 from apps.platform_recovery.integration import mutation_context
@@ -205,6 +207,29 @@ class Guard:
         self.permissions.append((values, allowed))
         if required and not allowed:
             raise cases.CaseConflict("identity_registry_denied")
+        if allowed:
+            try:
+                privacy.staff(
+                    "CASE",
+                    case.pk,
+                    provider=self.provider,
+                    actor=self.actor,
+                    action="SEARCH" if action == "SEARCH" else "READ",
+                )
+                for receipt_id in EvidenceBinding.objects.filter(
+                    case=case, evidence__version=1
+                ).values_list("receipt_id", flat=True):
+                    privacy.staff(
+                        "SOURCE_RECEIPT",
+                        receipt_id,
+                        provider=self.provider,
+                        actor=self.actor,
+                        action="SEARCH" if action == "SEARCH" else "READ",
+                    )
+            except PrivacyDenied:
+                if required:
+                    raise
+                return False
         return allowed
 
     def call(self, values):
@@ -263,6 +288,7 @@ class Guard:
 
 
 @mutation_context
+@privacy.contextual
 @contextmanager
 def scope(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     with synthetic_queue_atomic():

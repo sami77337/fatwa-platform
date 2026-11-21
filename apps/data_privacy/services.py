@@ -168,11 +168,13 @@ class Principal:
 
 def staff_principal(provider, actor):
     directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
+    from apps.ai_gateway.identity import SessionDirectory
     from apps.casework_web.access import RequestDirectory
 
     if not isinstance(directory, MuftiIdentityProvider) or not (
         provider is directory
         or (type(provider) is RequestDirectory and provider._provider is directory)
+        or (type(provider) is SessionDirectory and provider._provider is directory)
         or (
             type(provider) is operational_identity.RequestDirectory
             and provider.directory is directory
@@ -340,11 +342,11 @@ class Projection:
 
 
 @contextmanager
-def projection():
+def projection(*, atomic=True):
     guard = Projection()
     token = SCOPES.set((*SCOPES.get(), guard))
     try:
-        with synthetic_queue_atomic() if enabled() else nullcontext():
+        with synthetic_queue_atomic() if enabled() and atomic else nullcontext():
             yield guard
             guard.finish()
     finally:
@@ -358,6 +360,11 @@ def require(kind, identifier, *, principal, action="READ"):
         return None
     if not SCOPES.get():
         with projection():
+            return require(kind, identifier, principal=principal, action=action)
+    if not connection.in_atomic_block:
+        # A response may retain pins across multiple short reads and an external
+        # call. Only each current source admission holds the owned transaction.
+        with synthetic_queue_atomic():
             return require(kind, identifier, principal=principal, action=action)
     selected = policy()
     target = locate(kind, identifier)
@@ -385,6 +392,7 @@ def classify(
     provider,
     subject_id,
     synthetic_fixtures_only=False,
+    session_deadline=None,
 ):
     cases._guard(synthetic_fixtures_only)
     selected = policy()
@@ -393,6 +401,12 @@ def classify(
     key = cases._uuid(request_key)
     target = locate(kind, identifier)
     actor = operational_identity.validate(provider.resolve(subject_id), subject_id=subject_id)
+    if session_deadline is not None:
+        from dataclasses import replace
+
+        if not operational_identity.valid_deadline(session_deadline):
+            raise PrivacyDenied("privacy_session_expired")
+        actor = replace(actor, valid_until=min(actor.valid_until, session_deadline))
     principal = staff_principal(provider, actor)
     if target.case_ref and target.case_ref not in actor.case_keys:
         raise PrivacyDenied("privacy_classification_scope_denied")

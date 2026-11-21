@@ -1,0 +1,42 @@
+name: Isolated development containers
+on:
+  pull_request:
+    paths:
+      - 'infra/containers/**'
+      - '.github/workflows/container-development.yml'
+      - 'apps/**'
+      - 'config/**'
+      - 'templates/**'
+      - 'requirements.txt'
+      - 'infra/dev/with_casework_postgres.py'
+      - 'tests/casework/test_campaign.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['17', '18']
+    env:
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Build committed source and run owned database checks without runtime networking
+        run: python infra/containers/verify.py --postgres '${{ matrix.postgres }}'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: development-container-pg${{ matrix.postgres }}
+          path: .local/qa/containers
+          include-hidden-files: true
+          if-no-files-found: error

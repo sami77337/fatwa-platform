@@ -126,3 +126,18 @@ The complete owned service/native/recovery set after this follow-up is **24/24 P
 on PostgreSQL 17.11 (24.434 seconds) and PostgreSQL 18.7 (24.601 seconds), recorded in
 `identity-directory-pg17.log` and `identity-directory-pg18.log`. The existing three
 recovery denial counters and hosted browser evidence requirement are unchanged.
+
+### Classification of actual identity origins
+
+Current case `READ` classification and the exact original `SOURCE_RECEIPT` are
+additional conditions for capture, detail, audit and intentional registry writes.
+Search requires independent `SEARCH` permission on both sources before names,
+people or group counts are assembled. A hidden case is omitted from discovery;
+an explicitly selected hidden origin is denied. The existing identity authority,
+source-bound provenance, independent human verification and optimistic guards
+continue to apply. There is no invented global `IDENTITY` classification target.
+
+The outer privacy context outlives registry permission callbacks. A late privacy
+withdrawal discards the projection and rolls back the intentional command.
+`apps.identity_registry.privacy_tests` proves origin-level capture denial,
+independent search authorization and rollback after the last domain callback.

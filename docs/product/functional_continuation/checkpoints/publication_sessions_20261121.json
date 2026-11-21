@@ -77,6 +77,34 @@
       "status": "PASS_PURE_FIXTURES_NOT_RUNTIME_PROOF",
       "bytes": 1829,
       "sha256": "75f40ed0b87f0be5a9bd909b4ba376655edfd75d51b311518b9d6fbfe3e607c6"
+    },
+    {
+      "kind": "native-session-route-and-encrypted-restore",
+      "postgres_major": 17,
+      "source_local_commit": "d7eb928229402105bf19037058f5a29151c18509",
+      "status": "PASS_FOCUSED_AND_LOCAL_ENCRYPTED_RESTORE",
+      "tests": 3,
+      "tables": 88,
+      "helpers": 35,
+      "denials": 227,
+      "log_name": "sessions-native-recovery95-pg17.log",
+      "bytes": 59414,
+      "sha256": "a7a85049ec877435259fb83a347416a7c487cb140ff3f3f56dcbcd4e214d34ff",
+      "recovery_report_sha256": "df3cdb6341f67670020141fa9ef84b390f9df1d58a706e083a1dcfd16671e81b"
+    },
+    {
+      "kind": "native-session-route-and-encrypted-restore",
+      "postgres_major": 18,
+      "source_local_commit": "d7eb928229402105bf19037058f5a29151c18509",
+      "status": "PASS_FOCUSED_AND_LOCAL_ENCRYPTED_RESTORE",
+      "tests": 3,
+      "tables": 88,
+      "helpers": 35,
+      "denials": 227,
+      "log_name": "sessions-native-recovery95-pg18.log",
+      "bytes": 59413,
+      "sha256": "0add499ead50201f14b75bc18c561c4b0286df87389ec4c8b1bec7b8690fc700",
+      "recovery_report_sha256": "6cafda2dab25fa9ec035879dc0425a03295ca7a587a22ea8152b0e2a33a16e4e"
     }
   ],
   "preserved_failures": [
@@ -94,13 +122,49 @@
       "reported_tests_per_major": 20,
       "failed_per_major": 1,
       "status": "FAILED_NOT_CREDITED_AS_WHOLE_SUITE"
+    },
+    {
+      "kind": "hosted-fast9-startup",
+      "head_sha": "3c4c1d7ceabc2492423bddb88afeebb7e76f1b63",
+      "tested_merge_sha": "10c50503c7b8aa2bbd85aa641f6b609c38ca50a9",
+      "run": 44901056859,
+      "job": 136836839662,
+      "artifact": 14706275772,
+      "artifact_sha256": "61d748d377e55f3904222794bdc54a3f1ebf65cda8ba59efc42df6125bb6a378",
+      "stage": "browser_startup",
+      "timeout_ms": 10000,
+      "views": [],
+      "retry": "ONE_UNCHANGED_ISOLATED_JOB_RETRY_PASSED",
+      "status": "FAILED_FIRST_ATTEMPT_NOT_RETROACTIVELY_CHANGED",
+      "retry_job": 136837361202
+    },
+    {
+      "kind": "hosted-ai-browser-stall",
+      "head_sha": "b9d87e255d3dc69e51493e433b43288ff195b039",
+      "run": 44898331577,
+      "status": "CANCELLED_AT_45_MINUTES_NOT_CREDITED",
+      "browser_journeys_completed_per_major": 40,
+      "next_journey": "apps.ai_gateway.browser_tests.CitationGatewayBrowserTests.test_native_candidates_original_human_handoff_failure_revocation_and_manual_citation",
+      "cause": "NOT_YET_CONFIRMED; the last completed capture shows original and unsaved draft. A bounded native diagnostic gate records subsequent stages and thread stacks without changing the protected browser or assertions.",
+      "artifacts": [
+        {
+          "postgres_major": 17,
+          "id": 14706540953,
+          "sha256": "a7051f2fae1647d390f7ce70eb7e1f4f27fa61320d4756df386ddddb357d66c7"
+        },
+        {
+          "postgres_major": 18,
+          "id": 14706421359,
+          "sha256": "d7565b310a85ba2aac1937169eaf9cc5e8a71781ca8f9679c288572b76d95492"
+        }
+      ]
     }
   ],
   "partial_saved_work": [
     {
       "module": "apps.data_privacy",
-      "status": "PRIVATE_HOOKS_AND_LEDGER_SAVED_NOT_INSTALLED_OR_COUNTED",
-      "remaining": "Public derivative, search, export, source, AI and notification hooks, native classification editor and integrated protected-browser/recovery evidence remain in progress."
+      "status": "LEDGER_PRIVATE_PUBLIC_SOURCE_SEARCH_EXPORT_AI_NATIVE_EDITOR_SAVED_NOT_INSTALLED_OR_COUNTED",
+      "remaining": "Final public dependency, operational, scholarly graph and exact-source composition plus protected-browser/recovery evidence remain in progress. Partial hooks are saved without enabling the application."
     }
   ],
   "scope_limits": [

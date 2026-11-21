@@ -63,6 +63,13 @@ def allowed(actor, provider, case, action, resource):
         )
         if policy.permits(**arguments) is not True:
             return False
+        from apps.data_privacy.resource_hooks import research as privacy
+        from apps.data_privacy.services import PrivacyDenied
+
+        try:
+            privacy(case, actor, provider, action, resource)
+        except PrivacyDenied:
+            return False
         # A legacy/custom workspace policy cannot replace the authoritative ledger.
         # Case media continues to require its explicit separate policy.
         if strict and resource.kind not in {"ATTACHMENT", "ANSWER_MEDIA"}:

@@ -226,6 +226,12 @@ class CaseworkGuard:
         if re.fullmatch(r"(?:127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", host) is None:
             return denied("casework_host_invalid", 400)
         methods = ROUTES.get(request.path)
+        if request.path in {BASE + "staff/privacy/", BASE + "operations/privacy/"}:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", False) is True
+                else None
+            )
         if methods is None and (
             PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
             or LIBRARY_MEDIA_ROUTE.fullmatch(request.path)

@@ -182,6 +182,11 @@ def _transcript(guard, actor, transcript_id, *, reviewed=False):
     )
     if row is None:
         raise cases.CaseConflict("recording_transcript_unavailable")
+    from apps.data_privacy.integration import original_action
+    from apps.data_privacy.integration import staff as privacy
+
+    privacy("RECORDING_TRANSCRIPT", row.pk, provider=guard.provider, actor=actor,
+            action=original_action())
     _verify(row)
     part, pins, raw = _source(guard, actor, row.part_id)
     if pins != row.source_pins or sha256(row.text.encode()).hexdigest() != row.text_sha256:
@@ -768,6 +773,17 @@ def desk_projection(**common):
             part, pins, _ = _source(guard, actor, part.pk)
             guard.permit(actor, "READ_TRANSCRIPT", _resource(part))
             all_rows = list(RecordingTranscript.objects.filter(part=part).order_by("number"))
+            from apps.data_privacy.integration import staff as privacy
+            from apps.data_privacy.services import PrivacyDenied
+
+            admitted = []
+            for version in all_rows:
+                try:
+                    privacy("RECORDING_TRANSCRIPT", version.pk, provider=guard.provider, actor=actor)
+                except PrivacyDenied:
+                    continue
+                admitted.append(version)
+            all_rows = admitted
             latest = all_rows[-1] if all_rows else None
             saved_segments = latest.segments if latest else []
             inputs = []
@@ -928,6 +944,10 @@ def search_projection(**common):
                 continue
             candidate = Boundary(guard.case, guard.provider)
             try:
+                from apps.data_privacy.integration import staff as privacy
+
+                privacy("RECORDING_TRANSCRIPT", record.pk, provider=guard.provider,
+                        actor=actor, action="SEARCH")
                 row, part, _, _ = _transcript(candidate, actor, record.pk, reviewed=True)
                 candidate.before_write()
             except cases.CaseConflict:

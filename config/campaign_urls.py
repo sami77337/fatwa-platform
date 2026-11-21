@@ -14,7 +14,23 @@ from apps.research_workspace.views import styles as research_styles
 from apps.team_workspace.urls import urlpatterns as team_patterns
 from apps.timed_citations import views as timed_citations
 
+
+def privacy_workspace(request):
+    # Keep the optional editor lazy while its explicit feature remains closed.
+    from django.conf import settings
+
+    from apps.casework_web.guard import denied
+
+    if getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", False) is not True:
+        return denied("privacy_management_unavailable", 404)
+    from apps.data_privacy.views import workspace
+
+    return workspace(request)
+
+
 urlpatterns = [
+    path("casework/staff/privacy/", privacy_workspace),
+    path("casework/operations/privacy/", privacy_workspace),
     path("casework/sessions/", include("apps.staff_sessions.urls")),
     path("casework/operations/sessions/", include("apps.staff_sessions.urls")),
     path("", include("apps.operational_workspace.urls")),

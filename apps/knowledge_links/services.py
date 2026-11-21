@@ -59,14 +59,11 @@ def _recheck(case, actor, provider):
 @contextmanager
 def _edition(publication_id, subject_id, provider, synthetic_fixtures_only):
     _enabled()
-    # UUID is an identifier, never a capability. Use the existing scoped library
-    # projection; never expose case IDs or silently treat a candidate as published.
-    visible = publications.library(
-        subject_id=subject_id, provider=provider, synthetic_fixtures_only=synthetic_fixtures_only
-    )
-    if str(publication_id) not in {row["id"] for row in visible}:
+    # Direct open retains the exact current case and publication checks below.
+    # It must not borrow search permission or reveal unrelated library rows.
+    edition = PublicationEdition.objects.filter(pk=cases._uuid(publication_id)).first()
+    if edition is None:
         raise cases.CaseConflict("knowledge_publication_unavailable")
-    edition = PublicationEdition.objects.get(pk=cases._uuid(publication_id))
     with (
         cases._staff_case(edition.case_id, subject_id, provider, synthetic_fixtures_only) as (
             case, actor,
@@ -120,6 +117,13 @@ def _transcripts_locked(edition):
     for link in TranscriptLink.objects.filter(case_id=edition.case_id).select_related(
         "upload", "evidence", "event"
     ):
+        from apps.data_privacy.resource_hooks import transcript as privacy
+        from apps.data_privacy.services import PrivacyDenied
+
+        try:
+            privacy(edition.case, link.pk)
+        except PrivacyDenied:
+            continue
         raw = bytes(link.upload.bundle)
         if sha256(raw).hexdigest() != link.upload.sha256:
             raise cases.CaseConflict("transcript_binding_inconsistent")
@@ -145,6 +149,9 @@ def _permits_material(case, *, source=None, transcript_id=None, usage):
     if source is not None:
         return citations._permits_source(case, source, usage)
     try:
+        from apps.data_privacy.resource_hooks import transcript as privacy
+
+        privacy(case, transcript_id)
         rights = citations._rights_services()
         return (
             rights is None
@@ -158,6 +165,10 @@ def _permits_material(case, *, source=None, transcript_id=None, usage):
 
 
 def _row_permitted(case, row, usage):
+    from apps.data_privacy.integration import allowed as privacy_allowed
+
+    if not privacy_allowed("KNOWLEDGE_REVISION", row.pk):
+        return False
     return _permits_material(
         case,
         source={key: row.snapshot[key] for key in ("source", "source_sha256")}
@@ -365,6 +376,10 @@ def browse(*, publication_id, subject_id, provider, query="", synthetic_fixtures
         case,
         _actor,
     ):
+        from apps.data_privacy.integration import allowed as privacy_allowed
+        from apps.data_privacy.integration import current as privacy
+
+        privacy("CASE", case.pk, action="SEARCH")
         results = []
         rows = KnowledgeRevision.objects.filter(publication=edition).order_by("series", "-number")
         seen = set()
@@ -373,6 +388,8 @@ def browse(*, publication_id, subject_id, provider, query="", synthetic_fixtures
                 continue
             seen.add(row.series)
             if _state(row) != "APPROVED":
+                continue
+            if not privacy_allowed("KNOWLEDGE_REVISION", row.pk, action="SEARCH"):
                 continue
             try:
                 _verified(row, edition, subject_id, provider)
@@ -424,6 +441,9 @@ def _open_material(
         ).first()
         if row is None:
             raise cases.CaseConflict("knowledge_revision_unavailable")
+        from apps.data_privacy.integration import current as privacy
+
+        privacy("KNOWLEDGE_REVISION", row.pk)
         _latest(row)
         if _state(row) not in ({"PROPOSED", "APPROVED"} if preview else {"APPROVED"}):
             raise cases.CaseConflict("knowledge_approved_relation_required")
@@ -487,6 +507,10 @@ def desk(*, publication_id, subject_id, provider, synthetic_fixtures_only=False)
         for row in KnowledgeRevision.objects.filter(publication=edition).order_by(
             "series", "-number"
         ):
+            from apps.data_privacy.integration import allowed as privacy_allowed
+
+            if not privacy_allowed("KNOWLEDGE_REVISION", row.pk):
+                continue
             history.append(
                 {
                     "id": str(row.pk),
@@ -545,6 +569,10 @@ def history(*, publication_id, subject_id, provider, synthetic_fixtures_only=Fal
         for row in KnowledgeRevision.objects.filter(publication=edition).order_by(
             "series", "-number"
         ):
+            from apps.data_privacy.integration import allowed as privacy_allowed
+
+            if not privacy_allowed("KNOWLEDGE_REVISION", row.pk):
+                continue
             if row.snapshot_sha256 != _digest(row.snapshot):
                 raise cases.CaseConflict("knowledge_snapshot_changed")
             rows.append(

@@ -35,6 +35,12 @@ TARGETS = {
         "sha256",
         "series_version__series__case_id",
     ),
+    "KNOWLEDGE_REVISION": (
+        "knowledge_links.KnowledgeRevision",
+        "snapshot_sha256",
+        "publication__case_id",
+    ),
+    "SERIES_VERSION": ("scholarly_links.SeriesVersion", "sha256", "series__case_id"),
 }
 
 

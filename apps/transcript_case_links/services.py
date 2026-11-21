@@ -156,6 +156,10 @@ def read_links(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             .select_related("upload", "evidence", "event")
             .order_by("evidence__version")
         ):
+            from apps.data_privacy.integration import allowed as privacy_allowed
+
+            if not privacy_allowed("TRANSCRIPT_LINK", link.pk):
+                continue
             raw = bytes(link.upload.bundle)
             if sha256(raw).hexdigest() != link.upload.sha256:
                 raise cases.CaseConflict("transcript_binding_inconsistent")

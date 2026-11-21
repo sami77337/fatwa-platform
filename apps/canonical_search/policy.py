@@ -189,6 +189,15 @@ class Scope:
             raise cases.CaseConflict("search_authority_unavailable") from exc
         if result is not True:
             raise cases.CaseConflict("search_action_denied")
+        from apps.data_privacy.integration import staff as privacy
+
+        privacy(
+            "CASE",
+            case.pk,
+            provider=self.provider,
+            actor=self.actor,
+            action="SEARCH" if action in {"SEARCH", "REBUILD"} else "READ",
+        )
 
     def read(self, case):
         result = self._read(case)
@@ -197,7 +206,11 @@ class Scope:
 
     def _read(self, case):
         result = sources.read(
-            case, self.actor, self.provider, transcripts_available=self.source_policy[0]
+            case,
+            self.actor,
+            self.provider,
+            transcripts_available=self.source_policy[0],
+            privacy_action="SEARCH" if self.action in {"SEARCH", "REBUILD"} else "READ",
         ) + self.recordings.read(case)
         if len(result) > sources.MAX_DOCUMENTS:
             raise cases.CaseConflict("search_document_capacity")
@@ -258,7 +271,11 @@ def boundary(
             raise cases.CaseConflict("search_dictionary_case_scope_required")
     enabled()
     cases._guard(synthetic_fixtures_only)
-    with synthetic_queue_atomic(), ExitStack() as stack:
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
+    with projection(), synthetic_queue_atomic(), ExitStack() as stack:
         identity = identity_snapshot(provider)
         initial = snapshot()
         actor = resolve_identity(provider, subject_id)
@@ -271,10 +288,25 @@ def boundary(
         stack.enter_context(_projection_expiry_guard())
         locked = {}
         for pk in ids:
-            case, current = stack.enter_context(cases._staff_case(pk, subject_id, provider, True))
+            try:
+                privacy(
+                    "CASE",
+                    pk,
+                    provider=provider,
+                    actor=actor,
+                    action="SEARCH" if action in {"SEARCH", "REBUILD"} else "READ",
+                )
+                case, current = stack.enter_context(
+                    cases._staff_case(pk, subject_id, provider, True)
+                )
+            except PrivacyDenied:
+                continue
             if _actor(current) != _actor(actor):
                 raise cases.CaseConflict("search_identity_changed")
             locked[str(pk)] = case
+        if str(cases._uuid(case_id)) not in locked:
+            raise cases.CaseConflict("search_case_scope_unavailable")
+        ids = [case.pk for case in locked.values()]
         # Take the source/index snapshot only after all canonical locks are held.
         # This admits an exact idempotent replay after a concurrent rebuild.
         # Earlier identity callbacks cannot leave stale in-memory case pointers.

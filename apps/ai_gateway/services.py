@@ -15,6 +15,9 @@ from django.conf import settings
 from django.db import connection
 
 from apps.casework import services as cases
+from apps.data_privacy import integration as privacy
+from apps.data_privacy import services as privacy_policy
+from apps.data_privacy.catalog import locate as classified_source
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import IdentityUnavailable
 from apps.platform_recovery.integration import mutation_context, mutation_service
@@ -140,6 +143,42 @@ class Grants:
         self.pure_check()
 
 
+def privacy_context(guard, case, actor, kind, identifier):
+    """Classify only existing sources, before their text becomes a provider input.
+
+    Source ownership is internal lookup metadata. Reading or citing that source
+    never substitutes for the independently configured AI processing grant.
+    """
+    target = classified_source("LIBRARY_VERSION" if kind == "LIBRARY" else "ANSWER", identifier)
+    resources = [("CASE", str(case.pk))]
+    if target.case_id != str(case.pk):
+        resources.append(("CASE", target.case_id))
+    resources.append((target.kind, target.identifier))
+    pins = tuple(
+        (
+            resource_kind,
+            resource_id,
+            action,
+            privacy.staff(
+                resource_kind,
+                resource_id,
+                provider=guard.provider,
+                actor=actor,
+                action=action,
+            ),
+        )
+        for resource_kind, resource_id in resources
+        for action in ("READ", "AI")
+    )
+    if all(pin[3] is None for pin in pins):
+        return None
+    authority, epoch = privacy_policy.policy()
+    # Preserve the configured authority and its complete pure epoch across the
+    # provider gap, in addition to each exact source/classification digest.
+    return id(authority), authority, epoch, pins
+
+
+@privacy.contextual
 @contextmanager
 def authorized(
     base, *, revision, evidence, query_digest, selection=None, start=None, end=None, run=None
@@ -167,6 +206,7 @@ def authorized(
                 ):
                     raise cases.CaseConflict("ai_gateway_run_audience_changed")
                 pin = run.source
+                privacy_snapshot = privacy_context(guard, case, actor, pin["kind"], pin["id"])
                 live = sources.read(guard, pin, owner_case_id=case.pk)
             else:
                 if (
@@ -182,6 +222,8 @@ def authorized(
                     or end - start > MAX_WINDOW
                 ):
                     raise cases.CaseConflict("ai_gateway_window_invalid")
+                source_kind, source_id = selection.split(":")
+                privacy_snapshot = privacy_context(guard, case, actor, source_kind, source_id)
                 pin, live = sources.select(
                     guard,
                     selection,
@@ -223,6 +265,7 @@ def authorized(
                 library.identity_snapshot(guard.provider),
                 library.identity_snapshot(guard.directory),
                 library.policy_snapshot() if pin["kind"] == "LIBRARY" else None,
+                privacy_snapshot,
             )
             grants.pure_check()
             yield dict(

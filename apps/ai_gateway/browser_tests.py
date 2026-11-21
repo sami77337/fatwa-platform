@@ -1,12 +1,14 @@
 """One protected native journey, requiring real campaign wiring, never patched UI."""
 
+import faulthandler
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from django.db import close_old_connections, connections
+from django.db import close_old_connections, connection, connections
 from django.test import LiveServerTestCase, override_settings
 
 from apps.casework.models import AnswerRevision
@@ -22,16 +24,36 @@ OUT = Path(".local/qa/functional-continuation/ai-citation-browser")
 class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
     host = "127.0.0.1"
 
+    def step(self, name):
+        with (OUT / "progress.jsonl").open("a") as output:
+            output.write(json.dumps({"step": name, "monotonic": time.monotonic()}) + "\n")
+
     def sync(self, function):
+        self.step("database_probe_begin")
+
         def operation():
             close_old_connections()
             try:
+                # These are read-only test probes, not native service requests.
+                # A blocked connection/query must report a failure instead of
+                # making ThreadPoolExecutor.__exit__ wait beyond its future.
+                connection.settings_dict = {
+                    **connection.settings_dict,
+                    "OPTIONS": {
+                        **connection.settings_dict.get("OPTIONS", {}),
+                        "connect_timeout": 10,
+                    },
+                }
+                with connection.cursor() as cursor:
+                    cursor.execute("SET statement_timeout = '15s'")
                 return function()
             finally:
                 connections.close_all()
 
         with ThreadPoolExecutor(max_workers=1) as pool:
-            return pool.submit(operation).result(timeout=30)
+            result = pool.submit(operation).result(timeout=30)
+        self.step("database_probe_complete")
+        return result
 
     def submit(self, page, button):
         with page.expect_navigation(wait_until="domcontentloaded") as response:
@@ -40,6 +62,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
         self.assertEqual(response.value.status, 200, page.locator("body").inner_text()[:1000])
 
     def panel_submit(self, page, button, *, expected=200):
+        self.step("panel_submit_begin")
         previous = page.locator("#ai-citation-result").get_attribute("data-next-state")
         with page.expect_response(
             lambda response: (
@@ -50,6 +73,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
             button.focus()
             button.press("Enter")
         self.assertEqual(response.value.status, expected, response.value.body()[:1000])
+        self.step("panel_response_received")
         if expected == 200:
             page.wait_for_function(
                 "previous => { const state = document.querySelector('#ai-citation-result').dataset.nextState; return Boolean(state) && state !== previous; }",
@@ -58,6 +82,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
             self.assertIn("no-store", response.value.headers.get("cache-control", ""))
         else:
             page.locator('#ai-citation-result[data-run-status="UNAVAILABLE"]').wait_for()
+        self.step("panel_submit_complete")
 
     def capture(self, page, name):
         for width in (320, 1280):
@@ -65,6 +90,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
             self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
             self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), width)
             page.screenshot(path=str(OUT / f"{name}-{width}.png"), full_page=True)
+        self.step("captured_" + name)
 
     def test_native_candidates_original_human_handoff_failure_revocation_and_manual_citation(self):
         from playwright.sync_api import sync_playwright
@@ -73,6 +99,11 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
             self.fail("Protected browser proof requires FATWA_BROWSER_SANDBOX=1")
         OUT.mkdir(parents=True, exist_ok=True)
         (OUT / "result.json").unlink(missing_ok=True)
+        (OUT / "progress.jsonl").write_text("")
+        diagnostics = self.enterContext((OUT / "thread-stacks.log").open("w"))
+        faulthandler.dump_traceback_later(60, repeat=True, file=diagnostics)
+        self.addCleanup(faulthandler.cancel_dump_traceback_later)
+        self.step("started")
         errors, external, payloads = [], [], []
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(
@@ -100,6 +131,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
 
             context.route("**/*", route)
             context.tracing.start(screenshots=True, snapshots=True)
+            tracing = True
             page = context.new_page()
             page.on("pageerror", lambda error: errors.append(str(error)))
             try:
@@ -236,6 +268,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
                 )
                 self.assertGreater(self.sync(lambda: CandidateBatch.objects.count()), 0)
                 context.tracing.stop(path=str(OUT / "native-trace.zip"))
+                tracing = False
                 (OUT / "result.json").write_text(
                     json.dumps(
                         dict(
@@ -264,5 +297,9 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
                     )
                 )
             finally:
+                self.step("browser_cleanup_begin")
+                if tracing:
+                    context.tracing.stop(path=str(OUT / "failed-native-trace.zip"))
                 context.close()
                 browser.close()
+                self.step("browser_cleanup_complete")

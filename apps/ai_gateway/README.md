@@ -256,3 +256,49 @@ page opened by the container's `socket() failed: Operation not permitted` and
 `ai-citation-browser-pg17.log`; no browser PASS or quality acceptance is claimed.
 The actual campaign integration and hosted protected browser proof remain gates
 for the integrator before counting this unit as an accepted native journey.
+
+### Current classification at the processing boundary
+
+When the classification ledger applies, the owner case, the selected source case
+and the exact `LIBRARY_VERSION` or `ANSWER` require separate `READ` and `AI` grants
+before source text enters a `SourceWindow`. Existing case/source read, citation and
+gateway processing grants remain required independently. No class label grants
+permission by itself. Unknown sources fail closed; a saved label cannot be
+bypassed by disabling classification enforcement.
+
+The two short authorization stages retain their classification/source digests
+and the configured privacy authority's identity and pure generation. A change
+during the provider call rejects its result and leaves only the existing
+`REVOKED` run audit; there is no candidate batch or late handoff. Opening or
+selecting a previously saved batch repeats current classification authorization.
+Only the exact native `SessionDirectory` wrapping the configured directory is
+accepted; subclasses and alternate directories acquire no additional trust.
+
+The provider still runs outside a database transaction. Composition uses
+`PrivacyResponses` with its response-wide pure pins and short authorization
+transactions, not an outer transaction around the external adapter. No provider,
+model, network access, production permission or scholarly quality acceptance is
+added by these hooks.
+
+Regression labels: `apps.ai_gateway.privacy_tests` and
+`apps.ai_gateway.privacy_http_tests`. The latter exercises the actual campaign
+guard/routes/rendering with classified sources, native AI request/open/selection,
+mid-provider privacy revocation, and native staff-session fresh authentication
+and explicit revocation with privacy enabled. These are PostgreSQL/native HTTP
+tests; they do not claim a new protected-browser acceptance run. The consumer
+integration requires the privacy app, catalog, current library hooks and the
+non-transactional response guard; no new tables or recovery helper are introduced.
+
+The focused failure-first consumer run exposed 11 failed assertions out of 12
+tests before these hooks (`privacy-consumers-before-configured-pg17.log`). A
+separate approved-answer source regression then failed when `AI` was granted
+without `READ` (`privacy-ai-answer-before-pg17.log`); both actions are now required.
+The final combined service/native HTTP/recovery regression passed **131/131** on
+PostgreSQL 17.11 in 124.812 seconds and PostgreSQL 18.7 in 126.964 seconds, with
+fresh owned clusters and `apps.data_privacy.settings` on 2026-11-21. The set
+includes 19 new classified-consumer assertions plus existing AI, data-quality
+(including its review regressions), team updates, identity-registry and privacy
+ledger tests. Logs are `privacy-consumers-final-pg17.log` and
+`privacy-consumers-final-pg18.log` in the surrounding recovery workspace.
+Ruff check/format and `git diff --check` passed. No protected-browser acceptance
+or production grant is inferred from these local results.
