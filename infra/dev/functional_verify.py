@@ -59,6 +59,7 @@ LABELS = [
     "apps.case_attachments.storage_gc_tests",
     "apps.canonical_search.tests",
     "apps.canonical_search.test_http",
+    "apps.canonical_search.test_taxonomy",
     "apps.canonical_search.test_rights",
     "apps.canonical_search.test_recovery",
     "apps.canonical_search.test_recordings",

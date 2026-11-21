@@ -14,7 +14,7 @@ from django.db.models.functions import Least
 from apps.casework import services as cases
 from apps.platform_recovery.integration import mutation_service
 
-from . import policy, sources
+from . import policy, sources, taxonomy
 from .models import SearchDocument, SearchGeneration
 from .text import FUZZY_THRESHOLD, PROFILE, canonical, digest, normalize, query, text_digest
 
@@ -287,7 +287,8 @@ def _queryset(ids, value, mode, expansions=None):
     return rows.annotate(score=scores[0] if len(scores) == 1 else Least(*scores))
 
 
-def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1, expansions=None):
+def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1,
+                      expansions=None, eligible_case_ids=None, taxonomy_info=None):
     query(value, mode)
     if expansions is not None and mode != "FTS":
         raise cases.CaseConflict("search_dictionary_fts_only")
@@ -295,6 +296,8 @@ def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1, expansi
         raise cases.CaseConflict("search_query_invalid")
     allowed, cases_by_document, statuses = {}, {}, []
     for case in context.cases.values():
+        if eligible_case_ids is not None and str(case.pk) not in eligible_case_ids:
+            continue
         _, usable, status = _case_data(context, case)
         statuses.append(status)
         for identifier, source in usable.items():
@@ -330,7 +333,7 @@ def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1, expansi
                 "mode": mode,
             }
         )
-    return {
+    response = {
         "results": result,
         "total": len(matched),
         "limited": limited,
@@ -343,12 +346,25 @@ def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1, expansi
         "mode": mode,
         "kind": kind,
     }
+    if taxonomy_info is not None:
+        response["taxonomy"] = taxonomy_info
+    return response
 
 
 @mutation_service
-def search(*, value, mode="FTS", kind="ALL", page=1, scope="CASE", **base):
-    with policy.boundary(**base, action="SEARCH", scope=scope) as context:
-        return search_in_context(context, value=value, mode=mode, kind=kind, page=page)
+def search(*, value, mode="FTS", kind="ALL", page=1, scope="CASE",
+           taxonomy_version=None, taxonomy_node=None, taxonomy_children=False, **base):
+    # Taxonomy locks must precede canonical search locks to avoid inversion.
+    # Neither boundary releases its rights or source-version pins before return.
+    with taxonomy.reviewed_selector(
+        **base, version_id=taxonomy_version, node_id=taxonomy_node,
+        descendants=taxonomy_children,
+    ) as selection, policy.boundary(**base, action="SEARCH", scope=scope) as context:
+        eligible = selection.case_ids(context.cases) if selection else None
+        return search_in_context(
+            context, value=value, mode=mode, kind=kind, page=page,
+            eligible_case_ids=eligible, taxonomy_info=selection.info if selection else None,
+        )
 
 
 def open_in_context(context, *, case_id, generation_id, document_id):
