@@ -98,7 +98,10 @@ def requester_snapshot(
             answer = case.approved_answer
             if answer is None or answer.pk != decision.answer_id:
                 raise cases.CaseConflict("current_private_answer_unavailable")
-            private_answer = {"text": answer.text, "revision": answer.revision}
+            from apps.data_privacy.integration import allowed
+
+            if allowed("ANSWER", answer.pk):
+                private_answer = {"text": answer.text, "revision": answer.revision}
         private_media = {"available": False, "answer_revision": None, "part_count": None}
         if django_apps.is_installed("apps.answer_media"):
             from apps.answer_media.services import private_availability_for_locked_case

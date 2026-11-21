@@ -170,9 +170,13 @@ def staff_principal(provider, actor):
     directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
     from apps.casework_web.access import RequestDirectory
 
-    wrappers = (RequestDirectory, operational_identity.RequestDirectory)
     if not isinstance(directory, MuftiIdentityProvider) or not (
-        provider is directory or (type(provider) in wrappers and provider.directory is directory)
+        provider is directory
+        or (type(provider) is RequestDirectory and provider._provider is directory)
+        or (
+            type(provider) is operational_identity.RequestDirectory
+            and provider.directory is directory
+        )
     ):
         raise PrivacyDenied("privacy_current_directory_required")
     operational_identity.validate(actor)
@@ -329,7 +333,9 @@ class Projection:
             use.final_pins()
 
     def finish(self):
-        self.callbacks()
+        # Mandatory current callbacks ran in require(), before source consumption.
+        # A new callback here could revoke a source AFTER its domain's final pins.
+        # Adapters may explicitly call callbacks() before all final source pins.
         self.final_pins()
 
 

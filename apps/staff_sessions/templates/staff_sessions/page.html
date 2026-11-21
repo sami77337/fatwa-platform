@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>جلسات الحساب</title></head>
+<body><main><h1>جلسات الحساب</h1>
+<p>الإبطال يمنع الطلبات اللاحقة لهذه الجلسة، ويحفظ سجل عمل صاحبها.</p>
+{% if target %}
+<section aria-labelledby="chosen-session"><h2 id="chosen-session">تأكيد الجلسة المحددة</h2>
+<p>الحساب: <span>{{ target.subject_id }}</span></p><p>بدأت: {{ target.created_at }} — تنتهي: {{ target.expires_at }}</p>
+{% if proof %}<p role="status">تم التحقق من الهوية لهذه العملية. أكّد الإبطال لإتمامه.</p>{% endif %}
+{% if required and not proof %}
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="reauthenticate"><input type="hidden" name="target_id" value="{{ target.id }}"><input type="hidden" name="ticket" value="{{ ticket }}"><label>بيانات التحقق الحالية <input name="credential" type="password" autocomplete="current-password" minlength="32" maxlength="1024" required></label><button type="submit">إعادة التحقق لهذه العملية</button></form>
+{% else %}
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="revoke"><input type="hidden" name="target_id" value="{{ target.id }}"><input type="hidden" name="ticket" value="{{ ticket }}"><input type="hidden" name="proof_id" value="{% if proof %}{{ proof.id }}{% endif %}"><button type="submit">إبطال الجلسة المحددة</button></form>
+{% endif %}<p><a href="{{ request.path }}">العودة إلى الجلسات</a></p></section>
+{% endif %}
+<h2>جلسات حسابك</h2><ul>{% for row in rows %}<li><p>{% if row.current %}الجلسة الحالية{% else %}جلسة أخرى{% endif %} — {% if row.surface == 'CASEWORK' %}معالجة القضايا{% else %}التنظيم{% endif %}</p><p>بدأت: {{ row.created_at }} — تنتهي: {{ row.expires_at }}</p>{% if row.revoked %}<p>مبطلة</p>{% elif row.expired %}<p>منتهية</p>{% else %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="select"><input type="hidden" name="target_id" value="{{ row.id }}"><button type="submit">اختيار هذه الجلسة</button></form>{% endif %}</li>{% empty %}<li>لا توجد جلسات معروضة.</li>{% endfor %}</ul>
+<h2>جلسة محددة مصرح بها</h2><form method="post">{% csrf_token %}<input type="hidden" name="action" value="select"><label>معرّف الجلسة <input name="target_id" maxlength="36" required></label><button type="submit">عرض الجلسة المحددة</button></form>
+<p><a href="{% if surface == 'OPERATIONS' %}/casework/operations/{% else %}/casework/staff/{% endif %}">العودة إلى العمل</a></p>
+</main></body></html>

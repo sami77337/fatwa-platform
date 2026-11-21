@@ -4,6 +4,8 @@ The separate metadata editing and reviewed-classification unit is documented in
 [METADATA.md](METADATA.md), with its own default-off flag, grants and proof labels.
 The independent lesson-link actions for actual organizers are documented in
 [LESSON_LINKS.md](LESSON_LINKS.md), including exact resource grants and source preservation.
+The publication manager is documented in [PUBLICATION.md](PUBLICATION.md); it
+manages existing Mufti-prepared copies under independent exact grants.
 
 This development unit supplies the native operational queue described by original
 owner rows **495–500**. Its five lanes read real existing domain state: missing

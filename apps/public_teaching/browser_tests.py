@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from django.test import LiveServerTestCase, override_settings
+from django.urls import reverse
 
 from apps.answer_media import services as media
 from apps.public_answer_media.browser_tests import PublicAnswerMediaBrowserTests
@@ -213,6 +214,17 @@ class PublicTeachingBrowserTests(TeachingFixture, LiveServerTestCase):
                     ):
                         self.native_decision(page, ordered[0], command)
 
+                    metadata_path = reverse(
+                        "public_knowledge:lesson", args=[first_metadata.series_id]
+                    )
+                    self.assertEqual(reader.goto(origin + metadata_path).status, 200)
+                    metadata_link = reader.locator(
+                        f'a[href="/library-preview/teaching/lessons/{first[1]}/"]'
+                    )
+                    self.click(reader, metadata_link)
+                    self.assertEqual(reader.locator("audio[controls]").count(), 1)
+                    proof["metadata_to_exact_recording"] = True
+                    self.capture(reader, "metadata-to-released-recording", proof)
                     self.assertEqual(reader.goto(origin + "/library-preview/").status, 200)
                     self.click(reader, reader.locator('a[href="/library-preview/teaching/"]'))
                     self.capture(reader, "public-teaching-catalogue", proof)
@@ -304,6 +316,13 @@ class PublicTeachingBrowserTests(TeachingFixture, LiveServerTestCase):
                     proof["actual_material_download_sha256"] = sha256(raw).hexdigest()
 
                     self.native_decision(publisher, first[0], "WITHDRAW")
+                    self.assertEqual(reader.goto(origin + metadata_path).status, 200)
+                    self.assertEqual(
+                        reader.locator(
+                            f'a[href="/library-preview/teaching/lessons/{first[1]}/"]'
+                        ).count(),
+                        0,
+                    )
                     refused = reader.goto(origin + f"/library-preview/teaching/lessons/{first[1]}/")
                     self.assertEqual(refused.status, 404)
                     refused_bytes = reader.context.request.get(

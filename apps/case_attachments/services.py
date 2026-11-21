@@ -111,6 +111,8 @@ def _check(row):
 
 
 def _list(case):
+    from apps.data_privacy.integration import allowed
+
     rows = (
         CaseAttachment.objects.filter(case=case)
         .select_related("evidence", "event")
@@ -118,12 +120,17 @@ def _list(case):
     )
     result = []
     for row in rows:
+        if not allowed("ATTACHMENT", row.pk):
+            continue
         _check(row)
         result.append(_metadata(row))
     return {"public_ref": case.public_ref, "revision": case.revision, "attachments": result}
 
 
 def _read(case, attachment_id):
+    from apps.data_privacy.integration import current
+
+    current("ATTACHMENT", attachment_id)
     row = (
         CaseAttachment.objects.filter(case=case, pk=cases._uuid(attachment_id))
         .select_related("evidence", "event")

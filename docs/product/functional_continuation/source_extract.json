@@ -2,7 +2,7 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 76,
+  "specification_count": 79,
   "note": "Exact source objects copied from the pinned specification and decision inventories for 70 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
@@ -839,6 +839,39 @@
       "owner_points_source": "97",
       "source_spec_lines_unverified": "368–369",
       "parsed_index": 89,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U07-002",
+      "unit": "7",
+      "title": "المسؤوليات والصلاحيات",
+      "original_text": "7.2. المسؤوليات والصلاحيات\nاعتماد الجواب الشرعي للشيخ المخول. المنظم المخول يدير التوصيل والنشر بحسب صلاحياته، ويستطيع الشيخ إدارة وجهات إضافية متى كانت لديه الصلاحية المناسبة. تعمل العمليات الآلية ضمن سياسة تشغيل مصرح بها، ولا تقرر Luna إرسال فتوى أو نشرها أو اعتمادها. صلاحية التوصيل ليست تلقائيًا صلاحية نشر، والعكس صحيح.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "99، 494، 510، 534",
+      "source_spec_lines_unverified": "918–919",
+      "parsed_index": 203,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U14-013",
+      "unit": "14",
+      "title": "دخول الفريق والمصادقة الإضافية",
+      "original_text": "14.13. دخول الفريق والمصادقة الإضافية\nتبقى المصادقة القوية وMFA إلزاميتين للشيخ ومسؤول المنظم وفق D-037، وإعادة التحقق للعمليات الحساسة بحسب السياسة. لكل فعل نسبة إلى حساب صاحبه، ولا يُستخدم حساب شيخ مشترك للمنظمين. استعادة الحساب أو عامل التحقق لا تمنح صلاحيات إضافية ولا تتجاوز إثبات الملكية، وتخضع لمسار معتمد. لا نختار هنا تطبيق التحقق أو مزوده أو آجال الجلسات أو حقول تحقق جديدة لجميع السائلين.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "66، 405، 407",
+      "source_spec_lines_unverified": "1933–1934",
+      "parsed_index": 410,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U14-014",
+      "unit": "14",
+      "title": "تعطيل الحساب لا يمحو أعمال صاحبه",
+      "original_text": "14.14. تعطيل الحساب لا يمحو أعمال صاحبه\nيمكن إبطال الجلسات وتعطيل الحساب أو سحب صلاحية مع منع الأفعال اللاحقة غير المصرح بها. كتفصيل مقترح تظهر للإدارة القضايا والمسودات والمهام المتأثرة لتسليم العمل بشريًا بحسب صلاحياتها، وتراجع المهام المجدولة وفق سياسة تنفيذها بدل استمرارها بامتيازات مسحوبة. تبقى الأجوبة السابقة منسوبة إلى أصحابها الفعليين؛ تعطيل حساب الشيخ ليس إلغاءً تلقائيًا لفتاواه ولا حذفًا لتاريخها. ولا ننسب جوابًا قيد الإعداد إلى شخص جديد دون فعل واعتماد موثقين.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "406",
+      "source_spec_lines_unverified": "1937–1938",
+      "parsed_index": 411,
       "acceptance": "HOLD"
     }
   ],

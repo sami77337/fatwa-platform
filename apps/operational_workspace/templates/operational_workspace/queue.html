@@ -1,5 +1,6 @@
 {% extends "operational_workspace/base.html" %}
 {% block content %}
+{% if staff_sessions_url %}<p><a href="{{ staff_sessions_url }}">جلسات الحساب</a></p>{% endif %}
 <p id="ops-actor">المستخدم الحالي: <bdi>{{ queue.subject }}</bdi> — <bdi>{{ queue.role }}</bdi></p>
 <p>القائمة والأعداد تعرض الحالات والإجراءات المسموح لك بقراءتها حاليًا.</p>
 <nav aria-label="قوائم الإجراءات" id="ops-filters">
@@ -18,6 +19,9 @@
 {% for row in queue.transcript_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="transcript_editor">التفريغ والتحرير — {{ row.public_ref }}</button></form>{% endfor %}
 </details>{% endif %}
 <section id="ops-queue" aria-label="قضايا تحتاج إجراء">
+{% if queue.publication_cases %}<details id="ops-publication-index"><summary>إدارة نسخ النشر للقضايا المخولة</summary>
+{% for row in queue.publication_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="publication_manager">إدارة النشر — {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
 {% for row in queue.rows %}<article data-case-ref="{{ row.public_ref }}"><h2><bdi>{{ row.public_ref }}</bdi></h2><p>{{ row.stage }} — الوقائع {{ row.evidence_version }}</p>
 {% for section in row.pending %}<section data-section="{{ section.key }}"><h3>{{ section.label }}</h3><ul>{% for reason in section.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
 <form method="post" action="/casework/operations/">{% csrf_token %}<input type="hidden" name="action" value="detail"><input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="section" value="{{ section.key }}">عرض تفاصيل {{ section.label }}</button></form></section>{% endfor %}

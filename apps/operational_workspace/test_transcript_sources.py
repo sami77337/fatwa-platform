@@ -44,8 +44,7 @@ class ExactCitationAuthority(CitationAuthority):
         )
 
 
-@override_settings(**{**TRANSCRIPT_FEATURES, "FATWA_PRECISE_CITATIONS_ENABLED": True})
-class OperationalTranscriptSourceTests(TranscriptFixture, TransactionTestCase):
+class CitedTranscriptFixture(TranscriptFixture):
     def setUp(self):
         super().setUp()
         self.source = intake("organizer-transcript-exact-citation")
@@ -130,6 +129,9 @@ class OperationalTranscriptSourceTests(TranscriptFixture, TransactionTestCase):
     def save_values(self, **changes):
         return super().save_values(**{"expected_revision": 5, **changes})
 
+
+@override_settings(**{**TRANSCRIPT_FEATURES, "FATWA_PRECISE_CITATIONS_ENABLED": True})
+class OperationalTranscriptSourceTests(CitedTranscriptFixture, TransactionTestCase):
     def test_real_reviewed_cross_case_citation_allows_actual_organizer_derivative(self):
         self.assertTrue(
             CitationAnchor.objects.filter(

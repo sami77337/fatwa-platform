@@ -118,6 +118,15 @@ TRANSCRIPT_ACTIONS = frozenset(
         "READ_RECORDING_AUDIO",
     }
 )
+PUBLICATION_SECTION_ACTIONS = frozenset({"READ_PUBLICATION_MANAGER"})
+PUBLICATION_ACTIONS = frozenset(
+    {
+        "READ_PUBLICATION_EDITION",
+        "REVIEW_PUBLICATION_EDITION",
+        "APPROVE_PUBLICATION_EDITION",
+        "WITHDRAW_PUBLICATION_EDITION",
+    }
+)
 
 
 def note_feature_enabled():
@@ -146,6 +155,13 @@ def transcript_feature_enabled():
         getattr(settings, "FATWA_OPERATIONAL_TRANSCRIPTS_ENABLED", False) is True
         and getattr(settings, "FATWA_PUBLIC_ANSWER_MEDIA_ENABLED", False) is True
         and getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True
+    )
+
+
+def publication_feature_enabled():
+    return (
+        getattr(settings, "FATWA_OPERATIONAL_PUBLICATION_ENABLED", False) is True
+        and getattr(settings, "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED", False) is True
     )
 
 
@@ -291,6 +307,7 @@ class Guard:
         self.coordination_feature = coordination_feature_enabled()
         self.lesson_feature = lesson_feature_enabled()
         self.transcript_feature = transcript_feature_enabled()
+        self.publication_feature = publication_feature_enabled()
         self.deadline = min(actor.valid_until, deadline) if deadline else actor.valid_until
         self.permissions, self.profiles, self.derived_reads = [], {}, []
         self.adapters = []
@@ -311,6 +328,7 @@ class Guard:
             | METADATA_ACTIONS
             | LESSON_SECTION_ACTIONS
             | TRANSCRIPT_SECTION_ACTIONS
+            | PUBLICATION_SECTION_ACTIONS
             or case.pk not in self.locked
         ):
             raise cases.CaseConflict("operational_action_unavailable")
@@ -322,6 +340,8 @@ class Guard:
             raise cases.CaseConflict("operational_lesson_links_unavailable")
         if action in TRANSCRIPT_SECTION_ACTIONS and not self.transcript_feature:
             raise cases.CaseConflict("operational_transcripts_unavailable")
+        if action in PUBLICATION_SECTION_ACTIONS and not self.publication_feature:
+            raise cases.CaseConflict("operational_publication_unavailable")
         return self._permission(
             case,
             action,
@@ -352,6 +372,11 @@ class Guard:
                     and self.transcript_feature
                     and resource.get("kind")
                     in {"CASE_RECORDING_SOURCE", "CASE_RECORDING_TRANSCRIPT"}
+                )
+                or (
+                    action in PUBLICATION_ACTIONS
+                    and self.publication_feature
+                    and resource.get("kind") == "CASE_PUBLICATION_EDITION"
                 )
             )
             if type(resource) is dict
@@ -435,6 +460,7 @@ class Guard:
             LinkDecision,
             RecordingTranscript,
             TranscriptAction,
+            PublicationAction,
         }:
             raise cases.CaseConflict("operational_append_unavailable")
         if model is LinkDecision:
@@ -443,6 +469,8 @@ class Guard:
             case_id = row.lesson_link.case_id
         elif model is TranscriptAction:
             case_id = row.transcript.case_id
+        elif model is PublicationAction:
+            case_id = row.edition.case_id
         else:
             case_id = row.case_id
         table = model._meta.db_table
@@ -506,6 +534,7 @@ class Guard:
             or coordination_feature_enabled() != self.coordination_feature
             or lesson_feature_enabled() != self.lesson_feature
             or transcript_feature_enabled() != self.transcript_feature
+            or publication_feature_enabled() != self.publication_feature
             or getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None) is not self.directory
             or getattr(settings, "FATWA_COMPOSITE_DELIVERY_CAPABILITIES", None)
             is not self.capabilities

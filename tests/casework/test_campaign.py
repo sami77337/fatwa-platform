@@ -22,6 +22,7 @@ class CampaignProfileTests(SimpleTestCase):
 
         expected_middleware = [
             "apps.platform_recovery.middleware.MaintenanceGuard",
+            "apps.staff_sessions.middleware.SessionContext",
             "apps.material_api.middleware.MaterialAPIResponses",
             "apps.private_media.links.PrivateMediaResponses",
             *[
@@ -32,6 +33,9 @@ class CampaignProfileTests(SimpleTestCase):
             ],
         ]
         self.assertEqual(campaign_review.MIDDLEWARE, expected_middleware)
+        self.assertFalse(campaign_review.FATWA_STAFF_SESSIONS_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_RUNTIME_EPOCH)
         self.assertFalse(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_ENABLED)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_KEY)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_EPOCH)

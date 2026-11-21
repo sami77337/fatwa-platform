@@ -165,7 +165,9 @@ def topic(request, series_id):
 @safe_read
 def lesson(request, series_id):
     _query(request)
-    with public.projection() as snapshot:
+    from apps.public_teaching.navigation import knowledge_projection, lesson_links
+
+    with knowledge_projection() as (snapshot, teaching):
         _decorate(snapshot)
         row = snapshot.lesson(series_id)
         return _page(
@@ -177,6 +179,7 @@ def lesson(request, series_id):
             path=_url("lesson", series_id),
             crumbs=[{"title": row["title"], "url": row["url"]}],
             lesson=row,
+            recordings=lesson_links(snapshot, teaching, series_id),
         )
 
 

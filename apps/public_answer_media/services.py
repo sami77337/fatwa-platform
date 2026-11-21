@@ -485,7 +485,9 @@ def _publication(guard, publication_id):
     if end:
         guard.pin.deadlines.append(end)
     for event in (row, actions["REVIEW"], actions["APPROVE"]):
-        guard.actor(event.subject_id, event.auth_epoch, event.provider_id)
+        # Publication decisions concern the reviewed derivative. The canonical
+        # answer author/approver still resolve strictly as MUFTI in _source().
+        guard.editorial_actor(event.subject_id, event.auth_epoch, event.provider_id)
     return row
 
 

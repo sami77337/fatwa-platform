@@ -53,7 +53,11 @@ INSTALLED_APPS = [
     "apps.public_teaching",
     "apps.operational_workspace",
     "apps.ai_gateway",
+    "apps.staff_sessions",
 ]
+FATWA_STAFF_SESSIONS_ENABLED = False
+FATWA_STAFF_SESSION_AUTHORITY = None
+FATWA_STAFF_SESSION_RUNTIME_EPOCH = None
 FATWA_OPERATIONAL_WORKSPACE_ENABLED = False
 FATWA_OPERATIONAL_WORKSPACE_AUTHORITY = None
 FATWA_OPERATIONAL_INTERNAL_NOTES_ENABLED = False
@@ -61,6 +65,7 @@ FATWA_OPERATIONAL_METADATA_ENABLED = False
 FATWA_OPERATIONAL_LESSON_LINKS_ENABLED = False
 FATWA_OPERATIONAL_COORDINATION_ENABLED = False
 FATWA_OPERATIONAL_TRANSCRIPTS_ENABLED = False
+FATWA_OPERATIONAL_PUBLICATION_ENABLED = False
 FATWA_OPERATIONAL_PRIORITY_POLICY = None
 FATWA_AI_GATEWAY_ENABLED = False
 FATWA_AI_CITATION_CANDIDATES_ENABLED = False
@@ -191,6 +196,7 @@ TEMPLATES[0]["DIRS"] = [
 ]
 MIDDLEWARE = [
     "apps.platform_recovery.middleware.MaintenanceGuard",
+    "apps.staff_sessions.middleware.SessionContext",
     "apps.material_api.middleware.MaterialAPIResponses",
     "apps.private_media.links.PrivateMediaResponses",
     *[

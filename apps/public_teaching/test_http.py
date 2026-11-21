@@ -5,6 +5,7 @@ from dataclasses import replace
 from unittest.mock import patch
 
 from django.test import Client, TransactionTestCase, override_settings
+from django.urls import reverse
 
 from apps.public_answer_media.test_support import audio
 from apps.public_knowledge.models import PublicRevision
@@ -17,6 +18,108 @@ from .test_support import FEATURES, MATERIAL, TeachingFixture
 
 @override_settings(**FEATURES)
 class TeachingHTTPTests(TeachingFixture, TransactionTestCase):
+    def recorded_metadata(self):
+        _, metadata, other = self.metadata()
+        row = self.release_teaching(
+            self.save_teaching(
+                "LESSON",
+                title="تسجيل الدرس المرتبط بالنسخة الدقيقة",
+                lesson=services.selection(metadata),
+            )
+        )
+        return metadata, other, row
+
+    def test_curated_home_metadata_and_exact_recording_form_one_current_public_path(self):
+        from apps.public_collections import services as collections
+        from apps.public_collections.test_support import CollectionFixture, FixtureAuthority
+
+        metadata, other, row = self.recorded_metadata()
+        authority = FixtureAuthority(self.receipt["public_ref"], self.second["public_ref"])
+        with override_settings(
+            FATWA_PUBLIC_COLLECTIONS_ENABLED=True,
+            FATWA_PUBLIC_COLLECTIONS_AUTHORITY=authority,
+        ):
+            home = collections.save(
+                **self.common,
+                **self.pins(),
+                kind="HOME",
+                title="دروس منتقاة للصفحة العامة",
+                introduction="ترتيب بشري للنسخة المصرح بها",
+                members=[f"LESSON|{metadata.pk}|{metadata.sha256}"],
+                featured=True,
+                expected_version=0,
+                request_key=str(uuid.uuid4()),
+            )
+            for command in ("REVIEW", "APPROVE", "RELEASE"):
+                home = CollectionFixture.collection_action(self, home, command, **self.pins())
+            page = self.client.get("/library-preview/collections/")
+            metadata_url = reverse("public_knowledge:lesson", args=[metadata.series_id])
+            self.assertContains(page, f'href="{metadata_url}"')
+            self.assertContains(page, 'href="/library-preview/teaching/"')
+            page = self.client.get(metadata_url)
+            recording_url = reverse("teaching_lesson", args=[row["public_id"]])
+            self.assertContains(page, f'href="{recording_url}"')
+            self.assertNotContains(page, str(self.part.pk))
+            self.assertNotContains(page, self.receipt["public_ref"])
+            self.assertEqual(self.client.get(recording_url).status_code, 200)
+            original = self.client.get(
+                reverse("teaching_audio", args=[row["public_id"], 1]), HTTP_RANGE="bytes=0-43"
+            )
+            self.assertEqual(original.status_code, 206)
+            self.assertEqual(original.content, audio()[:44])
+            unrelated = self.client.get(reverse("public_knowledge:lesson", args=[other.series_id]))
+            self.assertNotContains(unrelated, recording_url)
+
+    def test_metadata_permission_does_not_reveal_denied_recording_link_or_count(self):
+        metadata, _, row = self.recorded_metadata()
+        self.teaching_authority.denied.add("PUBLIC_LESSON_CONTENT")
+        page = self.client.get(reverse("public_knowledge:lesson", args=[metadata.series_id]))
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, "lesson-recordings")
+        self.assertNotContains(page, row["title"])
+        self.assertNotContains(page, row["public_id"])
+
+    def test_unconfigured_optional_teaching_keeps_public_metadata_without_recording_grants(self):
+        metadata, _, row = self.recorded_metadata()
+        for settings in (
+            {"FATWA_PUBLIC_TEACHING_ENABLED": False},
+            {"FATWA_PUBLIC_TEACHING_PUBLIC_ENABLED": False},
+            {"FATWA_PUBLIC_TEACHING_AUTHORITY": None},
+        ):
+            with self.subTest(settings=settings), override_settings(**settings):
+                page = self.client.get(
+                    reverse("public_knowledge:lesson", args=[metadata.series_id])
+                )
+                self.assertEqual(page.status_code, 200)
+                self.assertNotContains(page, "lesson-recordings")
+                self.assertNotContains(page, row["public_id"])
+
+    def test_metadata_render_cannot_keep_recording_link_after_late_revocation(self):
+        from apps.public_knowledge import views as knowledge_views
+
+        metadata, _, row = self.recorded_metadata()
+        original = knowledge_views.render
+
+        def revoke(*args, **kwargs):
+            result = original(*args, **kwargs)
+            self.teaching_authority.denied.add("PUBLIC_LESSON_CONTENT")
+            return result
+
+        with patch.object(knowledge_views, "render", side_effect=revoke):
+            page = self.client.get(reverse("public_knowledge:lesson", args=[metadata.series_id]))
+        self.assertEqual(page.status_code, 404)
+        self.assertNotContains(page, row["public_id"], status_code=404)
+
+    def test_withdrawn_recording_leaves_independently_released_metadata_available(self):
+        metadata, _, row = self.recorded_metadata()
+        self.teaching_decision(row, "WITHDRAW")
+        page = self.client.get(reverse("public_knowledge:lesson", args=[metadata.series_id]))
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, row["public_id"])
+        self.assertEqual(
+            self.client.get(reverse("teaching_lesson", args=[row["public_id"]])).status_code, 404
+        )
+
     def desk(self, subject="editor"):
         client, page = self.staff_client(subject)
         page = post(

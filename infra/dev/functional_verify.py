@@ -145,6 +145,12 @@ LABELS = [
     "apps.operational_workspace.test_transcripts",
     "apps.operational_workspace.test_transcript_sources",
     "apps.operational_workspace.test_transcript_recovery",
+    "apps.operational_workspace.test_publication",
+    "apps.operational_workspace.test_publication_sources",
+    "apps.operational_workspace.test_publication_recovery",
+    "apps.staff_sessions.tests",
+    "apps.staff_sessions.test_recovery",
+    "apps.staff_sessions.test_campaign",
 ]
 
 BROWSER_LABELS = [
@@ -189,6 +195,8 @@ BROWSER_LABELS = [
     "apps.ai_gateway.browser_tests",
     "apps.private_media.browser_tests",
     "apps.operational_workspace.browser_transcripts",
+    "apps.operational_workspace.browser_publication",
+    "apps.staff_sessions.browser_tests",
 ]
 
 

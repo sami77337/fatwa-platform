@@ -143,6 +143,13 @@ NEW_WORKFLOWS = {
     ),
     "apps.private_media.recovery_support": (),
     "apps.operational_workspace.transcript_recovery_support": (),
+    "apps.operational_workspace.publication_recovery_support": (),
+    "apps.staff_sessions.recovery_support": (
+        "staff_sessions_session",
+        "staff_sessions_sessionrevocation",
+        "staff_sessions_freshproof",
+        "staff_sessions_proofuse",
+    ),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -360,6 +367,31 @@ RESTORED_DENIAL_CHECKS = {
         "revoked_exact_audio_read": 1,
         "revoked_domain_transcript_read": 1,
         "revoked_current_media_right": 1,
+    },
+    "apps.operational_workspace.publication_recovery_support": {
+        "disabled_publication_manager": 1,
+        "disabled_publication": 1,
+        "missing_directory": 1,
+        "missing_operational_authority": 1,
+        "missing_domain_authority": 1,
+        "unversioned_domain_authority": 1,
+        "revoked_current_identity": 1,
+        "revoked_read_case": 1,
+        "revoked_read_publication_manager": 1,
+        "revoked_exact_edition_read": 1,
+        "revoked_domain_read": 1,
+        "expired_current_operational_grants": 1,
+        "removed_current_case_scope": 1,
+    },
+    "apps.staff_sessions.recovery_support": {
+        "sessions_disabled": 1,
+        "missing_authority": 1,
+        "missing_directory": 1,
+        "missing_runtime_epoch": 1,
+        "revoked_audit_grant": 1,
+        "cross_actor_audit": 1,
+        "inactive_actor": 1,
+        "restored_session_runtime": 1,
     },
 }
 
@@ -603,6 +635,16 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-continuation/operational-transcripts-browser/result.json",
         "modern",
     ),
+    (
+        "apps.operational_workspace.browser_publication.OperationalPublicationBrowserTests.test_native_organizer_publication_review_admin_approval_and_withdrawal_preserve_source",
+        ".local/qa/functional-continuation/operational-publication-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.staff_sessions.browser_tests.StaffSessionsBrowserTests.test_native_mufti_and_admin_fresh_confirmation_revoke_only_exact_session",
+        ".local/qa/functional-continuation/staff-sessions-browser/result.json",
+        "modern",
+    ),
 )
 
 
@@ -652,8 +694,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["45"],
-        "Exactly 45 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["47"],
+        "Exactly 47 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -661,7 +703,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 45 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 47 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -859,10 +901,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 62
-        and len(expected_tables) == 84
+        and len(new_tables) == 66
+        and len(expected_tables) == 88
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 84 prior and new recovery tables are required",
+        "Exactly the 88 prior and new recovery tables are required",
     )
     require(
         all(
@@ -876,7 +918,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All thirty-three fresh-process workflow result records are required",
+        "All thirty-five fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

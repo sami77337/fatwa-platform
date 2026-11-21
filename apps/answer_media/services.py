@@ -427,6 +427,11 @@ def release_private(
 
 
 def _projection(case, manifest):
+    from apps.data_privacy.integration import current as privacy
+
+    privacy("ANSWER", manifest.answer_id)
+    for identifier in manifest.parts.values_list("pk", flat=True):
+        privacy("ANSWER_PART", identifier)
     parts = [_fields(row) for row in _verified(manifest)]
     current = bool(
         case.stage == "ANSWERED"
@@ -536,16 +541,23 @@ def clone_parts_for_new_answer(previous, answer):
 
 @mutation_service
 def staff_snapshot(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+    from apps.data_privacy.services import PrivacyDenied
+
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         result = cases._staff(case)
         result["current_text"] = result["answers"][-1]["text"] if result["answers"] else ""
-        result["packages"] = [
-            _projection(case, manifest)
-            for manifest in AnswerManifest.objects.filter(answer__case=case)
+        result["packages"] = []
+        for manifest in (
+            AnswerManifest.objects.filter(answer__case=case)
             .select_related("answer")
             .order_by("-answer__revision")
-        ]
+        ):
+            try:
+                package = _projection(case, manifest)
+            except PrivacyDenied:
+                continue
+            result["packages"].append(package)
         result["latest_package"] = next(
             (p for p in result["packages"] if p["answer_revision"] == case.answer_revision), None
         )
@@ -553,9 +565,12 @@ def staff_snapshot(*, case_id, subject_id, provider, synthetic_fixtures_only=Fal
 
 
 def _requester_manifest(case):
+    from apps.data_privacy.integration import current as privacy
+
     manifest = AnswerManifest.objects.filter(answer_id=case.approved_answer_id).first()
     if manifest is None:
         raise cases.CaseConflict("private_multipart_unavailable")
+    privacy("ANSWER", manifest.answer_id)
     decision = _current(case, manifest)
     release = PrivateAnswerRelease.objects.filter(manifest=manifest).first()
     if (
@@ -634,10 +649,13 @@ def requester_page_projection(*, token, synthetic_fixtures_only=False):
 
 @mutation_service
 def requester_read(*, token, part_id, synthetic_fixtures_only=False):
+    from apps.data_privacy.integration import current as privacy
+
     _release_enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
         pin = _requester_pin(case, token)
         manifest = _requester_manifest(case)
+        privacy("ANSWER_PART", part_id)
         row = next(
             (p for p in _verified(manifest) if str(p.pk) == str(part_id) and p.ordinal > 1), None
         )
@@ -650,6 +668,8 @@ def requester_read(*, token, part_id, synthetic_fixtures_only=False):
 
 @mutation_service
 def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
+    from apps.data_privacy.integration import current as privacy
+
     _enabled()
     row = (
         AnswerPart.objects.select_related("manifest__answer")
@@ -662,6 +682,8 @@ def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
     with cases._staff_case(
         row.manifest.answer.case_id, subject_id, provider, synthetic_fixtures_only
     ) as (case, actor):
+        privacy("ANSWER", row.manifest.answer_id)
+        privacy("ANSWER_PART", row.pk)
         cases._answer_annotations(row.manifest.answer, actor=actor, provider=provider)
         cases._answer_citations(row.manifest.answer)
         _verified(row.manifest)
@@ -680,9 +702,13 @@ def raw_for_part(row):
 
 def private_availability_for_locked_case(case):
     """Minimal current private availability, under the caller's requester case lock."""
+    from apps.data_privacy.integration import current as privacy
+
     try:
         _release_enabled()
         manifest = _requester_manifest(case)
+        for identifier in manifest.parts.values_list("pk", flat=True):
+            privacy("ANSWER_PART", identifier)
     except cases.CaseConflict:
         return {"available": False, "answer_revision": None, "part_count": None}
     return {

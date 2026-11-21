@@ -27,6 +27,8 @@ ROUTES = {
     BASE + "operations/": ("GET", "HEAD", "POST"),
     BASE + "operations/login/": ("GET", "HEAD", "POST"),
     BASE + "operations/logout/": ("POST",),
+    BASE + "sessions/": ("GET", "HEAD", "POST"),
+    BASE + "operations/sessions/": ("GET", "HEAD", "POST"),
     BASE + "ai-citations/": ("POST",),
     BASE + "ai-citations/panel.mjs": ("GET", "HEAD"),
     BASE + "staff/recording-player.js": ("GET", "HEAD"),
@@ -171,7 +173,14 @@ def _budget(request):
     if request.method == "POST":
         if request.path == BASE:
             group = "intake"
-        elif request.path in {BASE + "staff/login/", BASE + "operations/login/"}:
+        elif request.path in {
+            BASE + "staff/login/",
+            BASE + "operations/login/",
+            BASE + "sessions/",
+            BASE + "operations/sessions/",
+        }:
+            # Session forms can actively verify a credential. Charge every POST
+            # to the existing login budget without parsing an untrusted body.
             group = "login"
         elif "/staff/" in request.path or request.path.startswith(BASE + "operations/"):
             group = "staff"

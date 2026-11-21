@@ -135,13 +135,8 @@ class ClassificationLedgerTests(PrivacyFixture, TransactionTestCase):
         with self.assertRaises(services.PrivacyDenied):
             with services.projection() as guard:
                 self.read()
-                original = guard.callbacks
-
-                def after_callbacks():
-                    original()
-                    del self.authority.grants[key]
-
-                guard.callbacks = after_callbacks
+                guard.callbacks()
+                del self.authority.grants[key]
         self.allow(self.target, "CONFIDENTIAL", "READ")
         self.assertEqual(self.read()["level"], "CONFIDENTIAL")
 
@@ -153,16 +148,11 @@ class ClassificationLedgerTests(PrivacyFixture, TransactionTestCase):
             with self.subTest(change=change), self.assertRaises(services.PrivacyDenied):
                 with services.projection() as guard:
                     self.read()
-                    original = guard.callbacks
-
-                    def after_callbacks():
-                        original()
-                        if change == "identity":
-                            self.directory.current = replace(original_actor, active=False)
-                        else:
-                            self.classify(level="RESTRICTED")
-
-                    guard.callbacks = after_callbacks
+                    guard.callbacks()
+                    if change == "identity":
+                        self.directory.current = replace(original_actor, active=False)
+                    else:
+                        self.classify(level="RESTRICTED")
             self.directory.current = original_actor
         # The nested classification was rolled back with the refused read.
         self.assertEqual(ClassificationRevision.objects.count(), 1)

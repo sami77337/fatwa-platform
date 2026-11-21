@@ -8,6 +8,7 @@ from django.shortcuts import render
 from apps.casework_web.guard import enabled as question_enabled
 from apps.library_preview import services as preview
 from apps.library_preview.guard import safe_read
+from apps.library_preview.navigation import teaching_catalog_url
 
 from . import services
 
@@ -96,6 +97,7 @@ def index(request):
                 "featured_topics": [row for row in topics if row["featured"]],
                 "groups": groups.items(),
                 "question_enabled": question_enabled(),
+                "teaching_url": teaching_catalog_url(),
             },
         )
 

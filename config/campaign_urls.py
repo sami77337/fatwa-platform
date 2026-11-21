@@ -15,6 +15,8 @@ from apps.team_workspace.urls import urlpatterns as team_patterns
 from apps.timed_citations import views as timed_citations
 
 urlpatterns = [
+    path("casework/sessions/", include("apps.staff_sessions.urls")),
+    path("casework/operations/sessions/", include("apps.staff_sessions.urls")),
     path("", include("apps.operational_workspace.urls")),
     path("", include("apps.public_reader_tools.urls")),
     path("", include("apps.staff_shell.urls")),

@@ -56,10 +56,13 @@ not question text, media bytes, a requester token or an automatically inferred g
 The source domain authenticates and authorizes its own operation independently.
 The privacy check is an additional veto before its DTO, filename, link, count or
 bytes are composed. Each use retains its policy, exact source, classification and
-current-identity pins in every enclosing privacy projection. Closing a projection
-rechecks permission callbacks and current identity first, then compares all pure
-pins and the earliest deadline after the last callback. A late revocation or
-reclassification discards the whole response.
+current-identity pins in every enclosing privacy projection. `require()` checks the
+current permission and identity before consuming each source. Closing a projection
+compares pure complete policy/identity epochs, source/label pins and the earliest
+deadline after the last domain callback. It does not invoke a new provider after
+that domain's final source checks. An adapter can explicitly run `callbacks()`
+before all final pins when its existing boundary requires a second callback pass.
+A late revocation or reclassification discards the whole response.
 
 Readers and classification writes share a target advisory transaction lock.
 Classification writes obtain the existing scholarly graph lock before the canonical
@@ -104,6 +107,26 @@ steps. A schema or green unit suite alone cannot establish the table above.
 
 First checkpoint: **11/11 PASS on PostgreSQL 17.11 (5.080 seconds)**, using
 `apps.data_privacy.settings` and the owned-cluster runner with real migrations.
+The same checkpoint passed **11/11 on PostgreSQL 18.7 (4.706 seconds)**.
+
+Second checkpoint adds private case/read-list/requester boundaries, actual answer
+and attachment DTO/byte gates, requester answer availability/counts, and source
+provenance checks for copied attachment/transcript evidence. The actual requester
+portal and signed GET/HEAD/Range tests prove that staff privacy grants cannot be
+borrowed by a requester, a PUBLIC case cannot expose an unclassified child, and
+late domain-to-privacy or privacy-to-identity revocation discards output. The
+selected group passed **38/38 on PG17.11 (43.944 seconds)**:
+
+```text
+apps.data_privacy.test_ledger
+apps.data_privacy.test_private_hooks
+apps.private_media.test_signed_links
+tests.casework.test_editor_profile_compatibility
+```
+
+The native classification editor and remaining library/search/export/public/
+operational hooks are still pending at this second checkpoint. The middleware
+hook is prepared, but coordinator-owned campaign settings have not enabled it.
 
 The production role/data-type matrix, real object classifications, legal retention
 durations, actual providers and operational key custody are missing owner inputs.

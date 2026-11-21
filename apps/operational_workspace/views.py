@@ -24,6 +24,7 @@ from . import (
     services,
     transcripts,
 )
+from . import publication as publication_manager
 from .boundary import policy
 
 BASE = access.BASE
@@ -189,6 +190,43 @@ def workspace(request):
             form(request, {"action", "case_ref"})
             with notes.projection(case_ref=request.POST.get("case_ref"), **common) as result:
                 response = render(request, "operational_workspace/notes.html", {"notes": result})
+        elif action == "publication_manager":
+            form(request, {"action", "case_ref"})
+            with publication_manager.projection(
+                case_ref=request.POST.get("case_ref"), **common
+            ) as result:
+                response = render(
+                    request, "operational_workspace/publication.html", {"publication": result}
+                )
+        elif action == "publication_decide":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "edition_id",
+                    "content_sha256",
+                    "decision",
+                    "confirmed",
+                    "sequence",
+                    "revision",
+                    "evidence_version",
+                },
+            )
+            with publication_manager.decide(
+                case_ref=request.POST.get("case_ref"),
+                edition_id=request.POST.get("edition_id"),
+                content_sha256=request.POST.get("content_sha256"),
+                action=request.POST.get("decision"),
+                confirmed=request.POST.get("confirmed") == "yes",
+                expected_actions=integer(request, "sequence"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/publication.html", {"publication": result}
+                )
         elif action == "transcript_editor":
             form(request, {"action", "case_ref"})
             with transcripts.projection(case_ref=request.POST.get("case_ref"), **common) as result:

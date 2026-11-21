@@ -473,6 +473,9 @@ def _public(case):
 
 
 def _staff(case):
+    from apps.data_privacy.integration import allowed, evidence_allowed
+
+    visible_answers = [a for a in case.answers.order_by("revision") if allowed("ANSWER", a.pk)]
     result = _public(case)
     result.update(
         {
@@ -482,6 +485,7 @@ def _staff(case):
             "followups": [
                 {"version": e.version, "text": e.text}
                 for e in case.evidence.filter(version__gt=1).order_by("version")
+                if evidence_allowed(e)
             ],
             "answers": [
                 {
@@ -490,14 +494,15 @@ def _staff(case):
                     "evidence_version": a.evidence_version,
                     "text": a.text,
                 }
-                for a in case.answers.order_by("revision")
+                for a in visible_answers
             ],
             "clarifications": list(
                 case.events.filter(action="CLARIFICATION")
                 .order_by("sequence")
                 .values_list("note", flat=True)
             ),
-            "approved_answer_id": str(case.approved_answer_id) if case.approved_answer_id else None,
+            "approved_answer_id": str(case.approved_answer_id)
+            if case.approved_answer_id in {a.pk for a in visible_answers} else None,
         }
     )
     return result
@@ -590,10 +595,12 @@ def _staff_case(
         identity = _identity(provider, subject_id, case)
         if before.auth_epoch != identity.auth_epoch:
             raise CaseConflict("case_identity_changed")
-        _verify(case)
-        if expected_revision is not None:
-            _versions(case, expected_revision, expected_evidence_version)
-        with _answer_use_boundary():
+        from apps.data_privacy.integration import staff_case as privacy_scope
+
+        with privacy_scope(case, identity, provider), _answer_use_boundary():
+            _verify(case)
+            if expected_revision is not None:
+                _versions(case, expected_revision, expected_evidence_version)
             yield case, identity
 
 
@@ -616,12 +623,21 @@ def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
         .order_by("created_at")
         .values_list("id", flat=True)
     )
-    return [
-        read_case(
-            case_id=pk, subject_id=subject_id, provider=provider, synthetic_fixtures_only=True
-        )
-        for pk in rows
-    ]
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.services import PrivacyDenied
+
+    result = []
+    with projection():
+        for pk in rows:
+            try:
+                row = read_case(
+                    case_id=pk, subject_id=subject_id, provider=provider,
+                    synthetic_fixtures_only=True,
+                )
+            except PrivacyDenied:
+                continue
+            result.append(row)
+    return result
 
 
 @mutation_service
@@ -785,8 +801,10 @@ def _token_case(token, ack):
             or grant.expires_at <= timezone.now()
         ):
             raise CaseConflict("case_token_invalid_or_expired")
-        _verify(case)
-        with _answer_use_boundary():
+        from apps.data_privacy.integration import requester_case as privacy_scope
+
+        with privacy_scope(case, digest), _answer_use_boundary():
+            _verify(case)
             yield case
 
 

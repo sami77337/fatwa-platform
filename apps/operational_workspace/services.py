@@ -16,6 +16,7 @@ from apps.public_answer_media.models import RecordingTranscript
 
 from . import coordination, lesson_links, notes, retry_projection, transcripts
 from . import metadata as metadata_editor
+from . import publication as publication_manager
 from .boundary import rows, scope
 
 FILTERS = {
@@ -335,6 +336,7 @@ def queue_projection(*, selected_filter="all", **common):
         coordination_cases = []
         lesson_cases = []
         transcript_cases = []
+        publication_cases = []
         for case in sorted(guard.locked.values(), key=lambda value: value.public_ref):
             if not guard.permit(case, "READ_QUEUE", "queue") or not guard.permit(
                 case, "READ_CASE", "case"
@@ -349,6 +351,8 @@ def queue_projection(*, selected_filter="all", **common):
                 lesson_cases.append({"public_ref": case.public_ref})
             if transcripts.available(case, guard):
                 transcript_cases.append({"public_ref": case.public_ref})
+            if publication_manager.available(case, guard):
+                publication_cases.append({"public_ref": case.public_ref})
             available = sections(case, guard)
             pending = [row for row in available if row["pending"]]
             if not pending:
@@ -378,6 +382,7 @@ def queue_projection(*, selected_filter="all", **common):
             ),
             "lesson_cases": lesson_cases,
             "transcript_cases": transcript_cases,
+            "publication_cases": publication_cases,
             "counts": counts,
             "selected_filter": selected_filter,
             "filters": [
@@ -412,4 +417,5 @@ def detail_projection(*, case_ref, section, **common):
             "metadata_available": metadata_editor.available(case, guard),
             "lesson_links_available": lesson_links.available(case, guard),
             "transcript_editor_available": transcripts.available(case, guard),
+            "publication_manager_available": publication_manager.available(case, guard),
         }

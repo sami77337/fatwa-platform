@@ -1,0 +1,198 @@
+"""Small lazy hooks for existing readers; no route, query or identity rewriting."""
+
+from contextlib import contextmanager
+from contextvars import ContextVar
+from functools import wraps
+
+from django.apps import apps
+
+READERS = ContextVar("privacy_current_source_readers", default=())
+
+
+@contextmanager
+def projection():
+    from .services import projection as boundary
+
+    with boundary() as guard:
+        yield guard
+
+
+def projected(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        with projection():
+            return function(*args, **kwargs)
+
+    return wrapped
+
+
+def contextual(function):
+    @wraps(function)
+    @contextmanager
+    def wrapped(*args, **kwargs):
+        with projection():
+            with function(*args, **kwargs) as value:
+                yield value
+
+    return wrapped
+
+
+def public_contextual(function):
+    @wraps(function)
+    @contextmanager
+    def wrapped(*args, **kwargs):
+        from apps.library_preview.services import PreviewUnavailable
+
+        from .services import PrivacyDenied
+
+        try:
+            with projection():
+                with function(*args, **kwargs) as value:
+                    yield value
+        except PrivacyDenied as exc:
+            raise PreviewUnavailable() from exc
+
+    return wrapped
+
+
+def public_projected(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        from apps.library_preview.services import PreviewUnavailable
+
+        from .services import PrivacyDenied
+
+        try:
+            with projection():
+                return function(*args, **kwargs)
+        except PrivacyDenied as exc:
+            raise PreviewUnavailable() from exc
+
+    return wrapped
+
+
+@contextmanager
+def using(principal):
+    token = READERS.set((*READERS.get(), principal))
+    try:
+        yield
+    finally:
+        READERS.reset(token)
+
+
+def current(kind, identifier, *, action="READ"):
+    from . import services
+
+    if not services.applicable(kind, str(identifier)):
+        return None
+    principal = next((value for value in reversed(READERS.get()) if value is not None), None)
+    if principal is None:
+        raise services.PrivacyDenied("privacy_current_reader_required")
+    return services.require(kind, identifier, principal=principal, action=action)
+
+
+def allowed(kind, identifier, *, action="READ"):
+    from .services import PrivacyDenied
+
+    try:
+        current(kind, identifier, action=action)
+        return True
+    except PrivacyDenied:
+        return False
+
+
+def staff(kind, identifier, *, provider, actor, action="READ"):
+    from . import services
+
+    if not services.applicable(kind, str(identifier)):
+        return None
+    return services.require(
+        kind, identifier, principal=services.staff_principal(provider, actor), action=action
+    )
+
+
+def public(kind, identifier, *, action="READ"):
+    from . import services
+
+    if not services.applicable(kind, str(identifier)):
+        return None
+    return services.require(kind, identifier, principal=services.public_principal(), action=action)
+
+
+def evidence_allowed(evidence, *, action="READ"):
+    """A copied attachment label or transcript question keeps its source gate."""
+    for kind, label in (
+        ("ATTACHMENT", "case_attachments.CaseAttachment"),
+        ("TRANSCRIPT_LINK", "transcript_case_links.TranscriptLink"),
+        ("SOURCE_RECEIPT", "source_case_intake.EvidenceBinding"),
+    ):
+        app_label = label.split(".")[0]
+        if not apps.is_installed("apps." + app_label):
+            continue
+        model = apps.get_model(label)
+        source_ids = model.objects.filter(evidence_id=evidence.pk).values_list("pk", flat=True)
+        if any(not allowed(kind, identifier, action=action) for identifier in source_ids):
+            return False
+    return True
+
+
+def _original(case):
+    if apps.is_installed("apps.source_case_intake"):
+        model = apps.get_model("source_case_intake.EvidenceBinding")
+        for identifier in model.objects.filter(case=case, evidence__version=1).values_list(
+            "pk", flat=True
+        ):
+            current("SOURCE_RECEIPT", identifier)
+
+
+@contextmanager
+def staff_case(case, actor, provider):
+    from . import services
+
+    with projection():
+        principal = (
+            services.staff_principal(provider, actor)
+            if services.applicable("CASE", str(case.pk))
+            else None
+        )
+        with using(principal):
+            current("CASE", case.pk)
+            _original(case)
+            yield
+
+
+@contextmanager
+def requester_case(case, token_digest):
+    from . import services
+
+    with projection():
+        principal = (
+            services.requester_principal(case, token_digest)
+            if services.applicable("CASE", str(case.pk))
+            else None
+        )
+        with using(principal):
+            current("CASE", case.pk)
+            _original(case)
+            yield
+
+
+class PrivacyResponses:
+    """Final pure projection across native rendering, without late provider calls."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from apps.casework_web.guard import denied
+
+        from .services import PrivacyDenied
+
+        try:
+            with projection() as guard:
+                response = self.get_response(request)
+                if getattr(response, "streaming", False) and guard.uses:
+                    raise PrivacyDenied("privacy_buffered_projection_required")
+                return response
+        except PrivacyDenied:
+            return denied("private_projection_unavailable", 404)

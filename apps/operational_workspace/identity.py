@@ -6,7 +6,13 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.casework.services import CaseConflict
-from apps.mufti_review.identity import MuftiIdentity, MuftiIdentityProvider, _ref
+from apps.mufti_review.identity import (
+    IdentityUnavailable,
+    MuftiIdentity,
+    MuftiIdentityProvider,
+    _ref,
+)
+from apps.staff_sessions import integration as sessions
 
 ROLES = frozenset({"MUFTI", "ORGANIZER_ADMIN", "ORGANIZER"})
 
@@ -106,6 +112,10 @@ class RequestDirectory(MuftiIdentityProvider):
         self.directory = directory
         self.provider_id = directory.provider_id
         self.expected = pin(validate(actor))
+        try:
+            self._session = sessions.capture(directory, actor, surface="OPERATIONS")
+        except IdentityUnavailable as exc:
+            raise CaseConflict("operational_session_unavailable") from exc
 
     def authenticate(self, credential):
         raise CaseConflict("operational_request_cannot_authenticate")
@@ -116,7 +126,16 @@ class RequestDirectory(MuftiIdentityProvider):
         actor = resolve(self.directory, subject_id)
         if pin(actor) != self.expected:
             raise CaseConflict("operational_request_identity_changed")
-        return actor
+        try:
+            return sessions.resolve(self._session, actor)
+        except IdentityUnavailable as exc:
+            raise CaseConflict("operational_session_unavailable") from exc
 
     def projection_epoch(self):
-        return repr((id(self.directory), self.provider_id, self.expected, epoch(self.directory)))
+        try:
+            session = sessions.projection(self._session)
+        except IdentityUnavailable as exc:
+            raise CaseConflict("operational_session_unavailable") from exc
+        return repr(
+            (id(self.directory), self.provider_id, self.expected, session, epoch(self.directory))
+        )

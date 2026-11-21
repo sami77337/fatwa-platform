@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 92,
-  "implemented_scope_candidates": 92,
+  "candidate_count": 95,
+  "implemented_scope_candidates": 95,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 16.55,
+  "candidate_percentage": 17.09,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -3469,6 +3469,156 @@
         "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "organizer_publication_management",
+      "title_ar": "إدارة المنظم لمراجعة نسخ النشر واعتمادها المستقل وسحبها",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/PUBLICATION.md",
+      "baseline_gap": "Recovered publication management admitted only Mufti identities; actual organizer approval and withdrawal of prepared copies were absent.",
+      "service_test_labels": [
+        "apps.operational_workspace.test_publication",
+        "apps.operational_workspace.test_publication_sources",
+        "apps.operational_workspace.test_publication_recovery"
+      ],
+      "service_test_classes": [
+        "apps.operational_workspace.test_publication.OperationalPublicationTests",
+        "apps.operational_workspace.test_publication_sources.OperationalPublicationSourceTests",
+        "apps.operational_workspace.test_publication_recovery.OperationalPublicationRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_publication.OperationalPublicationBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-publication-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.publication_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Reuses existing publication editions/actions. A prepared copy with independent organizer decisions and withdrawal is restored; thirteen current-grant denials and a positive read follow."
+      },
+      "points": [
+        {
+          "original_id": "99",
+          "original_text": "يمكنه إدارة Publication حسب صلاحياته.",
+          "direct_spec_ids": [
+            "SPEC-U07-002"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 101
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Actual ORGANIZER and ORGANIZER_ADMIN manage exact immutable editions prepared by a Mufti through independent READ, REVIEW, APPROVE and WITHDRAW grants, current domain authority and source/precise/timed citation checks. Approval is distinct from scholarly meaning approval and public release. Strict native forms, independent actors, immutable audit and current-grant recovery checks preserve the original answer and publication body."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "server_staff_sessions",
+      "title_ar": "جلسات قابلة للإلغاء وإعادة تحقق مستقلة للعملية الحساسة",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/staff_sessions/README.md",
+      "baseline_gap": "Browser cookies expired and rechecked identity, but there was no durable session revocation or operation-bound actively verified fresh proof.",
+      "service_test_labels": [
+        "apps.staff_sessions.tests",
+        "apps.staff_sessions.test_recovery",
+        "apps.staff_sessions.test_campaign"
+      ],
+      "service_test_classes": [
+        "apps.staff_sessions.tests.StaffSessionTests",
+        "apps.staff_sessions.test_recovery.StaffSessionRecoveryTests",
+        "apps.staff_sessions.test_campaign.CampaignSessionTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.staff_sessions.browser_tests.StaffSessionsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/staff-sessions-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.staff_sessions.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 4,
+        "tables": [
+          "staff_sessions_session",
+          "staff_sessions_sessionrevocation",
+          "staff_sessions_freshproof",
+          "staff_sessions_proofuse"
+        ],
+        "notes": "Four immutable audit tables, eight denied current-authority reads, positive explicitly granted audit read, consumed proof and revoked target retained. Restored sessions cannot authenticate."
+      },
+      "points": [
+        {
+          "original_id": "406",
+          "original_text": "Sessions قابلة للإلغاء.",
+          "direct_spec_ids": [
+            "SPEC-U14-014"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 408
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Server-side sessions for actual Mufti and operational identities retain browser binding, role, scope, original shorter expiry and exact explicit policy. Native logout or explicit permitted revocation invalidates copied cookies. Current requests and private streams recheck the registry. A fresh restore database/runtime generation does not restore old authentication."
+        },
+        {
+          "original_id": "407",
+          "original_text": "العمليات الحساسة يمكن أن تطلب Re-authentication.",
+          "direct_spec_ids": [
+            "SPEC-U14-013"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 409
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "An explicit current policy can require active fresh credential verification for REVOKE_SESSION. Its immutable single-use proof binds the real actor, session, exact target, operation, challenge, verifier version, policy and finite deadline; a separate native confirmation performs the revocation. This is not MFA, does not select a production identity provider, and does not assert that every other operation has been assigned a fresh-verification policy."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -4107,6 +4257,24 @@
       "from": "ACTUAL_ORGANIZER_EDITORIAL_WORKFLOW_ABSENT",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Actual ORGANIZER identities create recording transcript derivative versions, independently review and withdraw them through native CSRF forms, exact source-version CAS and separate current per-resource operational/media grants. Only an actual MUFTI can approve meaning; canonical approved answers, original audio and precise/timed source permissions are preserved and rechecked after the final callbacks. Restored editorial history cannot supply present authorization."
+    },
+    {
+      "original_id": "99",
+      "from": "ACTUAL_ORGANIZER_PUBLICATION_MANAGEMENT_ABSENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual ORGANIZER and ORGANIZER_ADMIN manage exact immutable editions prepared by a Mufti through independent READ, REVIEW, APPROVE and WITHDRAW grants, current domain authority and source/precise/timed citation checks. Approval is distinct from scholarly meaning approval and public release. Strict native forms, independent actors, immutable audit and current-grant recovery checks preserve the original answer and publication body."
+    },
+    {
+      "original_id": "406",
+      "from": "SERVER_REVOCATION_AND_ACTIVE_FRESH_VERIFICATION_ABSENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Server-side sessions for actual Mufti and operational identities retain browser binding, role, scope, original shorter expiry and exact explicit policy. Native logout or explicit permitted revocation invalidates copied cookies. Current requests and private streams recheck the registry. A fresh restore database/runtime generation does not restore old authentication."
+    },
+    {
+      "original_id": "407",
+      "from": "SERVER_REVOCATION_AND_ACTIVE_FRESH_VERIFICATION_ABSENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "An explicit current policy can require active fresh credential verification for REVOKE_SESSION. Its immutable single-use proof binds the real actor, session, exact target, operation, challenge, verifier version, policy and finite deadline; a separate native confirmation performs the revocation. This is not MFA, does not select a production identity provider, and does not assert that every other operation has been assigned a fresh-verification policy."
     }
   ],
   "verified_checkpoints": [

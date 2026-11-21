@@ -50,6 +50,14 @@ class OperationalAuthority(ABC):
         resources. APPROVE_TRANSCRIPT_MEANING additionally requires actual MUFTI,
         regardless of a true policy result. AnswerMediaAuthority and TimedMediaRights
         remain independent. Derivative editing never changes the original answer.
+
+        The independently default-off publication manager uses READ_PUBLICATION_MANAGER
+        on its section and READ_PUBLICATION_EDITION, REVIEW_PUBLICATION_EDITION,
+        APPROVE_PUBLICATION_EDITION, WITHDRAW_PUBLICATION_EDITION on an exact
+        CASE_PUBLICATION_EDITION. Versioned PublicationAuthority must independently
+        permit READ / REVIEW / APPROVE / WITHDRAW. It manages existing editions
+        prepared through the MUFTI workflow; it grants no free body editing,
+        scientific approval, delivery or anonymous publication availability.
         """
         raise NotImplementedError
 
