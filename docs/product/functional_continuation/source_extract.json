@@ -2,8 +2,8 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 65,
-  "note": "Exact source objects copied from the pinned specification and decision inventories for66 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
+  "specification_count": 69,
+  "note": "Exact source objects copied from the pinned specification and decision inventories for 70 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
       "original_id": "SPEC-U01-004",
@@ -58,6 +58,17 @@
       "owner_points_source": "492، 493",
       "source_spec_lines_unverified": "222–223",
       "parsed_index": 54,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U02-032",
+      "unit": "2",
+      "title": "الملاحظات الداخلية",
+      "original_text": "32. الملاحظات الداخلية\nيمكن للشيخ أو المستخدم المخول إضافة ملاحظة داخلية لا تدخل جواب السائل ولا النسخة العامة.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "100",
+      "source_spec_lines_unverified": "266–267",
+      "parsed_index": 65,
       "acceptance": "HOLD"
     },
     {
@@ -193,6 +204,17 @@
       "acceptance": "HOLD"
     },
     {
+      "original_id": "SPEC-U05-014",
+      "unit": "5",
+      "title": "الفتح على النسخة والموضع",
+      "original_text": "5.14. الفتح على النسخة والموضع\nيمكن الانتقال إلى الجواب أو التعقيب أو فقرة المصدر أو الرواية أو المقطع الزمني الذي جاءت منه المطابقة. تحفظ الإحالة هوية النسخة والطبعة والموضع. إذا تعذر فتح الفقرة نفسها، يظهر أقرب موضع موثق مع المرجع، ولا يُدّعى موضع غير متاح. يراجع الشيخ الإحالة قبل إضافتها إلى جوابه.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "233، 343، 344، 345، 346",
+      "source_spec_lines_unverified": "686–687",
+      "parsed_index": 159,
+      "acceptance": "HOLD"
+    },
+    {
       "original_id": "SPEC-U05-015",
       "unit": "5",
       "title": "الصوت والفيديو والملفات",
@@ -314,6 +336,17 @@
       "acceptance": "HOLD"
     },
     {
+      "original_id": "SPEC-U07-003",
+      "unit": "7",
+      "title": "كل عملية تشير إلى نسخة محددة",
+      "original_text": "7.3. كل عملية تشير إلى نسخة محددة\nيرتبط التوصيل بإصدار جواب معتمد محدد، ويرتبط النشر بإصدار عام محدد مشتق من الجواب المعتمد. نعرف أي نص وملفات وإحالات خرجت في كل عملية. لا تُسحب مسودة أو أحدث نسخة تحريرية تلقائيًا بدل النسخة المختارة، ولا تطمس التعديلات اللاحقة تاريخ ما أرسل أو نشر سابقًا.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "30، 86، 136، 137، 442",
+      "source_spec_lines_unverified": "922–923",
+      "parsed_index": 204,
+      "acceptance": "HOLD"
+    },
+    {
       "original_id": "SPEC-U07-013",
       "unit": "7",
       "title": "إعادة محاولة الجزء الذي فشل",
@@ -322,6 +355,17 @@
       "owner_points_source": "127، 128، 130",
       "source_spec_lines_unverified": "964–965",
       "parsed_index": 214,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U07-022",
+      "unit": "7",
+      "title": "نتيجة مستقلة لكل وجهة",
+      "original_text": "7.22. نتيجة مستقلة لكل وجهة\nيمكن نشر الفتوى في الموقع ووجهة عامة أخرى، مع إصدار وحالة وسجل لكل وجهة. نجاح الموقع وفشل قناة أخرى لا يلغيان نجاح الموقع ولا يعيدان إرسال جواب السائل. ويختلف ربط عملية توصيل بنجاح صفحة عامة عن جعل جميع الوجهات تعتمد بعضها على بعض. تعرض الاستقلالية والاعتماد المحدد بوضوح.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "135، 136، 137",
+      "source_spec_lines_unverified": "1002–1003",
+      "parsed_index": 223,
       "acceptance": "HOLD"
     },
     {

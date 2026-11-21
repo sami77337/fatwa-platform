@@ -58,6 +58,14 @@ ACTIONS = frozenset(
         "READ_CAPABILITY",
     }
 )
+NOTE_ACTIONS = frozenset({"READ_INTERNAL_NOTES", "ADD_INTERNAL_NOTE"})
+
+
+def note_feature_enabled():
+    return (
+        getattr(settings, "FATWA_OPERATIONAL_INTERNAL_NOTES_ENABLED", False) is True
+        and getattr(settings, "FATWA_CASE_ORGANIZATION_ENABLED", False) is True
+    )
 
 
 def digest(value):
@@ -170,6 +178,7 @@ class Guard:
         self.directory, self.directory_epoch = directory, directory_epoch
         self.request_epoch = request_epoch
         self.provider_id = directory.provider_id
+        self.note_feature = note_feature_enabled()
         self.deadline = min(actor.valid_until, deadline) if deadline else actor.valid_until
         self.permissions, self.profiles, self.derived_reads = [], {}, []
         self.retry_configuration = retry_projection.configuration()
@@ -177,12 +186,15 @@ class Guard:
         self.audit_head = digest(rows(DeliveryAuditHead.objects.all()))
         self.capabilities = getattr(settings, "FATWA_COMPOSITE_DELIVERY_CAPABILITIES", None)
         self.capability_epoch = capability_epoch(self.capabilities)
-        self.watermark = digest(source_rows(locked))
+        self.sources = source_rows(locked)
+        self.watermark = digest(self.sources)
         self.scope = tuple(sorted((str(row.pk), row.public_ref) for row in locked.values()))
 
     def permit(self, case, action, section, *, required=False):
-        if action not in ACTIONS or case.pk not in self.locked:
+        if action not in ACTIONS | NOTE_ACTIONS or case.pk not in self.locked:
             raise cases.CaseConflict("operational_action_unavailable")
+        if action in NOTE_ACTIONS and not self.note_feature:
+            raise cases.CaseConflict("operational_notes_unavailable")
         values = dict(
             provider_id=self.provider_id,
             subject_id=self.actor.subject_id,
@@ -234,6 +246,32 @@ class Guard:
         self.derived_reads.append((reader, digest(result)))
         return result
 
+    def account_for_note_append(self, row):
+        """Advance the exact expected fingerprint by one authorized immutable note row.
+
+        Never adopt a fresh whole-database snapshot after a write: that would
+        conceal an unrelated append performed by a callback during admission.
+        """
+        table = OrganizationRevision._meta.db_table
+        created = rows(OrganizationRevision.objects.filter(pk=row.pk))
+        if (
+            row.case_id not in self.locked
+            or row.subject_id != self.actor.subject_id
+            or row.provider_id != self.provider_id
+            or row.auth_epoch != self.actor.auth_epoch
+            or not row.note
+            or len(created) != 1
+            or any(value["id"] == row.pk for value in self.sources[table])
+        ):
+            raise cases.CaseConflict("operational_note_append_invalid")
+        self.sources = {
+            **self.sources,
+            table: sorted([*self.sources[table], created[0]], key=lambda value: str(value["id"])),
+        }
+        self.watermark = digest(self.sources)
+        if digest(source_rows(self.locked)) != self.watermark:
+            raise cases.CaseConflict("operational_note_source_changed")
+
     def callbacks(self):
         for values, before in self.permissions:
             if self.call(values) != before:
@@ -259,6 +297,7 @@ class Guard:
         if (
             current[0] is not self.authority
             or current[1] != self.policy_epoch
+            or note_feature_enabled() != self.note_feature
             or getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None) is not self.directory
             or getattr(settings, "FATWA_COMPOSITE_DELIVERY_CAPABILITIES", None)
             is not self.capabilities

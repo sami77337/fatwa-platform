@@ -127,3 +127,11 @@ and index eligibility are evidence of implementation, not a performance benchmar
 
 Implementation references: [Django 5.2 PostgreSQL search](https://docs.djangoproject.com/en/5.2/ref/contrib/postgres/search/)
 and [PostgreSQL 18 pg_trgm](https://www.postgresql.org/docs/18/pgtrgm.html).
+
+## Exact source passage navigation
+
+The additive owner-233 implementation opens ordinary results at exact original
+character ranges, with signed query/mode/position and native previous/next forms.
+Every movement rechecks current OPEN/SEARCH and source rights without rewriting
+source text. See `MATCH_NAVIGATION.md` for exactness limits, the new protected
+browser identity, six-denial fresh-process helper and pending hosted evidence.

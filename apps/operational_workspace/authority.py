@@ -17,6 +17,11 @@ class OperationalAuthority(ABC):
         READ_TRANSCRIPT and READ_CAPABILITY are independent read grants. No grant
         here may create/approve a scholarly answer, edit its original, publish,
         send, assign a staff role or administer any policy.
+
+        The separately default-off internal-notes feature accepts independent
+        READ_INTERNAL_NOTES and ADD_INTERNAL_NOTE grants. ADD permits only an
+        append-only internal note with unchanged server-copied tags and types;
+        it does not confer read access or any scholarly or metadata edit right.
         """
         raise NotImplementedError
 

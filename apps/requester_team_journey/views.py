@@ -54,6 +54,12 @@ def staff(request):
 
             if action in IDENTITY_ACTIONS:
                 return _panel(identity_workspace(request), "cases")
+        if django_apps.is_installed("apps.publication_destinations"):
+            from apps.publication_destinations.views import ACTIONS as DESTINATION_ACTIONS
+            from apps.publication_destinations.views import workspace as destination_workspace
+
+            if action in DESTINATION_ACTIONS:
+                return _panel(destination_workspace(request), "cases")
         if django_apps.is_installed("apps.publication_schedules"):
             from apps.publication_schedules.views import ACTIONS as SCHEDULE_ACTIONS
             from apps.publication_schedules.views import workspace as schedule_workspace

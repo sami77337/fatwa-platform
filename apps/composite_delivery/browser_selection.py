@@ -13,8 +13,7 @@ from apps.answer_media import services as media
 from apps.answer_media.models import AnswerManifest, AnswerPart
 from apps.delivery_queue.models import DeliveryAttempt, DeliveryIntent
 
-from . import services
-from .test_browser import DeliveryDeskBrowserTests
+from . import services, test_browser
 from .test_selection import FEATURES, SelectionFixture
 
 OUT = Path(".local/qa/functional-continuation/composite-choice-browser")
@@ -23,9 +22,9 @@ OUT = Path(".local/qa/functional-continuation/composite-choice-browser")
 @override_settings(**FEATURES)
 class CompositeChoiceBrowserTests(SelectionFixture, LiveServerTestCase):
     host = "127.0.0.1"
-    sync = DeliveryDeskBrowserTests.sync
-    click = DeliveryDeskBrowserTests.click
-    import_part = DeliveryDeskBrowserTests.import_part
+    sync = test_browser.DeliveryDeskBrowserTests.sync
+    click = test_browser.DeliveryDeskBrowserTests.click
+    import_part = test_browser.DeliveryDeskBrowserTests.import_part
 
     def read_original(self, part_id):
         return media.staff_read(
@@ -90,7 +89,18 @@ class CompositeChoiceBrowserTests(SelectionFixture, LiveServerTestCase):
                     page.locator("#credential").fill("synthetic-credential-with-32-characters")
                     self.click(page, "دخول المكتب")
                     self.click(page, self.a["public_ref"])
-                    self.click(page, "تجهيز توصيل الجواب المركب")
+                    # The current Mufti workspace has a visible tab and a separate
+                    # collapsed journey shortcut; neither uses the legacy label.
+                    entry = page.locator(
+                        '.mufti-case-nav > form:has(> input[name="action"][value="composite_open"]) > button'
+                    )
+                    self.assertEqual(entry.count(), 1)
+                    self.assertTrue(entry.is_visible())
+                    with page.expect_navigation(wait_until="domcontentloaded") as opened:
+                        entry.focus()
+                        entry.press("Enter")
+                    self.assertEqual(opened.value.status, 200)
+                    self.assertIn("no-store", opened.value.headers.get("cache-control", ""))
                     self.assertEqual(page.locator('article[id^="part-"]').count(), 3)
                     self.assertEqual(
                         page.locator("#delivery-selection").get_attribute("data-selection"), "ALL"

@@ -21,7 +21,7 @@ from apps.editorial_workbench.reviewer_access import browser_proof
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 
-from . import governance_pins, governance_views, policy, services
+from . import governance_pins, governance_views, matches, policy, services
 
 SALT = "fatwa.canonical-search.native.v1"
 FIELDS = {
@@ -110,13 +110,39 @@ def _page(request, base, *, search=None, selected=None, message=""):
                         "case_ref": row["case_ref"],
                         "generation_id": row["generation_id"],
                         "document_id": row["document_id"],
+                        "query": search["query"],
+                        "mode": search["mode"],
+                        "match_index": 0,
                     },
                 )
-        opened = (
-            services.open_in_context(context, case_id=base["case_id"], **selected)
-            if selected
-            else None
-        )
+        opened = None
+        if selected:
+            if "query" in selected:
+                opened = matches.open_in_context(
+                    context,
+                    case_id=base["case_id"],
+                    generation_id=selected["generation_id"],
+                    document_id=selected["document_id"],
+                    value=selected["query"],
+                    mode=selected["mode"],
+                    index=selected["match_index"],
+                )
+                navigation = opened["navigation"]
+                for direction, step in (("previous", -1), ("next", 1)):
+                    if navigation[f"has_{direction}"]:
+                        navigation[f"{direction}_state"] = _state(
+                            request,
+                            base,
+                            {
+                                **selected,
+                                "case_ref": desk["case_ref"],
+                                "match_index": navigation["index"] + step,
+                            },
+                        )
+            else:
+                # Existing dictionary/shadow source forms retain their exact
+                # source-opening contract without inventing a literal query.
+                opened = services.open_in_context(context, case_id=base["case_id"], **selected)
         get_token(request)
         state = _state(
             request,
@@ -144,7 +170,13 @@ def _page(request, base, *, search=None, selected=None, message=""):
                     "governance_navigation": governance_pins.flag() == (bool, True),
                     "benchmark_navigation": benchmark_policy.flag() == (bool, True),
                     "values": search
-                    or {"query": "", "mode": "FTS", "kind": "ALL", "scope": "CASE", "page": 1},
+                    or {
+                        "query": selected.get("query", "") if selected else "",
+                        "mode": selected.get("mode", "FTS") if selected else "FTS",
+                        "kind": "ALL",
+                        "scope": "CASE",
+                        "page": 1,
+                    },
                 },
             )
         )
@@ -193,12 +225,16 @@ def workspace(request):
             )
         if action == "cs_source":
             state = _read_state(request, base, fields)
-            if set(state) != {"binding", "case_ref", "generation_id", "document_id"}:
+            source_keys = {"binding", "case_ref", "generation_id", "document_id"}
+            match_keys = {"query", "mode", "match_index"}
+            if set(state) not in (source_keys, source_keys | match_keys):
                 raise InvalidForm("search_result_state_invalid")
             return _page(
                 request,
                 base,
-                selected={key: state[key] for key in ("generation_id", "document_id")},
+                selected={
+                    key: value for key, value in state.items() if key not in {"binding", "case_ref"}
+                },
             )
         if action == "cs_rebuild":
             state = _read_state(request, base, fields)

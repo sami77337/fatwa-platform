@@ -2,6 +2,8 @@
 
 import json
 import os
+from email import policy
+from email.parser import BytesParser
 from hashlib import sha256
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -157,7 +159,30 @@ class RelatedMaterialBrowserTests(RelatedFixture, LiveServerTestCase):
                 self.capture(page, "revoked-source-cleared-draft-retained", proof)
                 self.authority.denied.clear()
                 page.locator('[name="synthetic_only"]').check()
-                self.submit(page, "answer_media_save")
+                with page.expect_request(
+                    lambda request: (
+                        request.method == "POST"
+                        and urlsplit(request.url).path == "/casework/staff/"
+                    )
+                ) as submitted:
+                    self.submit(page, "answer_media_save")
+                # Native multipart serialization uses CRLF for textarea line
+                # breaks. Preserve the exact submitted bytes, not the DOM's LF
+                # representation or a normalized copy of the stored answer.
+                request = submitted.value
+                content_type = request.headers["content-type"]
+                self.assertTrue(content_type.startswith("multipart/form-data;"))
+                payload = BytesParser(policy=policy.default).parsebytes(
+                    ("Content-Type: " + content_type + "\r\n\r\n").encode()
+                    + request.post_data_buffer
+                )
+                text_parts = [
+                    part.get_payload(decode=True)
+                    for part in payload.iter_parts()
+                    if part.get_param("name", header="content-disposition") == "text"
+                ]
+                self.assertEqual(text_parts, [DRAFT.replace("\n", "\r\n").encode()])
+                submitted_text = text_parts[0]
                 self.assertEqual(self.sync(lambda: CaseEvent.objects.count()), before + 1)
 
                 def saved():
@@ -167,7 +192,7 @@ class RelatedMaterialBrowserTests(RelatedFixture, LiveServerTestCase):
                 self.assertEqual(
                     self.sync(saved),
                     [
-                        ("TEXT", DRAFT.encode(), sha256(DRAFT.encode()).hexdigest()),
+                        ("TEXT", submitted_text, sha256(submitted_text).hexdigest()),
                         ("FILE", UPLOAD, sha256(UPLOAD).hexdigest()),
                         (
                             "YOUTUBE_LINK",
@@ -188,6 +213,7 @@ class RelatedMaterialBrowserTests(RelatedFixture, LiveServerTestCase):
                     no_case_write_during_panel_reads=True,
                     revoked_source_cleared=True,
                     explicit_save_once=True,
+                    exact_native_submitted_text=True,
                 )
                 (OUT / "result.json").write_text(json.dumps(proof, indent=2) + "\n")
             finally:

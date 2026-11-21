@@ -45,8 +45,14 @@ class FatwaReferenceBrowserTests(ReferenceFixture, LiveServerTestCase):
             proof["screenshots"].append(name)
 
     def submit(self, page, form, status=200):
+        self.assertEqual(form.count(), 1)
+        button = form.locator("button")
+        self.assertEqual(button.count(), 1)
+        self.assertTrue(button.is_visible())
+        self.assertTrue(form.evaluate("form => form.checkValidity()"))
         with page.expect_navigation(wait_until="domcontentloaded") as event:
-            form.locator("button").first.press("Enter")
+            button.focus()
+            button.press("Enter")
         self.assertEqual(event.value.status, status)
         return event.value
 
@@ -167,12 +173,12 @@ class FatwaReferenceBrowserTests(ReferenceFixture, LiveServerTestCase):
                     form.locator('[name="case_ref"]').fill(self.receipt["public_ref"])
                     self.submit(staff, form)
                     publication_form = staff.locator(
-                        'form:has(input[name="action"][value="pub_open"])'
-                    ).first
+                        '.mufti-case-nav > form:has(> input[name="action"][value="pub_open"])'
+                    )
                     self.submit(staff, publication_form)
                     withdrawal = staff.locator(
-                        'form:has(input[name="action"][value="pub_withdraw"])'
-                    ).first
+                        f'#publication-edition-{self.publication.pk} > form:has(> input[name="action"][value="pub_withdraw"])'
+                    )
                     withdrawal.locator('[name="confirm"]').check()
                     self.submit(staff, withdrawal)
                     self.assertTrue(

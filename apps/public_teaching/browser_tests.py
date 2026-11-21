@@ -78,7 +78,7 @@ class PublicTeachingBrowserTests(TeachingFixture, LiveServerTestCase):
         self.assertEqual(article.count(), 1)
         return article.get_attribute("data-teaching-id"), article.get_attribute("data-public-id")
 
-    def decision(self, page, identifier, command):
+    def native_decision(self, page, identifier, command):
         self.open_desk(page)
         form = page.locator(
             f'article[data-teaching-id="{identifier}"] form.teaching-decision[data-command="{command}"]'
@@ -190,9 +190,9 @@ class PublicTeachingBrowserTests(TeachingFixture, LiveServerTestCase):
                     )
                     self.capture(editor, "native-reviewed-source-choices", proof)
                     for identifier, _ in (attribution, first, second):
-                        self.decision(reviewer, identifier, "REVIEW")
-                        self.decision(publisher, identifier, "APPROVE")
-                        self.decision(publisher, identifier, "RELEASE")
+                        self.native_decision(reviewer, identifier, "REVIEW")
+                        self.native_decision(publisher, identifier, "APPROVE")
+                        self.native_decision(publisher, identifier, "RELEASE")
                     member_tokens = self.sync(
                         lambda: [
                             services.selection(TeachingVersion.objects.get(pk=identifier))
@@ -211,7 +211,7 @@ class PublicTeachingBrowserTests(TeachingFixture, LiveServerTestCase):
                         (publisher, "APPROVE"),
                         (publisher, "RELEASE"),
                     ):
-                        self.decision(page, ordered[0], command)
+                        self.native_decision(page, ordered[0], command)
 
                     self.assertEqual(reader.goto(origin + "/library-preview/").status, 200)
                     self.click(reader, reader.locator('a[href="/library-preview/teaching/"]'))
@@ -303,7 +303,7 @@ class PublicTeachingBrowserTests(TeachingFixture, LiveServerTestCase):
                     self.assertEqual(raw, MATERIAL)
                     proof["actual_material_download_sha256"] = sha256(raw).hexdigest()
 
-                    self.decision(publisher, first[0], "WITHDRAW")
+                    self.native_decision(publisher, first[0], "WITHDRAW")
                     refused = reader.goto(origin + f"/library-preview/teaching/lessons/{first[1]}/")
                     self.assertEqual(refused.status, 404)
                     refused_bytes = reader.context.request.get(

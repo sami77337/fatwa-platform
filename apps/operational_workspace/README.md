@@ -19,8 +19,10 @@ and encrypted fresh-read evidence remain required.
 The direct contract is SPEC-U03-004 with D-054 and D-067. This unit does not close
 all of U03. Intake/identity-review desks, assignment mutations, manual priority,
 operational metadata editing, transcript editing, publishing, sending and permission
-administration are separate functions. The queue is read-only, including its detail
-pages. Its source records are actual outputs of the existing domain services.
+administration are separate functions. The queue and its status detail pages remain
+read-only. A separately disabled internal-note action is documented in
+[NOTES.md](NOTES.md); it permits only an immutable note under independent current
+read/add grants. The queue's source records are actual outputs of existing services.
 
 ## Identity and authorization
 

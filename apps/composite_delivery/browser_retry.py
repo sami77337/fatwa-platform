@@ -87,10 +87,15 @@ class CompositeRetryBrowserTests(RetryFixture, LiveServerTestCase):
                     self.click(page, "دخول المكتب")
                     self.click(page, self.a["public_ref"])
                     entry = page.locator(
-                        'form:has(input[name="action"][value="composite_open"]) button'
+                        '.mufti-case-nav > form:has(> input[name="action"][value="composite_open"]) > button'
                     )
                     self.assertEqual(entry.count(), 1)
-                    self.click(page, entry.inner_text())
+                    self.assertTrue(entry.is_visible())
+                    with page.expect_navigation(wait_until="domcontentloaded") as opened:
+                        entry.focus()
+                        entry.press("Enter")
+                    self.assertEqual(opened.value.status, 200)
+                    self.assertIn("no-store", opened.value.headers.get("cache-control", ""))
                     full = self.sync(self.request)
                     original = None
                     failed_parent = None

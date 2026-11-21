@@ -65,6 +65,7 @@ NEW_WORKFLOWS = {
         "canonical_search_searchgeneration",
         "canonical_search_searchdocument",
     ),
+    "apps.canonical_search.match_recovery_support": (),
     "apps.public_answer_media.recovery_support": (
         "public_answer_media_recordingtranscript",
         "public_answer_media_transcriptaction",
@@ -96,6 +97,11 @@ NEW_WORKFLOWS = {
         "publication_schedules_publicationschedule",
         "publication_schedules_scheduleoutcome",
     ),
+    "apps.publication_destinations.recovery_support": (
+        "publication_destinations_destinationrecord",
+        "publication_destinations_destinationversion",
+        "publication_destinations_destinationevent",
+    ),
     "apps.composite_delivery.selection_recovery": (),
     "apps.development_taxonomy.recovery_support": (
         "development_taxonomy_developmenttree",
@@ -120,6 +126,7 @@ NEW_WORKFLOWS = {
     "apps.composite_delivery.retry_recovery": ("composite_delivery_compositeretry",),
     "apps.library_preview.reference_recovery": (),
     "apps.operational_workspace.recovery_support": (),
+    "apps.operational_workspace.notes_recovery_support": (),
     "apps.arabic_search_eval.benchmark_recovery_support": (
         "arabic_search_eval_evaluationrevision",
         "arabic_search_eval_evaluationdecision",
@@ -140,6 +147,14 @@ RESTORED_DENIAL_CHECKS = {
         "revoked_current_reader": 3,
     },
     "apps.canonical_search.recovery_support": {"missing_authority": 1, "inactive_identity": 1},
+    "apps.canonical_search.match_recovery_support": {
+        "disabled_search": 1,
+        "missing_authority": 1,
+        "missing_identity": 1,
+        "revoked_open": 1,
+        "revoked_search": 1,
+        "revoked_case_scope": 1,
+    },
     "apps.public_answer_media.recovery_support": {
         "missing_authority": 2,
         "missing_identity_provider": 2,
@@ -179,6 +194,17 @@ RESTORED_DENIAL_CHECKS = {
         "missing_authority": 1,
         "missing_identity_provider": 1,
         "revoked_current_reader": 1,
+    },
+    "apps.publication_destinations.recovery_support": {
+        "missing_destination_authority": 1,
+        "missing_current_identity": 1,
+        "missing_source_publication_authority": 1,
+        "missing_signature_trust": 1,
+        "revoked_current_reader_grant": 1,
+        "changed_original_publisher_epoch": 1,
+        "revoked_simulator_key": 1,
+        "changed_exact_destination_profile": 1,
+        "unavailable_current_source_rights": 1,
     },
     "apps.composite_delivery.selection_recovery": {
         "disabled_choices": 1,
@@ -230,6 +256,15 @@ RESTORED_DENIAL_CHECKS = {
         "revoked_case_read": 1,
         "revoked_transcript_read": 1,
         "expired_operational_grant": 1,
+    },
+    "apps.operational_workspace.notes_recovery_support": {
+        "disabled_note_feature": 1,
+        "disabled_metadata": 1,
+        "missing_identity_provider": 1,
+        "missing_authority": 1,
+        "revoked_current_identity": 1,
+        "revoked_case_read": 1,
+        "revoked_note_actions": 1,
     },
     "apps.arabic_search_eval.benchmark_recovery_support": {
         "missing_benchmark_authority": 2,
@@ -296,6 +331,24 @@ PRIOR_BROWSER_JOURNEYS = (
     ),
 )
 NEW_BROWSER_JOURNEYS = (
+    (
+        "apps.canonical_search.browser_matches.SearchMatchBrowserTests."
+        "test_native_exact_question_answer_matches_previous_next_and_current_denials",
+        ".local/qa/functional-continuation/search-match-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.operational_workspace.browser_notes.OperationalNotesBrowserTests."
+        "test_native_organizer_notes_preserve_source_and_remain_hidden_from_requester",
+        ".local/qa/functional-continuation/operational-notes-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.publication_destinations.browser_tests.PublicationDestinationsBrowserTests."
+        "test_native_distinct_destination_versions_signed_outcomes_correction_and_withdrawal_isolation",
+        ".local/qa/functional-continuation/publication-destinations-browser/result.json",
+        "modern",
+    ),
     (
         "apps.research_library.browser_tests.LibraryBrowserTests."
         "test_native_external_video_rights_versions_and_public_revocation",
@@ -470,8 +523,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["34"],
-        "Exactly 34 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["37"],
+        "Exactly 37 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -479,7 +532,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 34 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 37 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -676,10 +729,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 55
-        and len(expected_tables) == 77
+        and len(new_tables) == 58
+        and len(expected_tables) == 80
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 77 prior and new recovery tables are required",
+        "Exactly the 80 prior and new recovery tables are required",
     )
     require(
         all(
@@ -693,7 +746,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All twenty-four fresh-process workflow result records are required",
+        "All twenty-seven fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

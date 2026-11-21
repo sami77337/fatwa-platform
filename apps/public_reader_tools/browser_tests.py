@@ -178,6 +178,8 @@ class ReaderToolsBrowserTests(ReaderFixture, LiveServerTestCase):
                         "rgb(255, 255, 255)",
                     )
                     self.capture(page, "print-light-in-dark-preference", proof)
+                    print_url = page.url
+                    printable_content = page.locator("#print-content").inner_text()
                     # Observe the real native print event; do not replace window.print,
                     # browser security, a response, a grant or the product event handler.
                     page.evaluate(
@@ -189,10 +191,24 @@ class ReaderToolsBrowserTests(ReaderFixture, LiveServerTestCase):
                         page.get_by_role("button", name="طباعة هذه النسخة", exact=True).click()
                     self.assertEqual(event.value.status, 200)
                     expect(page.locator("html")).to_have_attribute("data-observed-print", "yes")
+                    proof["native_beforeprint_observed"] = True
+                    # window.print owns this document's native print session. Close
+                    # it after observing the real event, then load a fresh authorized
+                    # print document for Chromium's separate print-to-PDF operation.
+                    # Both reads use the real endpoint and current exact-version grant.
+                    context = page.context
+                    page.close()
+                    page = context.new_page()
+                    page.on(
+                        "pageerror",
+                        lambda error: proof["page_errors"].append(type(error).__name__),
+                    )
+                    self.assertEqual(page.goto(print_url).status, 200)
+                    self.assertEqual(page.locator("#print-content").inner_text(), printable_content)
                     printed = page.pdf(path=str(OUT / proof["printed_pdf"]), print_background=True)
                     self.assertTrue(printed.startswith(b"%PDF-"))
                     self.assertGreater(len(printed), 1000)
-                    proof["native_beforeprint_observed"] = True
+                    proof["pdf_from_fresh_authorized_print_document"] = True
                     proof["printed_pdf_sha256"] = sha256(printed).hexdigest()
                     grant = self.reader_authority.grants.pop("PRINT")
                     with page.expect_response(

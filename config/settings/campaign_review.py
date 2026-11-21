@@ -48,12 +48,14 @@ INSTALLED_APPS = [
     "apps.public_reader_tools",
     "apps.material_api",
     "apps.publication_schedules",
+    "apps.publication_destinations",
     "apps.development_taxonomy",
     "apps.public_teaching",
     "apps.operational_workspace",
 ]
 FATWA_OPERATIONAL_WORKSPACE_ENABLED = False
 FATWA_OPERATIONAL_WORKSPACE_AUTHORITY = None
+FATWA_OPERATIONAL_INTERNAL_NOTES_ENABLED = False
 FATWA_PUBLIC_READER_TOOLS_ENABLED = False
 FATWA_PUBLIC_READER_TOOLS_AUTHORITY = None
 FATWA_REFERENCE_LOOKUP_ENABLED = False
@@ -178,6 +180,7 @@ TEMPLATES[0]["DIRS"] = [
 ]
 MIDDLEWARE = [
     "apps.platform_recovery.middleware.MaintenanceGuard",
+    "apps.material_api.middleware.MaterialAPIResponses",
     *[
         "apps.library_preview.guard.PreviewCompositionGuard"
         if item == "apps.casework_web.guard.CaseworkGuard"
@@ -194,10 +197,13 @@ FATWA_IDENTITY_REGISTRY_AUTHORITY = None
 # Read-only allowed-material API; separate from privileged integrations.
 FATWA_MATERIAL_API_ENABLED = False
 
-MIDDLEWARE = ["apps.material_api.middleware.MaterialAPIResponses", *MIDDLEWARE]  # noqa: F405
-
 FATWA_PUBLICATION_SCHEDULES_ENABLED = False
 FATWA_PUBLICATION_SCHEDULES_AUTHORITY = None
+
+FATWA_PUBLICATION_DESTINATIONS_ENABLED = False
+FATWA_PUBLICATION_DESTINATIONS_AUTHORITY = None
+FATWA_PUBLICATION_DESTINATION_PROFILES = None
+FATWA_PUBLICATION_DESTINATIONS_PROVIDER_VERIFIER = None
 
 FATWA_DEVELOPMENT_TAXONOMY_ENABLED = False
 FATWA_DEVELOPMENT_TAXONOMY_AUTHORITY = None

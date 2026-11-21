@@ -14,7 +14,7 @@ from apps.casework_web.guard import private
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.platform_recovery.integration import MaintenanceUnavailable
 
-from . import access, identity, services
+from . import access, identity, notes, services
 from .boundary import policy
 
 BASE = access.BASE
@@ -62,6 +62,13 @@ def form(request, fields):
         or any(len(request.POST.getlist(key)) != 1 for key in request.POST)
     ):
         raise CaseConflict("operational_form_invalid")
+
+
+def integer(request, name):
+    value = request.POST.get(name)
+    if type(value) is not str or re.fullmatch(r"0|[1-9][0-9]{0,8}", value) is None:
+        raise CaseConflict("operational_form_invalid")
+    return int(value)
 
 
 @csrf_protect
@@ -136,6 +143,33 @@ def workspace(request):
                 case_ref=request.POST.get("case_ref"), section=request.POST.get("section"), **common
             ) as result:
                 response = render(request, "operational_workspace/detail.html", {"detail": result})
+        elif action == "notes":
+            form(request, {"action", "case_ref"})
+            with notes.projection(case_ref=request.POST.get("case_ref"), **common) as result:
+                response = render(request, "operational_workspace/notes.html", {"notes": result})
+        elif action == "add_note":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "note",
+                    "command_id",
+                    "metadata_version",
+                    "revision",
+                    "evidence_version",
+                },
+            )
+            with notes.append(
+                case_ref=request.POST.get("case_ref"),
+                note=request.POST.get("note"),
+                command_id=request.POST.get("command_id"),
+                expected_metadata_version=integer(request, "metadata_version"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                **common,
+            ) as result:
+                response = render(request, "operational_workspace/notes.html", {"notes": result})
         else:
             raise CaseConflict("operational_action_unavailable")
     except CaseConflict:

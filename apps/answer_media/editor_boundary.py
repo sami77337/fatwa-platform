@@ -5,7 +5,23 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
-from apps.research_library.services import identity_snapshot
+
+
+def identity_snapshot(provider):
+    """Pin the directory without loading an optional library application's models.
+
+    Answer integrity is checked by older casework profiles too. Those profiles
+    intentionally have no research-library schema, even when media flags are off.
+    The enhanced editor still requires the same strict pure revision contract.
+    """
+    method = getattr(provider, "projection_epoch", None)
+    try:
+        value = method() if callable(method) else None
+    except Exception as exc:
+        raise cases.CaseConflict("answer_editor_identity_snapshot_required") from exc
+    if type(value) is not str or not 1 <= len(value) <= 131072:
+        raise cases.CaseConflict("answer_editor_identity_snapshot_required")
+    return id(provider), provider.provider_id, value
 
 
 def head(case_id):

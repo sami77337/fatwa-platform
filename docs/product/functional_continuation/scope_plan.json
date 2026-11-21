@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 66,
-  "implemented_scope_candidates": 66,
+  "candidate_count": 70,
+  "implemented_scope_candidates": 70,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 11.871,
+  "candidate_percentage": 12.59,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -94,7 +94,8 @@
     "met_by_selected_scope": true,
     "shortfall_from_56_candidates": 0,
     "status": "HISTORICAL_INTERMEDIATE_MILESTONE_NOT_OVERALL_COMPLETION",
-    "met_by_certified_completion": false
+    "met_by_certified_completion": false,
+    "scope_exceeds_historical_upper_bound": true
   },
   "groups": [
     {
@@ -2513,6 +2514,219 @@
         "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "independent_publication_destinations",
+      "title_ar": "سجل ونسخ وتاريخ مستقل لكل وجهة نشر",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/publication_destinations/README.md",
+      "baseline_gap": "Untracked unfinished destination source was recovered; the prior integrated snapshot had no independent destination record/version/event histories.",
+      "service_test_labels": [
+        "apps.publication_destinations.tests",
+        "apps.publication_destinations.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.publication_destinations.tests.DestinationTests",
+        "apps.publication_destinations.test_recovery.DestinationRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.publication_destinations.browser_tests.PublicationDestinationsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/publication-destinations-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.publication_destinations.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "tables": [
+          "publication_destinations_destinationrecord",
+          "publication_destinations_destinationversion",
+          "publication_destinations_destinationevent"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "136",
+          "original_text": "لكل وجهة Publication Record خاص بها.",
+          "direct_spec_ids": [
+            "SPEC-U07-003",
+            "SPEC-U07-022"
+          ],
+          "decision_ids": [
+            "D-035"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 138
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create separately authorized WEBSITE and TELEGRAM_CHANNEL records with independent signed synthetic accepted/success/failure histories; exact current source, identity, grants and provider trust remain necessary. No real external publication is claimed."
+        },
+        {
+          "original_id": "137",
+          "original_text": "يمكن وجود نسخ مختلفة بحسب الوجهة مع الحفاظ على المصدر الأصلي.",
+          "direct_spec_ids": [
+            "SPEC-U07-003",
+            "SPEC-U07-022"
+          ],
+          "decision_ids": [
+            "D-035"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 139
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Keep separately reviewed destination versions pinned to unchanged original source bytes; correcting or withdrawing one destination must preserve the other destination and the complete source/delivery histories. Prove current-trust denials after encrypted restore."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "organizer_internal_notes",
+      "title_ar": "ملاحظات داخلية للمنظم لا تظهر للسائل",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/NOTES.md",
+      "baseline_gap": "Three unfinished local groundwork files existed; the original operational queue had no native independent organizer note read/add actions.",
+      "service_test_labels": [
+        "apps.operational_workspace.test_notes",
+        "apps.operational_workspace.test_notes_recovery"
+      ],
+      "service_test_classes": [
+        "apps.operational_workspace.test_notes.OperationalNoteTests",
+        "apps.operational_workspace.test_notes.OperationalNoteHTTPTests",
+        "apps.operational_workspace.test_notes_recovery.OperationalNotesRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_notes.OperationalNotesBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-notes-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.notes_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "100",
+          "original_text": "يمكنه إضافة Internal Notes لا تظهر للسائل.",
+          "direct_spec_ids": [
+            "SPEC-U02-032"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 102
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Use the actual organizer identity with independent per-case READ_INTERNAL_NOTES and ADD_INTERNAL_NOTE grants; append immutable notes while copying current tags/types server-side, preserve original question/answer, deny late/revoked grants, and prove both existing and newly added notes absent from the actual requester portal. Production role activation remains a separate D-067 policy decision."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "exact_question_answer_matches",
+      "title_ar": "الانتقال إلى التطابق داخل السؤال والجواب مع حفظ الأصل",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/canonical_search/MATCH_NAVIGATION.md",
+      "baseline_gap": "The saved search navigation worktree had no implementation. Search selections opened entire originals without bound query, match positions or native next/previous navigation.",
+      "service_test_labels": [
+        "apps.canonical_search.test_matches",
+        "apps.canonical_search.test_match_http",
+        "apps.canonical_search.test_match_recovery"
+      ],
+      "service_test_classes": [
+        "apps.canonical_search.test_matches.MatchProjectionTests",
+        "apps.canonical_search.test_matches.SearchMatchServiceTests",
+        "apps.canonical_search.test_match_http.MatchHTTPTests",
+        "apps.canonical_search.test_match_recovery.SearchMatchRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.canonical_search.browser_matches.SearchMatchBrowserTests",
+        "result_path": ".local/qa/functional-continuation/search-match-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.canonical_search.match_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "233",
+          "original_text": "يمكن الانتقال إلى المقطع المطابق داخل السؤال أو الجواب.",
+          "direct_spec_ids": [
+            "SPEC-U05-014"
+          ],
+          "decision_ids": [
+            "D-018"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 235
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Use a signed session-bound query/mode/source selection and current OPEN plus SEARCH authority to show actual source-character spans in question and answer, navigate previous/next matches through native POST forms and fragments, preserve all original bytes, escape source HTML and deny stale sources or revoked rights. Approximate results without exact spans must be stated honestly, with no invented match."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -2995,6 +3209,30 @@
       "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in docs/product/functional_continuation/search_benchmark/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "136",
+      "from": "UNFINISHED_LOCAL_WORK_RECOVERED_AFTER_66_CANDIDATE_SNAPSHOT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Recovered original local code and completed the implementation in apps/publication_destinations/README.md; focused PG17/18 tests reported, exact integrated browser and encrypted restore remain required. Original owner acceptance is unchanged."
+    },
+    {
+      "original_id": "137",
+      "from": "UNFINISHED_LOCAL_WORK_RECOVERED_AFTER_66_CANDIDATE_SNAPSHOT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Recovered original local code and completed the implementation in apps/publication_destinations/README.md; focused PG17/18 tests reported, exact integrated browser and encrypted restore remain required. Original owner acceptance is unchanged."
+    },
+    {
+      "original_id": "100",
+      "from": "UNFINISHED_LOCAL_WORK_RECOVERED_AFTER_66_CANDIDATE_SNAPSHOT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Recovered original local code and completed the implementation in apps/operational_workspace/NOTES.md; focused PG17/18 tests reported, exact integrated browser and encrypted restore remain required. Original owner acceptance is unchanged."
+    },
+    {
+      "original_id": "233",
+      "from": "NO_IMPLEMENTATION_IN_RECOVERED_SEARCH_MATCH_WORKTREE",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Implemented after verifying the saved worktree had no match-navigation code. 78 affected tests passed on each PG17/18; exact integrated protected browser and encrypted recovery still required."
     }
   ],
   "verified_checkpoints": [

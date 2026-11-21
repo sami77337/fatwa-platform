@@ -46,6 +46,7 @@ TABS = (
     ("delivery", "composite_open", "التوصيل المركب", "FATWA_COMPOSITE_DELIVERY_ENABLED"),
     ("pilot", "pilot_open", "محاكاة التسليم البشرية", "FATWA_PILOT_WORKBENCH_ENABLED"),
     ("publication_schedules", "ps_open", "مواعيد نشر النسخ المراجعة", "FATWA_PUBLICATION_SCHEDULES_ENABLED"),
+    ("publication_destinations", "pd_open", "سجلات النشر المستقلة للوجهات", "FATWA_PUBLICATION_DESTINATIONS_ENABLED"),
     ("publication", "pub_open", "نسخة النشر المستقلة", "FATWA_EXPERIMENTAL_PUBLICATION_ENABLED"),
     ("reports", "reports_open", "بلاغات المحتوى ومراجعتها", "FATWA_CONTENT_REPORTS_ENABLED"),
     ("quality", "quality_case", "جودة بيانات القضية", "FATWA_DATA_QUALITY_ENABLED"),
@@ -65,6 +66,8 @@ def _active(action):
         return "identities"
     if action.startswith("ps_"):
         return "publication_schedules"
+    if action.startswith("pd_"):
+        return "publication_destinations"
     if action.startswith("dt_"):
         return "development_taxonomy"
     if action.startswith("pt_"):

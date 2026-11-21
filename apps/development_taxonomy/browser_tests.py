@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -32,6 +33,17 @@ class DevelopmentTaxonomyBrowserTests(TaxonomyFixture, LiveServerTestCase):
             return pool.submit(work).result(timeout=30)
 
     def submit(self, page, button, expected=200):
+        # This long two-human journey shares the real loopback request budget.
+        # Pace native actions across its fixed minute windows; never clear the
+        # durable throttle or raise the application limit to make the test pass.
+        window = int(time.time()) // 60
+        if getattr(self, "_post_window", None) != window:
+            self._post_window, self._post_count = window, 0
+        if self._post_count >= 45:
+            remaining = (window + 1) * 60 - time.time() + 0.2
+            page.wait_for_timeout(max(0, int(remaining * 1000)))
+            self._post_window, self._post_count = int(time.time()) // 60, 0
+        self._post_count += 1
         with page.expect_navigation(wait_until="domcontentloaded") as response:
             button.focus()
             button.press("Enter")

@@ -23,6 +23,8 @@ OUT = Path(".local/qa/functional-continuation/publication-schedules-browser")
 BROWSER_FEATURES = {
     **FEATURES,
     "FATWA_LIBRARY_PREVIEW_ENABLED": True,
+    "FATWA_CASE_CITATIONS_ENABLED": True,
+    "FATWA_KNOWLEDGE_LINKS_ENABLED": True,
     "MIDDLEWARE": [
         "apps.library_preview.guard.PreviewCompositionGuard",
         "django.middleware.csrf.CsrfViewMiddleware",

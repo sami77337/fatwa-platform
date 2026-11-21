@@ -13,5 +13,6 @@
 {% if detail.section.key == "capability" %}<p>القناة الأصلية: <bdi>{{ detail.section.channel }}</bdi></p><ul>{% for part in detail.section.parts %}<li>الجزء {{ part.ordinal }} — <bdi>{{ part.kind }}</bdi><ul>{% for reason in part.reasons %}<li>{{ reason }}</li>{% empty %}<li>لا تعارض مسجل مع قدرات القناة الحالية.</li>{% endfor %}</ul></li>{% endfor %}</ul>{% endif %}
 {% if detail.section.notice %}<p>{{ detail.section.notice }}</p>{% endif %}
 </section>
+{% if detail.notes_available %}<form method="post" action="/casework/operations/" class="ops-notes-open">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ detail.public_ref }}"><button name="action" value="notes">الملاحظات الداخلية</button></form>{% endif %}
 <form method="post" action="/casework/operations/" id="ops-back">{% csrf_token %}<input type="hidden" name="action" value="queue"><button name="filter" value="{{ detail.section.key }}">العودة إلى القائمة</button></form>
 {% endblock %}

@@ -8,7 +8,7 @@ The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed 2
 
 The later `ac8f5170b82767d759bd656fe9c2ea33cf48fc9f` checkpoint passed614 affected tests,20 protected browser journeys and47-table encrypted restore on each PostgreSQL major. All18 workflows ultimately passed; one B6 browser-startup attempt first stopped before any journey and its unchanged isolated retry passed. Subsequent screenshot review found invisible native audio controls despite keyboard playback. `checkpoints/ac8f517.json` records both the successful execution and that finding. The current source fixes control height and strengthens actual visible-control assertions; it still requires fresh hosted execution.
 
-The current plan contains **66 implemented candidates in 26 functional groups**, with **zero current-plan certification** before the complete integrated run. This selected scope fits the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
+The current plan contains **70 implemented candidates in 29 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
 
 ## Selected groups
 
@@ -40,8 +40,11 @@ The current plan contains **66 implemented candidates in 26 functional groups**,
 | البحث المباشر برقم FT وإظهاره للنسخة المصرح بها | 217, 266 | `apps/library_preview/REFERENCES.md` | `.local/qa/functional-continuation/fatwa-reference-browser/result.json` |
 | طوابير المنظم بهويته الفعلية وصلاحيات مستقلة لكل قضية | 495, 496, 497, 498, 499, 500 | `apps/operational_workspace/README.md` | `.local/qa/functional-continuation/operational-browser/result.json` |
 | قياس البحث الفعلي بأحكام مستقلة ومقاييس لكل استعلام | 242, 245 | `docs/product/functional_continuation/search_benchmark/README.md` | `.local/qa/functional-continuation/search-benchmark-browser/result.json` |
+| سجل مستقل ونسخ مصرح بها لكل وجهة نشر | 136, 137 | `apps/publication_destinations/README.md` | `.local/qa/functional-continuation/publication-destinations-browser/result.json` |
+| الملاحظات الداخلية للمنظم واستبعادها من بوابة السائل | 100 | `apps/operational_workspace/NOTES.md` | `.local/qa/functional-continuation/operational-notes-browser/result.json` |
+| الانتقال إلى التطابق داخل السؤال والجواب | 233 | `apps/canonical_search/MATCH_NAVIGATION.md` | `.local/qa/functional-continuation/search-match-browser/result.json` |
 
-The source extract preserves65 exact specification objects and32 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
+The source extract preserves69 exact specification objects and32 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
 
 ## What the continuation adds
 
@@ -51,19 +54,21 @@ The next 20 candidates add a human-authored immutable YouTube reference, an inde
 
 The next11 candidates add independently signed bounded retries of exact failed parts, native FT lookup with separate public-reference disclosure, an actual organizer queue with five derived operational lanes, and actual canonical-search evaluation with independently authored judgments, paired SQL runs and Precision/Recall/MRR/coverage. The queue preserves the actor's real role and adds no scholarly approval authority. The benchmark keeps the earlier title-word engine separate and does not manufacture a specialist gold corpus.
 
+The recovered untracked destination app and incomplete organizer-note groundwork add three candidates. Destination correction and withdrawal preserve the other destination and original source. Notes use actual organizer identities and independent read/add grants and stay absent from requester status. The fourth newly implemented candidate adds signed native question/answer match navigation after confirming that worktree held no saved implementation. All four still require integrated browser and encrypted-restore evidence.
+
 Stable classification IDs and development fixtures do not establish the owner's final scholarly taxonomy. Synthetic identities do not establish civil identity. Shadow comparisons do not establish production quality or real gold judgments. Native schedule execution does not establish a production cron. Signed synthetic provider results do not establish external delivery. These limits remain visible in each app contract.
 
 ## Required integrated evidence
 
-The explicit registries require **34 exact protected browser identities**: eight inherited and26 continuation journeys. Thirty-three emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
+The explicit registries require **37 exact protected browser identities**: eight inherited and29 continuation journeys. Thirty-six emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
 
-The encrypted drill must restore **77 nonempty tables**:22 inherited and55 additionally covered tables, with **24 explicit fresh-process helper results and110 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The latest five covered tables are one retry history table and four evaluation/benchmark tables, of which the two evaluation tables already existed. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
+The encrypted drill must restore **80 nonempty tables**:22 inherited and58 additionally covered tables, with **27 explicit fresh-process helper results and132 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The latest three covered tables preserve independent destination records, versions and events; internal notes reuse the existing organization history. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
 
 Native workflows execute through `config.campaign_urls`. Actual media bytes, play/seek, readable print/export output, offline network failure, current revocation and independently reviewed state transitions are required where applicable. Local tests do not certify a protected browser pass. Browser protection may not be disabled to satisfy evidence.
 
 ## Remaining work and boundaries
 
-Three pinned additive audits reconcile all556 original owner rows against code and test evidence; audit classifications themselves grant no credit. Remaining functional work includes further organizer actions, lifecycle/sensitivity policies, per-destination publication histories, controlled integration adapters and other gaps identified by those audits. Real provider credentials, scientific datasets and owner policy decisions are separate dependencies; they must not be invented or replaced by synthetic assertions.
+Three pinned additive audits reconcile all556 original owner rows against code and test evidence; audit classifications themselves grant no credit. Remaining functional work includes further organizer actions, lifecycle/sensitivity policies, controlled integration adapters and other gaps identified by those audits. Real provider credentials, scientific datasets and owner policy decisions are separate dependencies; they must not be invented or replaced by synthetic assertions.
 
 Owner120 has an implemented native publication proposal when a YouTube destination cannot receive the current answer form. It deliberately remains blocked and uncounted: no externally verified public fatwa page is configured, so the proposal contains no sendable URL and creates no outgoing delivery. A loopback preview is not a substitute for that dependency. Owner243's real specialist corpus,244's real judgments and246's broader ranking/normalization/embedding variants are also uncounted.
 

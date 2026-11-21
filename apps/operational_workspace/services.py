@@ -14,7 +14,7 @@ from apps.experimental_publication.models import PublicationEdition
 from apps.public_answer_media import services as recording
 from apps.public_answer_media.models import RecordingTranscript
 
-from . import retry_projection
+from . import notes, retry_projection
 from .boundary import rows, scope
 
 FILTERS = {
@@ -355,6 +355,7 @@ def queue_projection(*, selected_filter="all", **common):
                     "revision": case.revision,
                     "evidence_version": case.evidence_version,
                     "pending": pending,
+                    "notes_available": any(notes.access(case, guard).values()),
                 }
             )
         yield {
@@ -389,4 +390,5 @@ def detail_projection(*, case_ref, section, **common):
             "section": detail,
             "subject": guard.actor.subject_id,
             "role": guard.actor.role,
+            "notes_available": any(notes.access(case, guard).values()),
         }
