@@ -305,7 +305,8 @@ def decide(
         if edition is None or edition.content_sha256 != content_sha256:
             raise cases.CaseConflict("operational_publication_edition_changed")
         bridge = PublicationBridge(case, guard)
-        bridge.permit(edition, "READ", required=True)
+        if action != "WITHDRAW":
+            bridge.permit(edition, "READ", required=True)
         bridge.permit(edition, action, required=True)
         if action != "WITHDRAW":
             bridge.source(edition)

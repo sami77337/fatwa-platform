@@ -10,6 +10,9 @@ from django.utils import timezone
 from apps.case_citations.services import _projection_expiry_guard
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
+from apps.data_privacy import services as classification
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.experimental_publication.models import PublicationEdition
 from apps.library_preview import services as preview
@@ -52,6 +55,26 @@ def _dependencies(record):
         result.append(value["scholar_id"])
     result.extend(value.get("scholar_ids", []))
     return result
+
+
+def _privacy_sources(record, actor, directory):
+    """A released copy never inherits permission to republish its sources."""
+    targets = [("PUBLICATION", record.publication_id)]
+    targets.extend(("PUBLIC_KNOWLEDGE", value) for value in _dependencies(record))
+    if record.series.kind == "LESSON":
+        from apps.scholarly_links.models import LessonVersion
+
+        version = LessonVersion.objects.filter(
+            lesson__public_id=record.payload["lesson_public_id"],
+            number=record.payload["lesson_version"],
+            sha256=record.payload["lesson_sha256"],
+        ).first()
+        if version is None:
+            raise cases.CaseConflict("public_lesson_unavailable")
+        targets.append(("LESSON_VERSION", version.pk))
+        targets.append(("SERIES_VERSION", version.series_version_id))
+    for kind, identifier in targets:
+        privacy.staff(kind, identifier, provider=directory, actor=actor, action="PUBLISH")
 
 
 def _base(record):
@@ -207,6 +230,7 @@ class Snapshot:
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def projection():
     """Hold through the caller's final HTML/XML render, not just its data reads."""
@@ -276,6 +300,12 @@ def projection():
                     )
                 ):
                     continue
+                try:
+                    privacy.public("PUBLIC_KNOWLEDGE", record.pk)
+                    releaser = _grant_actor(lease, record, directory)
+                    _privacy_sources(record, releaser, directory)
+                except PrivacyDenied:
+                    continue
                 for event in (approval, lease):
                     identity = _grant_actor(event, record, directory)
                     actors.append((identity, event, record))
@@ -300,13 +330,36 @@ def projection():
                 # dependency still needs its exact source/teacher permissions.
                 lease = services._verify(record)[3]
                 actor = _grant_actor(lease, record, directory)
-                services._dependencies(
-                    record, actor=actor, provider=directory, case=record.series.case
+                # This dependency validation consumes the publication's pinned
+                # originals again, after its own public reader has closed. Keep
+                # that use bound to this derivative's current release actor;
+                # reading a public source never grants private READ implicitly.
+                principal = (
+                    classification.staff_principal(directory, actor)
+                    if classification.enabled()
+                    else None
                 )
+                with privacy.published_sources(principal):
+                    services._dependencies(
+                        record, actor=actor, provider=directory, case=record.series.case
+                    )
                 if record.series.kind == "PRESENTATION":
-                    related[str(record.pk)] = scholarly.related_publications(
+                    candidates = scholarly.related_publications(
                         record, sources, actor=actor, provider=directory
                     )
+                    related[str(record.pk)] = []
+                    for candidate in candidates:
+                        try:
+                            privacy.staff(
+                                "PUBLICATION",
+                                candidate["publication_id"],
+                                provider=directory,
+                                actor=actor,
+                                action="PUBLISH",
+                            )
+                        except PrivacyDenied:
+                            continue
+                        related[str(record.pk)].append(candidate)
             snapshot = Snapshot(sources, available, related)
             yield snapshot
             # All permission callbacks precede the final source/history snapshot.

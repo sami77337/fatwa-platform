@@ -182,11 +182,9 @@ def _transcript(guard, actor, transcript_id, *, reviewed=False):
     )
     if row is None:
         raise cases.CaseConflict("recording_transcript_unavailable")
-    from apps.data_privacy.integration import original_action
-    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.integration import original as privacy
 
-    privacy("RECORDING_TRANSCRIPT", row.pk, provider=guard.provider, actor=actor,
-            action=original_action())
+    privacy("RECORDING_TRANSCRIPT", row.pk, provider=guard.provider, actor=actor)
     _verify(row)
     part, pins, raw = _source(guard, actor, row.part_id)
     if pins != row.source_pins or sha256(row.text.encode()).hexdigest() != row.text_sha256:

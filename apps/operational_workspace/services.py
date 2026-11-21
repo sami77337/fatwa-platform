@@ -6,6 +6,8 @@ from apps.answer_media import services as media
 from apps.answer_media.models import AnswerManifest
 from apps.case_organization import services as organization
 from apps.casework import services as cases
+from apps.data_privacy import operational_hooks as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.models import DeliveryIntent
 from apps.development_taxonomy.boundary import verify as verify_taxonomy
 from apps.development_taxonomy.models import CaseClassification, HumanReview
@@ -52,6 +54,9 @@ DELIVERY_STATES = {
 
 
 def metadata(case, guard):
+    approved_visible = bool(
+        case.approved_answer_id and privacy.allowed(guard, "ANSWER", case.approved_answer_id)
+    )
     history = organization._rows(case)
     latest = history[-1] if history else None
     tags = latest.tags if latest else []
@@ -70,7 +75,7 @@ def metadata(case, guard):
         if review:
             verify_taxonomy(review)
         classified = bool(
-            case.approved_answer_id
+            approved_visible
             and binding.answer_id == case.approved_answer_id
             and binding.evidence_version == case.evidence_version
             and review
@@ -82,7 +87,7 @@ def metadata(case, guard):
         reasons.append("لم تسجل وسوم بشرية")
     if not types:
         reasons.append("لم يسجل نوع السؤال")
-    if case.approved_answer_id and not classified:
+    if approved_visible and not classified:
         reasons.append("لا يوجد تصنيف فقهي حالي لهذا الجواب")
     return {
         "key": "metadata",
@@ -98,6 +103,15 @@ def metadata(case, guard):
 
 def delivery(case, guard):
     intents = rows(DeliveryIntent.objects.filter(case_key=case.public_ref))
+    for revision in {row["answer_revision"] for row in intents}:
+        answer = case.answers.filter(revision=revision).first()
+        if answer is None:
+            raise cases.CaseConflict("operational_delivery_source_unavailable")
+        privacy.require(guard, "ANSWER", answer.pk)
+        for identifier in media.AnswerPart.objects.filter(manifest__answer=answer).values_list(
+            "pk", flat=True
+        ):
+            privacy.require(guard, "ANSWER_PART", identifier)
     retries = guard.observe(lambda: retry_projection.read(case))
     resolved = set(retries["resolved"])
     parts = []
@@ -146,6 +160,8 @@ def delivery(case, guard):
 
 def publication_state(case, guard):
     latest = PublicationEdition.objects.filter(case=case).order_by("-number").first()
+    if latest:
+        privacy.require(guard, "PUBLICATION", latest.pk)
     result = {
         "key": "publication",
         "label": FILTERS["publication"],
@@ -197,6 +213,10 @@ def transcript(case, guard):
         raise cases.CaseConflict("operational_transcript_bound")
     versions, reasons = [], []
     for row in latest.values():
+        if not privacy.allowed(guard, "RECORDING_TRANSCRIPT", row.pk) or not privacy.allowed(
+            guard, "ANSWER_PART", row.part_id
+        ):
+            continue
         actions = list(row.actions.order_by("sequence"))
         for action in actions:
             recording._verify(action)
@@ -250,6 +270,7 @@ def capability(case, guard):
     }
     if not case.approved_answer_id:
         return result
+    privacy.require(guard, "ANSWER", case.approved_answer_id)
     origin = cases._delivery_origin_for_locked_case(case)
     result["channel"] = origin["channel"]
     profile = guard.profile(origin["channel"])
@@ -268,6 +289,8 @@ def capability(case, guard):
     manifest = AnswerManifest.objects.filter(answer_id=case.approved_answer_id).first()
     if manifest:
         originals = list(manifest.parts.order_by("ordinal"))
+        for row in originals:
+            privacy.require(guard, "ANSWER_PART", row.pk)
         if (
             len(originals) != manifest.part_count
             or media._digest([media._fields(row) for row in originals]) != manifest.sha256
@@ -323,7 +346,11 @@ def sections(case, guard, *, selected=None):
         if selected and key != selected:
             continue
         if guard.permit(case, SECTION_ACTIONS[key], key, required=bool(selected)):
-            result.append(READERS[key](case, guard))
+            try:
+                result.append(READERS[key](case, guard))
+            except PrivacyDenied:
+                if selected:
+                    raise
     return result
 
 

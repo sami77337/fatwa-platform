@@ -26,7 +26,8 @@ permissions:
 jobs:
   citation-browser:
     # The previous aggregate stalled here after forty successful journeys.
-    # Exercise this boundary first, retaining protected Chromium and diagnostics.
+    # Exercise this boundary and the real two-role privacy forms first,
+    # retaining protected Chromium and diagnostics.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -65,18 +66,20 @@ jobs:
           sudo install -d /etc/postgresql-common
           printf 'create_main_cluster = false\n' | sudo tee /etc/postgresql-common/createcluster.conf
           sudo apt-get install -y --no-install-recommends "postgresql-$PG_EXPECTED_MAJOR" ffmpeg
-      - name: Verify native candidate handoff with current grants
+      - name: Verify native candidate handoff and privacy with current grants
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           python infra/dev/with_casework_postgres.py \
             --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" \
             --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
-            python manage.py test apps.ai_gateway.browser_tests --noinput --verbosity 2
+            python manage.py test apps.ai_gateway.browser_tests apps.data_privacy.browser_tests --noinput --verbosity 2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: citation-native-pg${{ matrix.postgres }}
-          path: .local/qa/functional-continuation/ai-citation-browser
+          path: |
+            .local/qa/functional-continuation/ai-citation-browser
+            .local/qa/functional-continuation/data-privacy-browser
           include-hidden-files: true
           if-no-files-found: error
   workspace:

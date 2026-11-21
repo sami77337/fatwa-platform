@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "apps.operational_workspace",
     "apps.ai_gateway",
     "apps.staff_sessions",
+    "apps.data_privacy",
 ]
 FATWA_STAFF_SESSIONS_ENABLED = False
 FATWA_STAFF_SESSION_AUTHORITY = None
@@ -199,6 +200,7 @@ TEMPLATES[0]["DIRS"] = [
 MIDDLEWARE = [
     "apps.platform_recovery.middleware.MaintenanceGuard",
     "apps.staff_sessions.middleware.SessionContext",
+    "apps.data_privacy.integration.PrivacyResponses",
     "apps.material_api.middleware.MaterialAPIResponses",
     "apps.private_media.links.PrivateMediaResponses",
     *[

@@ -44,7 +44,10 @@ class ExactGrants:
         rows = services.history(target)
         if rows and rows[-1].level == level:
             return target
-        self.permit(target, level, "CLASSIFY", previous=rows[-1].level if rows else "")
+        subject = getattr(self, "classifier", "editor")
+        self.permit(
+            target, level, "CLASSIFY", previous=rows[-1].level if rows else "", actor=subject
+        )
         services.classify(
             kind=kind,
             identifier=identifier,
@@ -54,7 +57,7 @@ class ExactGrants:
             expected_source_digest=target.source_digest,
             request_key=uuid.uuid4(),
             provider=self.directory,
-            subject_id="editor",
+            subject_id=subject,
             synthetic_fixtures_only=True,
         )
         return target

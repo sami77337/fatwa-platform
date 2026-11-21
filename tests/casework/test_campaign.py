@@ -23,6 +23,7 @@ class CampaignProfileTests(SimpleTestCase):
         expected_middleware = [
             "apps.platform_recovery.middleware.MaintenanceGuard",
             "apps.staff_sessions.middleware.SessionContext",
+            "apps.data_privacy.integration.PrivacyResponses",
             "apps.material_api.middleware.MaterialAPIResponses",
             "apps.private_media.links.PrivateMediaResponses",
             *[

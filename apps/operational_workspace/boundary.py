@@ -25,6 +25,7 @@ from apps.casework.models import (
 )
 from apps.composite_delivery import services as composite
 from apps.composite_delivery.models import CompositeDelivery, CompositeRetry
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.models import (
     ApprovalClaim,
     DeliveryAttempt,
@@ -403,6 +404,14 @@ class Guard:
         )
         allowed = self.call(values)
         self.permissions.append((values, allowed))
+        if allowed:
+            from apps.data_privacy.operational_hooks import permission
+            from apps.data_privacy.services import PrivacyDenied
+
+            try:
+                permission(self, case, action, resource)
+            except PrivacyDenied:
+                allowed = False
         if required and not allowed:
             raise cases.CaseConflict("operational_read_denied")
         return allowed
@@ -562,6 +571,7 @@ class Guard:
 
 
 @mutation_context
+@privacy.contextual
 @contextmanager
 def scope(*, subject_id, provider, synthetic_fixtures_only=False, session_deadline=None):
     cases._guard(synthetic_fixtures_only)
@@ -597,5 +607,10 @@ def scope(*, subject_id, provider, synthetic_fixtures_only=False, session_deadli
             request_epoch,
             session_deadline,
         )
-        yield guard
-        guard.finish()
+        from apps.data_privacy.services import enabled as privacy_enabled
+        from apps.data_privacy.services import staff_principal
+
+        principal = staff_principal(provider, actor) if privacy_enabled() else None
+        with privacy.using(principal):
+            yield guard
+            guard.finish()

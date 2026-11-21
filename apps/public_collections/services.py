@@ -9,6 +9,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.casework import services as cases
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.library_preview import services as preview
 from apps.platform_recovery.integration import mutation_context, mutation_service
@@ -283,7 +284,7 @@ def _record_permission(guard, provider, actor, record, action):
     guard.permit(provider, fresh, case, action, record.series.kind, record.pk, record.sha256)
 
 
-def available(guard):
+def available(guard, *, public=False):
     """Only complete current collections. No omitted-member count or title leaks."""
     rows = list(
         CollectionRevision.objects.select_related("series__case", "parent__series").order_by(
@@ -302,6 +303,31 @@ def available(guard):
         if stage != "APPROVED" or lease is None:
             continue
         try:
+            if public:
+                privacy.public("PUBLIC_COLLECTION", row.pk)
+                actor, _ = guard.actor(guard.directory, lease.subject_id, row.series.case_id)
+                if (
+                    guard.directory.provider_id != lease.provider_id
+                    or actor.auth_epoch != lease.auth_epoch
+                ):
+                    raise cases.CaseConflict("collection_release_identity_changed")
+                targets = [
+                    (
+                        "PUBLICATION"
+                        if pin["kind"] == "PUBLICATION"
+                        else "LIBRARY_VERSION"
+                        if pin["kind"] == "LIBRARY"
+                        else "PUBLIC_KNOWLEDGE",
+                        pin["id"],
+                    )
+                    for pin in row.payload["members"]
+                ]
+                if row.parent_id:
+                    targets.append(("PUBLIC_COLLECTION", row.parent_id))
+                for kind, identifier in targets:
+                    privacy.staff(
+                        kind, identifier, provider=guard.directory, actor=actor, action="PUBLISH"
+                    )
             cards = None
             for event in (approval, lease):
                 directory = guard.directory
@@ -755,11 +781,12 @@ def reorder(
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def public_projection():
     try:
         with scope(freeze_history=True) as guard:
-            rows = available(guard)
+            rows = available(guard, public=True)
             result = {}
             for identifier, item in rows.items():
                 row = item["record"]

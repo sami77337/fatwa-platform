@@ -287,8 +287,11 @@ def create_edition(
         if privacy_enabled():
             # The creator knows the submitted inputs. A new saved copy still
             # needs its own human label before any subsequent read or release.
-            return {"id": str(edition.pk), "number": edition.number,
-                    "classification_required": True}
+            return {
+                "id": str(edition.pk),
+                "number": edition.number,
+                "classification_required": True,
+            }
         return _projection(edition, editorial=True)
 
 
@@ -332,6 +335,11 @@ def act(
             reviewed=reviewed,
             before_append=final_admission,
         )
+        if action == "WITHDRAW":
+            from apps.data_privacy.integration import allowed as privacy_allowed
+
+            if not privacy_allowed("PUBLICATION", edition.pk):
+                return {"id": str(edition.pk), "number": edition.number, "state": "WITHDRAWN"}
         return _projection(edition, editorial=True)
 
 
@@ -558,7 +566,9 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
         locked = {}
         for row in sorted(scoped, key=lambda row: row["case_id"]):
             try:
-                context = stack.enter_context(cases._staff_case(row["case_id"], subject_id, provider, True))
+                context = stack.enter_context(
+                    cases._staff_case(row["case_id"], subject_id, provider, True)
+                )
                 privacy("CASE", context[0].pk, provider=provider, actor=context[1], action="SEARCH")
                 locked[row["case_id"]] = context
             except PrivacyDenied:

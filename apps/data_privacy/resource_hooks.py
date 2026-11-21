@@ -26,7 +26,9 @@ def _references(case, *, edition_id, source_row_id=None):
 
 def reference(case, source, *, action="READ"):
     pin = source["source"]
-    identifiers = _references(case, edition_id=pin["edition_id"], source_row_id=pin["source_row_id"])
+    identifiers = _references(
+        case, edition_id=pin["edition_id"], source_row_id=pin["source_row_id"]
+    )
     if not identifiers and services.enabled():
         raise services.PrivacyDenied("privacy_registered_source_required")
     for identifier in identifiers:
@@ -36,9 +38,11 @@ def reference(case, source, *, action="READ"):
 def transcript(case, identifier, *, action="READ"):
     integration.source("TRANSCRIPT_LINK", identifier, action=action)
     if apps.is_installed("apps.source_rights"):
-        for source_id in apps.get_model("source_rights.SourceVersion").objects.filter(
-            transcript_id=identifier, sourceregistration__case=case
-        ).values_list("pk", flat=True):
+        for source_id in (
+            apps.get_model("source_rights.SourceVersion")
+            .objects.filter(transcript_id=identifier, sourceregistration__case=case)
+            .values_list("pk", flat=True)
+        ):
             integration.source("SOURCE_VERSION", source_id, action=action)
 
 
@@ -48,7 +52,7 @@ def permit(case, actor, provider, action, resource):
         raise services.PrivacyDenied("privacy_resource_action_invalid")
 
     def check(kind, identifier):
-        return integration.staff(kind, identifier, provider=provider, actor=actor, action=action)
+        return integration.original(kind, identifier, provider=provider, actor=actor, action=action)
 
     if resource.kind in DIRECT:
         check(DIRECT[resource.kind], resource.identifier)

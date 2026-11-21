@@ -11,6 +11,8 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.experimental_publication.models import PublicationEdition
 from apps.library_preview import services as preview
@@ -123,6 +125,7 @@ def _boundary(source):
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def reader_projection(publication_id, *, action=None):
     if action is not None and action not in ACTIONS:
@@ -139,6 +142,13 @@ def reader_projection(publication_id, *, action=None):
             with recording_public.publication_projection(source.pk, include_media=False) as result:
                 available = []
                 for operation in (action,) if action else ACTIONS:
+                    if operation in {"PRINT", "DOWNLOAD_TEXT"}:
+                        try:
+                            privacy.public("PUBLICATION", source.pk, action="EXPORT")
+                        except PrivacyDenied:
+                            if action is not None:
+                                raise preview.PreviewUnavailable() from None
+                            continue
                     if guard.permission(operation, required=action is not None):
                         available.append(operation)
                 guard.check_state()

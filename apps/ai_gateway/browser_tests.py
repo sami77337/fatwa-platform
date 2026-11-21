@@ -71,8 +71,15 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
             )
         ) as response:
             button.focus()
+            self.step("panel_button_focused")
             button.press("Enter")
-        self.assertEqual(response.value.status, expected, response.value.body()[:1000])
+            self.step("panel_button_pressed")
+        # Response.body() has no timeout. An intentionally rejected fetch need
+        # not be consumed by the panel, so reading it even when this assertion
+        # succeeds can block the whole native journey. Assert the HTTP status
+        # and the bounded, user-visible result instead; neither check is omitted.
+        self.step("panel_response_observed")
+        self.assertEqual(response.value.status, expected)
         self.step("panel_response_received")
         if expected == 200:
             page.wait_for_function(

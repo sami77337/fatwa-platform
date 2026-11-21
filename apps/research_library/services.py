@@ -330,7 +330,7 @@ def _permit(case, actor, provider, action, *, namespace="", external_id="", vers
     _permit_raw(snapshot[0], values)
     assert_policy_snapshot(snapshot)
     if version_digest and action in {"VIEW", "READ", "CITE", "DOWNLOAD", "OFFLINE", "EXPORT", "REVIEW", "APPROVE", "RELEASE"}:
-        from apps.data_privacy.integration import staff as privacy
+        from apps.data_privacy.integration import original as privacy
 
         identifier = LibraryVersion.objects.filter(item__case=case, digest=version_digest).values_list("pk", flat=True).get()
         privacy(

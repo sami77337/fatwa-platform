@@ -62,9 +62,10 @@ def main():
     import django
 
     django.setup()
+    from django.conf import settings
     from django.core.management import call_command
     from django.db import connection
-    from django.test.runner import DiscoverRunner
+    from django.test.utils import get_runner
 
     from apps.intake_workflow.guards import require_owned_database
 
@@ -79,7 +80,10 @@ def main():
     else:
         raise AssertionError("Container source filesystem accepted a write")
 
-    runner = DiscoverRunner(verbosity=2, interactive=False)
+    # The configured runner creates the ownership witness in its test database.
+    # A bare DiscoverRunner creates an unowned test database and is correctly
+    # rejected by the unchanged migration admission boundary.
+    runner = get_runner(settings)(verbosity=2, interactive=False)
     count = runner.build_suite(LABELS).countTestCases()
     if count != 4 or runner.run_tests(LABELS):
         raise SystemExit("Container native workspace checks did not pass")

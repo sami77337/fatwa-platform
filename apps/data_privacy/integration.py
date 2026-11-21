@@ -8,6 +8,7 @@ from django.apps import apps
 
 READERS = ContextVar("privacy_current_source_readers", default=())
 SOURCE_USES = ContextVar("privacy_current_original_uses", default=())
+SOURCE_READERS = ContextVar("privacy_current_original_publishers", default=())
 
 
 @contextmanager
@@ -85,10 +86,12 @@ def using(principal):
 def published_sources(principal):
     """A public copy consumes originals only through its current real publisher."""
     token = SOURCE_USES.set((*SOURCE_USES.get(), "PUBLISH"))
+    reader = SOURCE_READERS.set((*SOURCE_READERS.get(), principal))
     try:
         with using(principal):
             yield
     finally:
+        SOURCE_READERS.reset(reader)
         SOURCE_USES.reset(token)
 
 
@@ -97,7 +100,25 @@ def original_action(action="READ"):
 
 
 def source(kind, identifier, *, action="READ"):
+    if SOURCE_READERS.get():
+        from . import services
+
+        if not services.applicable(kind, str(identifier)):
+            return None
+        principal = SOURCE_READERS.get()[-1]
+        if principal is None:
+            raise services.PrivacyDenied("privacy_current_publisher_required")
+        return services.require(
+            kind, identifier, principal=principal, action=original_action(action)
+        )
     return current(kind, identifier, action=original_action(action))
+
+
+def original(kind, identifier, *, provider, actor, action="READ"):
+    """Keep the publisher distinct from a nested source's native scholarly actor."""
+    if SOURCE_READERS.get():
+        return source(kind, identifier, action=action)
+    return staff(kind, identifier, provider=provider, actor=actor, action=action)
 
 
 def current(kind, identifier, *, action="READ"):
@@ -162,7 +183,7 @@ def _original(case):
         for identifier in model.objects.filter(case=case, evidence__version=1).values_list(
             "pk", flat=True
         ):
-            current("SOURCE_RECEIPT", identifier)
+            source("SOURCE_RECEIPT", identifier)
 
 
 @contextmanager
@@ -176,7 +197,7 @@ def staff_case(case, actor, provider):
             else None
         )
         with using(principal):
-            current("CASE", case.pk)
+            source("CASE", case.pk)
             _original(case)
             yield
 

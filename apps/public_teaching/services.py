@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.library_preview import services as preview
 from apps.mufti_review.identity import resolve_identity
@@ -357,6 +358,37 @@ def _latest_released(item):
     )
 
 
+def _privacy_sources(guard, row, release):
+    """Current release identity admits exact sources without exposing originals."""
+    actor, _ = guard.actor(
+        guard.directory,
+        release.subject_id,
+        row.item.case_id,
+        expected_epoch=release.auth_epoch,
+        expected_provider=release.provider_id,
+    )
+    targets = []
+    if row.item.kind == "SCHOLAR_MATERIAL":
+        targets = [
+            ("PUBLIC_KNOWLEDGE", row.profile_id),
+            ("LIBRARY_VERSION", row.library_version_id),
+        ]
+    elif row.item.kind == "LESSON":
+        targets = [
+            ("PUBLIC_KNOWLEDGE", row.lesson_metadata_id),
+            ("LESSON_VERSION", row.lesson_version_id),
+            ("SERIES_VERSION", row.series_version_id),
+            ("ANSWER_PART", row.lesson_version.source_part_id),
+        ]
+    elif row.item.kind == "SERIES":
+        targets = [
+            ("SERIES_VERSION", row.series_version_id),
+            *(("PUBLIC_TEACHING", member["id"]) for member in row.members),
+        ]
+    for kind, identifier in targets:
+        privacy.staff(kind, identifier, provider=guard.directory, actor=actor, action="PUBLISH")
+
+
 def _released(guard, row, *, visiting=()):
     if str(row.pk) in visiting or len(visiting) > 2:
         raise cases.CaseConflict("teaching_member_cycle")
@@ -372,6 +404,9 @@ def _released(guard, row, *, visiting=()):
         raise cases.CaseConflict("teaching_current_release_required")
     if events["RELEASE"].valid_until <= timezone.now():
         raise cases.CaseConflict("teaching_release_expired")
+    if guard.public:
+        privacy.public("PUBLIC_TEACHING", row.pk)
+        _privacy_sources(guard, row, events["RELEASE"])
     guard.deadlines.append(events["RELEASE"].valid_until)
     source = None
     for command in ("REVIEW", "APPROVE", "RELEASE"):
@@ -1098,6 +1133,7 @@ class PublicSnapshot:
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def public_projection():
     try:
