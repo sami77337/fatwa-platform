@@ -2,6 +2,7 @@
 {% block title %}{{ title }} — المكتبة المعرفية{% endblock %}
 {% block metadata %}{% if canonical %}<link rel="canonical" href="{{ canonical }}"><meta property="og:url" content="{{ canonical }}"><meta property="og:title" content="{{ title }}"><meta property="og:type" content="website">{% endif %}{% if description %}<meta name="description" content="{{ description }}"><meta property="og:description" content="{{ description }}">{% endif %}{% endblock %}
 {% block content %}
+{% if teaching_url %}<p><a href="{{ teaching_url }}">الدروس والسلاسل والمواد العامة للعلماء</a></p>{% endif %}
 <nav aria-label="مسار التصفح"><ol itemscope itemtype="https://schema.org/BreadcrumbList">{% for crumb in breadcrumbs %}<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><a itemprop="item" href="{{ crumb.url }}"><span itemprop="name">{{ crumb.title }}</span></a><meta itemprop="position" content="{{ crumb.position }}"></li>{% endfor %}</ol></nav>
 {% block knowledge_content %}{% endblock %}
 {% endblock %}

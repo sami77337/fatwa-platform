@@ -1,0 +1,17 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ detail.subject }}</bdi> — <bdi>{{ detail.role }}</bdi></p>
+<h2><bdi>{{ detail.public_ref }}</bdi> — {{ detail.section.label }}</h2>
+<p>{{ detail.stage }} — الوقائع {{ detail.evidence_version }} — سجل القضية {{ detail.revision }}</p>
+<details><summary>أصل السؤال</summary><p class="original" id="ops-original">{{ detail.question }}</p></details>
+<section id="ops-detail" data-section="{{ detail.section.key }}">
+<ul>{% for reason in detail.section.reasons %}<li>{{ reason }}</li>{% empty %}<li>لا إجراء معلق في هذا القسم حاليًا.</li>{% endfor %}</ul>
+{% if detail.section.key == "metadata" %}<p>إصدار البيانات: {{ detail.section.version }}</p><p>الوسوم: {% for tag in detail.section.tags %}{{ tag }}{% if not forloop.last %}، {% endif %}{% empty %}غير مسجلة{% endfor %}</p><p>أنواع السؤال: {% for value in detail.section.question_types %}{{ value }}{% if not forloop.last %}، {% endif %}{% empty %}غير مسجلة{% endfor %}</p><p>تصنيف حالي للجواب: {% if detail.section.current_classification %}مسجل{% else %}غير مسجل{% endif %}</p>{% endif %}
+{% if detail.section.key == "delivery" %}<ul>{% for part in detail.section.parts %}<li>الجواب {{ part.answer_revision }}، الجزء {{ part.ordinal }}: {{ part.label }}{% if part.retry_number %} — المحاولة الإضافية {{ part.retry_number }}{% endif %}{% if part.resolved_by_retry %} — فشل تاريخي محفوظ؛ تحققت إفادة المزود لمحاولة لاحقة مطابقة{% endif %}</li>{% empty %}<li>لا محاولات مسجلة.</li>{% endfor %}</ul>{% endif %}
+{% if detail.section.key == "publication" %}<p>النسخة التحريرية {{ detail.section.number }}: {{ detail.section.state }}</p>{% endif %}
+{% if detail.section.key == "transcript" %}<ul>{% for version in detail.section.versions %}<li>التسجيل {{ version.original_ordinal }}، التفريغ {{ version.number }}: {{ version.state }}</li>{% empty %}<li>لا تفريغ محفوظ.</li>{% endfor %}</ul>{% endif %}
+{% if detail.section.key == "capability" %}<p>القناة الأصلية: <bdi>{{ detail.section.channel }}</bdi></p><ul>{% for part in detail.section.parts %}<li>الجزء {{ part.ordinal }} — <bdi>{{ part.kind }}</bdi><ul>{% for reason in part.reasons %}<li>{{ reason }}</li>{% empty %}<li>لا تعارض مسجل مع قدرات القناة الحالية.</li>{% endfor %}</ul></li>{% endfor %}</ul>{% endif %}
+{% if detail.section.notice %}<p>{{ detail.section.notice }}</p>{% endif %}
+</section>
+<form method="post" action="/casework/operations/" id="ops-back">{% csrf_token %}<input type="hidden" name="action" value="queue"><button name="filter" value="{{ detail.section.key }}">العودة إلى القائمة</button></form>
+{% endblock %}

@@ -25,6 +25,19 @@ ADDITIONAL_WORKFLOWS = (
     "apps.public_answer_media.recovery_support",
     "apps.precise_citations.recovery_support",
     "apps.case_attachments.video_recovery",
+    "apps.answer_media.youtube_recovery_support",
+    "apps.identity_registry.recovery_support",
+    "apps.public_reader_tools.recovery_support",
+    "apps.material_api.recovery_support",
+    "apps.publication_schedules.recovery_support",
+    "apps.composite_delivery.selection_recovery",
+    "apps.development_taxonomy.recovery_support",
+    "apps.canonical_search.governance_recovery_support",
+    "apps.public_teaching.recovery_support",
+    "apps.composite_delivery.retry_recovery",
+    "apps.library_preview.reference_recovery",
+    "apps.operational_workspace.recovery_support",
+    "apps.arabic_search_eval.benchmark_recovery_support",
 )
 
 
@@ -320,7 +333,10 @@ def drill(pg_bin):
                         observed = json.loads(line)
                     except json.JSONDecodeError:
                         continue
-                    if not isinstance(observed, dict) or "verified_restored_workflow" not in observed:
+                    if (
+                        not isinstance(observed, dict)
+                        or "verified_restored_workflow" not in observed
+                    ):
                         continue
                     name = observed["verified_restored_workflow"]
                     assert name in ADDITIONAL_WORKFLOWS and name not in restored_results
@@ -346,7 +362,9 @@ def drill(pg_bin):
                 assert maintenance.status(root=control)["phase"] == "FROZEN"
                 receipt = {
                     "status": "PASS",
-                    "tested_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                    "tested_sha": subprocess.check_output(
+                        ["git", "rev-parse", "HEAD"], text=True
+                    ).strip(),
                     "postgres_major": postgres_major,
                     "tables": {name: before["tables"][name] for name in tables},
                     "durable_original_references": references,
@@ -363,7 +381,9 @@ def drill(pg_bin):
                     "plaintext_dump_present": bool(list(root.rglob("database.dump"))),
                 }
                 assert receipt["plaintext_dump_present"] is False
-                proof = Path(".local/qa/functional-continuation") / f"recovery-pg{postgres_major}.json"
+                proof = (
+                    Path(".local/qa/functional-continuation") / f"recovery-pg{postgres_major}.json"
+                )
                 proof.parent.mkdir(parents=True, exist_ok=True)
                 proof.write_text(json.dumps(receipt, indent=2) + "\n")
                 print(json.dumps(receipt, indent=2))

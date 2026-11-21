@@ -28,15 +28,18 @@ INTEGRATED = {**FEATURES, "FATWA_SCHOLARLY_LINKS_ENABLED": True, "FATWA_ANSWER_M
 
 
 class LinkAuthority(ScholarlyAuthority):
-    def __init__(self, refs):
+    def __init__(self, refs, *, provider_id="synthetic-publication-directory"):
         self.refs, self.denied = set(refs), set()
+        self.provider_id = provider_id
 
     def projection_epoch(self):
-        return sha256(repr((sorted(self.refs), sorted(self.denied))).encode()).hexdigest()
+        return sha256(
+            repr((self.provider_id, sorted(self.refs), sorted(self.denied))).encode()
+        ).hexdigest()
 
     def permits(self, **values):
         return (
-            values["provider_id"] == "synthetic-publication-directory"
+            values["provider_id"] == self.provider_id
             and values["subject_id"] in {"editor", "other", "publisher"}
             and values["auth_epoch"] == "epoch-1"
             and values["case_ref"] in self.refs
@@ -48,18 +51,22 @@ class LinkAuthority(ScholarlyAuthority):
 class IntegratedFixture(CurationFixture):
     def setUp(self):
         super().setUp()
+        seed_key = uuid.uuid4().hex
         self.second = cases.intake_case(
             original_question="PRIVATE second related case",
-            source_event_id="public-related-event",
-            requester_id="public-related-requester",
-            idempotency_key="public-related-key",
+            source_event_id="public-related-event-" + seed_key,
+            requester_id="public-related-requester-" + seed_key,
+            idempotency_key="public-related-key-" + seed_key,
             synthetic_fixtures_only=True,
         )
         for key, value in self.directory.identities.items():
             self.directory.identities[key] = replace(
                 value, case_keys=value.case_keys | {self.second["public_ref"]}
             )
-        self.link_authority = LinkAuthority([self.receipt["public_ref"], self.second["public_ref"]])
+        self.link_authority = LinkAuthority(
+            [self.receipt["public_ref"], self.second["public_ref"]],
+            provider_id=self.directory.provider_id,
+        )
         configured = override_settings(FATWA_SCHOLARLY_LINKS_AUTHORITY=self.link_authority)
         configured.enable()
         self.addCleanup(configured.disable)

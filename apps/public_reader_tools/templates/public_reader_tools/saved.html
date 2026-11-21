@@ -1,0 +1,8 @@
+{% extends "library_preview/base.html" %}
+{% block title %}المراجع المحفوظة على هذا الجهاز{% endblock %}
+{% block metadata %}<link rel="stylesheet" href="{% url 'public_reader_style' %}"><script src="{% url 'public_reader_script' %}" defer></script>{% endblock %}
+{% block content %}
+<h1>المراجع المحفوظة على هذا الجهاز</h1><p>هذه مراجع محلية وليست أرشيفًا للنصوص أو الملفات. تُعاد مراجعة إتاحة كل نسخة عند فتح القائمة، ولا تنتقل صلاحية الوصول مع حفظ المرجع.</p>
+<p id="reader-tool-status" role="status" aria-live="polite"></p><section id="saved-references" aria-label="المراجع المحفوظة"></section>
+<noscript><p>تحتاج هذه القائمة إلى JavaScript للوصول إلى المراجع التي حفظتها على هذا الجهاز.</p></noscript>
+{% endblock %}

@@ -80,19 +80,21 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 35,
-  "implemented_scope_candidates": 35,
+  "candidate_count": 66,
+  "implemented_scope_candidates": 66,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 6.295,
+  "candidate_percentage": 11.871,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
     "whole_point_min": 56,
     "whole_point_max": 66,
-    "met_by_selected_scope": false,
-    "shortfall_from_56_candidates": 21
+    "met_by_selected_scope": true,
+    "shortfall_from_56_candidates": 0,
+    "status": "HISTORICAL_INTERMEDIATE_MILESTONE_NOT_OVERALL_COMPLETION",
+    "met_by_certified_completion": false
   },
   "groups": [
     {
@@ -1298,6 +1300,1219 @@
       "implementation_commits": [
         "7fcc7a9"
       ]
+    },
+    {
+      "id": "authored_youtube_reference",
+      "title_ar": "إضافة مرجع YouTube بشري وحفظ الرابط الأصلي",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/answer_media/YOUTUBE_LINK.md",
+      "baseline_gap": "The earlier composer stored owned text/audio/files but had no native immutable external YouTube reference part with current authorized release and explicit unverified availability.",
+      "service_test_labels": [
+        "apps.answer_media.test_youtube",
+        "apps.answer_media.test_youtube_recovery"
+      ],
+      "service_test_classes": [
+        "apps.answer_media.test_youtube.YouTubeLinkTests",
+        "apps.answer_media.test_youtube.YouTubeLinkHTTPTests",
+        "apps.answer_media.test_youtube_recovery.YouTubeRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.answer_media.browser_youtube.YouTubeAnswerBrowserTests",
+        "result_path": ".local/qa/functional-continuation/youtube-answer-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.answer_media.youtube_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "tables": [
+          "answer_media_answermanifest",
+          "answer_media_answerpart",
+          "answer_media_privateanswerrelease"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "73",
+          "original_text": "يمكنه إضافة رابط YouTube.",
+          "direct_spec_ids": [
+            "SPEC-U02-011"
+          ],
+          "decision_ids": [
+            "D-008"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 75
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Enter an actual accepted YouTube URL through the native composer, preserve its exact original bytes and derived metadata independently, approve and release it through the canonical answer workflow, and deny current revoked access without fetching or embedding remote video."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "related_material_side_panel",
+      "title_ar": "بحث المواد المرتبطة في لوحة مستقلة عن مسودة الجواب",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/answer_media/RELATED_MATERIALS.md",
+      "baseline_gap": "Existing search pages displaced the composer; no separate live side panel retained the actual unsaved answer, selected file and authored link during native search/open/back.",
+      "service_test_labels": [
+        "apps.answer_media.test_related"
+      ],
+      "service_test_classes": [
+        "apps.answer_media.test_related.RelatedMaterialHTTPTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.answer_media.browser_related.RelatedMaterialBrowserTests",
+        "result_path": ".local/qa/functional-continuation/answer-related-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": null,
+        "status": "NO_NEW_TABLES_REUSE_CURRENT_ANSWER_AND_SEARCH_RECOVERY",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "492",
+          "original_text": "Related Materials في Side Panel مستقل.",
+          "direct_spec_ids": [
+            "SPEC-U02-020",
+            "SPEC-U02-021"
+          ],
+          "decision_ids": [
+            "D-047"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 494
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Search and open currently authorized canonical source results in an independent native side panel while the real draft textarea, selected file and link remain unchanged; no draft is sent or saved until the human explicitly saves the answer."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "human_identity_registry",
+      "title_ar": "فصل الشخص عن هوية المنصة وربطها ودمجها وفصلها بمراجعة بشرية",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/identity_registry/README.md",
+      "baseline_gap": "Source identities existed on immutable intake receipts, but there was no separate Person graph, reviewed linkage state or append-only native merge/split with unchanged canonical source facts.",
+      "service_test_labels": [
+        "apps.identity_registry.tests",
+        "apps.identity_registry.test_http",
+        "apps.identity_registry.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.identity_registry.tests.IdentityRegistryTests",
+        "apps.identity_registry.test_http.IdentityRegistryHTTPTests",
+        "apps.identity_registry.test_recovery.IdentityRegistryRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.identity_registry.browser_tests.IdentityRegistryBrowserTests",
+        "result_path": ".local/qa/functional-continuation/identities-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.identity_registry.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 6,
+        "tables": [
+          "identity_registry_platformidentity",
+          "identity_registry_identityobservation",
+          "identity_registry_person",
+          "identity_registry_linkproposal",
+          "identity_registry_registryoperation",
+          "identity_registry_identitymembership"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "153",
+          "original_text": "نفرق بين Person الحقيقي وبين Platform Identity.",
+          "direct_spec_ids": [
+            "SPEC-U14-002"
+          ],
+          "decision_ids": [
+            "D-036"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 155
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Persist a Person separately from exact source/account/sender PlatformIdentity and preserve distinct identities despite matching display names."
+        },
+        {
+          "original_id": "156",
+          "original_text": "حالات الربط تشمل مثلًا: Unlinked، Possible Match، Verified Link.",
+          "direct_spec_ids": [
+            "SPEC-U14-004"
+          ],
+          "decision_ids": [
+            "D-036"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 158
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Execute actual UNLINKED, POSSIBLE_MATCH, independently VERIFIED_LINK and explicit unlink transitions through native forms and current per-action authority."
+        },
+        {
+          "original_id": "158",
+          "original_text": "عمليات Merge/Split للهويات مدققة وقابلة للمراجعة.",
+          "direct_spec_ids": [
+            "SPEC-U14-006"
+          ],
+          "decision_ids": [
+            "D-036"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 160
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Preview and apply a reviewed merge and explicit subset split, with immutable before/after memberships and no change to canonical case facts or delivery destinations."
+        },
+        {
+          "original_id": "421",
+          "original_text": "Merge/Split للهويات مسجل.",
+          "direct_spec_ids": [
+            "SPEC-U14-019"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 423
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Reopen the exact append-only merge/split operation and membership history after encrypted restore; historical review never creates present access."
+        },
+        {
+          "original_id": "439",
+          "original_text": "Person منفصل عن Platform Identity.",
+          "direct_spec_ids": [
+            "SPEC-U14-002"
+          ],
+          "decision_ids": [
+            "D-055"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 441
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Keep optional Person linkage independent of preserved platform-origin identities through native capture, verified linking, merging and splitting."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "public_reader_actions",
+      "title_ar": "حفظ المرجع والمشاركة والطباعة والتنزيل بحسب السياسة الحالية",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/public_reader_tools/README.md",
+      "baseline_gap": "Public reading lacked independently authorized native save-reference/share/print/download actions with actual output and withdrawal checks.",
+      "service_test_labels": [
+        "apps.public_reader_tools.tests",
+        "apps.public_reader_tools.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.public_reader_tools.tests.ReaderToolsTests",
+        "apps.public_reader_tools.test_recovery.ReaderRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.public_reader_tools.browser_tests.ReaderToolsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/reader-tools-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.public_reader_tools.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "278",
+          "original_text": "تدعم Save/Share/Print/Download وفق السياسة.",
+          "direct_spec_ids": [
+            "SPEC-U09-020",
+            "SPEC-U11-024"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 280
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Use actual local reference saving, a real shareable released URL, readable browser print output and exact text download under separate current policy; withdrawal or absent current authority closes every action without caching private case content."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "allowed_material_api",
+      "title_ar": "واجهة قراءة للمطورين على المواد المسموح بها",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/material_api/README.md",
+      "baseline_gap": "Local imports/exports and HTML material readers did not provide a current-rights developer JSON/original-byte API.",
+      "service_test_labels": [
+        "apps.material_api.tests",
+        "apps.material_api.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.material_api.tests.MaterialAPITests",
+        "apps.material_api.test_recovery.MaterialAPIRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.material_api.browser_tests.MaterialAPIBrowserTests",
+        "result_path": ".local/qa/functional-continuation/material-api-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.material_api.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "370",
+          "original_text": "يوجد Developer API للمواد المسموح بها.",
+          "direct_spec_ids": [
+            "SPEC-U13-022"
+          ],
+          "decision_ids": [
+            "D-057"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 372
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Search and open the exact released allowed-material version through the developer JSON API, download its actual original bytes, and prove feature, directory, source-release and current actor revocation fail closed with consistent unavailable responses."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "future_publication_schedule",
+      "title_ar": "جدولة نشر نسخة مراجعة وإلغاؤها وتنفيذها عند الاستحقاق",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/publication_schedules/README.md",
+      "baseline_gap": "Reviewed publication editions could be released immediately, but there was no durable exact-edition future schedule, cancellation or due-time worker with authority and source revalidation.",
+      "service_test_labels": [
+        "apps.publication_schedules.tests",
+        "apps.publication_schedules.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.publication_schedules.tests.PublicationScheduleTests",
+        "apps.publication_schedules.test_recovery.ScheduleRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.publication_schedules.browser_tests.PublicationScheduleBrowserTests",
+        "result_path": ".local/qa/functional-continuation/publication-schedules-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.publication_schedules.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 2,
+        "tables": [
+          "publication_schedules_publicationschedule",
+          "publication_schedules_scheduleoutcome"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "138",
+          "original_text": "يمكن scheduling للنشر مستقبلًا.",
+          "direct_spec_ids": [
+            "SPEC-U07-023"
+          ],
+          "decision_ids": [
+            "D-035"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 140
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Schedule an exact reviewed edition for a future time, reject early execution, cancel an independent schedule, execute the actual due worker and read its published page; changed source or current authority holds execution without claiming a production cron."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "explicit_text_delivery_choice",
+      "title_ar": "اختيار الجزء النصي وحده من جواب مركب قبل الإرسال",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/composite_delivery/SELECTION.md",
+      "baseline_gap": "The approved composite-delivery plan always selected every answer part; no explicit signed text-only choice bound the omitted original audio/file parts.",
+      "service_test_labels": [
+        "apps.composite_delivery.test_selection",
+        "apps.composite_delivery.test_selection_recovery"
+      ],
+      "service_test_classes": [
+        "apps.composite_delivery.test_selection.ExplicitSelectionTests",
+        "apps.composite_delivery.test_selection_recovery.SelectionRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.composite_delivery.browser_selection.CompositeChoiceBrowserTests",
+        "result_path": ".local/qa/functional-continuation/composite-choice-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.composite_delivery.selection_recovery",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "122",
+          "original_text": "يمكن أيضًا اختيار إرسال الجزء النصي فقط إذا كان جواب الشيخ يحتوي Text + Audio.",
+          "direct_spec_ids": [
+            "SPEC-U01-023"
+          ],
+          "decision_ids": [
+            "D-060"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 124
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Explicitly choose TEXT_ONLY for a canonical approved text-plus-audio answer, inspect omitted exact originals, independently sign and stage the selected plan, verify the actual synthetic provider result, preserve full originals and reject stale/currently unauthorized choice changes."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "development_taxonomy",
+      "title_ar": "شجرة تصنيف مستقلة ومعرّفات ثابتة وترحيل مراجع قابل للعكس",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/development_taxonomy/README.md",
+      "baseline_gap": "Imported source-book headings did not supply a separate human-created classification tree with stable semantic IDs, primary/additional case bindings or reviewed version migration and exact rollback.",
+      "service_test_labels": [
+        "apps.development_taxonomy.tests",
+        "apps.development_taxonomy.test_http",
+        "apps.development_taxonomy.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.development_taxonomy.tests.DevelopmentTaxonomyTests",
+        "apps.development_taxonomy.test_http.DevelopmentTaxonomyHTTPTests",
+        "apps.development_taxonomy.test_recovery.DevelopmentTaxonomyRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.development_taxonomy.browser_tests.DevelopmentTaxonomyBrowserTests",
+        "result_path": ".local/qa/functional-continuation/taxonomy-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.development_taxonomy.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 7,
+        "tables": [
+          "development_taxonomy_developmenttree",
+          "development_taxonomy_concept",
+          "development_taxonomy_treeversion",
+          "development_taxonomy_humanreview",
+          "development_taxonomy_migrationplan",
+          "development_taxonomy_migrationexecution",
+          "development_taxonomy_caseclassification"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "159",
+          "original_text": "لدينا Sharia Taxonomy متعددة المستويات.",
+          "direct_spec_ids": [
+            "SPEC-U04-003"
+          ],
+          "decision_ids": [
+            "D-017",
+            "D-069"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 161
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create and independently review a real multilevel development classification tree, expand its ordered native outline, and preserve earlier versions without claiming final scholarly taxonomy acceptance."
+        },
+        {
+          "original_id": "161",
+          "original_text": "الفتوى يمكن أن تنتمي لأكثر من باب.",
+          "direct_spec_ids": [
+            "SPEC-U04-004"
+          ],
+          "decision_ids": [
+            "D-011",
+            "D-069"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 163
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Classify one actual approved canonical answer under multiple explicitly selected reviewed categories without rewriting the answer."
+        },
+        {
+          "original_id": "162",
+          "original_text": "يمكن تحديد Primary Category وتصنيفات إضافية.",
+          "direct_spec_ids": [
+            "SPEC-U04-004"
+          ],
+          "decision_ids": [
+            "D-011",
+            "D-069"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 164
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Require exactly one primary category and distinct explicit additional categories in the native binding workflow, with validation and current authority."
+        },
+        {
+          "original_id": "164",
+          "original_text": "كل Category لها ID ثابت مستقل عن اسمها الظاهر.",
+          "direct_spec_ids": [
+            "SPEC-U04-013",
+            "SPEC-U04-014"
+          ],
+          "decision_ids": [
+            "D-044",
+            "D-069"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 166
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Preserve immutable semantic UUIDs through rename and move; split or merged meanings receive new UUIDs and cannot silently reuse prior meanings."
+        },
+        {
+          "original_id": "165",
+          "original_text": "تغييرات Taxonomy لاحقًا لها Versioning وMigration Mapping.",
+          "direct_spec_ids": [
+            "SPEC-U04-013",
+            "SPEC-U04-014"
+          ],
+          "decision_ids": [
+            "D-044",
+            "D-069"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 167
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create a complete version migration map, inspect exact affected cases, require an independent review, apply actual bindings atomically and perform a precise audited rollback; missing equivalents remain held."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "reviewed_search_governance",
+      "title_ar": "قاموس مرادفات بإصدارات ومقارنة بحث فعلية قبل اعتماد التغيير",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "docs/product/functional_continuation/search_governance/README.md",
+      "baseline_gap": "Canonical literal/FTS/fuzzy retrieval existed, but there was no durable human-authored dictionary revision with independent current-source review or actual baseline/candidate shadow comparison.",
+      "service_test_labels": [
+        "apps.canonical_search.test_governance",
+        "apps.canonical_search.test_governance_http",
+        "apps.canonical_search.test_governance_recovery"
+      ],
+      "service_test_classes": [
+        "apps.canonical_search.test_governance.SearchGovernanceTests",
+        "apps.canonical_search.test_governance_http.SearchGovernanceHTTPTests",
+        "apps.canonical_search.test_governance_recovery.SearchGovernanceRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.canonical_search.browser_governance.SearchGovernanceBrowserTests",
+        "result_path": ".local/qa/functional-continuation/search-governance-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.canonical_search.governance_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 4,
+        "tables": [
+          "canonical_search_synonymrevision",
+          "canonical_search_synonympreview",
+          "canonical_search_synonymdecision",
+          "canonical_search_shadowcomparison"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "222",
+          "original_text": "يدعم Synonym Dictionary.",
+          "direct_spec_ids": [
+            "SPEC-U05-007"
+          ],
+          "decision_ids": [
+            "D-018",
+            "D-044"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 224
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Author bounded versioned synonym terms and mappings, run a real current-source preview, obtain independent review and explicitly use that exact vocabulary for real FTS while preserving ordinary/literal search and original query bytes."
+        },
+        {
+          "original_id": "247",
+          "original_text": "يمكن استخدام Shadow Mode قبل اعتماد تغيير كبير.",
+          "direct_spec_ids": [
+            "SPEC-U05-027"
+          ],
+          "decision_ids": [
+            "D-023"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 249
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Execute and persist actual baseline and candidate searches against the same current authorized source pins, inspect result/order differences, preserve the baseline and prohibit automatic promotion; revoke access after dictionary retirement."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "public_teaching_catalogue",
+      "title_ar": "مواد العلماء والدروس والسلاسل المنشورة بمراجعة مستقلة",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/public_teaching/README.md",
+      "baseline_gap": "Scholar profiles and private scholarly lesson models lacked an independently released public scholar-material catalogue with ordered series, actual native lesson audio and current source withdrawal.",
+      "service_test_labels": [
+        "apps.public_teaching.tests",
+        "apps.public_teaching.test_http",
+        "apps.public_teaching.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.public_teaching.tests.TeachingTests",
+        "apps.public_teaching.test_http.TeachingHTTPTests",
+        "apps.public_teaching.test_recovery.TeachingRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.public_teaching.browser_tests.PublicTeachingBrowserTests",
+        "result_path": ".local/qa/functional-continuation/public-teaching-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.public_teaching.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "tables": [
+          "public_teaching_teachingitem",
+          "public_teaching_teachingversion",
+          "public_teaching_teachingaction"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "281",
+          "original_text": "تعرض الفتاوى والدروس والمواد العامة.",
+          "direct_spec_ids": [
+            "SPEC-U09-014"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 283
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Publish an independently reviewed scholar attribution combining the actual released fatwa, lesson and general material; open exact public content and revoke it when current source authority is withdrawn."
+        },
+        {
+          "original_id": "290",
+          "original_text": "الدروس والسلاسل.",
+          "direct_spec_ids": [
+            "SPEC-U09-017",
+            "SPEC-U11-003"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 292
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Expose actual reviewed lessons and ordered versioned series in the native public knowledge catalogue; play and download original lesson audio and navigate/reorder series under independent human review."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "bounded_failed_part_retry",
+      "title_ar": "إعادة محاولة الجزء الفاشل بخطة مستقلة مع منع التكرار",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/composite_delivery/RETRY.md",
+      "baseline_gap": "Composite plans preserved failed parts but did not provide a new independently signed bounded successor while retaining original failure receipts and resolving only exact successful leaves.",
+      "service_test_labels": [
+        "apps.composite_delivery.test_retry",
+        "apps.composite_delivery.test_retry_recovery",
+        "apps.case_lifecycle.test_retry"
+      ],
+      "service_test_classes": [
+        "apps.composite_delivery.test_retry.RetryTests",
+        "apps.composite_delivery.test_retry.RetryHTTPTests",
+        "apps.composite_delivery.test_retry.SelectedRetryTests",
+        "apps.composite_delivery.test_retry_recovery.RetryRecoveryTests",
+        "apps.case_lifecycle.test_retry.RetryClosureTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.composite_delivery.browser_retry.CompositeRetryBrowserTests",
+        "result_path": ".local/qa/functional-continuation/composite-retry-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.composite_delivery.retry_recovery",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 1,
+        "tables": [
+          "composite_delivery_compositeretry"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "127",
+          "original_text": "النظام يدعم retries وidempotency.",
+          "direct_spec_ids": [
+            "SPEC-U07-013",
+            "SPEC-U07-027"
+          ],
+          "decision_ids": [
+            "D-034"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 129
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Retry only a currently verified FAILED logical part under a fresh independently signed plan, preserve original signed failure and all source bytes, limit successor chains, make exact replay idempotent, and reconcile only verified effective leaves without resending delivered or omitted parts."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "exact_fatwa_reference",
+      "title_ar": "البحث المباشر برقم FT وإظهاره للنسخة المنشورة المصرح بها",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/library_preview/REFERENCES.md",
+      "baseline_gap": "Canonical FT references existed privately but no explicit native lookup form and independently authorized exact public-edition reference projection existed.",
+      "service_test_labels": [
+        "apps.library_preview.test_references",
+        "apps.library_preview.test_reference_recovery"
+      ],
+      "service_test_classes": [
+        "apps.library_preview.test_references.FatwaReferenceTests",
+        "apps.library_preview.test_reference_recovery.ReferenceRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.library_preview.browser_references.FatwaReferenceBrowserTests",
+        "result_path": ".local/qa/functional-continuation/fatwa-reference-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.library_preview.reference_recovery",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "217",
+          "original_text": "يدعم البحث المباشر برقم FT.",
+          "direct_spec_ids": [
+            "SPEC-U05-005"
+          ],
+          "decision_ids": [
+            "D-018"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 219
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Use real staff and public exact FT forms to open the currently authorized canonical case or explicitly mapped released edition; private and unknown public references remain indistinguishable, with no private corpus scan or approximate fallback."
+        },
+        {
+          "original_id": "266",
+          "original_text": "رقم FT.",
+          "direct_spec_ids": [
+            "SPEC-U09-009"
+          ],
+          "decision_ids": [
+            "D-056"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 268
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Show the canonical FT on the exact published fatwa only under independent current reference disclosure authority; preserve the original number and close both detail and lookup after withdrawal, supersession or publisher/source revocation."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "actual_operational_queue",
+      "title_ar": "طوابير المنظم بهويته الفعلية وصلاحيات مستقلة لكل قضية",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/README.md",
+      "baseline_gap": "The scholarly staff desk required a MUFTI identity and could not provide an actual ORGANIZER session with separately scoped operational queues.",
+      "service_test_labels": [
+        "apps.operational_workspace.tests",
+        "apps.operational_workspace.test_http",
+        "apps.operational_workspace.test_recovery",
+        "apps.operational_workspace.test_retry"
+      ],
+      "service_test_classes": [
+        "apps.operational_workspace.tests.OperationalWorkspaceTests",
+        "apps.operational_workspace.test_http.OperationalWorkspaceHTTPTests",
+        "apps.operational_workspace.test_recovery.OperationalRecoveryTests",
+        "apps.operational_workspace.test_retry.OperationalRetryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_tests.OperationalWorkspaceBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "495",
+          "original_text": "المنظم لديه Queue تشغيلية واضحة.",
+          "direct_spec_ids": [
+            "SPEC-U03-004"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 497
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Authenticate a real ORGANIZER principal in the separate native operational workspace, filter actual queue states and open only individually authorized cases without converting the role to MUFTI."
+        },
+        {
+          "original_id": "496",
+          "original_text": "يرى القضايا التي تحتاج تصنيفًا أو Metadata.",
+          "direct_spec_ids": [
+            "SPEC-U03-004"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 498
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Derive visible classification or metadata gaps from actual current case organization records; exclude unscoped cases from rows, counts and facets."
+        },
+        {
+          "original_id": "497",
+          "original_text": "يرى Delivery Failures.",
+          "direct_spec_ids": [
+            "SPEC-U03-004"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 499
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Expose actual retained failed or uncertain delivery state under separate current delivery-read authority, with no inferred permission to send or edit scholarly content. A currently verified successful exact retry leaf resolves only its retained failure ancestors; unrelated failures and unbound claims remain operational work. Revoked current verification restores the unresolved warning."
+        },
+        {
+          "original_id": "498",
+          "original_text": "يرى الحالات التي تحتاج Publication Action.",
+          "direct_spec_ids": [
+            "SPEC-U03-004"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 500
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Show actual publication editions needing human action under independent current publication-read authority without exposing publication bodies through queue grants."
+        },
+        {
+          "original_id": "499",
+          "original_text": "يرى Transcript Review.",
+          "direct_spec_ids": [
+            "SPEC-U03-004"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 501
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Show actual latest transcripts awaiting review under explicit transcript-state authority; queue grants do not disclose transcript text or confer review/approval power."
+        },
+        {
+          "original_id": "500",
+          "original_text": "يرى الحالات التي تحتاج تدخلاً بشريًا بسبب Platform Capability.",
+          "direct_spec_ids": [
+            "SPEC-U03-004"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 502
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Compare actual answer-part requirements with the current versioned platform capability projection and surface missing or mismatched support for human intervention; no unversioned adapter is assumed valid."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "measured_canonical_benchmark",
+      "title_ar": "قياس البحث الفعلي بأحكام مستقلة ومقاييس لكل استعلام",
+      "implementation_state": "IMPLEMENTED_FOCUSED_TESTS_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "docs/product/functional_continuation/search_benchmark/README.md",
+      "baseline_gap": "The earlier title-word evaluation and shadow comparison lacked an engine-separated authored canonical corpus, actual paired FTS results, metrics and independent exact-run review.",
+      "service_test_labels": [
+        "apps.arabic_search_eval.test_benchmark",
+        "apps.arabic_search_eval.test_benchmark_http",
+        "apps.arabic_search_eval.test_benchmark_recovery"
+      ],
+      "service_test_classes": [
+        "apps.arabic_search_eval.test_benchmark.CanonicalBenchmarkTests",
+        "apps.arabic_search_eval.test_benchmark_http.CanonicalBenchmarkHTTPTests",
+        "apps.arabic_search_eval.test_benchmark_recovery.CanonicalBenchmarkRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.arabic_search_eval.browser_benchmark.CanonicalBenchmarkBrowserTests",
+        "result_path": ".local/qa/functional-continuation/search-benchmark-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.arabic_search_eval.benchmark_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 4,
+        "tables": [
+          "arabic_search_eval_evaluationrevision",
+          "arabic_search_eval_evaluationdecision",
+          "arabic_search_eval_canonicalbenchmarkrun",
+          "arabic_search_eval_canonicalbenchmarkdecision"
+        ],
+        "notes": "Tables are counted once in the explicit recovery inventory. A reused table is not a newly created table. Client drafts are never database authority."
+      },
+      "points": [
+        {
+          "original_id": "242",
+          "original_text": "لا نقيس البحث بالانطباع فقط.",
+          "direct_spec_ids": [
+            "SPEC-U05-027"
+          ],
+          "decision_ids": [
+            "D-023"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 244
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Create and independently review explicit synthetic judgments before running actual baseline/candidate SQL against pinned current authorized sources; retain measurements and independent ACCEPT/HOLD decisions with no automatic promotion."
+        },
+        {
+          "original_id": "245",
+          "original_text": "نقيس Recall وPrecision وجودة Ranking وCoverage.",
+          "direct_spec_ids": [
+            "SPEC-U05-027"
+          ],
+          "decision_ids": [
+            "D-023"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 247
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Compute actual per-query and aggregate Precision@5, Recall@5, MRR and coverage with explicit denominators, negative-query false positives and regression holds; retain exact corpus, source, dictionary, configuration and comparison provenance without claiming a real specialist gold corpus."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -1366,15 +2581,6 @@
       "reason": "The named topics illustrate 283; names do not constitute additional functional delivery."
     },
     {
-      "original_id": "281",
-      "original_text": "تعرض الفتاوى والدروس والمواد العامة.",
-      "direct_spec_ids": [
-        "SPEC-U09-014"
-      ],
-      "classification": "PARTIAL_ALL_MATERIAL_SCOPE",
-      "reason": "The new catalogue/collection does not supply every general material on scholar pages or an absent specialized hadith corpus. No whole-point claim."
-    },
-    {
       "original_id": "285",
       "original_text": "الصفحة تجمع الموضوعات الفرعية والفتاوى والدروس والأحاديث والمواد المرتبطة.",
       "direct_spec_ids": [
@@ -1382,26 +2588,6 @@
       ],
       "classification": "PARTIAL_ALL_MATERIAL_SCOPE",
       "reason": "The new catalogue/collection does not supply every general material on scholar pages or an absent specialized hadith corpus. No whole-point claim."
-    },
-    {
-      "original_id": "290",
-      "original_text": "الدروس والسلاسل.",
-      "direct_spec_ids": [
-        "SPEC-U09-017",
-        "SPEC-U11-003"
-      ],
-      "classification": "NOT_IMPLEMENTED_IN_THIS_LIBRARY",
-      "reason": "Existing scholarly lesson/series models were credited in the previous batch. The new typed library has not implemented integrated lesson/series catalogue support; reusing old models is not new completion."
-    },
-    {
-      "original_id": "278",
-      "original_text": "تدعم Save/Share/Print/Download وفق السياسة.",
-      "direct_spec_ids": [
-        "SPEC-U09-020",
-        "SPEC-U11-024"
-      ],
-      "classification": "NOT_SELECTED_OR_UNFINISHED",
-      "reason": "Advanced public answer audio/transcript/time references and citation behavior are not completed by metadata collections or a generic library player."
     },
     {
       "original_id": "387",
@@ -1500,15 +2686,6 @@
       "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
     },
     {
-      "original_id": "370",
-      "original_text": "يوجد Developer API للمواد المسموح بها.",
-      "direct_spec_ids": [
-        "SPEC-U13-022"
-      ],
-      "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
-      "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
-    },
-    {
       "original_id": "371",
       "original_text": "يمكن توفير Webhooks للتكاملات المصرح بها.",
       "direct_spec_ids": [
@@ -1525,15 +2702,6 @@
       ],
       "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
       "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
-    },
-    {
-      "original_id": "247",
-      "original_text": "يمكن استخدام Shadow Mode قبل اعتماد تغيير كبير.",
-      "direct_spec_ids": [
-        "SPEC-U05-027"
-      ],
-      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
-      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
     },
     {
       "original_id": "443",
@@ -1641,6 +2809,192 @@
       "from": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Actual implementation, native tests, protected-browser journey and restoration contract are now included in group canonical_search. No completion credit is assigned until the fresh integrated run passes."
+    },
+    {
+      "original_id": "73",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/answer_media/YOUTUBE_LINK.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "492",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/answer_media/RELATED_MATERIALS.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "153",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/identity_registry/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "156",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/identity_registry/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "158",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/identity_registry/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "421",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/identity_registry/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "439",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/identity_registry/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "278",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/public_reader_tools/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "370",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/material_api/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "138",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/publication_schedules/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "122",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/composite_delivery/SELECTION.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "159",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/development_taxonomy/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "161",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/development_taxonomy/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "162",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/development_taxonomy/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "164",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/development_taxonomy/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "165",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/development_taxonomy/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "222",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in docs/product/functional_continuation/search_governance/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "247",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in docs/product/functional_continuation/search_governance/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "281",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/public_teaching/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "290",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_35_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests now exist in apps/public_teaching/README.md; current integrated protected-browser and encrypted-recovery proof remains required."
+    },
+    {
+      "original_id": "127",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/composite_delivery/RETRY.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "217",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/library_preview/REFERENCES.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "266",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/library_preview/REFERENCES.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "495",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/operational_workspace/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "496",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/operational_workspace/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "497",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/operational_workspace/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "498",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/operational_workspace/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "499",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/operational_workspace/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "500",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in apps/operational_workspace/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "242",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in docs/product/functional_continuation/search_benchmark/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
+    },
+    {
+      "original_id": "245",
+      "from": "NOT_SELECTED_OR_INCOMPLETE_IN_PRIOR_55_CANDIDATE_PLAN",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual implementation and focused PostgreSQL17/18 tests are recorded in docs/product/functional_continuation/search_benchmark/README.md; exact integrated protected browser and encrypted recovery remain required. Original owner acceptance stays unchanged."
     }
   ],
   "verified_checkpoints": [
@@ -1650,5 +3004,12 @@
       "completed_additional_points": 20,
       "basis": "Historical exact-commit PG17/18 protected browser/service/encrypted recovery execution; not reused as current-head evidence."
     }
-  ]
+  ],
+  "current_user_goal": {
+    "scope": "Complete documented remaining functional work; final visual design excluded",
+    "status": "IN_PROGRESS_WITH_EVIDENCE_REQUIRED_PER_WHOLE_ORIGINAL_POINT",
+    "design_original_id": "530",
+    "overall_completion_claim": false,
+    "external_policy_data_and_production_decisions": "Tracked separately; no invented data, credentials, grants or owner acceptance"
+  }
 }

@@ -84,12 +84,13 @@ def _pins(receipt):
 
 
 def populate():
+    seed_key = uuid.uuid4().hex
     receipts = [
         cases.intake_case(
             original_question=f"سؤال استعادة اصطناعي {suffix}",
-            requester_id="scholarly-recovery-" + suffix,
-            source_event_id="scholarly-recovery-" + suffix,
-            idempotency_key="scholarly-recovery-" + suffix,
+            requester_id="scholarly-recovery-" + seed_key + "-" + suffix,
+            source_event_id="scholarly-recovery-" + seed_key + "-" + suffix,
+            idempotency_key="scholarly-recovery-" + seed_key + "-" + suffix,
             synthetic_fixtures_only=True,
         )
         for suffix in ("a", "b")

@@ -10,7 +10,9 @@ from django.urls import reverse
 
 from apps.library_preview import services as preview
 from apps.library_preview.guard import safe_read
+from apps.library_preview.navigation import teaching_catalog_url
 from apps.public_answer_media.navigation import publication_recordings_url
+from apps.public_reader_tools.navigation import publication_tools_url
 
 from . import public, services
 
@@ -76,6 +78,7 @@ def _page(request, template, snapshot, *, title, path, crumbs=(), description=""
             "description": description,
             "canonical": _origin() + path if _origin() else "",
             "breadcrumbs": breadcrumbs,
+            "teaching_url": teaching_catalog_url(),
             **context,
         },
     )
@@ -250,6 +253,7 @@ def publication_page(request, publication_id, language="ar"):
             missing_translation=missing,
             original_url=original_url,
             recordings_url=publication_recordings_url(publication_id),
+            reader_tools_url=publication_tools_url(publication_id),
             original_canonical=_origin() + original_url if _origin() else "",
             related=related,
             lessons=lessons,

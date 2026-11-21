@@ -24,7 +24,11 @@ ROUTES = {
     BASE + "staff/": ("GET", "HEAD", "POST"),
     BASE + "staff/quality/": ("GET", "HEAD"),
     BASE + "staff/logout/": ("POST",),
+    BASE + "operations/": ("GET", "HEAD", "POST"),
+    BASE + "operations/login/": ("GET", "HEAD", "POST"),
+    BASE + "operations/logout/": ("POST",),
     BASE + "staff/recording-player.js": ("GET", "HEAD"),
+    BASE + "staff/answer-media/related.mjs": ("GET", "HEAD"),
     BASE + "staff/pwa/manifest.webmanifest": ("GET", "HEAD"),
     BASE + "staff/pwa/install.mjs": ("GET", "HEAD"),
     BASE + "staff/pwa/sw.mjs": ("GET", "HEAD"),
@@ -134,6 +138,20 @@ def private(response, *, head=False):
         policy = response["Content-Security-Policy"]
         if "script-src" not in policy:
             response["Content-Security-Policy"] = policy + "; script-src 'self'"
+    if (
+        enabled()
+        and getattr(settings, "FATWA_ANSWER_RELATED_ENABLED", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+        and not getattr(response, "streaming", False)
+        and b'data-answer-related="enabled"' in response.content
+        and "sandbox" not in response["Content-Security-Policy"]
+    ):
+        policy = response["Content-Security-Policy"]
+        for directive in ("script-src", "connect-src"):
+            if directive not in policy:
+                policy += "; " + directive + " 'self'"
+        response["Content-Security-Policy"] = policy
     if head:
         response.content = b""
     return response
@@ -151,9 +169,9 @@ def _budget(request):
     if request.method == "POST":
         if request.path == BASE:
             group = "intake"
-        elif request.path == BASE + "staff/login/":
+        elif request.path in {BASE + "staff/login/", BASE + "operations/login/"}:
             group = "login"
-        elif "/staff/" in request.path:
+        elif "/staff/" in request.path or request.path.startswith(BASE + "operations/"):
             group = "staff"
         else:
             group = "requester"

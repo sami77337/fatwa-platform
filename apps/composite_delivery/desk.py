@@ -5,6 +5,7 @@ references, never a guessed external API address or a choice of another recipien
 """
 
 import json
+import uuid
 from dataclasses import fields
 from datetime import datetime
 from hmac import compare_digest
@@ -25,10 +26,16 @@ from apps.delivery_queue.signed_provider_receipts import (
 )
 from apps.platform_recovery.integration import mutation_service
 
-from . import services
-from .models import CompositeDelivery
+from . import publication_proposal, retries, services
+from .models import CompositeDelivery, CompositeRetry
 
-KINDS = {"TEXT": "نص", "FILE": "ملف", "AUDIO": "صوت", "IMAGE": "صورة"}
+KINDS = {
+    "TEXT": "نص",
+    "FILE": "ملف",
+    "AUDIO": "صوت",
+    "IMAGE": "صورة",
+    "YOUTUBE_LINK": "رابط YouTube خارجي",
+}
 STATES = {
     "NOT_STAGED": "لم تُجهّز محاولة",
     "STAGED": "مجهز، لم يُرسل",
@@ -108,7 +115,7 @@ def _origin(case):
     return result
 
 
-def _read_locked(case, subject_id, provider):
+def _read_locked(case, subject_id, provider, selection_mode=None):
     base = {
         "public_ref": case.public_ref,
         "revision": case.revision,
@@ -117,7 +124,7 @@ def _read_locked(case, subject_id, provider):
         "parts": [],
     }
     try:
-        prepared = services._prepare(case, subject_id, provider)
+        prepared = services._prepare(case, subject_id, provider, selection_mode)
     except cases.CaseConflict as exc:
         if str(exc) not in BLOCKED:
             raise
@@ -166,6 +173,8 @@ def _read_locked(case, subject_id, provider):
     for part, step in zip(manifest["parts"], plan.steps, strict=True):
         row = rows.get(part["ordinal"])
         proof = status_parts.get(part["ordinal"], {})
+        if proof.get("intent_key"):
+            row = DeliveryIntent.objects.get(pk=proof["intent_key"])
         state = row.state if row else "NOT_STAGED"
         attempt = DeliveryAttempt.objects.filter(intent=row).first() if row else None
         expired = bool(state == "LEASED" and attempt and attempt.expires_at <= timezone.now())
@@ -177,7 +186,11 @@ def _read_locked(case, subject_id, provider):
         elif state in {"UNKNOWN_REQUIRES_RECONCILIATION", "SENT_UNCONFIRMED", "LEASED"}:
             action = "طابق إيصال المزود الموقّع مع هذه المحاولة؛ لا تُنشئ محاولة أخرى."
         elif state == "FAILED_REQUIRES_REVIEW":
-            action = "راجع سبب الفشل عبر المسار البشري؛ إعادة المحاولة ليست متاحة هنا."
+            action = (
+                "راجع الفشل الموقّع واطلب إذنًا جديدًا لمحاولة هذا الجزء فقط؛ الحد ثلاث محاولات إضافية."
+                if proof.get("may_retry")
+                else "راجع سبب الفشل عبر المسار البشري؛ إعادة المحاولة ليست متاحة هنا."
+            )
         elif state == "DELIVERED":
             action = (
                 "لا إجراء مطلوب لهذا الجزء."
@@ -200,7 +213,12 @@ def _read_locked(case, subject_id, provider):
                 "attempted": attempt is not None,
                 "lease_expires_at": attempt.expires_at if attempt else None,
                 "may_import": attempt is not None and state != "FAILED_REQUIRES_REVIEW",
-                "envelope_sha256": step.idempotency_key,
+                "envelope_sha256": row.payload_sha256 if row else step.idempotency_key,
+                "may_retry": proof.get("may_retry", False),
+                "parent_intent": row.pk if row else "",
+                "request_id": str(uuid.uuid4()),
+                "retry_count": proof.get("retry_count", 0),
+                "retry_history": proof.get("retry_history", []),
             }
         )
     services._reader(case, subject_id, provider, prepared)(case.public_ref)
@@ -208,6 +226,18 @@ def _read_locked(case, subject_id, provider):
         **base,
         "origin": origin,
         "parts": parts,
+        "selection_mode": manifest.get("selection_mode", "ALL"),
+        "selection_label": "النص فقط"
+        if manifest.get("selection_mode") == "TEXT_ONLY"
+        else "جميع الأجزاء",
+        "omitted_parts": [
+            {**part, "kind_label": KINDS[part["kind"]]}
+            for part in manifest.get("omitted_parts", [])
+        ],
+        "may_choose_text": getattr(settings, "FATWA_COMPOSITE_CHOICES_ENABLED", False) is True
+        and not binding
+        and any(p["kind"] == "AUDIO" for p in manifest["parts"]),
+        "may_propose_publication": publication_proposal.offered(origin, manifest, plan),
         "plan_sha256": fingerprint,
         "answer_revision": evidence.answer_revision,
         "decision_id": str(decision.pk),
@@ -228,10 +258,12 @@ def _read_locked(case, subject_id, provider):
 
 
 @mutation_service
-def read_delivery_desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+def read_delivery_desk(
+    *, case_id, subject_id, provider, selection_mode=None, synthetic_fixtures_only=False
+):
     services._enabled()
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
-        return _read_locked(case, subject_id, provider)
+        return _read_locked(case, subject_id, provider, selection_mode)
 
 
 def _unique(pairs):
@@ -305,18 +337,26 @@ def apply_desk_action(
     plan_sha256,
     response_json="",
     part_id="",
+    parent_intent="",
+    request_id="",
+    selection_mode=None,
     synthetic_fixtures_only=False,
 ):
     """Optimistic case/plan check and action occur under the same case/queue locks."""
     services._enabled()
-    if action in {"composite_stage", "composite_reconcile"} and not isinstance(
+    if action in {
+        "composite_stage",
+        "composite_reconcile",
+        "composite_retry_export",
+        "composite_retry_stage",
+    } and not isinstance(
         getattr(settings, "FATWA_COMPOSITE_DELIVERY_PROVIDER_VERIFIER", None),
         Ed25519ProviderEventVerifier,
     ):
         raise cases.CaseConflict("composite_provider_verifier_unavailable")
     with legacy._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
         cases._versions(case, revision, evidence_version)
-        prepared = services._prepare(case, subject_id, provider)
+        prepared = services._prepare(case, subject_id, provider, selection_mode)
         if not queue._hex(plan_sha256) or not compare_digest(
             plan_sha256,
             canonical_plan_sha256(prepared[4]),
@@ -325,6 +365,27 @@ def apply_desk_action(
         common = dict(
             case_id=case_id, subject_id=subject_id, provider=provider, synthetic_fixtures_only=True
         )
+        if action == "composite_publication_proposal":
+            return publication_proposal.prepare(case, prepared)
+        if action in {"composite_retry_export", "composite_retry_stage"}:
+            request = retries.prepare_retry(
+                **common, parent_intent=parent_intent, request_id=request_id
+            )
+            if request["retry"]["part"]["id"] != part_id:
+                raise cases.CaseConflict("composite_retry_part_mismatch")
+            if action == "composite_retry_export":
+                return request
+            digest, receipt = decode_signed_response(response_json)
+            if not compare_digest(digest, request["plan_sha256"]):
+                raise cases.CaseConflict("composite_retry_plan_changed")
+            retries.stage_retry(
+                **common,
+                parent_intent=parent_intent,
+                request_id=request_id,
+                receipt=receipt,
+                verify_receipt=getattr(settings, "FATWA_CASE_DELIVERY_APPROVAL_VERIFIER", None),
+            )
+            return "سُجل إذن جديد لمحاولة الجزء الفاشل وحده؛ بقي سجل الفشل السابق محفوظًا. لم يحدث إرسال."
         if action == "composite_stage":
             digest, receipt = decode_signed_response(response_json)
             if not compare_digest(digest, plan_sha256):
@@ -333,12 +394,21 @@ def apply_desk_action(
                 **common,
                 receipt=receipt,
                 verify_receipt=getattr(settings, "FATWA_CASE_DELIVERY_APPROVAL_VERIFIER", None),
+                selection_mode=selection_mode,
             )
-            return "سُجلت خطة جميع الأجزاء بإذن مستقل. لم يحدث إرسال."
+            return "سُجلت خطة الأجزاء المختارة بإذن مستقل. لم يحدث إرسال."
         if action == "composite_receipt":
             bundle_part, lease, event = decode_provider_bundle(response_json)
             part = next((p for p in prepared[1]["parts"] if p["id"] == part_id), None)
-            if part is None or bundle_part != part_id or event.ordinal != part["ordinal"]:
+            logical_ordinal = event.ordinal
+            retry = CompositeRetry.objects.filter(
+                approval__plan_fingerprint=event.plan_fingerprint
+            ).first()
+            if retry is not None:
+                if retry.delivery_id != prepared[0].pk or event.ordinal != 1:
+                    raise cases.CaseConflict("composite_retry_part_mismatch")
+                logical_ordinal = retry.logical_ordinal
+            if part is None or bundle_part != part_id or logical_ordinal != part["ordinal"]:
                 raise cases.CaseConflict("composite_part_mismatch")
             services.record_composite_event(
                 **common,
@@ -351,5 +421,5 @@ def apply_desk_action(
             result = services.reconcile_composite_timeouts(**common)
             return f"سُجلت {result['unresolved_parts']} محاولة منتهية كغير محسومة؛ لا إعادة إرسال."
         if action == "composite_export":
-            return services.prepare_composite_delivery(**common)
+            return services.prepare_composite_delivery(**common, selection_mode=selection_mode)
         raise cases.CaseConflict("unknown_composite_action")

@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
 
+from apps.arabic_search_eval import benchmark_policy, benchmark_views
 from apps.casework import services as cases
 from apps.casework.models import Case
 from apps.casework_web.access import RequestDirectory, current_staff
@@ -20,7 +21,7 @@ from apps.editorial_workbench.reviewer_access import browser_proof
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 
-from . import policy, services
+from . import governance_pins, governance_views, policy, services
 
 SALT = "fatwa.canonical-search.native.v1"
 FIELDS = {
@@ -28,6 +29,8 @@ FIELDS = {
     "cs_search": {"query", "mode", "kind", "page", "scope"},
     "cs_rebuild": {"state"},
     "cs_source": {"state"},
+    **governance_views.FIELDS,
+    **benchmark_views.FIELDS,
 }
 ACTIONS = frozenset(FIELDS)
 MODES = (
@@ -138,6 +141,8 @@ def _page(request, base, *, search=None, selected=None, message=""):
                     "message": message,
                     "modes": MODES,
                     "kinds": KINDS,
+                    "governance_navigation": governance_pins.flag() == (bool, True),
+                    "benchmark_navigation": benchmark_policy.flag() == (bool, True),
                     "values": search
                     or {"query": "", "mode": "FTS", "kind": "ALL", "scope": "CASE", "page": 1},
                 },
@@ -168,6 +173,10 @@ def workspace(request):
             provider=provider,
             synthetic_fixtures_only=True,
         )
+        if action in benchmark_views.FIELDS:
+            return benchmark_views.handle(request, base, action, fields)
+        if action in governance_views.FIELDS:
+            return governance_views.handle(request, base, action, fields)
         if action == "cs_search":
             if not fields["page"].isascii() or not fields["page"].isdigit():
                 raise InvalidForm("search_page_invalid")

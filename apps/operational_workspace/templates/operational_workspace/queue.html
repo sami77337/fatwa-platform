@@ -1,0 +1,15 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ queue.subject }}</bdi> — <bdi>{{ queue.role }}</bdi></p>
+<p>القائمة والأعداد تعرض الحالات والإجراءات المسموح لك بقراءتها حاليًا.</p>
+<nav aria-label="قوائم الإجراءات" id="ops-filters">
+{% for filter in queue.filters %}<form method="post" action="/casework/operations/">{% csrf_token %}<input type="hidden" name="action" value="queue"><button name="filter" value="{{ filter.key }}" aria-pressed="{% if filter.key == queue.selected_filter %}true{% else %}false{% endif %}">{{ filter.label }} <span data-filter-count="{{ filter.key }}">{{ filter.count }}</span></button></form>{% endfor %}
+</nav>
+<section id="ops-queue" aria-label="قضايا تحتاج إجراء">
+{% for row in queue.rows %}<article data-case-ref="{{ row.public_ref }}"><h2><bdi>{{ row.public_ref }}</bdi></h2><p>{{ row.stage }} — الوقائع {{ row.evidence_version }}</p>
+{% for section in row.pending %}<section data-section="{{ section.key }}"><h3>{{ section.label }}</h3><ul>{% for reason in section.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+<form method="post" action="/casework/operations/">{% csrf_token %}<input type="hidden" name="action" value="detail"><input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="section" value="{{ section.key }}">عرض تفاصيل {{ section.label }}</button></form></section>{% endfor %}
+</article>{% empty %}<p id="ops-empty">لا توجد إجراءات متاحة ضمن هذا المرشح والصلاحيات الحالية.</p>{% endfor %}
+</section>
+<form method="post" action="/casework/operations/logout/" id="ops-logout">{% csrf_token %}<button>تسجيل الخروج</button></form>
+{% endblock %}

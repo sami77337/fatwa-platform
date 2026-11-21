@@ -63,6 +63,7 @@ def index(request):
                 "previous": int(page) - 1,
                 "next": int(page) + 1,
                 "offline_enabled": getattr(settings, "FATWA_RESEARCH_LIBRARY_OFFLINE_ENABLED", False) is True,
+                "material_api_enabled": getattr(settings, "FATWA_MATERIAL_API_ENABLED", False) is True,
             },
         )
 

@@ -1,6 +1,8 @@
 <ol>{% for part in package.parts %}<li>
 <h4>الجزء {{ part.ordinal }} — {% if part.kind == 'TEXT' %}نص الجواب{% else %}{{ part.filename }}{% endif %}</h4>
-{% if part.kind == 'TEXT' %}<p class="original">{{ package.text }}</p>{% else %}
+{% if part.kind == 'TEXT' %}<p class="original">{{ package.text }}</p>{% elif part.kind == 'YOUTUBE_LINK' %}
+<p>{{ part.metadata.label }}</p><p><a class="external-youtube" href="{{ part.metadata.url }}" target="_blank" rel="noopener noreferrer external">فتح رابط YouTube الخارجي</a></p><p>رابط خارجي فقط؛ لم يتحقق النظام من توفر الفيديو أو محتواه، ولا يملك نسخة منه. لا تشغيل أو تنزيل تلقائي.</p>
+{% else %}
 <p>{{ part.media_type }} · {{ part.size }} بايت</p>
 {% if is_staff %}{% url 'answer_media_staff_file' part_id=part.id as media_url %}{% else %}{% url 'answer_media_requester_file' part_id=part.id as media_url %}{% endif %}
 {% if part.kind == 'AUDIO' %}<audio controls preload="metadata" src="{{ media_url }}" aria-label="{{ part.filename }}"></audio>

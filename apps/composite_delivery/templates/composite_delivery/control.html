@@ -9,6 +9,11 @@
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>العودة إلى القضية</button></form>
 <p>القضية <bdi>{{ desk.public_ref }}</bdi> · إصدار الوقائع {{ desk.evidence_version }}{% if desk.answer_revision %} · إصدار الجواب {{ desk.answer_revision }}{% endif %}</p>
 {% if desk.blocked %}<p role="alert">{{ desk.blocked }}</p>{% else %}
+<section aria-labelledby="selection-title"><h3 id="selection-title">اختيار أجزاء خطة الإرسال</h3><p id="delivery-selection" data-selection="{{ desk.selection_mode }}">الخطة الحالية: <strong>{{ desk.selection_label }}</strong>. يبقى الجواب المعتمد ومرفقاته محفوظين كاملين.</p>
+{% if desk.may_choose_text %}<form method="post" action="/casework/staff/" id="choose-text-only">{% csrf_token %}<input type="hidden" name="action" value="composite_choice"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><input type="hidden" name="selection_mode" value="TEXT_ONLY"><label><input type="checkbox" name="confirm" value="yes" required>أختار تجهيز النص فقط وأستبعد الصوت وباقي المرفقات من هذه الخطة</label><button>معاينة خطة النص فقط</button></form>{% endif %}
+{% if desk.may_propose_publication %}<form method="post" action="/casework/staff/" id="propose-publication">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_publication_proposal"><label><input type="checkbox" name="confirm" value="yes" required>أختار مراجعة خيار إعداد نسخة عامة للصوت الذي تعذر إرجاعه في تعليق YouTube</label><button>مراجعة اقتراح النشر والرابط</button></form>{% endif %}
+{% if publication_proposal %}<section id="publication-proposal" data-sendable="false" aria-labelledby="publication-proposal-title"><h4 id="publication-proposal-title">اقتراح يحتاج نشرًا عامًا مستقلًا</h4><p>ابدأ نسخة النشر وراجع معناها وخصوصيتها ثم اطلب اعتماد نشر مستقل. إرسال الرابط متوقف حاليًا لعدم وجود صفحة عامة خارجية متحققة. عنوان المعاينة التجريبية لا يثبت إتاحة صفحة للعامة.</p>{% if not publication_proposal.link_capability_verified %}<p>قدرة قناة المصدر على استقبال الرابط لم تعتمد في الملف الحالي أيضًا.</p>{% endif %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="pub_open"><input type="hidden" name="case_ref" value="{{ publication_proposal.public_ref }}"><button>فتح تحرير النسخة ومراجعة النشر</button></form><p>يمكن العودة لاختيار النص فقط إن كان صالحًا، أو إبقاء الحالة لإجراء بشري. تبقى حالة التوصيل والنشر مستقلة.</p></section>{% endif %}
+{% if desk.omitted_parts %}<h4>أجزاء مستبعدة من هذه الخطة باختيار صريح</h4><ul id="omitted-parts">{% for part in desk.omitted_parts %}<li data-omitted-part="{{ part.id }}">{{ part.kind_label }}: {{ part.filename }} — لن يدخل هذا الجزء في الإرسال المختار، ولا يُدّعى تسليمه.</li>{% endfor %}</ul>{% if not desk.staged %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_choice"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><input type="hidden" name="selection_mode" value="ALL"><label><input type="checkbox" name="confirm" value="yes" required>أعيد اختيار جميع أجزاء الجواب قبل تسجيل أي إذن</label><button>معاينة جميع الأجزاء</button></form>{% endif %}{% endif %}</section>
 <section aria-labelledby="destination-title"><h3 id="destination-title">أصل القناة ومرجع الوجهة</h3>
 <p>القناة: <strong>{{ desk.origin.label }}</strong>. الوجهة مقيدة بالأصل المحفوظ؛ ليست عنوان إرسال خارجيًا مفعلًا ولا يمكن استبدالها من النموذج.</p>
 <dl>{% if desk.origin.account %}<dt>حساب المصدر</dt><dd><bdi>{{ desk.origin.account }}</bdi></dd>{% endif %}
@@ -18,7 +23,7 @@
 <details><summary>بصمات الربط والاعتماد</summary>
 <dl><dt>هوية المصدر والوجهة</dt><dd><bdi>{{ desk.origin.identity_sha256 }}</bdi></dd>
 <dt>قرار الاعتماد البشري الحالي</dt><dd><bdi>{{ desk.decision_id }}</bdi></dd>
-<dt>الخطة الكاملة</dt><dd><bdi>{{ desk.plan_sha256 }}</bdi></dd>
+<dt>خطة الأجزاء المختارة</dt><dd><bdi>{{ desk.plan_sha256 }}</bdi></dd>
 <dt>مجموعة الأجزاء</dt><dd><bdi>{{ desk.manifest_sha256 }}</bdi></dd>
 <dt>قدرات القناة</dt><dd><bdi>{{ desk.capability_sha256 }}</bdi></dd></dl></details>
 </section>
@@ -27,7 +32,8 @@
 {% if desk.staged and not desk.provider_verifier_available %}<p role="alert">التحقق من توقيع المزود غير متاح. لا يُدّعى اكتمال التسليم.</p>{% endif %}
 {% if desk.status %}<p role="status">{{ desk.status_label }}</p><p>أجزاء لها إثبات تسليم متحقق: <strong>{{ desk.status.verified_parts }} من {{ desk.status.expected_parts }}</strong>.</p>
 {% if desk.status.delivery_verified %}<p role="status">اكتمل تقرير التسليم الموقّع لكل الأجزاء في المحاكي.</p>{% else %}<p>لم يثبت اكتمال تسليم جميع الأجزاء.</p>{% endif %}{% endif %}
-{% if desk.requires_human %}<p role="status">يلزم تدخل بشري؛ راجع الإجراء المطلوب بجانب كل جزء. لا يُختزل الجواب إلى النص إذا تعذر ملف أو صوت.</p>{% endif %}
+{% if desk.status.original_plan %}<p id="original-plan-state">حالة الخطة الأولى المحفوظة: <bdi>{{ desk.status.original_plan.state }}</bdi>. النتيجة الحالية تتبع المحاولات المعتمدة لكل جزء، وتبقى إيصالات الفشل السابقة في السجل.</p>{% endif %}
+{% if desk.requires_human %}<p role="status">يلزم تدخل بشري؛ راجع الإجراء المطلوب بجانب كل جزء. لا يُستبعد أي جزء تلقائيًا عند تعذر القناة؛ تغيير الاختيار يحتاج معاينة وإذنًا مستقلًا.</p>{% endif %}
 </section>
 <section aria-label="أجزاء الجواب"><h3>متابعة كل جزء</h3>
 {% for part in desk.parts %}<article id="part-{{ part.ordinal }}" aria-labelledby="part-title-{{ part.ordinal }}">
@@ -37,6 +43,12 @@
 {% if part.delivery_verified %}<p>إيصال تسليم موقّع متحقق لهذا الجزء.</p>{% endif %}
 {% if part.lease_expires_at %}<p>نهاية مهلة المحاولة: <time datetime="{{ part.lease_expires_at|date:'c' }}"><bdi>{{ part.lease_expires_at|date:"Y-m-d H:i:s T" }}</bdi></time>.</p>{% endif %}
 <p>{{ part.next_action }}</p>
+{% if part.retry_history %}<p>محاولات إضافية معتمدة لهذا الجزء: {{ part.retry_count }} من 3.</p><ol aria-label="سجل المحاولات السابقة">{% for retry in part.retry_history %}<li>المحاولة الإضافية {{ retry.retry_number }} مرتبطة بفشل موقّع محفوظ: <bdi>{{ retry.failure_evidence }}</bdi>.</li>{% endfor %}</ol>{% endif %}
+{% if part.may_retry %}<details><summary>مراجعة فشل الجزء {{ part.ordinal }} وطلب محاولة إضافية</summary>
+<p>ينشئ الإذن الجديد محاولة واحدة لهذا الجزء فقط. لا يعاد تجهيز الأجزاء المسلّمة أو المقبولة أو غير المحسومة. الحد ثلاث محاولات إضافية لكل جزء.</p>
+<form method="post" action="/casework/staff/" data-retry-export="{{ part.ordinal }}">{% csrf_token %}{% include "composite_delivery/retry_fields.html" %}<input type="hidden" name="action" value="composite_retry_export"><button>تنزيل طلب محاولة إضافية للجزء {{ part.ordinal }}</button></form>
+<form method="post" action="/casework/staff/" data-retry-stage="{{ part.ordinal }}">{% csrf_token %}{% include "composite_delivery/retry_fields.html" %}<input type="hidden" name="action" value="composite_retry_stage"><label>إذن مستقل جديد للمحاولة المحددة<textarea name="response_json" maxlength="16000" autocomplete="off" required></textarea></label><label><input type="checkbox" name="confirm" value="yes" required>راجعت دليل الفشل وأطلب محاولة إضافية للجزء المحدد بعد إذن جديد</label><button>تسجيل محاولة إضافية للجزء {{ part.ordinal }}</button></form>
+</details>{% endif %}
 <details><summary>هوية وبصمة الجزء {{ part.ordinal }}</summary><dl>
 <dt>هوية الجزء</dt><dd><bdi>{{ part.id }}</bdi></dd><dt>بصمة المحتوى</dt><dd><bdi>{{ part.sha256 }}</bdi></dd>
 <dt>بصمة الجزء داخل الخطة الموقّعة</dt><dd><bdi>{{ part.envelope_sha256 }}</bdi></dd></dl></details>
@@ -52,8 +64,8 @@
 {% if desk.staged %}
 <form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_reconcile"><label><input type="checkbox" name="confirm" value="yes" required>أطلب تسجيل الحجوزات المنتهية كغير محسومة فقط.</label><button>مطابقة المحاولات المنتهية</button></form>
 {% else %}
-<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_export"><button>تنزيل طلب إذن جميع الأجزاء</button></form>
-{% if desk.plan_status == 'PLANNED_NOT_SENT' %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_stage"><label for="return-permission">إيصال الإذن المستقل الموقّع</label><textarea id="return-permission" name="response_json" maxlength="16000" required autocomplete="off"></textarea><label><input type="checkbox" name="confirm" value="yes" required>راجعت القناة والوجهة وجميع الأجزاء وأطلب تسجيل الإذن الحالي فقط.</label><button>تسجيل خطة الأجزاء الموقّعة</button></form>{% endif %}
+<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_export"><button>تنزيل طلب إذن {{ desk.selection_label }}</button></form>
+{% if desk.plan_status == 'PLANNED_NOT_SENT' %}<form method="post" action="/casework/staff/">{% csrf_token %}{% include "composite_delivery/snapshot_fields.html" %}<input type="hidden" name="action" value="composite_stage"><label for="return-permission">إيصال الإذن المستقل الموقّع</label><textarea id="return-permission" name="response_json" maxlength="16000" required autocomplete="off"></textarea><label><input type="checkbox" name="confirm" value="yes" required>راجعت القناة والوجهة والأجزاء المختارة والمستبعدة وأطلب تسجيل الإذن الحالي فقط.</label><button>تسجيل خطة الأجزاء الموقّعة</button></form>{% endif %}
 {% endif %}
 {% endif %}
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="composite_open"><input type="hidden" name="case_ref" value="{{ desk.public_ref }}"><button>تحديث متابعة الأجزاء</button></form>

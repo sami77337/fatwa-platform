@@ -187,6 +187,17 @@ def _snapshot(locked):
                 if apps.is_installed("apps.composite_delivery")
                 else []
             ),
+            (
+                list(
+                    apps.get_model("composite_delivery", "CompositeRetry")
+                    .objects.filter(delivery__decision__case_id__in=ids)
+                    .order_by("pk")
+                    .values()
+                )
+                if apps.is_installed("apps.composite_delivery")
+                else []
+            ),
+            getattr(settings, "FATWA_COMPOSITE_RETRY_ENABLED", False) is True,
         ]
     )
 
@@ -330,11 +341,13 @@ def _closure(case, guard, *, without_delivery=False):
     claims = list(ApprovalClaim.objects.filter(case_key=case.public_ref).order_by("pk"))
     proofs = []
     current = []
+    resolved_retry_plans = set()
     for claim in claims:
         legacy = (
             CaseDelivery.objects.filter(approval=claim).select_related("decision__answer").first()
         )
         composite = None
+        retry = None
         if apps.is_installed("apps.composite_delivery"):
             composite = (
                 apps.get_model("composite_delivery", "CompositeDelivery")
@@ -342,6 +355,16 @@ def _closure(case, guard, *, without_delivery=False):
                 .select_related("decision__answer")
                 .first()
             )
+            retry = (
+                apps.get_model("composite_delivery", "CompositeRetry")
+                .objects.filter(approval=claim)
+                .select_related("delivery__decision__answer", "delivery__approval")
+                .first()
+            )
+            if retry is not None:
+                if composite is not None:
+                    raise cases.CaseConflict("lifecycle_delivery_binding_invalid")
+                composite = retry.delivery
         binding = legacy or composite
         if (
             binding is None
@@ -351,6 +374,33 @@ def _closure(case, guard, *, without_delivery=False):
             or (claim.answer_revision == answer.revision and binding.decision_id != decision.pk)
         ):
             raise cases.CaseConflict("lifecycle_delivery_binding_invalid")
+        if composite is not None:
+            from apps.composite_delivery import retries
+
+            if retries.present(composite):
+                if claim.plan_fingerprint in resolved_retry_plans:
+                    continue
+                try:
+                    result = retries.status_locked(composite, guard.composite_verifier)
+                except Exception:
+                    raise cases.CaseConflict("lifecycle_delivery_unresolved") from None
+                if not result["delivery_verified"]:
+                    raise cases.CaseConflict("lifecycle_delivery_unresolved")
+                # Only this exact validated ancestry may reconcile its preserved
+                # failed claims. Other historical or unbound claims still pass
+                # through the original conservative checks below.
+                resolved_retry_plans.update(result["retained_plans"])
+                proofs.append(
+                    {
+                        "plan": composite.approval.plan_fingerprint,
+                        "parts": result["expected_parts"],
+                        "original_state": result["original_plan"]["state"],
+                        "retry_plans": result["retained_plans"],
+                    }
+                )
+                if claim.answer_revision == answer.revision:
+                    current.append(claim)
+                continue
         try:
             evidence = audit_provider_reported_delivery(
                 plan_fingerprint=claim.plan_fingerprint,

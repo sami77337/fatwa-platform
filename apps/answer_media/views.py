@@ -1,5 +1,8 @@
 """Native forms and authenticated byte responses for the closed media answer demo."""
 
+from contextlib import contextmanager
+from hashlib import sha256
+
 from django.conf import settings
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
@@ -9,18 +12,23 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_post_parameters
 
+from apps.case_attachments.storage_bindings import binding_locks
 from apps.casework import services as cases
 from apps.casework_web import requester_workspace
 from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _form, _integer, _provider
+from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
+from apps.private_media.storage import configured_storage
 
-from . import services
+from . import related_views, services
+from .editor_boundary import EditorBoundary, head
 
-ACTIONS = frozenset(
-    {"answer_media", "answer_media_save", "answer_media_release", "answer_media_reorder"}
+ACTIONS = (
+    frozenset({"answer_media", "answer_media_save", "answer_media_release", "answer_media_reorder"})
+    | related_views.ACTIONS
 )
 
 
@@ -64,6 +72,14 @@ def _multipart(request):
         "csrfmiddlewaretoken",
     }
     posted = set(request.POST)
+    link_fields = {"youtube_url", "youtube_label"}
+    if posted & link_fields:
+        if (
+            getattr(settings, "FATWA_ANSWER_LINKS_ENABLED", False) is not True
+            or not link_fields <= posted
+        ):
+            raise InvalidForm("answer_link_form_invalid")
+        required |= link_fields
     # Native browsers serialize an unselected optional file control as one
     # empty field. It is absence of a file, never a filename/path or an upload.
     if "answer_file" in posted:
@@ -83,9 +99,61 @@ def _multipart(request):
     return request.POST
 
 
+def _enhanced():
+    return any(
+        getattr(settings, name, False) is True
+        for name in ("FATWA_ANSWER_LINKS_ENABLED", "FATWA_ANSWER_RELATED_ENABLED")
+    )
+
+
+@contextmanager
+def _editor_transaction(request, common):
+    if not _enhanced():
+        yield
+        return
+    storage = configured_storage()
+    digests = []
+    for uploaded in request.FILES.values():
+        if uploaded.size > 192000:
+            raise InvalidForm("answer_media_too_large")
+        digests.append(sha256(uploaded.read(192001)).hexdigest())
+        uploaded.seek(0)
+    with binding_locks(storage, digests), synthetic_queue_atomic():
+        editor = EditorBoundary(common["provider"])
+        yield
+        editor.check()
+
+
+def _render_staff(request, common, action):
+    expected = head(common["case_id"])
+    selected = services.staff_snapshot(**common)
+    related = related_views.seed(request, common, selected)
+    get_token(request)
+    response = private(
+        render(
+            request,
+            "answer_media/staff.html",
+            {
+                "selected": selected,
+                "related": related,
+                "saved": action != "answer_media",
+                "links_enabled": getattr(settings, "FATWA_ANSWER_LINKS_ENABLED", False) is True,
+                "release_enabled": getattr(settings, "FATWA_ANSWER_MEDIA_PRIVATE_ENABLED", False)
+                is True,
+            },
+        )
+    )
+    if _enhanced():
+        if services.staff_snapshot(**common) != selected or head(common["case_id"]) != expected:
+            raise cases.CaseConflict("answer_editor_source_changed")
+    return response
+
+
 @sensitive_post_parameters()
 @csrf_protect
 def staff(request):
+    if request.method == "POST" and request.POST.get("action") in related_views.ACTIONS:
+        return related_views.workspace(request)
     try:
         if request.method != "POST" or request.POST.get("action") not in ACTIONS:
             raise InvalidForm("answer_media_form_invalid")
@@ -111,71 +179,68 @@ def staff(request):
         if selected is None:
             return denied("answer_media_unavailable", 404)
         common["case_id"] = selected["case_id"]
-        if action == "answer_media_save":
-            current = services.staff_snapshot(**common)
-            retained = (
-                [
-                    p["id"]
-                    for p in (current["latest_package"] or {}).get("parts", [])
-                    if p["kind"] != "TEXT"
-                ]
-                if fields["retain"] == "yes"
-                else []
-            )
-            uploaded = request.FILES.get("answer_file")
-            files = []
-            if uploaded:
-                if uploaded.size > 192000:
-                    return denied("answer_media_too_large", 413)
-                files.append(
-                    {
-                        "raw": uploaded.read(192001),
-                        "filename": uploaded.name,
-                        "media_type": uploaded.content_type,
-                    }
+        with _editor_transaction(request, common):
+            if action == "answer_media_save":
+                current = services.staff_snapshot(**common)
+                retained = (
+                    [
+                        p["id"]
+                        for p in (current["latest_package"] or {}).get("parts", [])
+                        if p["kind"] != "TEXT"
+                    ]
+                    if fields["retain"] == "yes"
+                    else []
                 )
-            services.save_multipart_answer(
-                **common,
-                text=fields["text"],
-                files=files,
-                retained_part_ids=retained,
-                expected_revision=_integer(fields["revision"]),
-                expected_evidence_version=_integer(fields["evidence_version"]),
-            )
-        elif action == "answer_media_reorder":
-            current = services.staff_snapshot(**common)
-            parts = [part for part in fields.getlist("parts") if part]
-            services.save_multipart_answer(
-                **common,
-                text=current["current_text"],
-                files=[],
-                retained_part_ids=parts,
-                expected_revision=_integer(fields["revision"]),
-                expected_evidence_version=_integer(fields["evidence_version"]),
-            )
-        elif action == "answer_media_release":
-            services.release_private(
-                **common,
-                expected_revision=_integer(fields["revision"]),
-                expected_evidence_version=_integer(fields["evidence_version"]),
-                manifest_sha256=fields["manifest_sha256"],
-                confirmed=fields["confirm"] == "yes",
-            )
-        get_token(request)
-        return private(
-            render(
-                request,
-                "answer_media/staff.html",
-                {
-                    "selected": services.staff_snapshot(**common),
-                    "saved": action != "answer_media",
-                    "release_enabled": getattr(
-                        settings, "FATWA_ANSWER_MEDIA_PRIVATE_ENABLED", False
+                uploaded = request.FILES.get("answer_file")
+                files = []
+                if uploaded:
+                    if uploaded.size > 192000:
+                        return denied("answer_media_too_large", 413)
+                    files.append(
+                        {
+                            "raw": uploaded.read(192001),
+                            "filename": uploaded.name,
+                            "media_type": uploaded.content_type,
+                        }
                     )
-                    is True,
-                },
-            )
-        )
+                services.save_multipart_answer(
+                    **common,
+                    text=fields["text"],
+                    files=files,
+                    links=(
+                        [
+                            {
+                                "url": fields.get("youtube_url", ""),
+                                "label": fields.get("youtube_label", ""),
+                            }
+                        ]
+                        if fields.get("youtube_url", "") or fields.get("youtube_label", "")
+                        else []
+                    ),
+                    retained_part_ids=retained,
+                    expected_revision=_integer(fields["revision"]),
+                    expected_evidence_version=_integer(fields["evidence_version"]),
+                )
+            elif action == "answer_media_reorder":
+                current = services.staff_snapshot(**common)
+                parts = [part for part in fields.getlist("parts") if part]
+                services.save_multipart_answer(
+                    **common,
+                    text=current["current_text"],
+                    files=[],
+                    retained_part_ids=parts,
+                    expected_revision=_integer(fields["revision"]),
+                    expected_evidence_version=_integer(fields["evidence_version"]),
+                )
+            elif action == "answer_media_release":
+                services.release_private(
+                    **common,
+                    expected_revision=_integer(fields["revision"]),
+                    expected_evidence_version=_integer(fields["evidence_version"]),
+                    manifest_sha256=fields["manifest_sha256"],
+                    confirmed=fields["confirm"] == "yes",
+                )
+            return _render_staff(request, common, action)
     except (InvalidForm, SuspiciousOperation):
         return denied("answer_media_form_invalid", 400)
     except IdentityUnavailable:
@@ -193,11 +258,11 @@ def requester(request):
         _form(request, {"action"})
         if request.POST["action"] != "answer_media":
             raise InvalidForm("answer_media_form_invalid")
-        result = services.requester_snapshot(
+        with services.requester_page_projection(
             token=requester_workspace._capability(request), synthetic_fixtures_only=True
-        )
-        get_token(request)
-        return private(render(request, "answer_media/requester.html", result))
+        ) as result:
+            get_token(request)
+            return private(render(request, "answer_media/requester.html", result))
     except (InvalidForm, SuspiciousOperation):
         return denied("answer_media_form_invalid", 400)
     except cases.CaseConflict:
@@ -207,6 +272,17 @@ def requester(request):
 
 
 def _file(row):
+    if row["kind"] == "YOUTUBE_LINK":
+        return private(
+            HttpResponse(
+                row["raw"],
+                content_type="text/plain; charset=utf-8",
+                headers={
+                    "Content-Disposition": 'attachment; filename="youtube-reference.txt"',
+                    "Content-Length": str(row["size"]),
+                },
+            )
+        )
     response = private(
         HttpResponse(
             row["raw"],

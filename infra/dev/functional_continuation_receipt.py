@@ -61,15 +61,71 @@ NEW_WORKFLOWS = {
         "public_collections_collectionaction",
     ),
     "apps.case_lifecycle.recovery_support": ("case_lifecycle_lifecycleevent",),
-    "apps.canonical_search.recovery_support": ("canonical_search_searchgeneration", "canonical_search_searchdocument"),
+    "apps.canonical_search.recovery_support": (
+        "canonical_search_searchgeneration",
+        "canonical_search_searchdocument",
+    ),
     "apps.public_answer_media.recovery_support": (
-        "public_answer_media_recordingtranscript", "public_answer_media_transcriptaction",
-        "public_answer_media_publicmediaedition", "public_answer_media_publicmediaaction",
+        "public_answer_media_recordingtranscript",
+        "public_answer_media_transcriptaction",
+        "public_answer_media_publicmediaedition",
+        "public_answer_media_publicmediaaction",
     ),
     "apps.precise_citations.recovery_support": (
-        "precise_citations_citationset", "precise_citations_citationanchor", "precise_citations_citationreview",
+        "precise_citations_citationset",
+        "precise_citations_citationanchor",
+        "precise_citations_citationreview",
     ),
     "apps.case_attachments.video_recovery": ("case_attachments_caseattachment",),
+    "apps.answer_media.youtube_recovery_support": (
+        "answer_media_answermanifest",
+        "answer_media_answerpart",
+        "answer_media_privateanswerrelease",
+    ),
+    "apps.identity_registry.recovery_support": (
+        "identity_registry_platformidentity",
+        "identity_registry_identityobservation",
+        "identity_registry_person",
+        "identity_registry_linkproposal",
+        "identity_registry_registryoperation",
+        "identity_registry_identitymembership",
+    ),
+    "apps.public_reader_tools.recovery_support": (),
+    "apps.material_api.recovery_support": (),
+    "apps.publication_schedules.recovery_support": (
+        "publication_schedules_publicationschedule",
+        "publication_schedules_scheduleoutcome",
+    ),
+    "apps.composite_delivery.selection_recovery": (),
+    "apps.development_taxonomy.recovery_support": (
+        "development_taxonomy_developmenttree",
+        "development_taxonomy_concept",
+        "development_taxonomy_treeversion",
+        "development_taxonomy_humanreview",
+        "development_taxonomy_migrationplan",
+        "development_taxonomy_migrationexecution",
+        "development_taxonomy_caseclassification",
+    ),
+    "apps.canonical_search.governance_recovery_support": (
+        "canonical_search_synonymrevision",
+        "canonical_search_synonympreview",
+        "canonical_search_synonymdecision",
+        "canonical_search_shadowcomparison",
+    ),
+    "apps.public_teaching.recovery_support": (
+        "public_teaching_teachingitem",
+        "public_teaching_teachingversion",
+        "public_teaching_teachingaction",
+    ),
+    "apps.composite_delivery.retry_recovery": ("composite_delivery_compositeretry",),
+    "apps.library_preview.reference_recovery": (),
+    "apps.operational_workspace.recovery_support": (),
+    "apps.arabic_search_eval.benchmark_recovery_support": (
+        "arabic_search_eval_evaluationrevision",
+        "arabic_search_eval_evaluationdecision",
+        "arabic_search_eval_canonicalbenchmarkrun",
+        "arabic_search_eval_canonicalbenchmarkdecision",
+    ),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -85,11 +141,104 @@ RESTORED_DENIAL_CHECKS = {
     },
     "apps.canonical_search.recovery_support": {"missing_authority": 1, "inactive_identity": 1},
     "apps.public_answer_media.recovery_support": {
-        "missing_authority": 2, "missing_identity_provider": 2, "missing_media_rights": 2,
-        "revoked_current_reader": 2, "revoked_public_release_actor": 1,
+        "missing_authority": 2,
+        "missing_identity_provider": 2,
+        "missing_media_rights": 2,
+        "revoked_current_reader": 2,
+        "revoked_public_release_actor": 1,
     },
     "apps.precise_citations.recovery_support": {"missing_authority": 1, "withdrawn_source_cite": 1},
-    "apps.case_attachments.video_recovery": {"revoked_requester": 2, "revoked_current_reader": 2, "disabled_feature": 2},
+    "apps.case_attachments.video_recovery": {
+        "revoked_requester": 2,
+        "revoked_current_reader": 2,
+        "disabled_feature": 2,
+    },
+    "apps.answer_media.youtube_recovery_support": {"missing_authority": 1, "inactive_identity": 1},
+    "apps.identity_registry.recovery_support": {
+        "missing_authority": 1,
+        "missing_identity_provider": 1,
+        "revoked_current_reader": 1,
+    },
+    "apps.public_reader_tools.recovery_support": {
+        "missing_tool_authority": 1,
+        "missing_current_directory": 1,
+        "missing_publication_grant": 1,
+        "revoked_current_authorizer": 1,
+        "missing_save_reference": 1,
+        "missing_share_link": 1,
+        "missing_print": 1,
+        "missing_download_text": 1,
+    },
+    "apps.material_api.recovery_support": {
+        "disabled_api": 1,
+        "missing_authority": 1,
+        "missing_identity_provider": 1,
+        "revoked_release_actor": 1,
+    },
+    "apps.publication_schedules.recovery_support": {
+        "missing_authority": 1,
+        "missing_identity_provider": 1,
+        "revoked_current_reader": 1,
+    },
+    "apps.composite_delivery.selection_recovery": {
+        "disabled_choices": 1,
+        "missing_identity_provider": 1,
+        "missing_capabilities": 1,
+        "revoked_current_reader": 1,
+    },
+    "apps.development_taxonomy.recovery_support": {
+        "missing_authority": 1,
+        "missing_identity_provider": 1,
+        "revoked_current_reader": 1,
+        "revoked_mapping_authority": 1,
+    },
+    "apps.canonical_search.governance_recovery_support": {
+        "missing_authority": 2,
+        "missing_identity_provider": 2,
+        "disabled_feature": 2,
+        "revoked_current_reader": 2,
+    },
+    "apps.public_teaching.recovery_support": {
+        "missing_authority": 1,
+        "missing_identity_provider": 1,
+        "missing_source_authority": 1,
+        "revoked_current_release_actor": 1,
+        "missing_public_content_right": 1,
+        "missing_attributed_material_right": 1,
+    },
+    "apps.composite_delivery.retry_recovery": {
+        "disabled_retry": 1,
+        "missing_identity_provider": 1,
+        "missing_provider_verifier": 1,
+        "missing_capabilities": 1,
+        "revoked_current_reader": 1,
+        "revoked_failure_verification_key": 1,
+    },
+    "apps.library_preview.reference_recovery": {
+        "disabled_feature": 1,
+        "missing_reference_policy": 1,
+        "missing_identity_provider": 1,
+        "missing_publication_grant": 1,
+        "missing_source_rights": 1,
+        "revoked_current_publisher": 1,
+    },
+    "apps.operational_workspace.recovery_support": {
+        "disabled_workspace": 1,
+        "missing_authority": 1,
+        "missing_identity_provider": 1,
+        "revoked_current_identity": 1,
+        "revoked_case_read": 1,
+        "revoked_transcript_read": 1,
+        "expired_operational_grant": 1,
+    },
+    "apps.arabic_search_eval.benchmark_recovery_support": {
+        "missing_benchmark_authority": 2,
+        "missing_identity_provider": 2,
+        "disabled_feature": 2,
+        "missing_source_search_authority": 2,
+        "revoked_read_action": 2,
+        "revoked_current_reader": 2,
+    },
 }
 
 # Keep the exact executed identities, including the assignment class's inherited
@@ -178,38 +327,108 @@ NEW_BROWSER_JOURNEYS = (
         "modern",
     ),
     (
-        'apps.canonical_search.browser_tests.CanonicalSearchBrowserTests.test_native_literal_fts_fuzzy_exact_source_stale_rebuild_and_current_revocation',
-        '.local/qa/functional-continuation/canonical-search-browser/result.json',
+        "apps.canonical_search.browser_tests.CanonicalSearchBrowserTests.test_native_literal_fts_fuzzy_exact_source_stale_rebuild_and_current_revocation",
+        ".local/qa/functional-continuation/canonical-search-browser/result.json",
         "modern",
     ),
     (
-        'apps.canonical_search.browser_recordings.RecordingSearchBrowserTests.test_actual_fts_result_opens_reviewed_original_at_pinned_segment',
-        '.local/qa/functional-continuation/search-recording-browser/result.json',
+        "apps.canonical_search.browser_recordings.RecordingSearchBrowserTests.test_actual_fts_result_opens_reviewed_original_at_pinned_segment",
+        ".local/qa/functional-continuation/search-recording-browser/result.json",
         "modern",
     ),
     (
-        'apps.public_answer_media.browser_tests.PublicAnswerMediaBrowserTests.test_native_transcript_revision_review_public_playback_seek_and_withdrawal',
-        '.local/qa/functional-continuation/public-answer-media-browser/result.json',
+        "apps.public_answer_media.browser_tests.PublicAnswerMediaBrowserTests.test_native_transcript_revision_review_public_playback_seek_and_withdrawal",
+        ".local/qa/functional-continuation/public-answer-media-browser/result.json",
         "modern",
     ),
     (
-        'apps.precise_citations.browser_tests.PreciseCitationBrowserTests.test_native_exact_phrase_review_original_export_and_withdrawal',
-        '.local/qa/functional-continuation/citations-browser/result.json',
+        "apps.precise_citations.browser_tests.PreciseCitationBrowserTests.test_native_exact_phrase_review_original_export_and_withdrawal",
+        ".local/qa/functional-continuation/citations-browser/result.json",
         "modern",
     ),
     (
-        'apps.case_attachments.video_browser_tests.RequesterVideoBrowserTests.test_native_requester_upload_playback_original_download_and_revocation',
-        '.local/qa/functional-continuation/requester-video-browser/result.json',
+        "apps.case_attachments.video_browser_tests.RequesterVideoBrowserTests.test_native_requester_upload_playback_original_download_and_revocation",
+        ".local/qa/functional-continuation/requester-video-browser/result.json",
         "modern",
     ),
     (
-        'apps.staff_shell.browser_tests.StaffPWABrowserTests.test_installable_staff_scope_requires_live_authorization_and_never_caches_cases',
-        '.local/qa/functional-continuation/staff-pwa-browser/result.json',
+        "apps.staff_shell.browser_tests.StaffPWABrowserTests.test_installable_staff_scope_requires_live_authorization_and_never_caches_cases",
+        ".local/qa/functional-continuation/staff-pwa-browser/result.json",
         "modern",
     ),
     (
-        'apps.staff_shell.browser_tests.DarkModeBrowserTests.test_system_theme_switch_preserves_published_content_with_readable_dark_surfaces',
-        '.local/qa/functional-continuation/dark-mode-browser/result.json',
+        "apps.staff_shell.browser_tests.DarkModeBrowserTests.test_system_theme_switch_preserves_published_content_with_readable_dark_surfaces",
+        ".local/qa/functional-continuation/dark-mode-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.answer_media.browser_youtube.YouTubeAnswerBrowserTests.test_native_external_link_save_approve_release_and_current_requester_access",
+        ".local/qa/functional-continuation/youtube-answer-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.answer_media.browser_related.RelatedMaterialBrowserTests.test_actual_side_panel_preserves_draft_file_and_link_until_explicit_save",
+        ".local/qa/functional-continuation/answer-related-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.identity_registry.browser_tests.IdentityRegistryBrowserTests.test_native_independent_identity_states_and_reviewable_merge_split",
+        ".local/qa/functional-continuation/identities-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.public_reader_tools.browser_tests.ReaderToolsBrowserTests.test_native_local_reference_share_print_download_and_current_withdrawal",
+        ".local/qa/functional-continuation/reader-tools-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.material_api.browser_tests.MaterialAPIBrowserTests.test_native_developer_search_exact_json_original_and_current_revocation",
+        ".local/qa/functional-continuation/material-api-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.publication_schedules.browser_tests.PublicationScheduleBrowserTests.test_native_exact_future_schedule_cancel_due_publication_and_changed_authority_hold",
+        ".local/qa/functional-continuation/publication-schedules-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.composite_delivery.browser_selection.CompositeChoiceBrowserTests.test_native_explicit_text_selection_preserves_audio_and_requires_independent_signed_plan",
+        ".local/qa/functional-continuation/composite-choice-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.development_taxonomy.browser_tests.DevelopmentTaxonomyBrowserTests.test_native_multilevel_ids_primary_additional_reviewed_migrations_and_rollback",
+        ".local/qa/functional-continuation/taxonomy-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.canonical_search.browser_governance.SearchGovernanceBrowserTests.test_native_versioned_dictionary_independent_review_actual_fts_shadow_and_retirement",
+        ".local/qa/functional-continuation/search-governance-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.public_teaching.browser_tests.PublicTeachingBrowserTests.test_native_scholar_material_ordered_series_actual_lesson_playback_and_revocation",
+        ".local/qa/functional-continuation/public-teaching-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.composite_delivery.browser_retry.CompositeRetryBrowserTests.test_native_failed_part_fresh_signed_bounded_retry_keeps_original_failure_and_no_duplicates",
+        ".local/qa/functional-continuation/composite-retry-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.library_preview.browser_references.FatwaReferenceBrowserTests.test_native_exact_ft_lookup_scoped_staff_open_explicit_public_number_and_withdrawal",
+        ".local/qa/functional-continuation/fatwa-reference-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.operational_workspace.browser_tests.OperationalWorkspaceBrowserTests.test_actual_organizer_queue_filters_and_scoped_details_without_scholarly_authority",
+        ".local/qa/functional-continuation/operational-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.arabic_search_eval.browser_benchmark.CanonicalBenchmarkBrowserTests.test_native_authored_judgments_actual_metrics_independent_decisions_and_current_denials",
+        ".local/qa/functional-continuation/search-benchmark-browser/result.json",
         "modern",
     ),
 )
@@ -251,8 +470,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["20"],
-        "Exactly 20 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["34"],
+        "Exactly 34 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -260,7 +479,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 20 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 34 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -401,7 +620,15 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     require(major in {"17", "18"}, "Unsupported PostgreSQL evidence")
     stages = {stage["name"]: stage for stage in execution["stages"]}
     require(
-        {"system", "migrations", "recording", "recording_player", "offline_client", "affected", "recovery"}
+        {
+            "system",
+            "migrations",
+            "recording",
+            "recording_player",
+            "offline_client",
+            "affected",
+            "recovery",
+        }
         <= stages.keys(),
         "Mandatory aggregate stage is missing",
     )
@@ -449,10 +676,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 25
-        and len(expected_tables) == 47
+        and len(new_tables) == 55
+        and len(expected_tables) == 77
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 47 prior and new recovery tables are required",
+        "Exactly the 77 prior and new recovery tables are required",
     )
     require(
         all(
@@ -466,7 +693,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All eleven fresh-process workflow result records are required",
+        "All twenty-four fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

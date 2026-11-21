@@ -30,6 +30,9 @@ from tests.casework.test_core import TestDirectory
 
 class CaseDeliveryFixture:
     def setUp(self):
+        # Preserve idempotent repeats within this seed while isolating separately
+        # composed recovery fixtures, including explicit-choice and retry chains.
+        self.intake_namespace = secrets.token_hex(12)
         self.now = timezone.now()
         self.approval_key = Ed25519PrivateKey.generate()
         self.channel_key = Ed25519PrivateKey.generate()
@@ -60,8 +63,8 @@ class CaseDeliveryFixture:
         return s.intake_case(
             original_question="  سؤال اصطناعي حرفي\n" + suffix,
             requester_id="requester-" + suffix,
-            source_event_id="website-" + suffix,
-            idempotency_key="intake-" + suffix,
+            source_event_id="website-" + self.intake_namespace + "-" + suffix,
+            idempotency_key="intake-" + self.intake_namespace + "-" + suffix,
             synthetic_fixtures_only=True,
         )
 

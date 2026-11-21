@@ -1,0 +1,16 @@
+{% extends "library_preview/base.html" %}
+{% block title %}واجهة المواد للمطورين{% endblock %}
+{% block content %}
+<h1>واجهة المواد للمطورين</h1>
+<p>قراءة المواد المصرح بها حاليًا ومعرفاتها ونسخها ومراجعها. صلاحية البيانات الوصفية مستقلة عن إتاحة النص أو تنزيل الملف.</p>
+<p><a href="{% url 'material_api:schema' %}">عقد الواجهة وإصداره</a></p>
+<form method="get" action="{% url 'material_api:docs' %}">
+<label for="api-query">بحث في المواد المتاحة</label><input id="api-query" name="q" maxlength="120" value="{{ data.query.q }}">
+<label for="api-kind">نوع المادة</label><select id="api-kind" name="kind"><option value="">كل الأنواع</option>{% for value,label in kinds.items %}<option value="{{ value }}" {% if data.query.kind == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+<button>بحث المواد</button>
+</form>
+<p>المواد المتاحة: {{ data.pagination.total }}. الصفحة {{ data.pagination.page }}.</p>
+<form method="get" action="{% url 'material_api:index' %}"><input type="hidden" name="q" value="{{ data.query.q }}"><input type="hidden" name="kind" value="{{ data.query.kind }}"><button>فتح نتيجة JSON</button></form>
+{% for row in data.results %}<article class="card"><h2>{{ row.title }}</h2><p>{{ row.reference.work_title }} — {{ row.reference.edition }} — {{ row.reference.locator }}</p><p>النسخة {{ row.version }} · {{ row.kind }}</p><p><a class="api-record" href="{{ row.links.self }}">النسخة عبر API</a> · <a href="{{ row.links.canonical }}">قراءة المادة</a>{% if row.links.original %} · <a class="api-original" href="{{ row.links.original }}">تنزيل الأصل عبر API</a>{% endif %}</p></article>{% empty %}<p>لا توجد مواد متاحة بهذا البحث.</p>{% endfor %}
+<p>تقبل الواجهة GET وHEAD فقط. تُرفض المعلمات المكررة أو غير المعروفة. لا تنشئ الواجهة اعتمادًا أو نشرًا ولا تكشف قضية خاصة.</p>
+{% endblock %}

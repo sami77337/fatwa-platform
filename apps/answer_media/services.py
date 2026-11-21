@@ -4,10 +4,12 @@ import json
 import os
 import re
 import uuid
+from contextlib import contextmanager
 from hashlib import sha256
 
 from django.apps import apps
 from django.conf import settings
+from django.utils import timezone
 
 from apps.case_attachments.storage_bindings import (
     binding_locks,
@@ -17,10 +19,13 @@ from apps.case_attachments.storage_bindings import (
 )
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
-from apps.platform_recovery.integration import mutation_service, require_admission
+from apps.delivery_queue.models import RequesterTrackingToken
+from apps.platform_recovery.integration import mutation_context, mutation_service, require_admission
 from apps.private_media.storage import configured_storage
 from apps.private_media.validation import TYPES, MediaValidationError, validate
 
+from . import youtube
+from .editor_boundary import EditorBoundary, head
 from .models import AnswerManifest, AnswerPart, PrivateAnswerRelease
 
 MAX_PARTS = 8
@@ -28,6 +33,9 @@ MAX_PARTS = 8
 
 def _metadata_valid(row):
     """Cheap read-time shape checks; full isolated parsing occurs at approval."""
+    if row.kind == youtube.KIND:
+        youtube.verify(row, raw_for_part(row))
+        return True
     if re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_. -]{0,94}\.[A-Za-z0-9]{2,4}", row.filename) is None:
         return False
     expected = TYPES.get("." + row.filename.rsplit(".", 1)[-1].lower())
@@ -162,6 +170,7 @@ def save_multipart_answer(
     provider,
     text,
     files,
+    links=(),
     retained_part_ids=(),
     expected_revision,
     expected_evidence_version,
@@ -170,14 +179,29 @@ def save_multipart_answer(
     _enabled()
     cases._text(text)
     cases._mutation_versions(expected_revision, expected_evidence_version)
-    if type(files) not in (tuple, list) or type(retained_part_ids) not in (tuple, list):
+    if any(type(value) not in (tuple, list) for value in (files, links, retained_part_ids)):
         raise cases.CaseConflict("answer_parts_invalid")
+    if links and getattr(settings, "FATWA_ANSWER_LINKS_ENABLED", False) is not True:
+        raise cases.CaseConflict("answer_links_disabled")
+    linked = []
+    for link in links:
+        if type(link) is not dict or set(link) != {"url", "label"}:
+            raise cases.CaseConflict("youtube_link_invalid")
+        linked.append(youtube.validate(**link))
     if (
-        not 1 <= len(files) + len(retained_part_ids) < MAX_PARTS
+        not 1 <= len(files) + len(links) + len(retained_part_ids) < MAX_PARTS
         or any(type(value) is not str for value in retained_part_ids)
         or len(set(retained_part_ids)) != len(retained_part_ids)
     ):
         raise cases.CaseConflict("answer_parts_invalid")
+    editor = (
+        EditorBoundary(provider)
+        if links
+        or AnswerPart.objects.filter(
+            pk__in=[cases._uuid(value) for value in retained_part_ids], kind=youtube.KIND
+        ).exists()
+        else None
+    )
     checked = []
     try:
         for file in files:
@@ -251,6 +275,20 @@ def save_multipart_answer(
                     "metadata": media.metadata,
                 }
             )
+        for link in linked:
+            parts.append(
+                {
+                    "id": uuid.uuid4(),
+                    "ordinal": len(parts) + 1,
+                    "kind": youtube.KIND,
+                    "original": link.raw,
+                    "sha256": link.sha256,
+                    "size": link.size,
+                    "media_type": link.media_type,
+                    "filename": link.filename,
+                    "metadata": link.metadata,
+                }
+            )
         current_actor = cases._identity(provider, subject_id, case)
         if (current_actor.subject_id, current_actor.auth_epoch, provider.provider_id) != (
             actor.subject_id,
@@ -285,8 +323,22 @@ def save_multipart_answer(
             from apps.case_citations.services import clone_citations_for_new_answer
 
             clone_citations_for_new_answer(previous_answer, answer)
+        expected_head = (
+            (
+                case.revision,
+                case.evidence_version,
+                case.answer_revision,
+                case.approved_answer_id,
+                case.stage,
+            ),
+        )
         _verified(manifest)
-        return cases._staff(case)
+        result = cases._staff(case)
+        if editor:
+            editor.check(actor)
+            if head(case.pk) != expected_head:
+                raise cases.CaseConflict("answer_editor_source_changed")
+        return result
 
 
 def _current(case, manifest):
@@ -424,6 +476,9 @@ def validate_for_approval(answer):
     if manifest is None:
         return None
     for row in _verified(manifest)[1:]:
+        if row.kind == youtube.KIND:
+            youtube.verify(row, raw_for_part(row))
+            continue
         try:
             checked = validate(raw_for_part(row), row.filename, row.media_type)
         except MediaValidationError as exc:
@@ -519,30 +574,78 @@ def _requester_manifest(case):
     return manifest
 
 
+def _requester_pin(case, token):
+    directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
+    editor = (
+        EditorBoundary(directory)
+        if AnswerPart.objects.filter(
+            manifest_id=case.approved_answer_id, kind=youtube.KIND
+        ).exists()
+        else None
+    )
+    grant = RequesterTrackingToken.objects.get(pk=cases._digest(token))
+    return editor, head(case.pk), grant.case_id, grant.expires_at, grant.revoked_at
+
+
+def _check_requester_pin(pin, case, token):
+    editor, expected, tracking_id, expires, revoked = pin
+    grant = RequesterTrackingToken.objects.get(pk=cases._digest(token))
+    if (
+        head(case.pk) != expected
+        or grant.case_id != tracking_id
+        or grant.expires_at != expires
+        or grant.revoked_at != revoked
+        or grant.revoked_at is not None
+        or timezone.now() >= expires
+    ):
+        raise cases.CaseConflict("answer_requester_projection_changed")
+    if editor:
+        editor.check()
+
+
 @mutation_service
 def requester_snapshot(*, token, synthetic_fixtures_only=False):
     _release_enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
+        pin = _requester_pin(case, token)
         manifest = _requester_manifest(case)
-        return {
+        result = {
             "public_ref": case.public_ref,
             "package": _projection(case, manifest),
             "delivery_verified": False,
             "read_confirmed": False,
         }
+        _check_requester_pin(pin, case, token)
+        return result
+
+
+@mutation_context
+@contextmanager
+def requester_page_projection(*, token, synthetic_fixtures_only=False):
+    _release_enabled()
+    with cases._token_case(token, synthetic_fixtures_only) as case:
+        pin = _requester_pin(case, token)
+        result = requester_snapshot(token=token, synthetic_fixtures_only=True)
+        yield result
+        if requester_snapshot(token=token, synthetic_fixtures_only=True) != result:
+            raise cases.CaseConflict("answer_requester_projection_changed")
+        _check_requester_pin(pin, case, token)
 
 
 @mutation_service
 def requester_read(*, token, part_id, synthetic_fixtures_only=False):
     _release_enabled()
     with cases._token_case(token, synthetic_fixtures_only) as case:
+        pin = _requester_pin(case, token)
         manifest = _requester_manifest(case)
         row = next(
             (p for p in _verified(manifest) if str(p.pk) == str(part_id) and p.ordinal > 1), None
         )
         if row is None:
             raise cases.CaseConflict("answer_part_unavailable")
-        return {**_fields(row), "raw": raw_for_part(row)}
+        result = {**_fields(row), "raw": raw_for_part(row)}
+        _check_requester_pin(pin, case, token)
+        return result
 
 
 @mutation_service
@@ -555,6 +658,7 @@ def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
     )
     if row is None:
         raise cases.CaseConflict("answer_part_unavailable")
+    editor = EditorBoundary(provider) if row.kind == youtube.KIND else None
     with cases._staff_case(
         row.manifest.answer.case_id, subject_id, provider, synthetic_fixtures_only
     ) as (case, actor):
@@ -563,7 +667,10 @@ def staff_read(*, part_id, subject_id, provider, synthetic_fixtures_only=False):
         _verified(row.manifest)
         if row.ordinal == 1:
             raise cases.CaseConflict("answer_part_unavailable")
-        return {**_fields(row), "raw": raw_for_part(row)}
+        result = {**_fields(row), "raw": raw_for_part(row)}
+        if editor:
+            editor.check(actor)
+        return result
 
 
 def raw_for_part(row):

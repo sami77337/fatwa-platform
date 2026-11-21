@@ -70,6 +70,51 @@ LABELS = [
     "apps.case_attachments.media_tests",
     "apps.case_attachments.video_tests",
     "apps.staff_shell.tests",
+    "apps.answer_media.test_youtube",
+    "apps.answer_media.test_youtube_recovery",
+    "apps.answer_media.test_related",
+    "apps.identity_registry.tests",
+    "apps.identity_registry.test_http",
+    "apps.identity_registry.test_recovery",
+    "apps.public_reader_tools.tests",
+    "apps.public_reader_tools.test_recovery",
+    "apps.material_api.tests",
+    "apps.material_api.test_recovery",
+    "apps.publication_schedules.tests",
+    "apps.publication_schedules.test_recovery",
+    "apps.composite_delivery.test_selection",
+    "apps.composite_delivery.test_selection_recovery",
+    "apps.development_taxonomy.tests",
+    "apps.development_taxonomy.test_http",
+    "apps.development_taxonomy.test_recovery",
+    "apps.canonical_search.test_governance",
+    "apps.canonical_search.test_governance_http",
+    "apps.canonical_search.test_governance_recovery",
+    "apps.public_teaching.tests",
+    "apps.public_teaching.test_http",
+    "apps.public_teaching.test_recovery",
+    "apps.answer_media.tests",
+    "apps.answer_media.tests_storage",
+    "apps.composite_delivery.tests",
+    "apps.composite_delivery.test_desk",
+    "apps.composite_delivery.test_retry",
+    "apps.composite_delivery.test_retry_recovery",
+    "apps.case_lifecycle.test_retry",
+    "apps.library_preview.test_references",
+    "apps.library_preview.test_reference_recovery",
+    "apps.operational_workspace.tests",
+    "apps.operational_workspace.test_http",
+    "apps.operational_workspace.test_recovery",
+    "apps.operational_workspace.test_retry",
+    "tests.casework.test_delivery",
+    "apps.arabic_search_eval.test_benchmark",
+    "apps.arabic_search_eval.test_benchmark_http",
+    "apps.arabic_search_eval.test_benchmark_recovery",
+    "apps.composite_delivery.test_publication_proposal",
+    "apps.arabic_search_eval.test_review",
+    "apps.arabic_search_eval.test_ranking",
+    "apps.arabic_search_eval.test_services",
+    "apps.arabic_search_eval.test_v14_batch",
 ]
 
 BROWSER_LABELS = [
@@ -91,6 +136,20 @@ BROWSER_LABELS = [
     "apps.precise_citations.browser_tests",
     "apps.case_attachments.video_browser_tests",
     "apps.staff_shell.browser_tests",
+    "apps.answer_media.browser_youtube",
+    "apps.answer_media.browser_related",
+    "apps.identity_registry.browser_tests",
+    "apps.public_reader_tools.browser_tests",
+    "apps.material_api.browser_tests",
+    "apps.publication_schedules.browser_tests",
+    "apps.composite_delivery.browser_selection",
+    "apps.development_taxonomy.browser_tests",
+    "apps.canonical_search.browser_governance",
+    "apps.public_teaching.browser_tests",
+    "apps.composite_delivery.browser_retry",
+    "apps.library_preview.browser_references",
+    "apps.operational_workspace.browser_tests",
+    "apps.arabic_search_eval.browser_benchmark",
 ]
 
 
@@ -104,6 +163,7 @@ def main():
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if head != os.environ.get("EXPECTED_SHA", head):
         parser.error("Checkout differs from the requested commit")
+
     def clean_source():
         if subprocess.check_output(
             ["git", "status", "--porcelain", "--untracked-files=normal"], text=True
@@ -140,7 +200,14 @@ def main():
         ("migrations", [sys.executable, "manage.py", "makemigrations", "--check", "--dry-run"]),
         ("recording", ["node", "--test", "apps/browser_audio/test_capture_worklet.mjs"]),
         ("recording_player", ["node", "--test", "apps/public_answer_media/test_player.mjs"]),
-        ("offline_client", ["node", "--test", "apps/research_library/static/research_library/offline/core.test.mjs"]),
+        (
+            "offline_client",
+            [
+                "node",
+                "--test",
+                "apps/research_library/static/research_library/offline/core.test.mjs",
+            ],
+        ),
         (
             "affected",
             [sys.executable, "manage.py", "test", *LABELS, "--noinput", "--verbosity", "2"],
@@ -166,7 +233,7 @@ def main():
                     "--verbosity",
                     "2",
                 ],
-            )
+            ),
         )
     for name, command in stages:
         path = output / (name + ".log")
@@ -198,7 +265,9 @@ def main():
 
     try:
         accounting = write_scope_receipt(receipt, output, labels=LABELS)
-        continuation = write_continuation_receipt(receipt, output, labels=LABELS, browser_labels=BROWSER_LABELS)
+        continuation = write_continuation_receipt(
+            receipt, output, labels=LABELS, browser_labels=BROWSER_LABELS
+        )
     except Exception:
         receipt["status"] = "FAILED_SCOPE_ACCOUNTING"
         (output / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -206,9 +275,13 @@ def main():
     receipt["scope_audit_status"] = accounting["status"]
     receipt["completed_original_owner_points"] = accounting["completed_original_owner_points"]
     receipt["continuation_scope_status"] = continuation["status"]
-    receipt["completed_additional_original_owner_points"] = continuation["completed_additional_original_owner_points"]
+    receipt["completed_additional_original_owner_points"] = continuation[
+        "completed_additional_original_owner_points"
+    ]
     (output / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
-    (Path(".local/qa/functional-continuation") / ("pg" + major) / "execution.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    (Path(".local/qa/functional-continuation") / ("pg" + major) / "execution.json").write_text(
+        json.dumps(receipt, indent=2) + "\n"
+    )
     return 0
 
 

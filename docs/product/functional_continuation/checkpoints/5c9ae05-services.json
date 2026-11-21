@@ -1,0 +1,38 @@
+{
+  "schema": "fatwa.functional-continuation.local-observation.v1",
+  "source_commit": "5c9ae05d22a6ed3adfad3b9750accf968f6435e7",
+  "candidate_count": 55,
+  "status": "SERVICES_PASS_RECOVERY_FIXTURE_COLLISION",
+  "runs": [
+    {
+      "postgres_major": 17,
+      "affected_tests": 815,
+      "affected_seconds": 1081.989,
+      "affected_status": "PASS",
+      "encrypted_recovery_status": "FAIL_BEFORE_BACKUP",
+      "log_file": "continuation55-local-pg17.log",
+      "log_sha256": "9cd2bc8fe0d5dee6153db14694298daf02d712543f28760162642a4c85febfeb",
+      "log_bytes": 164268,
+      "observed_exception": "apps.casework.services.CaseConflict: case_revision_changed",
+      "failure_stage": "public_teaching.recovery_support.populate"
+    },
+    {
+      "postgres_major": 18,
+      "affected_tests": 815,
+      "affected_seconds": 1089.832,
+      "affected_status": "PASS",
+      "encrypted_recovery_status": "FAIL_BEFORE_BACKUP",
+      "log_file": "continuation55-local-pg18.log",
+      "log_sha256": "0d224c73041f165e83dc441ae0c0c7a3ae317fcd7c8ab8b949e1b7005b1bf528",
+      "log_bytes": 164266,
+      "observed_exception": "apps.casework.services.CaseConflict: case_revision_changed",
+      "failure_stage": "public_teaching.recovery_support.populate"
+    }
+  ],
+  "protected_browser_status": "NOT_RUN_LOCAL_ENVIRONMENT_BLOCKED",
+  "completed_original_ids": [],
+  "credited_count": 0,
+  "diagnosis": "Two fixture seeds reused the exact knowledge-event/knowledge-intake identity. The canonical intake correctly returned the existing advanced case; the later fixture expected revision2. Product version guards remain unchanged. A fixture isolation correction and fresh integrated recovery are required.",
+  "deployment": "NOT_DEPLOYED",
+  "original_acceptance_changed": false
+}

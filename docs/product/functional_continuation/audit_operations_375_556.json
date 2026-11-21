@@ -1,0 +1,4705 @@
+{
+  "schema": "fatwa.full-functional-gap-review.v1",
+  "reviewed_commit": "2bb8ecaa3fc638ece085a5e54060812d72f57c95",
+  "source_path": "docs/product/v14_scope_evidence/matrix.json",
+  "source_sha256": "0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487",
+  "range": [
+    375,
+    556
+  ],
+  "count": 182,
+  "goal": "Complete remaining documented functionality; final visual design excluded. Production approval and final owner decisions are not inferred.",
+  "claim_boundary": "Additive source/code reconciliation only. No percentage or new completion credit; each whole original statement needs its own matched execution evidence.",
+  "records": [
+    {
+      "original_id": "375",
+      "original_text": "يمكن إنشاء Offline Archive Packages للباحثين أو للأرشفة عند الحاجة.",
+      "direct_spec_ids": [
+        "SPEC-U12-026",
+        "SPEC-U13-005"
+      ],
+      "decision_ids": [
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 377
+      },
+      "functional_unit": "Offline packages",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/research_library/offline.py",
+        "apps/research_library/offline_browser_tests.py"
+      ],
+      "observed_in_code": "Explicitly selected public originals, packages and offline reader are implemented.",
+      "remaining_or_limit": "Current exact-commit protected journey and restoration must pass. Remote erasure cannot be promised while offline.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "376",
+      "original_text": "PostgreSQL يحفظ Metadata والعلاقات.",
+      "direct_spec_ids": [
+        "SPEC-U15-020",
+        "SPEC-U11-010"
+      ],
+      "decision_ids": [
+        "D-031",
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 378
+      },
+      "functional_unit": "Original media ownership and hashes",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/private_media/filesystem.py",
+        "apps/private_media/storage.py",
+        "apps/answer_media/models.py",
+        "apps/case_attachments/models.py"
+      ],
+      "observed_in_code": "SQL owner records retain separate logical ownership of hash-identified original bytes; physical filesystem deduplication does not combine case permissions.",
+      "remaining_or_limit": "Verify current complete original-point behavior. Local filesystem is not cloud object storage.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "377",
+      "original_text": "الملفات الأصلية تحفظ في Object Storage.",
+      "direct_spec_ids": [
+        "SPEC-U15-020",
+        "SPEC-U11-010"
+      ],
+      "decision_ids": [
+        "D-031",
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 379
+      },
+      "functional_unit": "Cloud object storage",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/private_media/README.md",
+        "apps/platform_recovery/service.py"
+      ],
+      "observed_in_code": "Actual private filesystem storage and encrypted backup/restore exist; these are explicitly not configured cloud object storage.",
+      "remaining_or_limit": "Select and configure actual object storage/versioning/key handling and run adapter/restore proof. No provider credentials or production versioning has been verified.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "378",
+      "original_text": "Media Blob الفيزيائي منفصل عن Media Asset المنطقي.",
+      "direct_spec_ids": [
+        "SPEC-U11-010",
+        "SPEC-U14-022"
+      ],
+      "decision_ids": [
+        "D-031",
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 380
+      },
+      "functional_unit": "Original media ownership and hashes",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/private_media/filesystem.py",
+        "apps/private_media/storage.py",
+        "apps/answer_media/models.py",
+        "apps/case_attachments/models.py"
+      ],
+      "observed_in_code": "SQL owner records retain separate logical ownership of hash-identified original bytes; physical filesystem deduplication does not combine case permissions.",
+      "remaining_or_limit": "Verify current complete original-point behavior. Local filesystem is not cloud object storage.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "379",
+      "original_text": "نستخدم Checksums مثل SHA-256.",
+      "direct_spec_ids": [
+        "SPEC-U11-026",
+        "SPEC-U13-007"
+      ],
+      "decision_ids": [
+        "D-031"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 381
+      },
+      "functional_unit": "Original media ownership and hashes",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/private_media/filesystem.py",
+        "apps/private_media/storage.py",
+        "apps/answer_media/models.py",
+        "apps/case_attachments/models.py"
+      ],
+      "observed_in_code": "SQL owner records retain separate logical ownership of hash-identified original bytes; physical filesystem deduplication does not combine case permissions.",
+      "remaining_or_limit": "Verify current complete original-point behavior. Local filesystem is not cloud object storage.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "380",
+      "original_text": "يمكن Deduplicate الملف الفيزيائي دون خلط الملكية المنطقية للمرفقات.",
+      "direct_spec_ids": [
+        "SPEC-U11-010",
+        "SPEC-U14-022"
+      ],
+      "decision_ids": [
+        "D-031",
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 382
+      },
+      "functional_unit": "Original media ownership and hashes",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/private_media/filesystem.py",
+        "apps/private_media/storage.py",
+        "apps/answer_media/models.py",
+        "apps/case_attachments/models.py"
+      ],
+      "observed_in_code": "SQL owner records retain separate logical ownership of hash-identified original bytes; physical filesystem deduplication does not combine case permissions.",
+      "remaining_or_limit": "Verify current complete original-point behavior. Local filesystem is not cloud object storage.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "381",
+      "original_text": "originals لا تستبدل بالمشتقات.",
+      "direct_spec_ids": [
+        "SPEC-U11-009",
+        "SPEC-U11-011"
+      ],
+      "decision_ids": [
+        "D-031"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 383
+      },
+      "functional_unit": "Original media ownership and hashes",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/private_media/filesystem.py",
+        "apps/private_media/storage.py",
+        "apps/answer_media/models.py",
+        "apps/case_attachments/models.py"
+      ],
+      "observed_in_code": "SQL owner records retain separate logical ownership of hash-identified original bytes; physical filesystem deduplication does not combine case permissions.",
+      "remaining_or_limit": "Verify current complete original-point behavior. Local filesystem is not cloud object storage.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "382",
+      "original_text": "مشتقات مثل Thumbnail أو Transcript أو Public Derivative تحفظ منفصلة.",
+      "direct_spec_ids": [
+        "SPEC-U11-009",
+        "SPEC-U11-011"
+      ],
+      "decision_ids": [
+        "D-031"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 384
+      },
+      "functional_unit": "Media derivatives",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/public_answer_media/models.py",
+        "apps/transcript_case_links/services.py"
+      ],
+      "observed_in_code": "Transcript/public presentation versions preserve original audio separately.",
+      "remaining_or_limit": "General thumbnail/derived-media lifecycle and actual transcription-provider jobs are not all implemented by this path.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "383",
+      "original_text": "الملفات الخاصة تقدم بروابط مؤقتة موقعة.",
+      "direct_spec_ids": [
+        "SPEC-U14-018"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 385
+      },
+      "functional_unit": "Temporary private media links",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/answer_media/views.py",
+        "apps/case_attachments/views.py",
+        "apps/casework_web/access.py"
+      ],
+      "observed_in_code": "Current session/capability readers protect original media.",
+      "remaining_or_limit": "A separately issued short-lived per-object signed URL contract has not been established by these session cookies.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "384",
+      "original_text": "Uploads تمر بفحص نوع الملف والحجم والأمان.",
+      "direct_spec_ids": [
+        "SPEC-U11-008"
+      ],
+      "decision_ids": [
+        "D-031"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 386
+      },
+      "functional_unit": "Upload security",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/private_media/validation.py",
+        "apps/private_media/worker.py",
+        "apps/private_media/video_worker.py"
+      ],
+      "observed_in_code": "Actual bounded structural parsing/decoding/type/size checks preserve originals.",
+      "remaining_or_limit": "The implementation explicitly does not certify malware scanning. A quarantine/scanner policy and actual scanner results remain a separate gap.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "385",
+      "original_text": "CLOSED لا تعني ARCHIVED.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 387
+      },
+      "functional_unit": "Close/archive lifecycle",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/case_lifecycle/services.py",
+        "apps/case_lifecycle/browser_tests.py"
+      ],
+      "observed_in_code": "Separate CLOSE/REOPEN/ARCHIVE/RESTORE histories preserve originals and require scoped current closure evidence.",
+      "remaining_or_limit": "Current integrated proof pending. Archive is not soft deletion.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "386",
+      "original_text": "ARCHIVED لا تعني SOFT DELETE.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 388
+      },
+      "functional_unit": "Close/archive lifecycle",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/case_lifecycle/services.py",
+        "apps/case_lifecycle/browser_tests.py"
+      ],
+      "observed_in_code": "Separate CLOSE/REOPEN/ARCHIVE/RESTORE histories preserve originals and require scoped current closure evidence.",
+      "remaining_or_limit": "Current integrated proof pending. Archive is not soft deletion.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "387",
+      "original_text": "SOFT DELETE لا تعني PURGE.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 389
+      },
+      "functional_unit": "Soft deletion/anonymization/purge",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/case_lifecycle/README.md",
+        "apps/private_media/filesystem.py"
+      ],
+      "observed_in_code": "Case lifecycle explicitly excludes canonical soft deletion/anonymization/purge. Orphan-file cleanup is independently bounded.",
+      "remaining_or_limit": "Implement separate reversible deletion and anonymization workflows plus reviewed retention/legal-hold/purge planning and audit. Orphan GC does not close these points.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "388",
+      "original_text": "UNPUBLISH لا تعني حذف الأصل.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 390
+      },
+      "functional_unit": "Publication withdrawal and audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/experimental_publication/services.py",
+        "apps/public_knowledge/services.py"
+      ],
+      "observed_in_code": "Versioned append-only human publication actions preserve canonical answers and original media after withdrawal.",
+      "remaining_or_limit": "Current whole native journey must retain exact source rights, version and revocation behavior.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "389",
+      "original_text": "يمكن وجود Anonymization كعملية مستقلة.",
+      "direct_spec_ids": [
+        "SPEC-U14-020"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 391
+      },
+      "functional_unit": "Soft deletion/anonymization/purge",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/case_lifecycle/README.md",
+        "apps/private_media/filesystem.py"
+      ],
+      "observed_in_code": "Case lifecycle explicitly excludes canonical soft deletion/anonymization/purge. Orphan-file cleanup is independently bounded.",
+      "remaining_or_limit": "Implement separate reversible deletion and anonymization workflows plus reviewed retention/legal-hold/purge planning and audit. Orphan GC does not close these points.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "390",
+      "original_text": "Purge الحقيقي عملية مضبوطة ومدققة، وليس Cascade عشوائيًا.",
+      "direct_spec_ids": [
+        "SPEC-U14-022",
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-043",
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 392
+      },
+      "functional_unit": "Soft deletion/anonymization/purge",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/case_lifecycle/README.md",
+        "apps/private_media/filesystem.py"
+      ],
+      "observed_in_code": "Case lifecycle explicitly excludes canonical soft deletion/anonymization/purge. Orphan-file cleanup is independently bounded.",
+      "remaining_or_limit": "Implement separate reversible deletion and anonymization workflows plus reviewed retention/legal-hold/purge planning and audit. Orphan GC does not close these points.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "391",
+      "original_text": "يمكن تصنيف البيانات إلى Public.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 393
+      },
+      "functional_unit": "Four sensitivity levels",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_rights/registry.py",
+        "apps/source_rights/services.py",
+        "apps/selected_exports/policy.py"
+      ],
+      "observed_in_code": "Source-use rights and scoped readers exist; RESTRICTED in the rights registry is a review state.",
+      "remaining_or_limit": "No unified durable Public/Internal/Confidential/Restricted classification and enforcement layer was found. It must affect reads/search/export/publication/derivatives; rights-state labels are insufficient.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "392",
+      "original_text": "Internal.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 394
+      },
+      "functional_unit": "Four sensitivity levels",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_rights/registry.py",
+        "apps/source_rights/services.py",
+        "apps/selected_exports/policy.py"
+      ],
+      "observed_in_code": "Source-use rights and scoped readers exist; RESTRICTED in the rights registry is a review state.",
+      "remaining_or_limit": "No unified durable Public/Internal/Confidential/Restricted classification and enforcement layer was found. It must affect reads/search/export/publication/derivatives; rights-state labels are insufficient.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "393",
+      "original_text": "Confidential.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 395
+      },
+      "functional_unit": "Four sensitivity levels",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_rights/registry.py",
+        "apps/source_rights/services.py",
+        "apps/selected_exports/policy.py"
+      ],
+      "observed_in_code": "Source-use rights and scoped readers exist; RESTRICTED in the rights registry is a review state.",
+      "remaining_or_limit": "No unified durable Public/Internal/Confidential/Restricted classification and enforcement layer was found. It must affect reads/search/export/publication/derivatives; rights-state labels are insufficient.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "394",
+      "original_text": "Restricted.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 396
+      },
+      "functional_unit": "Four sensitivity levels",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_rights/registry.py",
+        "apps/source_rights/services.py",
+        "apps/selected_exports/policy.py"
+      ],
+      "observed_in_code": "Source-use rights and scoped readers exist; RESTRICTED in the rights registry is a review state.",
+      "remaining_or_limit": "No unified durable Public/Internal/Confidential/Restricted classification and enforcement layer was found. It must affect reads/search/export/publication/derivatives; rights-state labels are insufficient.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "395",
+      "original_text": "الصلاحيات والتصدير والبحث تتأثر بهذا التصنيف.",
+      "direct_spec_ids": [
+        "SPEC-U14-016",
+        "SPEC-U14-017"
+      ],
+      "decision_ids": [
+        "D-043"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 397
+      },
+      "functional_unit": "Four sensitivity levels",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_rights/registry.py",
+        "apps/source_rights/services.py",
+        "apps/selected_exports/policy.py"
+      ],
+      "observed_in_code": "Source-use rights and scoped readers exist; RESTRICTED in the rights registry is a review state.",
+      "remaining_or_limit": "No unified durable Public/Internal/Confidential/Restricted classification and enforcement layer was found. It must affect reads/search/export/publication/derivatives; rights-state labels are insufficient.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "396",
+      "original_text": "الأدوار الأساسية الداخلية هي Organizer.",
+      "direct_spec_ids": [
+        "SPEC-U14-008"
+      ],
+      "decision_ids": [
+        "D-025",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 398
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "397",
+      "original_text": "Organizer Admin.",
+      "direct_spec_ids": [
+        "SPEC-U14-008"
+      ],
+      "decision_ids": [
+        "D-025",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 399
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "398",
+      "original_text": "Mufti.",
+      "direct_spec_ids": [
+        "SPEC-U14-008"
+      ],
+      "decision_ids": [
+        "D-025",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 400
+      },
+      "functional_unit": "Scholarly authority boundaries",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/casework_web/access.py",
+        "tests/casework/test_adversarial.py"
+      ],
+      "observed_in_code": "Scoped trusted identity gates scholarly actions; requester access is not an administrative role and absence of authority is denied.",
+      "remaining_or_limit": "Verify whole current point; these guards do not establish production identity enrollment or organizer administration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "399",
+      "original_text": "السائل مستخدم خارجي وليس دورًا إداريًا.",
+      "direct_spec_ids": [
+        "SPEC-U14-008"
+      ],
+      "decision_ids": [
+        "D-025",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 401
+      },
+      "functional_unit": "Scholarly authority boundaries",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/casework_web/access.py",
+        "tests/casework/test_adversarial.py"
+      ],
+      "observed_in_code": "Scoped trusted identity gates scholarly actions; requester access is not an administrative role and absence of authority is denied.",
+      "remaining_or_limit": "Verify whole current point; these guards do not establish production identity enrollment or organizer administration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "400",
+      "original_text": "الصلاحيات أكثر دقة من مجرد Role.",
+      "direct_spec_ids": [
+        "SPEC-U14-009"
+      ],
+      "decision_ids": [
+        "D-026",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 402
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "401",
+      "original_text": "يوجد Permission Sets وPer-user Overrides.",
+      "direct_spec_ids": [
+        "SPEC-U14-009"
+      ],
+      "decision_ids": [
+        "D-026",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 403
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "402",
+      "original_text": "لا يستطيع Organizer منح نفسه صلاحية دينية خاصة بالشيخ.",
+      "direct_spec_ids": [
+        "SPEC-U14-010"
+      ],
+      "decision_ids": [
+        "D-026",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 404
+      },
+      "functional_unit": "Scholarly authority boundaries",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/casework_web/access.py",
+        "tests/casework/test_adversarial.py"
+      ],
+      "observed_in_code": "Scoped trusted identity gates scholarly actions; requester access is not an administrative role and absence of authority is denied.",
+      "remaining_or_limit": "Verify whole current point; these guards do not establish production identity enrollment or organizer administration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "403",
+      "original_text": "لا يوجد Self-Escalation.",
+      "direct_spec_ids": [
+        "SPEC-U14-015"
+      ],
+      "decision_ids": [
+        "D-026",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 405
+      },
+      "functional_unit": "Scholarly authority boundaries",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/casework_web/access.py",
+        "tests/casework/test_adversarial.py"
+      ],
+      "observed_in_code": "Scoped trusted identity gates scholarly actions; requester access is not an administrative role and absence of authority is denied.",
+      "remaining_or_limit": "Verify whole current point; these guards do not establish production identity enrollment or organizer administration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "404",
+      "original_text": "كل تغيير صلاحيات يدخل Audit Log.",
+      "direct_spec_ids": [
+        "SPEC-U14-015"
+      ],
+      "decision_ids": [
+        "D-026",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 406
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "405",
+      "original_text": "MFA مطلوب للشيخ والإدارة الحساسة.",
+      "direct_spec_ids": [
+        "SPEC-U14-013"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 407
+      },
+      "functional_unit": "MFA and sensitive reauthentication",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework_web/access.py",
+        "apps/casework_web/views.py"
+      ],
+      "observed_in_code": "Native login delegates to a server identity resolver and pins its current epoch.",
+      "remaining_or_limit": "No enrolled MFA challenge/recovery/step-up implementation was found. Identity-provider and sensitive-action policy choices remain necessary.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "406",
+      "original_text": "Sessions قابلة للإلغاء.",
+      "direct_spec_ids": [
+        "SPEC-U14-014"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 408
+      },
+      "functional_unit": "Session revocation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework_web/access.py",
+        "tests/casework/test_http.py"
+      ],
+      "observed_in_code": "Provider epoch/current scope changes deny prior signed sessions.",
+      "remaining_or_limit": "A production session/device inventory and administrative revoke workflow is not demonstrated by the synthetic resolver.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "407",
+      "original_text": "العمليات الحساسة يمكن أن تطلب Re-authentication.",
+      "direct_spec_ids": [
+        "SPEC-U14-013"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 409
+      },
+      "functional_unit": "MFA and sensitive reauthentication",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework_web/access.py",
+        "apps/casework_web/views.py"
+      ],
+      "observed_in_code": "Native login delegates to a server identity resolver and pins its current epoch.",
+      "remaining_or_limit": "No enrolled MFA challenge/recovery/step-up implementation was found. Identity-provider and sensitive-action policy choices remain necessary.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "408",
+      "original_text": "السياسة Default Deny.",
+      "direct_spec_ids": [
+        "SPEC-U14-011"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 410
+      },
+      "functional_unit": "Scholarly authority boundaries",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/casework_web/access.py",
+        "tests/casework/test_adversarial.py"
+      ],
+      "observed_in_code": "Scoped trusted identity gates scholarly actions; requester access is not an administrative role and absence of authority is denied.",
+      "remaining_or_limit": "Verify whole current point; these guards do not establish production identity enrollment or organizer administration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "409",
+      "original_text": "Secrets لا تحفظ في الكود.",
+      "direct_spec_ids": [
+        "SPEC-U14-018"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 411
+      },
+      "functional_unit": "Deployment protection",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "config/settings/base.py",
+        "config/settings/campaign_review.py",
+        "apps/platform_recovery/encrypted.py"
+      ],
+      "observed_in_code": "Default-closed development gates, private permissions and authenticated encrypted backup bundles exist.",
+      "remaining_or_limit": "Actual secret management, environment separation, TLS and production data-at-rest protection require configured infrastructure and proof; loopback HTTP is not production TLS.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "410",
+      "original_text": "Dev/Staging/Production منفصلة.",
+      "direct_spec_ids": [
+        "SPEC-U14-018"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 412
+      },
+      "functional_unit": "Deployment protection",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "config/settings/base.py",
+        "config/settings/campaign_review.py",
+        "apps/platform_recovery/encrypted.py"
+      ],
+      "observed_in_code": "Default-closed development gates, private permissions and authenticated encrypted backup bundles exist.",
+      "remaining_or_limit": "Actual secret management, environment separation, TLS and production data-at-rest protection require configured infrastructure and proof; loopback HTTP is not production TLS.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "411",
+      "original_text": "Webhooks محمية والتحقق من التوقيعات مطلوب حيث تدعم المنصة ذلك.",
+      "direct_spec_ids": [
+        "SPEC-U13-025",
+        "SPEC-U14-018"
+      ],
+      "decision_ids": [
+        "D-033",
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 413
+      },
+      "functional_unit": "Authenticated webhooks",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/source_case_intake/services.py"
+      ],
+      "observed_in_code": "Offline raw source envelopes and origin identities are preserved.",
+      "remaining_or_limit": "Authenticated live webhook endpoints, keys, replay windows and account scopes are absent from the source-intake contract; official provider contracts must be checked before implementation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "412",
+      "original_text": "Rate Limiting موجود.",
+      "direct_spec_ids": [
+        "SPEC-U08-027"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 414
+      },
+      "functional_unit": "Rate limits",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework_web/guard.py",
+        "apps/casework_web/models.py"
+      ],
+      "observed_in_code": "Durable throttle/request-size/method/CSRF boundaries exist.",
+      "remaining_or_limit": "Per-surface production capacity and provider limits remain unverified; verify newly exposed native/API paths separately.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "413",
+      "original_text": "البيانات أثناء النقل مشفرة.",
+      "direct_spec_ids": [
+        "SPEC-U14-018"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 415
+      },
+      "functional_unit": "Deployment protection",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "config/settings/base.py",
+        "config/settings/campaign_review.py",
+        "apps/platform_recovery/encrypted.py"
+      ],
+      "observed_in_code": "Default-closed development gates, private permissions and authenticated encrypted backup bundles exist.",
+      "remaining_or_limit": "Actual secret management, environment separation, TLS and production data-at-rest protection require configured infrastructure and proof; loopback HTTP is not production TLS.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "414",
+      "original_text": "تخزين البيانات الحساسة يطبق الحماية المناسبة.",
+      "direct_spec_ids": [
+        "SPEC-U14-018"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 416
+      },
+      "functional_unit": "Deployment protection",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "config/settings/base.py",
+        "config/settings/campaign_review.py",
+        "apps/platform_recovery/encrypted.py"
+      ],
+      "observed_in_code": "Default-closed development gates, private permissions and authenticated encrypted backup bundles exist.",
+      "remaining_or_limit": "Actual secret management, environment separation, TLS and production data-at-rest protection require configured infrastructure and proof; loopback HTTP is not production TLS.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "415",
+      "original_text": "العمليات المهمة تسجل: من، ماذا، متى.",
+      "direct_spec_ids": [
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 417
+      },
+      "functional_unit": "Append-only operational audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/development_taxonomy/models.py",
+        "apps/public_answer_media/models.py",
+        "apps/selected_exports/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Approvals, classification changes, transcripts, private exports and identity merge/split retain actor/version histories.",
+      "remaining_or_limit": "New modules await exact integrated browser/restoration proof. Audit presence does not imply missing production actions exist.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "416",
+      "original_text": "اعتماد جواب الشيخ مسجل.",
+      "direct_spec_ids": [
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 418
+      },
+      "functional_unit": "Append-only operational audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/development_taxonomy/models.py",
+        "apps/public_answer_media/models.py",
+        "apps/selected_exports/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Approvals, classification changes, transcripts, private exports and identity merge/split retain actor/version histories.",
+      "remaining_or_limit": "New modules await exact integrated browser/restoration proof. Audit presence does not imply missing production actions exist.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "417",
+      "original_text": "تغيير التصنيف مسجل.",
+      "direct_spec_ids": [
+        "SPEC-U04-011",
+        "SPEC-U04-013"
+      ],
+      "decision_ids": [
+        "D-044"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 419
+      },
+      "functional_unit": "Append-only operational audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/development_taxonomy/models.py",
+        "apps/public_answer_media/models.py",
+        "apps/selected_exports/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Approvals, classification changes, transcripts, private exports and identity merge/split retain actor/version histories.",
+      "remaining_or_limit": "New modules await exact integrated browser/restoration proof. Audit presence does not imply missing production actions exist.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "418",
+      "original_text": "تعديل Transcript مسجل.",
+      "direct_spec_ids": [
+        "SPEC-U11-018",
+        "SPEC-U11-019"
+      ],
+      "decision_ids": [
+        "D-029"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 420
+      },
+      "functional_unit": "Append-only operational audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/development_taxonomy/models.py",
+        "apps/public_answer_media/models.py",
+        "apps/selected_exports/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Approvals, classification changes, transcripts, private exports and identity merge/split retain actor/version histories.",
+      "remaining_or_limit": "New modules await exact integrated browser/restoration proof. Audit presence does not imply missing production actions exist.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "419",
+      "original_text": "النشر وإلغاء النشر مسجل.",
+      "direct_spec_ids": [
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 421
+      },
+      "functional_unit": "Publication withdrawal and audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/experimental_publication/services.py",
+        "apps/public_knowledge/services.py"
+      ],
+      "observed_in_code": "Versioned append-only human publication actions preserve canonical answers and original media after withdrawal.",
+      "remaining_or_limit": "Current whole native journey must retain exact source rights, version and revocation behavior.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "420",
+      "original_text": "التصدير الحساس مسجل.",
+      "direct_spec_ids": [
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 422
+      },
+      "functional_unit": "Append-only operational audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/development_taxonomy/models.py",
+        "apps/public_answer_media/models.py",
+        "apps/selected_exports/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Approvals, classification changes, transcripts, private exports and identity merge/split retain actor/version histories.",
+      "remaining_or_limit": "New modules await exact integrated browser/restoration proof. Audit presence does not imply missing production actions exist.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "421",
+      "original_text": "Merge/Split للهويات مسجل.",
+      "direct_spec_ids": [
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 423
+      },
+      "functional_unit": "Append-only operational audit",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/development_taxonomy/models.py",
+        "apps/public_answer_media/models.py",
+        "apps/selected_exports/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Approvals, classification changes, transcripts, private exports and identity merge/split retain actor/version histories.",
+      "remaining_or_limit": "New modules await exact integrated browser/restoration proof. Audit presence does not imply missing production actions exist.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "422",
+      "original_text": "تغييرات الصلاحيات مسجلة.",
+      "direct_spec_ids": [
+        "SPEC-U14-019"
+      ],
+      "decision_ids": [
+        "D-037"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 424
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "423",
+      "original_text": "PostgreSQL له Backup/PITR بحسب إعدادات الإنتاج النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U15-020"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 425
+      },
+      "functional_unit": "PITR",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/platform_recovery/service.py",
+        "apps/platform_recovery/encrypted.py"
+      ],
+      "observed_in_code": "Real SQL snapshot and encrypted restore into fresh isolated databases are implemented.",
+      "remaining_or_limit": "Production WAL archiving, PITR targets, retention and chosen RPO/RTO remain unconfigured.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "424",
+      "original_text": "Object Storage له Versioning/Backup مناسب.",
+      "direct_spec_ids": [
+        "SPEC-U15-020"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 426
+      },
+      "functional_unit": "Cloud object storage",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/private_media/README.md",
+        "apps/platform_recovery/service.py"
+      ],
+      "observed_in_code": "Actual private filesystem storage and encrypted backup/restore exist; these are explicitly not configured cloud object storage.",
+      "remaining_or_limit": "Select and configure actual object storage/versioning/key handling and run adapter/restore proof. No provider credentials or production versioning has been verified.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "425",
+      "original_text": "توجد Restore Drills.",
+      "direct_spec_ids": [
+        "SPEC-U15-023"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 427
+      },
+      "functional_unit": "Restoration and runbooks",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/platform_recovery/V11_CONTRACT.md",
+        "apps/platform_recovery/v12_maintenance.md",
+        "tests/casework/functional_recovery.py"
+      ],
+      "observed_in_code": "Native maintenance/restore commands and actual nonempty encrypted restoration drills exist.",
+      "remaining_or_limit": "Every new table/helper needs exact integrated proof; actual production provider outages require corresponding runbooks.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "426",
+      "original_text": "Outbox/Queues تمنع فقد الأعمال عند الأعطال.",
+      "direct_spec_ids": [
+        "SPEC-U15-014"
+      ],
+      "decision_ids": [
+        "D-038",
+        "D-063"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 428
+      },
+      "functional_unit": "Queues/workers/reconciliation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/delivery_queue/services.py",
+        "apps/delivery_queue/signed_provider_receipts.py",
+        "apps/composite_delivery/services.py",
+        "apps/publication_schedules/services.py"
+      ],
+      "observed_in_code": "Durable signed staging/leases/receipts, timeout reconciliation and bounded publication/export workers exist.",
+      "remaining_or_limit": "Controlled retries are in active development. Live provider reconciliation, real outage/recovery and worker supervision remain separate requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "427",
+      "original_text": "توجد Reconciliation Jobs للتأكد من تطابق الحالة المحلية مع المنصات.",
+      "direct_spec_ids": [
+        "SPEC-U15-015"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 429
+      },
+      "functional_unit": "Queues/workers/reconciliation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/delivery_queue/services.py",
+        "apps/delivery_queue/signed_provider_receipts.py",
+        "apps/composite_delivery/services.py",
+        "apps/publication_schedules/services.py"
+      ],
+      "observed_in_code": "Durable signed staging/leases/receipts, timeout reconciliation and bounded publication/export workers exist.",
+      "remaining_or_limit": "Controlled retries are in active development. Live provider reconciliation, real outage/recovery and worker supervision remain separate requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "428",
+      "original_text": "توجد Runbooks للأعطال.",
+      "direct_spec_ids": [
+        "SPEC-U15-017"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 430
+      },
+      "functional_unit": "Restoration and runbooks",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/platform_recovery/V11_CONTRACT.md",
+        "apps/platform_recovery/v12_maintenance.md",
+        "tests/casework/functional_recovery.py"
+      ],
+      "observed_in_code": "Native maintenance/restore commands and actual nonempty encrypted restoration drills exist.",
+      "remaining_or_limit": "Every new table/helper needs exact integrated proof; actual production provider outages require corresponding runbooks.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "429",
+      "original_text": "إذا تعطلت Luna يستمر استقبال الأسئلة.",
+      "direct_spec_ids": [
+        "SPEC-U15-013"
+      ],
+      "decision_ids": [
+        "D-038",
+        "D-064",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 431
+      },
+      "functional_unit": "AI-independent human core",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/answer_media/services.py"
+      ],
+      "observed_in_code": "Human intake/answer/approval paths have no required AI call.",
+      "remaining_or_limit": "Actual optional-service outage composition must be proven when a gateway is added. An absent gateway is not completed AI functionality.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "430",
+      "original_text": "يستمر الشيخ في الإجابة.",
+      "direct_spec_ids": [
+        "SPEC-U15-013"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 432
+      },
+      "functional_unit": "AI-independent human core",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/answer_media/services.py"
+      ],
+      "observed_in_code": "Human intake/answer/approval paths have no required AI call.",
+      "remaining_or_limit": "Actual optional-service outage composition must be proven when a gateway is added. An absent gateway is not completed AI functionality.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "431",
+      "original_text": "إذا تعطلت Vector Search يبقى البحث التقليدي.",
+      "direct_spec_ids": [
+        "SPEC-U15-013"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 433
+      },
+      "functional_unit": "Vector search and rebuildable AI data",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/canonical_search/services.py",
+        "apps/canonical_search/models.py"
+      ],
+      "observed_in_code": "FTS/trigram generations rebuild from preserved authorized sources.",
+      "remaining_or_limit": "No pgvector semantic runtime or central AI-derived task store was found. Vector outages and complete AI rebuild/delete behavior need those components.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "432",
+      "original_text": "إذا تعطلت خدمة Transcription يبقى التسجيل الأصلي.",
+      "direct_spec_ids": [
+        "SPEC-U15-013"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 434
+      },
+      "functional_unit": "Transcription outage continuity",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/public_answer_media/services.py",
+        "apps/answer_media/models.py"
+      ],
+      "observed_in_code": "Human transcript versions do not overwrite the original recording.",
+      "remaining_or_limit": "Actual transcription-provider jobs/failure fallback are not implemented by manual transcript editing.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "433",
+      "original_text": "إذا تعطلت منصة خارجية لا نفقد جواب الشيخ؛ يبقى Delivery Pending/Failed ويعاد لاحقًا.",
+      "direct_spec_ids": [
+        "SPEC-U15-013"
+      ],
+      "decision_ids": [
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 435
+      },
+      "functional_unit": "Queues/workers/reconciliation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/delivery_queue/services.py",
+        "apps/delivery_queue/signed_provider_receipts.py",
+        "apps/composite_delivery/services.py",
+        "apps/publication_schedules/services.py"
+      ],
+      "observed_in_code": "Durable signed staging/leases/receipts, timeout reconciliation and bounded publication/export workers exist.",
+      "remaining_or_limit": "Controlled retries are in active development. Live provider reconciliation, real outage/recovery and worker supervision remain separate requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "434",
+      "original_text": "Fatwa Case هي مركز النموذج.",
+      "direct_spec_ids": [
+        "SPEC-U01-005",
+        "SPEC-U01-010"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 436
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "435",
+      "original_text": "Messages وMessage Parts مرتبة.",
+      "direct_spec_ids": [
+        "SPEC-U01-004",
+        "SPEC-U02-012"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 437
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "436",
+      "original_text": "Evidence Version منفصلة عن Metadata Version.",
+      "direct_spec_ids": [
+        "SPEC-U01-012",
+        "SPEC-U01-014"
+      ],
+      "decision_ids": [
+        "D-048",
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 438
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "437",
+      "original_text": "Assignments تاريخية.",
+      "direct_spec_ids": [
+        "SPEC-U14-012",
+        "SPEC-U15-019"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 439
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "438",
+      "original_text": "يوجد Primary Mufti نشط واحد كحد أقصى للقضية وفق النموذج المعتمد.",
+      "direct_spec_ids": [
+        "SPEC-U14-012"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 440
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "439",
+      "original_text": "Person منفصل عن Platform Identity.",
+      "direct_spec_ids": [
+        "SPEC-U14-002"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 441
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "440",
+      "original_text": "Media Blob منفصل عن Media Asset.",
+      "direct_spec_ids": [
+        "SPEC-U11-010",
+        "SPEC-U14-022"
+      ],
+      "decision_ids": [
+        "D-031",
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 442
+      },
+      "functional_unit": "Original media ownership and hashes",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/private_media/filesystem.py",
+        "apps/private_media/storage.py",
+        "apps/answer_media/models.py",
+        "apps/case_attachments/models.py"
+      ],
+      "observed_in_code": "SQL owner records retain separate logical ownership of hash-identified original bytes; physical filesystem deduplication does not combine case permissions.",
+      "remaining_or_limit": "Verify current complete original-point behavior. Local filesystem is not cloud object storage.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "441",
+      "original_text": "Transcripts مشتقة.",
+      "direct_spec_ids": [
+        "SPEC-U02-014",
+        "SPEC-U11-009"
+      ],
+      "decision_ids": [
+        "D-016",
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 443
+      },
+      "functional_unit": "Media derivatives",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/public_answer_media/models.py",
+        "apps/transcript_case_links/services.py"
+      ],
+      "observed_in_code": "Transcript/public presentation versions preserve original audio separately.",
+      "remaining_or_limit": "General thumbnail/derived-media lifecycle and actual transcription-provider jobs are not all implemented by this path.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "442",
+      "original_text": "Delivery وPublication يرتبطان بنسخة Answer ثابتة معتمدة.",
+      "direct_spec_ids": [
+        "SPEC-U01-019",
+        "SPEC-U07-003"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 444
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "443",
+      "original_text": "Search وAI Derived Data قابلة لإعادة البناء.",
+      "direct_spec_ids": [
+        "SPEC-U15-019"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 445
+      },
+      "functional_unit": "Vector search and rebuildable AI data",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/canonical_search/services.py",
+        "apps/canonical_search/models.py"
+      ],
+      "observed_in_code": "FTS/trigram generations rebuild from preserved authorized sources.",
+      "remaining_or_limit": "No pgvector semantic runtime or central AI-derived task store was found. Vector outages and complete AI rebuild/delete behavior need those components.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "444",
+      "original_text": "تعتمد قاعدة البيانات على FK/Unique/Check Constraints بدل ترك صحة البيانات للكود فقط.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 446
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "445",
+      "original_text": "نستخدم Optimistic Concurrency عند الحاجة لمنع الكتابة المتعارضة.",
+      "direct_spec_ids": [
+        "SPEC-U02-018"
+      ],
+      "decision_ids": [
+        "D-055"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 447
+      },
+      "functional_unit": "Canonical schema/concurrency",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework/models.py",
+        "apps/casework/services.py",
+        "apps/source_case_intake/models.py",
+        "apps/case_assignments/models.py",
+        "apps/identity_registry/models.py"
+      ],
+      "observed_in_code": "Canonical cases/evidence/answers and separate assignment/identity histories use FK/unique/check/immutable guards and current revisions.",
+      "remaining_or_limit": "Complete original-point behavior must be matched to exact current tests; generic schema presence alone is not acceptance.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "446",
+      "original_text": "الاتجاه المعماري هو Modular Monolith في البداية.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [
+        "D-039",
+        "D-063"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 448
+      },
+      "functional_unit": "Architecture and automated gates",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "config/settings/campaign_review.py",
+        ".github/workflows/functional-completion.yml",
+        "infra/dev/functional_verify.py"
+      ],
+      "observed_in_code": "Modular Django/PostgreSQL, FTS/trigram, explicit flags/authorities and exact-commit PG17/18 automated gates exist.",
+      "remaining_or_limit": "Production release/CD and final accepted stack are not established by draft-branch tests.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "447",
+      "original_text": "Workers مستقلة للعمليات الخلفية.",
+      "direct_spec_ids": [
+        "SPEC-U15-010",
+        "SPEC-U15-014"
+      ],
+      "decision_ids": [
+        "D-039",
+        "D-063"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 449
+      },
+      "functional_unit": "Queues/workers/reconciliation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/delivery_queue/services.py",
+        "apps/delivery_queue/signed_provider_receipts.py",
+        "apps/composite_delivery/services.py",
+        "apps/publication_schedules/services.py"
+      ],
+      "observed_in_code": "Durable signed staging/leases/receipts, timeout reconciliation and bounded publication/export workers exist.",
+      "remaining_or_limit": "Controlled retries are in active development. Live provider reconciliation, real outage/recovery and worker supervision remain separate requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "448",
+      "original_text": "PostgreSQL قاعدة البيانات الأساسية.",
+      "direct_spec_ids": [
+        "SPEC-U15-020"
+      ],
+      "decision_ids": [
+        "D-039",
+        "D-063"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 450
+      },
+      "functional_unit": "Architecture and automated gates",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "config/settings/campaign_review.py",
+        ".github/workflows/functional-completion.yml",
+        "infra/dev/functional_verify.py"
+      ],
+      "observed_in_code": "Modular Django/PostgreSQL, FTS/trigram, explicit flags/authorities and exact-commit PG17/18 automated gates exist.",
+      "remaining_or_limit": "Production release/CD and final accepted stack are not established by draft-branch tests.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "449",
+      "original_text": "PostgreSQL FTS وpg_trgm جزء من Search baseline.",
+      "direct_spec_ids": [
+        "SPEC-U05-006",
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 451
+      },
+      "functional_unit": "Architecture and automated gates",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "config/settings/campaign_review.py",
+        ".github/workflows/functional-completion.yml",
+        "infra/dev/functional_verify.py"
+      ],
+      "observed_in_code": "Modular Django/PostgreSQL, FTS/trigram, explicit flags/authorities and exact-commit PG17/18 automated gates exist.",
+      "remaining_or_limit": "Production release/CD and final accepted stack are not established by draft-branch tests.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "450",
+      "original_text": "pgvector متاح للبحث الدلالي.",
+      "direct_spec_ids": [
+        "SPEC-U05-025",
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 452
+      },
+      "functional_unit": "Vector search and rebuildable AI data",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/canonical_search/services.py",
+        "apps/canonical_search/models.py"
+      ],
+      "observed_in_code": "FTS/trigram generations rebuild from preserved authorized sources.",
+      "remaining_or_limit": "No pgvector semantic runtime or central AI-derived task store was found. Vector outages and complete AI rebuild/delete behavior need those components.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "451",
+      "original_text": "Object Storage للوسائط.",
+      "direct_spec_ids": [
+        "SPEC-U15-020"
+      ],
+      "decision_ids": [
+        "D-031",
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 453
+      },
+      "functional_unit": "Cloud object storage",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/private_media/README.md",
+        "apps/platform_recovery/service.py"
+      ],
+      "observed_in_code": "Actual private filesystem storage and encrypted backup/restore exist; these are explicitly not configured cloud object storage.",
+      "remaining_or_limit": "Select and configure actual object storage/versioning/key handling and run adapter/restore proof. No provider credentials or production versioning has been verified.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "452",
+      "original_text": "Queue/Outbox للمهام والتوصيل.",
+      "direct_spec_ids": [
+        "SPEC-U15-014"
+      ],
+      "decision_ids": [
+        "D-039",
+        "D-063"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 454
+      },
+      "functional_unit": "Queues/workers/reconciliation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/delivery_queue/services.py",
+        "apps/delivery_queue/signed_provider_receipts.py",
+        "apps/composite_delivery/services.py",
+        "apps/publication_schedules/services.py"
+      ],
+      "observed_in_code": "Durable signed staging/leases/receipts, timeout reconciliation and bounded publication/export workers exist.",
+      "remaining_or_limit": "Controlled retries are in active development. Live provider reconciliation, real outage/recovery and worker supervision remain separate requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "453",
+      "original_text": "Containerized environments.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 455
+      },
+      "functional_unit": "Container environments",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "README.md"
+      ],
+      "observed_in_code": "Repository development tooling and pinned runtime are present.",
+      "remaining_or_limit": "No actual container startup/parity proof was reviewed in this audit; do not infer containerization from CI or requirements pins.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "454",
+      "original_text": "CI/CD واختبارات تلقائية.",
+      "direct_spec_ids": [
+        "SPEC-U16-020",
+        "SPEC-U16-026"
+      ],
+      "decision_ids": [
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 456
+      },
+      "functional_unit": "Architecture and automated gates",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "config/settings/campaign_review.py",
+        ".github/workflows/functional-completion.yml",
+        "infra/dev/functional_verify.py"
+      ],
+      "observed_in_code": "Modular Django/PostgreSQL, FTS/trigram, explicit flags/authorities and exact-commit PG17/18 automated gates exist.",
+      "remaining_or_limit": "Production release/CD and final accepted stack are not established by draft-branch tests.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "455",
+      "original_text": "Feature Flags وKill Switches.",
+      "direct_spec_ids": [
+        "SPEC-U16-003",
+        "SPEC-U15-018"
+      ],
+      "decision_ids": [
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 457
+      },
+      "functional_unit": "Architecture and automated gates",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "config/settings/campaign_review.py",
+        ".github/workflows/functional-completion.yml",
+        "infra/dev/functional_verify.py"
+      ],
+      "observed_in_code": "Modular Django/PostgreSQL, FTS/trigram, explicit flags/authorities and exact-commit PG17/18 automated gates exist.",
+      "remaining_or_limit": "Production release/CD and final accepted stack are not established by draft-branch tests.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "456",
+      "original_text": "صفحات الفتاوى والموضوعات والمحتوى العام مصممة لمحركات البحث.",
+      "direct_spec_ids": [
+        "SPEC-U09-024"
+      ],
+      "decision_ids": [
+        "D-056"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 458
+      },
+      "functional_unit": "Public metadata/navigation",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/views.py",
+        "apps/public_knowledge/templates/public_knowledge/base.html",
+        "apps/public_knowledge/tests.py"
+      ],
+      "observed_in_code": "Released public knowledge pages support canonical/OpenGraph, breadcrumbs, structured data and current sitemaps with configured origin.",
+      "remaining_or_limit": "Check new teaching/material/collection coverage and withdrawal; final production origin is not supplied.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "457",
+      "original_text": "Canonical URLs.",
+      "direct_spec_ids": [
+        "SPEC-U09-024"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 459
+      },
+      "functional_unit": "Public metadata/navigation",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/views.py",
+        "apps/public_knowledge/templates/public_knowledge/base.html",
+        "apps/public_knowledge/tests.py"
+      ],
+      "observed_in_code": "Released public knowledge pages support canonical/OpenGraph, breadcrumbs, structured data and current sitemaps with configured origin.",
+      "remaining_or_limit": "Check new teaching/material/collection coverage and withdrawal; final production origin is not supplied.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "458",
+      "original_text": "Meta/OpenGraph.",
+      "direct_spec_ids": [
+        "SPEC-U09-024"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 460
+      },
+      "functional_unit": "Public metadata/navigation",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/views.py",
+        "apps/public_knowledge/templates/public_knowledge/base.html",
+        "apps/public_knowledge/tests.py"
+      ],
+      "observed_in_code": "Released public knowledge pages support canonical/OpenGraph, breadcrumbs, structured data and current sitemaps with configured origin.",
+      "remaining_or_limit": "Check new teaching/material/collection coverage and withdrawal; final production origin is not supplied.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "459",
+      "original_text": "Breadcrumbs.",
+      "direct_spec_ids": [
+        "SPEC-U09-009"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 461
+      },
+      "functional_unit": "Public metadata/navigation",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/views.py",
+        "apps/public_knowledge/templates/public_knowledge/base.html",
+        "apps/public_knowledge/tests.py"
+      ],
+      "observed_in_code": "Released public knowledge pages support canonical/OpenGraph, breadcrumbs, structured data and current sitemaps with configured origin.",
+      "remaining_or_limit": "Check new teaching/material/collection coverage and withdrawal; final production origin is not supplied.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "460",
+      "original_text": "Structured Data عندما يكون مناسبًا.",
+      "direct_spec_ids": [
+        "SPEC-U09-024"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 462
+      },
+      "functional_unit": "Public metadata/navigation",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/views.py",
+        "apps/public_knowledge/templates/public_knowledge/base.html",
+        "apps/public_knowledge/tests.py"
+      ],
+      "observed_in_code": "Released public knowledge pages support canonical/OpenGraph, breadcrumbs, structured data and current sitemaps with configured origin.",
+      "remaining_or_limit": "Check new teaching/material/collection coverage and withdrawal; final production origin is not supplied.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "461",
+      "original_text": "Sitemaps.",
+      "direct_spec_ids": [
+        "SPEC-U09-024"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 463
+      },
+      "functional_unit": "Public metadata/navigation",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/views.py",
+        "apps/public_knowledge/templates/public_knowledge/base.html",
+        "apps/public_knowledge/tests.py"
+      ],
+      "observed_in_code": "Released public knowledge pages support canonical/OpenGraph, breadcrumbs, structured data and current sitemaps with configured origin.",
+      "remaining_or_limit": "Check new teaching/material/collection coverage and withdrawal; final production origin is not supplied.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "462",
+      "original_text": "صفحات السائل الخاصة تستخدم NOINDEX.",
+      "direct_spec_ids": [
+        "SPEC-U09-024"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 464
+      },
+      "functional_unit": "Private noindex",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/casework_web/guard.py"
+      ],
+      "observed_in_code": "Private native responses carry no-store/noindex and current access checks.",
+      "remaining_or_limit": "Verify each newly connected private endpoint.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "463",
+      "original_text": "البنية تدعم تعدد اللغات.",
+      "direct_spec_ids": [
+        "SPEC-U09-023"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 465
+      },
+      "functional_unit": "Reviewed translations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/services.py",
+        "apps/public_knowledge/tests.py",
+        "apps/public_knowledge/browser_tests.py"
+      ],
+      "observed_in_code": "Versioned human review/release preserves Arabic and original source pins.",
+      "remaining_or_limit": "Prior57 evidence exists; current regression proof must remain valid. No automatic scholarly translation approval is inferred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "464",
+      "original_text": "الأصل العربي يبقى محفوظًا.",
+      "direct_spec_ids": [
+        "SPEC-U09-023"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 466
+      },
+      "functional_unit": "Reviewed translations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/services.py",
+        "apps/public_knowledge/tests.py",
+        "apps/public_knowledge/browser_tests.py"
+      ],
+      "observed_in_code": "Versioned human review/release preserves Arabic and original source pins.",
+      "remaining_or_limit": "Prior57 evidence exists; current regression proof must remain valid. No automatic scholarly translation approval is inferred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "465",
+      "original_text": "الترجمات لها Versions.",
+      "direct_spec_ids": [
+        "SPEC-U09-023",
+        "SPEC-U12-019"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 467
+      },
+      "functional_unit": "Reviewed translations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/services.py",
+        "apps/public_knowledge/tests.py",
+        "apps/public_knowledge/browser_tests.py"
+      ],
+      "observed_in_code": "Versioned human review/release preserves Arabic and original source pins.",
+      "remaining_or_limit": "Prior57 evidence exists; current regression proof must remain valid. No automatic scholarly translation approval is inferred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "466",
+      "original_text": "الترجمة المنشورة المعتمدة لا تعتبر مجرد AI Translation غير مراجعة.",
+      "direct_spec_ids": [
+        "SPEC-U09-023"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 468
+      },
+      "functional_unit": "Reviewed translations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/services.py",
+        "apps/public_knowledge/tests.py",
+        "apps/public_knowledge/browser_tests.py"
+      ],
+      "observed_in_code": "Versioned human review/release preserves Arabic and original source pins.",
+      "remaining_or_limit": "Prior57 evidence exists; current regression proof must remain valid. No automatic scholarly translation approval is inferred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "467",
+      "original_text": "لا تصبح ترجمة آلية غير معتمدة مصدرًا شرعيًا رسميًا.",
+      "direct_spec_ids": [
+        "SPEC-U09-023"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 469
+      },
+      "functional_unit": "Reviewed translations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/public_knowledge/services.py",
+        "apps/public_knowledge/tests.py",
+        "apps/public_knowledge/browser_tests.py"
+      ],
+      "observed_in_code": "Versioned human review/release preserves Arabic and original source pins.",
+      "remaining_or_limit": "Prior57 evidence exists; current regression proof must remain valid. No automatic scholarly translation approval is inferred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "468",
+      "original_text": "يوجد Data Quality Dashboard.",
+      "direct_spec_ids": [
+        "SPEC-U15-006",
+        "SPEC-U15-007"
+      ],
+      "decision_ids": [
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 470
+      },
+      "functional_unit": "Quality/reports",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/data_quality/services.py",
+        "apps/content_reports/services.py",
+        "apps/content_reports/test_review.py"
+      ],
+      "observed_in_code": "Diagnostics and human report review retain originals without automatically editing scholarly content.",
+      "remaining_or_limit": "Current whole-point evidence still required; report receipt does not prove a correction.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "469",
+      "original_text": "يمكن كشف السجلات الناقصة أو العلاقات المكسورة.",
+      "direct_spec_ids": [
+        "SPEC-U15-006",
+        "SPEC-U15-007"
+      ],
+      "decision_ids": [
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 471
+      },
+      "functional_unit": "Quality/reports",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/data_quality/services.py",
+        "apps/content_reports/services.py",
+        "apps/content_reports/test_review.py"
+      ],
+      "observed_in_code": "Diagnostics and human report review retain originals without automatically editing scholarly content.",
+      "remaining_or_limit": "Current whole-point evidence still required; report receipt does not prove a correction.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "470",
+      "original_text": "يوجد Error Reporting للمحتوى.",
+      "direct_spec_ids": [
+        "SPEC-U09-027",
+        "SPEC-U15-008"
+      ],
+      "decision_ids": [
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 472
+      },
+      "functional_unit": "Quality/reports",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/data_quality/services.py",
+        "apps/content_reports/services.py",
+        "apps/content_reports/test_review.py"
+      ],
+      "observed_in_code": "Diagnostics and human report review retain originals without automatically editing scholarly content.",
+      "remaining_or_limit": "Current whole-point evidence still required; report receipt does not prove a correction.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "471",
+      "original_text": "يستطيع المستخدم المخول الإبلاغ عن خطأ في فتوى منشورة أو حديث أو Transcript.",
+      "direct_spec_ids": [
+        "SPEC-U09-027",
+        "SPEC-U15-008"
+      ],
+      "decision_ids": [
+        "D-057",
+        "D-072",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 473
+      },
+      "functional_unit": "All content reporting kinds",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/content_reports/README.md"
+      ],
+      "observed_in_code": "Published-edition and transcript staff reports plus requester answer/part reports exist.",
+      "remaining_or_limit": "Hadith-specific reporting is explicitly absent with its distinct unimplemented verified-source workflow.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "472",
+      "original_text": "لا يؤدي Report تلقائيًا إلى تعديل المحتوى؛ يدخل Workflow للمراجعة.",
+      "direct_spec_ids": [
+        "SPEC-U09-027",
+        "SPEC-U15-008"
+      ],
+      "decision_ids": [
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 474
+      },
+      "functional_unit": "Quality/reports",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/data_quality/services.py",
+        "apps/content_reports/services.py",
+        "apps/content_reports/test_review.py"
+      ],
+      "observed_in_code": "Diagnostics and human report review retain originals without automatically editing scholarly content.",
+      "remaining_or_limit": "Current whole-point evidence still required; report receipt does not prove a correction.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "473",
+      "original_text": "لا يتم حذف النظام القديم من البداية.",
+      "direct_spec_ids": [
+        "SPEC-U16-019"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 475
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "474",
+      "original_text": "نحدد Mapping للبيانات القديمة.",
+      "direct_spec_ids": [
+        "SPEC-U16-008"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 476
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "475",
+      "original_text": "نجري Migration Dry Run.",
+      "direct_spec_ids": [
+        "SPEC-U16-012"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 477
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "476",
+      "original_text": "نتحقق من أعداد السجلات والعلاقات والملفات.",
+      "direct_spec_ids": [
+        "SPEC-U16-013"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 478
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "477",
+      "original_text": "يوجد Rollback Plan.",
+      "direct_spec_ids": [
+        "SPEC-U16-018"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 479
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "478",
+      "original_text": "يمكن استخدام Parallel Run لفترة.",
+      "direct_spec_ids": [
+        "SPEC-U16-016"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 480
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "479",
+      "original_text": "Cutover يحدث فقط بعد Feature Parity والتحقق.",
+      "direct_spec_ids": [
+        "SPEC-U16-015",
+        "SPEC-U16-017",
+        "SPEC-U16-019"
+      ],
+      "decision_ids": [
+        "D-003"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 481
+      },
+      "functional_unit": "TelegramV2 migration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/material_import/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Old bot is untouched. Generic material import/dry-run and restoration exist separately.",
+      "remaining_or_limit": "No legacy TelegramV2 snapshot/schema, case/history mapping, parity/parallel-run reconciliation or reviewed cutover has been supplied. Generic material import is not legacy migration.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "480",
+      "original_text": "WhatsApp له حالات خاصة بسبب قواعد نافذة المحادثة والقوالب.",
+      "direct_spec_ids": [
+        "SPEC-U07-015"
+      ],
+      "decision_ids": [
+        "D-060"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 482
+      },
+      "functional_unit": "WhatsApp policy integration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Generic capabilities hold unsupported parts without channel substitution.",
+      "remaining_or_limit": "Actual current Meta account/window/template contracts, credentials and allowed alternatives remain unverified. No permanent policy assumptions are justified.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "481",
+      "original_text": "النظام يجب أن يميز بين إمكانية الرد المباشر وبين الحاجة لمسار مسموح آخر.",
+      "direct_spec_ids": [
+        "SPEC-U07-007",
+        "SPEC-U07-015"
+      ],
+      "decision_ids": [
+        "D-060"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 483
+      },
+      "functional_unit": "WhatsApp policy integration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Generic capabilities hold unsupported parts without channel substitution.",
+      "remaining_or_limit": "Actual current Meta account/window/template contracts, credentials and allowed alternatives remain unverified. No permanent policy assumptions are justified.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "482",
+      "original_text": "التفاصيل الدقيقة تعتمد على سياسة Meta الحالية وقت تنفيذ Integration، وليست افتراضات ثابتة داخل قلب النظام.",
+      "direct_spec_ids": [
+        "SPEC-U16-022",
+        "SPEC-U07-015"
+      ],
+      "decision_ids": [
+        "D-060"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 484
+      },
+      "functional_unit": "WhatsApp policy integration",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Generic capabilities hold unsupported parts without channel substitution.",
+      "remaining_or_limit": "Actual current Meta account/window/template contracts, credentials and allowed alternatives remain unverified. No permanent policy assumptions are justified.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "483",
+      "original_text": "كل منصة لها Adapter مستقل.",
+      "direct_spec_ids": [
+        "SPEC-U01-001",
+        "SPEC-U13-026",
+        "SPEC-U07-007"
+      ],
+      "decision_ids": [
+        "D-033",
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 485
+      },
+      "functional_unit": "Adapters and human correlation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_case_intake/services.py",
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Separate offline adapters, immutable origin bindings, human correlation review and server capability profiles exist.",
+      "remaining_or_limit": "Not every documented platform is implemented/live; verify each source and original-message contract.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "484",
+      "original_text": "كل Adapter يعلن Capabilities التي يدعمها.",
+      "direct_spec_ids": [
+        "SPEC-U01-001",
+        "SPEC-U13-026",
+        "SPEC-U07-007"
+      ],
+      "decision_ids": [
+        "D-033",
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 486
+      },
+      "functional_unit": "Adapters and human correlation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_case_intake/services.py",
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Separate offline adapters, immutable origin bindings, human correlation review and server capability profiles exist.",
+      "remaining_or_limit": "Not every documented platform is implemented/live; verify each source and original-message contract.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "485",
+      "original_text": "قلب النظام لا يبني منطقًا خاصًا بـYouTube داخل Fatwa Case نفسها.",
+      "direct_spec_ids": [
+        "SPEC-U01-001",
+        "SPEC-U13-026",
+        "SPEC-U07-007"
+      ],
+      "decision_ids": [
+        "D-033",
+        "D-039"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 487
+      },
+      "functional_unit": "Adapters and human correlation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_case_intake/services.py",
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Separate offline adapters, immutable origin bindings, human correlation review and server capability profiles exist.",
+      "remaining_or_limit": "Not every documented platform is implemented/live; verify each source and original-message contract.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "486",
+      "original_text": "حالات Correlation المعقدة تبقى قابلة للمراجعة البشرية بدل الربط الآلي الخطير.",
+      "direct_spec_ids": [
+        "SPEC-U01-011"
+      ],
+      "decision_ids": [
+        "D-033"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 488
+      },
+      "functional_unit": "Adapters and human correlation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/source_case_intake/services.py",
+        "apps/source_case_intake/README.md",
+        "apps/composite_delivery/services.py"
+      ],
+      "observed_in_code": "Separate offline adapters, immutable origin bindings, human correlation review and server capability profiles exist.",
+      "remaining_or_limit": "Not every documented platform is implemented/live; verify each source and original-message contract.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "487",
+      "original_text": "الهدف ألا يشعر الشيخ أنه يستخدم سبع منصات.",
+      "direct_spec_ids": [
+        "SPEC-U01-031",
+        "SPEC-U02-001"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 489
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "488",
+      "original_text": "أمامه Inbox واحد.",
+      "direct_spec_ids": [
+        "SPEC-U01-031",
+        "SPEC-U02-001"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 490
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "489",
+      "original_text": "Case واحدة واضحة.",
+      "direct_spec_ids": [
+        "SPEC-U01-031",
+        "SPEC-U02-001"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 491
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "490",
+      "original_text": "Composer واحد.",
+      "direct_spec_ids": [
+        "SPEC-U02-011"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 492
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "491",
+      "original_text": "Search واحد.",
+      "direct_spec_ids": [
+        "SPEC-U02-022"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 493
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "492",
+      "original_text": "Related Materials في Side Panel مستقل.",
+      "direct_spec_ids": [
+        "SPEC-U02-020",
+        "SPEC-U02-021"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 494
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "493",
+      "original_text": "AI لا يزاحم مساحة الإجابة.",
+      "direct_spec_ids": [
+        "SPEC-U02-020",
+        "SPEC-U02-021"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 495
+      },
+      "functional_unit": "Human/AI separation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/precise_citations/services.py",
+        "apps/knowledge_links/services.py"
+      ],
+      "observed_in_code": "Human originals and reviewed scholarly decisions are preserved.",
+      "remaining_or_limit": "Central AI Gateway/task processing and suggestion-only composition remain absent; their enforced boundaries require implementation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "494",
+      "original_text": "الاعتماد الشرعي واضح ومنفصل عن الإرسال والتشغيل.",
+      "direct_spec_ids": [
+        "SPEC-U07-001",
+        "SPEC-U07-002"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 496
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "495",
+      "original_text": "المنظم لديه Queue تشغيلية واضحة.",
+      "direct_spec_ids": [
+        "SPEC-U03-004"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 497
+      },
+      "functional_unit": "Organizer operations queue",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/team_workspace/README.md",
+        "apps/editorial_dashboard/README.md",
+        "apps/mufti_review/identity.py"
+      ],
+      "observed_in_code": "Live canonical case tools are Mufti-scoped; old editorial dashboard is a fixture projection.",
+      "remaining_or_limit": "Build an actual current-authorized organizer queue for classification/metadata, failed deliveries, publication, transcript review and capability intervention without scholarly privilege or impersonation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "496",
+      "original_text": "يرى القضايا التي تحتاج تصنيفًا أو Metadata.",
+      "direct_spec_ids": [
+        "SPEC-U03-004"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 498
+      },
+      "functional_unit": "Organizer operations queue",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/team_workspace/README.md",
+        "apps/editorial_dashboard/README.md",
+        "apps/mufti_review/identity.py"
+      ],
+      "observed_in_code": "Live canonical case tools are Mufti-scoped; old editorial dashboard is a fixture projection.",
+      "remaining_or_limit": "Build an actual current-authorized organizer queue for classification/metadata, failed deliveries, publication, transcript review and capability intervention without scholarly privilege or impersonation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "497",
+      "original_text": "يرى Delivery Failures.",
+      "direct_spec_ids": [
+        "SPEC-U03-004"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 499
+      },
+      "functional_unit": "Organizer operations queue",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/team_workspace/README.md",
+        "apps/editorial_dashboard/README.md",
+        "apps/mufti_review/identity.py"
+      ],
+      "observed_in_code": "Live canonical case tools are Mufti-scoped; old editorial dashboard is a fixture projection.",
+      "remaining_or_limit": "Build an actual current-authorized organizer queue for classification/metadata, failed deliveries, publication, transcript review and capability intervention without scholarly privilege or impersonation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "498",
+      "original_text": "يرى الحالات التي تحتاج Publication Action.",
+      "direct_spec_ids": [
+        "SPEC-U03-004"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 500
+      },
+      "functional_unit": "Organizer operations queue",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/team_workspace/README.md",
+        "apps/editorial_dashboard/README.md",
+        "apps/mufti_review/identity.py"
+      ],
+      "observed_in_code": "Live canonical case tools are Mufti-scoped; old editorial dashboard is a fixture projection.",
+      "remaining_or_limit": "Build an actual current-authorized organizer queue for classification/metadata, failed deliveries, publication, transcript review and capability intervention without scholarly privilege or impersonation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "499",
+      "original_text": "يرى Transcript Review.",
+      "direct_spec_ids": [
+        "SPEC-U03-004"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 501
+      },
+      "functional_unit": "Organizer operations queue",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/team_workspace/README.md",
+        "apps/editorial_dashboard/README.md",
+        "apps/mufti_review/identity.py"
+      ],
+      "observed_in_code": "Live canonical case tools are Mufti-scoped; old editorial dashboard is a fixture projection.",
+      "remaining_or_limit": "Build an actual current-authorized organizer queue for classification/metadata, failed deliveries, publication, transcript review and capability intervention without scholarly privilege or impersonation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "500",
+      "original_text": "يرى الحالات التي تحتاج تدخلاً بشريًا بسبب Platform Capability.",
+      "direct_spec_ids": [
+        "SPEC-U03-004"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 502
+      },
+      "functional_unit": "Organizer operations queue",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/team_workspace/README.md",
+        "apps/editorial_dashboard/README.md",
+        "apps/mufti_review/identity.py"
+      ],
+      "observed_in_code": "Live canonical case tools are Mufti-scoped; old editorial dashboard is a fixture projection.",
+      "remaining_or_limit": "Build an actual current-authorized organizer queue for classification/metadata, failed deliveries, publication, transcript review and capability intervention without scholarly privilege or impersonation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "501",
+      "original_text": "إرسال السؤال بسيط.",
+      "direct_spec_ids": [
+        "SPEC-U08-001",
+        "SPEC-U08-005"
+      ],
+      "decision_ids": [
+        "D-049"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 503
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "502",
+      "original_text": "لا يحتاج لمعرفة آلية النظام الداخلية.",
+      "direct_spec_ids": [
+        "SPEC-U08-001",
+        "SPEC-U08-005"
+      ],
+      "decision_ids": [
+        "D-049"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 504
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "503",
+      "original_text": "يحصل على Reference واضح.",
+      "direct_spec_ids": [
+        "SPEC-U08-008"
+      ],
+      "decision_ids": [
+        "D-049"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 505
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "504",
+      "original_text": "يمكن أن يطلب منه الشيخ توضيحًا.",
+      "direct_spec_ids": [
+        "SPEC-U08-014"
+      ],
+      "decision_ids": [
+        "D-049"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 506
+      },
+      "functional_unit": "Connected user workspaces",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/mufti_workspace/context.py",
+        "apps/mufti_workspace/journey.py",
+        "apps/answer_media/related_views.py",
+        "apps/casework_web/requester_intake.py"
+      ],
+      "observed_in_code": "Native inbox/case/composer/search/side panel/reference/clarification and independent human approval are connected.",
+      "remaining_or_limit": "New related side panel awaits protected proof. Do not infer full usability or external delivery from controls alone.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "505",
+      "original_text": "يصله الجواب على مصدره الأصلي عندما يكون ذلك ممكنًا.",
+      "direct_spec_ids": [
+        "SPEC-U01-021"
+      ],
+      "decision_ids": [
+        "D-034"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 507
+      },
+      "functional_unit": "Actual origin delivery/fallback",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/composite_delivery/README.md",
+        "apps/casework/delivery.py"
+      ],
+      "observed_in_code": "Signed offline provider reports are distinct from private answer availability.",
+      "remaining_or_limit": "Live transport and policy-authorized per-origin fallback links need actual provider configuration and verification; no external send has occurred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "506",
+      "original_text": "إذا احتاج الجواب صفحة ويب بسبب نوع المحتوى، يمكن أن يصله رابطها وفق السياسة.",
+      "direct_spec_ids": [
+        "SPEC-U07-010"
+      ],
+      "decision_ids": [
+        "D-060"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 508
+      },
+      "functional_unit": "Actual origin delivery/fallback",
+      "review_state": "EXTERNAL_CONFIGURATION_REQUIRED",
+      "code_and_test_references": [
+        "apps/composite_delivery/README.md",
+        "apps/casework/delivery.py"
+      ],
+      "observed_in_code": "Signed offline provider reports are distinct from private answer availability.",
+      "remaining_or_limit": "Live transport and policy-authorized per-origin fallback links need actual provider configuration and verification; no external send has occurred.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "507",
+      "original_text": "AI يساعد أهل العلم؛ لا يحل محلهم.",
+      "direct_spec_ids": [
+        "SPEC-U14-024"
+      ],
+      "decision_ids": [
+        "D-020",
+        "D-046",
+        "D-064",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 509
+      },
+      "functional_unit": "Human/AI separation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/precise_citations/services.py",
+        "apps/knowledge_links/services.py"
+      ],
+      "observed_in_code": "Human originals and reviewed scholarly decisions are preserved.",
+      "remaining_or_limit": "Central AI Gateway/task processing and suggestion-only composition remain absent; their enforced boundaries require implementation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "508",
+      "original_text": "الأصل البشري محفوظ دائمًا.",
+      "direct_spec_ids": [
+        "SPEC-U15-019",
+        "SPEC-U14-022"
+      ],
+      "decision_ids": [
+        "D-016",
+        "D-043",
+        "D-064",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 510
+      },
+      "functional_unit": "Human/AI separation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/precise_citations/services.py",
+        "apps/knowledge_links/services.py"
+      ],
+      "observed_in_code": "Human originals and reviewed scholarly decisions are preserved.",
+      "remaining_or_limit": "Central AI Gateway/task processing and suggestion-only composition remain absent; their enforced boundaries require implementation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "509",
+      "original_text": "جميع مشتقات AI قابلة للحذف وإعادة البناء.",
+      "direct_spec_ids": [
+        "SPEC-U15-019",
+        "SPEC-U11-020",
+        "SPEC-U12-027"
+      ],
+      "decision_ids": [
+        "D-016",
+        "D-055",
+        "D-064",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 511
+      },
+      "functional_unit": "Vector search and rebuildable AI data",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/canonical_search/services.py",
+        "apps/canonical_search/models.py"
+      ],
+      "observed_in_code": "FTS/trigram generations rebuild from preserved authorized sources.",
+      "remaining_or_limit": "No pgvector semantic runtime or central AI-derived task store was found. Vector outages and complete AI rebuild/delete behavior need those components.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "510",
+      "original_text": "أي قرار ديني أو نشر حساس أو علاقة علمية حساسة تبقى تحت سيطرة بشرية.",
+      "direct_spec_ids": [
+        "SPEC-U12-007",
+        "SPEC-U14-024",
+        "SPEC-U07-002"
+      ],
+      "decision_ids": [
+        "D-046",
+        "D-064",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 512
+      },
+      "functional_unit": "Human/AI separation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/precise_citations/services.py",
+        "apps/knowledge_links/services.py"
+      ],
+      "observed_in_code": "Human originals and reviewed scholarly decisions are preserved.",
+      "remaining_or_limit": "Central AI Gateway/task processing and suggestion-only composition remain absent; their enforced boundaries require implementation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "511",
+      "original_text": "الاسم النهائي للمشروع.",
+      "direct_spec_ids": [
+        "SPEC-U09-028"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 513
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "512",
+      "original_text": "اسم Repository النهائي.",
+      "direct_spec_ids": [
+        "SPEC-U16-004"
+      ],
+      "decision_ids": [
+        "D-064"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 514
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "513",
+      "original_text": "Domain النهائي.",
+      "direct_spec_ids": [
+        "SPEC-U09-028"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 515
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "514",
+      "original_text": "النسخة النهائية من Sharia Taxonomy بعد تصحيح المختصين.",
+      "direct_spec_ids": [
+        "SPEC-U04-003",
+        "SPEC-U04-014"
+      ],
+      "decision_ids": [
+        "D-017",
+        "D-069"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 516
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "515",
+      "original_text": "Search weights النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U05-027"
+      ],
+      "decision_ids": [
+        "D-023",
+        "D-045"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 517
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "516",
+      "original_text": "Embedding model النهائي.",
+      "direct_spec_ids": [
+        "SPEC-U05-027"
+      ],
+      "decision_ids": [
+        "D-023",
+        "D-045"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 518
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "517",
+      "original_text": "Gold Benchmark الفعلي.",
+      "direct_spec_ids": [
+        "SPEC-U05-027"
+      ],
+      "decision_ids": [
+        "D-023",
+        "D-045"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 519
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "518",
+      "original_text": "قواعد Arabic Normalization النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U05-027"
+      ],
+      "decision_ids": [
+        "D-023",
+        "D-045"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 520
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "519",
+      "original_text": "Synonym Dictionary الفعلي.",
+      "direct_spec_ids": [
+        "SPEC-U05-027"
+      ],
+      "decision_ids": [
+        "D-023",
+        "D-045"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 521
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "520",
+      "original_text": "مزود/نموذج Transcription النهائي.",
+      "direct_spec_ids": [
+        "SPEC-U11-015"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 522
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "521",
+      "original_text": "التفاصيل النهائية لبعض حالات WhatsApp.",
+      "direct_spec_ids": [
+        "SPEC-U07-015"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 523
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "522",
+      "original_text": "الحالات المعقدة لربط التعقيبات عبر بعض المنصات.",
+      "direct_spec_ids": [
+        "SPEC-U01-011",
+        "SPEC-U16-022"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 524
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "523",
+      "original_text": "تفاصيل Migration Telegram V2 النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U16-007",
+        "SPEC-U16-012",
+        "SPEC-U16-013"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 525
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "524",
+      "original_text": "State Transition Matrix النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 526
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "525",
+      "original_text": "Physical ERD/DDL/Indexes/Migrations النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 527
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "526",
+      "original_text": "استراتيجية الاختبارات والقبول والإطلاق بالتفصيل.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 528
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "527",
+      "original_text": "التقارير ولوحات الإدارة النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U15-005",
+        "SPEC-U15-028"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 529
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "528",
+      "original_text": "مزودات الإنتاج والتكلفة والأحجام.",
+      "direct_spec_ids": [
+        "SPEC-U15-026",
+        "SPEC-U15-028"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 530
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "529",
+      "original_text": "أرقام RPO/RTO/Retention النهائية.",
+      "direct_spec_ids": [
+        "SPEC-U15-022"
+      ],
+      "decision_ids": [],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 531
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "530",
+      "original_text": "الـDesign System/Figma النهائي.",
+      "direct_spec_ids": [
+        "SPEC-U09-028"
+      ],
+      "decision_ids": [
+        "D-070"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 532
+      },
+      "functional_unit": "Final visual design",
+      "review_state": "EXCLUDED_BY_CURRENT_USER",
+      "code_and_test_references": [
+        "AGENTS.md"
+      ],
+      "observed_in_code": "The latest user explicitly excludes final visual design.",
+      "remaining_or_limit": "No final branding/Figma work is in this functional continuation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "531",
+      "original_text": "الـApplication Stack البرمجي النهائي قبل التنفيذ.",
+      "direct_spec_ids": [
+        "SPEC-U16-005"
+      ],
+      "decision_ids": [
+        "D-063"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 533
+      },
+      "functional_unit": "Unresolved final choices",
+      "review_state": "OWNER_DECISION_REQUIRED",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "docs/product/v14_scope_evidence/matrix.json"
+      ],
+      "observed_in_code": "Original rows explicitly retain final owner/scientific/provider decisions.",
+      "remaining_or_limit": "Do not invent final domain, tree, models, weights, benchmark, migration, retention, production cost or acceptance. Configurable code cannot approve these choices.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "532",
+      "original_text": "المنصة تستقبل سؤالًا من أي مصدر معتمد، تحفظ الأصل، وتحوله إلى قضية مرجعية دائمة.",
+      "direct_spec_ids": [
+        "SPEC-U01-001",
+        "SPEC-U01-002",
+        "SPEC-U01-005"
+      ],
+      "decision_ids": [
+        "D-033"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 534
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "533",
+      "original_text": "الشيخ يرى كل القضايا في Mufti Workspace واحدة ويجيب منها بالنص أو الصوت أو الوسائط.",
+      "direct_spec_ids": [
+        "SPEC-U02-001",
+        "SPEC-U02-011",
+        "SPEC-U02-013"
+      ],
+      "decision_ids": [
+        "D-047"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 535
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "534",
+      "original_text": "المنظم يدير التصنيف والتنظيم والتحرير والتوصيل والنشر، دون امتلاك صلاحية إصدار الفتوى.",
+      "direct_spec_ids": [
+        "SPEC-U07-002",
+        "SPEC-U14-009",
+        "SPEC-U14-010",
+        "SPEC-U11-019"
+      ],
+      "decision_ids": [
+        "D-054",
+        "D-067"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 536
+      },
+      "functional_unit": "Organizer permissions and audit",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_review/identity.py",
+        "apps/permission_lab/services.py",
+        "apps/team_workspace/README.md"
+      ],
+      "observed_in_code": "The live canonical desk is Mufti-scoped. The permission laboratory always denies and is not an administrative grant store.",
+      "remaining_or_limit": "Implement current explicit operational grants/sets/overrides and audited non-escalating administration. Detailed U03 production policy remains HOLD.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "535",
+      "original_text": "النظام يعيد جواب الشيخ إلى المصدر الأصلي بالطريقة التي تسمح بها المنصة، ويقترح بدائل بشرية عندما لا يكون نوع الجواب مدعومًا.",
+      "direct_spec_ids": [
+        "SPEC-U01-021",
+        "SPEC-U01-022",
+        "SPEC-U01-023"
+      ],
+      "decision_ids": [
+        "D-060"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 537
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "536",
+      "original_text": "الفتاوى المعتمدة يمكن أن تتحول، عند الموافقة، إلى محتوى عام منظم وقابل للبحث والاستشهاد.",
+      "direct_spec_ids": [
+        "SPEC-U07-017",
+        "SPEC-U09-012",
+        "SPEC-U05-003"
+      ],
+      "decision_ids": [
+        "D-035"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 538
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "537",
+      "original_text": "الموقع يجمع الفتاوى والحديث والعلماء والدروس والمكتبة في منصة معرفية واحدة.",
+      "direct_spec_ids": [
+        "SPEC-U09-003",
+        "SPEC-U12-003"
+      ],
+      "decision_ids": [
+        "D-056",
+        "D-072",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 539
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "538",
+      "original_text": "منصة الحديث غنية وقابلة للتوسع، لكن عناصر الإثراء مثل تعدد الأسانيد والتخريجات والشروح اختيارية بحسب المادة المتاحة وليست شرطًا إجباريًا لكل حديث.",
+      "direct_spec_ids": [
+        "SPEC-U04-020",
+        "SPEC-U16-003"
+      ],
+      "decision_ids": [
+        "D-059",
+        "D-072"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 540
+      },
+      "functional_unit": "Specialized hadith",
+      "review_state": "PINNED_DEFERRED_SCOPE_AND_MISSING_VERIFIED_SOURCES",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "apps/content_reports/README.md"
+      ],
+      "observed_in_code": "D072 defers specialized U10 in the pinned source; no fabricated hadith corpus is used.",
+      "remaining_or_limit": "An expanded full-product implementation needs explicit source/model/review work. Generic cards cannot substitute for independent chains, narrations and judgments.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "539",
+      "original_text": "البحث الهجين والـKnowledge Graph يربطان المواد ببعضها.",
+      "direct_spec_ids": [
+        "SPEC-U05-009",
+        "SPEC-U05-017",
+        "SPEC-U12-001"
+      ],
+      "decision_ids": [
+        "D-045",
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 541
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "540",
+      "original_text": "Luna تساعد في التصنيف والبحث والتنظيم والجودة، ولا تفتي ولا تكتب جواب الشيخ.",
+      "direct_spec_ids": [
+        "SPEC-U14-024",
+        "SPEC-U04-010",
+        "SPEC-U05-017"
+      ],
+      "decision_ids": [
+        "D-046",
+        "D-064",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 542
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "541",
+      "original_text": "الأمان والخصوصية والتدقيق والحفظ والاسترجاع ليست إضافات لاحقة، بل جزء من التصميم الأساسي.",
+      "direct_spec_ids": [
+        "SPEC-U14-001",
+        "SPEC-U14-019",
+        "SPEC-U15-019",
+        "SPEC-U15-023"
+      ],
+      "decision_ids": [
+        "D-037",
+        "D-038"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 543
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "542",
+      "original_text": "النتيجة المستهدفة هي منصة شرعية علمية طويلة الأجل يمكن أن تخدم السائل والشيخ والمنظم والباحث والجمهور من نفس قاعدة المعرفة، مع بقاء السلطة العلمية عند أهل العلم.",
+      "direct_spec_ids": [
+        "SPEC-U16-003",
+        "SPEC-U12-001",
+        "SPEC-U14-024"
+      ],
+      "decision_ids": [
+        "D-050",
+        "D-056",
+        "D-057"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 544
+      },
+      "functional_unit": "Whole-product summaries",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/mufti_workspace/README.md",
+        "apps/source_case_intake/README.md",
+        "apps/research_library/README.md",
+        "apps/platform_recovery/README.md"
+      ],
+      "observed_in_code": "Multiple real synthetic functional journeys exist.",
+      "remaining_or_limit": "Missing live channels, organizer roles, AI/semantic/hadith functionality and production operation prevent a whole-product completion claim; summaries depend on their component requirements.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "543",
+      "original_text": "يوجد نظام استدلال وإحالات دقيقة يمكّن الشيخ أو الباحث من ربط عبارة في الفتوى أو مادة علمية بأصل محدد وموضع معين قابل للفتح مباشرة، لا بمجرد عنوان كتاب أو نتيجة بحث عامة.",
+      "direct_spec_ids": [
+        "SPEC-U06-001"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 545
+      },
+      "functional_unit": "Precise reviewed citations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/precise_citations/services.py",
+        "apps/precise_citations/editor.py",
+        "apps/precise_citations/browser_tests.py"
+      ],
+      "observed_in_code": "Phrase/source/version locations, reviews, historical references and readable export/print citation history exist.",
+      "remaining_or_limit": "Protected current-head proof pending. Source validity and current rights remain mandatory.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "544",
+      "original_text": "يستطيع الشيخ تحديد عبارة في جوابه أو إضافة بطاقة مصدر مستقلة، ثم اختيار المصدر والنسخة والموضع ومعاينة ما سيفتحه الرابط قبل تثبيت الإحالة، دون فقد مسودة جوابه.",
+      "direct_spec_ids": [
+        "SPEC-U06-006",
+        "SPEC-U06-008"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 546
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "545",
+      "original_text": "تشمل الإحالات الكتب والطبعات وملفات PDF والوثائق والمصادر الرقمية، مع التمييز بين الكتاب بوصفه عملًا علميًا، والطبعة أو النسخة المعينة، والملف الرقمي الذي يعرضها؛ ويمكن تحديد صفحة أو فقرة أو مقطع بحسب المتاح.",
+      "direct_spec_ids": [
+        "SPEC-U06-002",
+        "SPEC-U06-005",
+        "SPEC-U06-011"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 547
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "546",
+      "original_text": "يُحفظ رقم الصفحة المطبوع ورقم الصفحة داخل ملف PDF على نحو مستقل عند توفر المطابقة الموثقة بينهما، ويمكن تحديد فقرة نصية أو منطقة في صفحة مصورة حيث تسمح التقنية بذلك، دون ادعاء دقة غير متاحة.",
+      "direct_spec_ids": [
+        "SPEC-U06-010",
+        "SPEC-U06-011"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 548
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "547",
+      "original_text": "يمكن ربط الإحالة بسورة وآية محددة أو نطاق آيات من مصدر قرآني موثق؛ ولا تولّد Luna نص الآية أو تنسب إليها نصًا غير محقق.",
+      "direct_spec_ids": [
+        "SPEC-U06-013"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 549
+      },
+      "functional_unit": "Verified Quran verse citation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/research_bridge/README.md"
+      ],
+      "observed_in_code": "No verified Quran-edition/verse-range adapter was found among current exact source kinds.",
+      "remaining_or_limit": "Implement identity/provenance and exact verse/range validation using supplied verified source text. Never generate or guess a verse.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "548",
+      "original_text": "يمكن الاستشهاد بحديث أو رواية أو سند محدد، وكذلك بحكم عالم على الحديث أو الإسناد أو بشرح موثق عند وجوده، مع إبقاء كل قول ورواية ومصدر وموضع مستقلًا، دون دمج الأحكام أو الروايات.",
+      "direct_spec_ids": [
+        "SPEC-U06-014",
+        "SPEC-U06-015"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068",
+        "D-072"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 550
+      },
+      "functional_unit": "Specialized hadith",
+      "review_state": "PINNED_DEFERRED_SCOPE_AND_MISSING_VERIFIED_SOURCES",
+      "code_and_test_references": [
+        "docs/product/v12_scope_evidence/decisions.json",
+        "apps/content_reports/README.md"
+      ],
+      "observed_in_code": "D072 defers specialized U10 in the pinned source; no fabricated hadith corpus is used.",
+      "remaining_or_limit": "An expanded full-product implementation needs explicit source/model/review work. Generic cards cannot substitute for independent chains, narrations and judgments.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "549",
+      "original_text": "يمكن توجيه الإحالة إلى درس أو تسجيل صوتي أو فيديو بموضع زمني محدد، كدقيقة وثانية أو بداية ونهاية مقطع، ويرتبط التوقيت بنسخة التسجيل نفسها ولا ينتقل تلقائيًا إلى نسخة أخرى.",
+      "direct_spec_ids": [
+        "SPEC-U06-016"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 551
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "550",
+      "original_text": "عند الإحالة إلى فتوى سابقة يمكن تحديد جوابها أو نسخته أو جزئه المقصود وفق الصلاحيات، مع الحفاظ على المرجع التاريخي وإظهار التصحيحات اللاحقة للمخوّلين عند توفرها، دون افتراض انطباق الحكم على قضية جديدة.",
+      "direct_spec_ids": [
+        "SPEC-U06-017"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 552
+      },
+      "functional_unit": "Precise reviewed citations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/precise_citations/services.py",
+        "apps/precise_citations/editor.py",
+        "apps/precise_citations/browser_tests.py"
+      ],
+      "observed_in_code": "Phrase/source/version locations, reviews, historical references and readable export/print citation history exist.",
+      "remaining_or_limit": "Protected current-head proof pending. Source validity and current rights remain mandatory.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "551",
+      "original_text": "تستند الإحالة إلى معرف ثابت للمصدر ونسخته وموضعه، لا إلى ترتيب مؤقت في نتائج البحث أو وصف غامض مثل «الكتاب الثاني»؛ وعند الغموض يُطلب تحديد المقصود بدل تخمينه.",
+      "direct_spec_ids": [
+        "SPEC-U06-007"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 553
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "552",
+      "original_text": "إذا أضيفت طبعة أو ملف أو تسجيل جديد فلا تنتقل الإحالة القديمة إليه بصمت؛ تظل مرتبطة بالنسخة التي اختارها صاحب الاستدلال مع حفظ التوثيق وتاريخ التصحيحات.",
+      "direct_spec_ids": [
+        "SPEC-U06-022",
+        "SPEC-U06-026"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 554
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "553",
+      "original_text": "إذا تعذر فتح الفقرة أو الموضع الدقيق تقنيًا، يُفتح أقرب موضع موثق مع بيان حدود الدقة، ولا يُختلق رقم صفحة أو رابط أو مقتطف غير متحقق؛ ويمكن الاحتفاظ بمرجع وصفي عندما لا تتوفر نسخة رقمية.",
+      "direct_spec_ids": [
+        "SPEC-U06-004",
+        "SPEC-U06-018",
+        "SPEC-U06-028"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 555
+      },
+      "functional_unit": "Precise reviewed citations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/precise_citations/services.py",
+        "apps/precise_citations/editor.py",
+        "apps/precise_citations/browser_tests.py"
+      ],
+      "observed_in_code": "Phrase/source/version locations, reviews, historical references and readable export/print citation history exist.",
+      "remaining_or_limit": "Protected current-head proof pending. Source validity and current rights remain mandatory.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "554",
+      "original_text": "تخضع الإحالات لحقوق المصدر وصلاحيات الوصول وقت الإنشاء والفتح والتوصيل والنشر والتصدير؛ لا يكشف الربط بمصدر داخلي محتواه أو ملفاته لجمهور غير مخوّل، ولا يحوّل القضية الخاصة إلى مادة عامة.",
+      "direct_spec_ids": [
+        "SPEC-U06-019",
+        "SPEC-U06-020",
+        "SPEC-U06-021",
+        "SPEC-U06-027"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 556
+      },
+      "functional_unit": "Exact source/deep-link composition",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/precise_citations/sources.py",
+        "apps/pdf_citations/services.py",
+        "apps/timed_citations/services.py",
+        "apps/source_rights/services.py"
+      ],
+      "observed_in_code": "Existing PDF/timed/exact-source readers preserve selected source/version identity and apply scoped rights.",
+      "remaining_or_limit": "Audit all specified content kinds and native draft-preservation journeys. Actual reviewed audio seeks are under current repair verification; subset support cannot close every broad row.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "555",
+      "original_text": "تبقى الإحالة والاقتباس والنص الأصلي للشيخ ومخرجات البحث الذكي طبقات متميزة؛ يمكن لـLuna اقتراح مواضع محتملة موثقة للمراجعة، لكنها لا تثبّت دليلًا في جواب الشيخ ولا تختار وجه الاستدلال أو تتولى اعتماده.",
+      "direct_spec_ids": [
+        "SPEC-U06-009",
+        "SPEC-U06-024",
+        "SPEC-U06-025"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 557
+      },
+      "functional_unit": "Human/AI separation",
+      "review_state": "MISSING_OR_PARTIAL_FUNCTIONALITY",
+      "code_and_test_references": [
+        "apps/casework/services.py",
+        "apps/precise_citations/services.py",
+        "apps/knowledge_links/services.py"
+      ],
+      "observed_in_code": "Human originals and reviewed scholarly decisions are preserved.",
+      "remaining_or_limit": "Central AI Gateway/task processing and suggestion-only composition remain absent; their enforced boundaries require implementation.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    },
+    {
+      "original_id": "556",
+      "original_text": "يسجل النظام من أضاف الإحالة وراجعها وصححها وموضعها وإصدارها؛ ويظهر في الطباعة والتصدير مرجع مقروء يتضمن المصدر والنسخة والموضع المتاح، ولا يسمح التصحيح التقني بتبديل الحجة أو المصدر المقصود دون مراجعة الشيخ.",
+      "direct_spec_ids": [
+        "SPEC-U06-023",
+        "SPEC-U06-026",
+        "SPEC-U06-027"
+      ],
+      "decision_ids": [
+        "D-062",
+        "D-068"
+      ],
+      "source_locator": {
+        "sheet": "نقاط المالك",
+        "parsed_index": 558
+      },
+      "functional_unit": "Precise reviewed citations",
+      "review_state": "CODE_PRESENT_REQUIRES_CURRENT_WHOLE_POINT_PROOF",
+      "code_and_test_references": [
+        "apps/precise_citations/services.py",
+        "apps/precise_citations/editor.py",
+        "apps/precise_citations/browser_tests.py"
+      ],
+      "observed_in_code": "Phrase/source/version locations, reviews, historical references and readable export/print citation history exist.",
+      "remaining_or_limit": "Protected current-head proof pending. Source validity and current rights remain mandatory.",
+      "confidence": "CODE_REVIEW_NOT_RUNTIME_ACCEPTANCE",
+      "whole_point_credit": 0
+    }
+  ]
+}

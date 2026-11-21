@@ -1,0 +1,7 @@
+{% extends "library_preview/base.html" %}{% block title %}{{ series.title }} — السلسلة{% endblock %}{% block content %}
+<h1>{{ series.title }}</h1><p>إصدار السلسلة المنشور {{ series.number }}</p>{% if series.topic %}<p>الموضوع: {{ series.topic }}</p>{% endif %}<p class="body">{{ series.summary }}</p>
+{% if series.teacher_labels %}<p>المعلمون: {% for teacher in series.teacher_labels %}{{ teacher }}{% if not forloop.last %}، {% endif %}{% endfor %}</p>{% else %}<p>لم تُنشر بيانات المعلم في هذا الإصدار.</p>{% endif %}
+<p>الدروس المختارة المتاحة مرتبة بحسب النسخة الموثقة. لا يُفترض وجود دروس ناقصة أو اكتمال السلسلة، وتبقى هوية الدرس مستقلة عن ترتيبه.</p>
+<ol id="series-lessons">{% for row in series.members %}<li data-lesson-id="{{ row.id }}"><a href="{% url 'teaching_series_lesson' series.id row.id %}">{{ row.title }}</a><p>{{ row.summary }}</p></li>{% endfor %}</ol>
+<p><a href="{% url 'teaching_catalog' %}">العودة إلى الدروس والسلاسل</a></p>
+{% endblock %}

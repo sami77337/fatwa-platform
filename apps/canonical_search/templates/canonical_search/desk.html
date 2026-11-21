@@ -2,9 +2,12 @@
 {% block title %}البحث في النصوص المحفوظة{% endblock %}
 {% block content %}
 <h1>البحث في النصوص المحفوظة</h1>
+{% if reference_lookup_enabled %}{% include "library_preview/staff_reference_form.html" %}{% endif %}
 <p>القضية <bdi id="canonical-search-case">{{ desk.case_ref }}</bdi> · نموذج تطوير ببيانات اصطناعية.</p>
 <p>تبحث النتائج في الأسئلة والتعقيبات والجواب الحالي والتفريغ المسموح بقراءته الآن. الترتيب يقيس تطابقًا نصيًا؛ لا يثبت صحة علمية ولا يعتمد جوابًا. النص الأصلي محفوظ كما وصل.</p>
 <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ desk.case_ref }}"><button>العودة إلى القضية</button></form>
+{% if governance_navigation %}<form method="post" action="/casework/staff/" id="search-governance-navigation">{% csrf_token %}<input type="hidden" name="action" value="cs_dictionary_open"><input type="hidden" name="case_ref" value="{{ desk.case_ref }}"><button>قاموس المرادفات ومقارنة البحث</button></form>{% endif %}
+{% if benchmark_navigation %}<form method="post" action="/casework/staff/" id="search-benchmark-navigation">{% csrf_token %}<input type="hidden" name="action" value="cs_benchmark_open"><input type="hidden" name="case_ref" value="{{ desk.case_ref }}"><button>أحكام نتائج البحث وتجارب المقارنة المراجعة</button></form>{% endif %}
 {% if message %}<p role="status">{{ message }}</p>{% endif %}
 <section id="search-index-status"><h2>الفهرس المشتق</h2>
 {% if desk.state == 'CURRENT' %}<p>الفهرس حالي للنصوص المتاحة. الإصدار {{ desk.generation }}، {{ desk.available_documents }} موضعًا.</p>{% elif desk.state == 'STALE' %}<p role="status">الفهرس قديم بعد تغير مصدر أو إتاحة. أعد البناء قبل البحث في هذه القضية.</p>{% else %}<p>لم يُبن فهرس لهذه القضية بعد.</p>{% endif %}

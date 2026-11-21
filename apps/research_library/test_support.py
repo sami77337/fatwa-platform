@@ -34,17 +34,18 @@ FEATURES = {
 
 
 class FixtureAuthority(LibraryAuthority):
-    def __init__(self, *refs):
+    def __init__(self, *refs, provider_id="synthetic-publication-directory"):
         self.refs, self.denied, self.hook = set(refs), set(), None
+        self.provider_id = provider_id
 
     def projection_epoch(self):
-        return repr((sorted(self.refs), sorted(self.denied, key=repr)))
+        return repr((self.provider_id, sorted(self.refs), sorted(self.denied, key=repr)))
 
     def permits(self, **values):
         if self.hook:
             self.hook(values)
         return (
-            values["provider_id"] == "synthetic-publication-directory"
+            values["provider_id"] == self.provider_id
             and values["subject_id"] in {"editor", "other", "publisher"}
             and values["auth_epoch"] == "epoch-1"
             and values["case_ref"] in self.refs

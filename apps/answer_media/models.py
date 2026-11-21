@@ -48,7 +48,8 @@ class AnswerPart(models.Model):
             models.UniqueConstraint(fields=["manifest", "ordinal"], name="am_ordinal_unique"),
             models.CheckConstraint(condition=Q(ordinal__gte=1, ordinal__lte=8), name="am_ordinal"),
             models.CheckConstraint(
-                condition=Q(kind__in=("TEXT", "FILE", "AUDIO", "IMAGE")), name="am_kind"
+                condition=Q(kind__in=("TEXT", "FILE", "AUDIO", "IMAGE", "YOUTUBE_LINK")),
+                name="am_kind",
             ),
             models.CheckConstraint(condition=Q(size__gte=1, size__lte=192000), name="am_size"),
             models.CheckConstraint(

@@ -16,5 +16,10 @@ class SearchAuthority(ABC):
 
     @abstractmethod
     def permits(self, *, provider_id, subject_id, auth_epoch, case_ref, action):
-        """Literal True for VIEW, REBUILD, SEARCH, or OPEN on this exact case."""
+        """Literal True for this exact action on this case.
+
+        Base actions: VIEW, REBUILD, SEARCH, OPEN. Optional governed actions:
+        DICTIONARY_READ, DICTIONARY_EDIT, DICTIONARY_REVIEW, DICTIONARY_USE,
+        SHADOW, SHADOW_READ. No base permission implies a governed permission.
+        """
         raise NotImplementedError

@@ -1,0 +1,6 @@
+{% extends "library_preview/base.html" %}{% block title %}الدروس والسلاسل ومواد العلماء{% endblock %}{% block content %}
+<h1>الدروس والسلاسل ومواد العلماء</h1><p>تعرض هذه الصفحة الموارد ذات النسبة والمراجعة والإتاحة الحالية. لا يفترض ترتيبها تفاضلًا علميًا أو اكتمال سلسلة.</p>
+<section id="teaching-series"><h2>السلاسل المتاحة</h2>{% for row in series %}<article><h3><a href="{{ row.url }}">{{ row.title }}</a></h3><p>{{ row.topic }}</p><p>{{ row.summary }}</p></article>{% empty %}<p>لا توجد سلسلة متاحة الآن.</p>{% endfor %}</section>
+<section id="teaching-lessons"><h2>الدروس المتاحة</h2>{% for row in lessons %}<article><h3><a href="{{ row.url }}">{{ row.title }}</a></h3><p>{{ row.summary }}</p></article>{% empty %}<p>لا يوجد درس متاح الآن.</p>{% endfor %}</section>
+<section id="teaching-scholars"><h2>العلماء ذوو المواد العامة المراجعة</h2>{% for row in scholars %}<article><a href="{% url 'teaching_scholar' row.id %}">{{ row.name }}</a></article>{% empty %}<p>لا توجد نسبة مادة عامة متاحة الآن.</p>{% endfor %}</section>
+{% endblock %}

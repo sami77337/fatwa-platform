@@ -86,12 +86,30 @@ class PublicAnswerMediaBrowserTests(MediaFixture, LiveServerTestCase):
             page.wait_for_load_state("networkidle")
             self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
             self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), width)
+            if label in {
+                "public-reviewed-recording",
+                "public-documented-segment",
+                "staff-original-segment",
+            }:
+                player = page.locator("audio[controls]").first
+                self.assertTrue(player.is_visible(), "native playback controls must be visible")
+                box = player.bounding_box()
+                self.assertIsNotNone(box)
+                self.assertGreaterEqual(box["height"], 40)
+                self.assertGreaterEqual(box["width"], 128)
+                self.assertGreaterEqual(box["x"], 0)
+                self.assertLessEqual(box["x"] + box["width"], width)
+                proof.setdefault("visible_native_controls", []).append(
+                    {"screen": label, "viewport_width": width, "box": box}
+                )
             name = f"{label}-{width}.png"
             page.screenshot(path=str(OUT / name), full_page=True)
             proof["screenshots"].append(name)
 
     def media_state(self, page, *, start=0):
         player = page.locator("audio[controls]").first
+        self.assertTrue(player.is_visible(), "DOM presence cannot prove usable native controls")
+        self.assertGreaterEqual(player.bounding_box()["height"], 40)
         self.assertIsNone(player.get_attribute("autoplay"))
         state = None
         for _ in range(120):

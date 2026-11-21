@@ -31,6 +31,19 @@ from tests.casework.test_core import TestDirectory
 
 
 class CaseDeliveryTests(CaseDeliveryFixture, TransactionTestCase):
+    def test_composed_fixture_intakes_stay_separate_and_preserve_each_seed_replay(self):
+        self.approve()
+        before = s.read_case(**self.staff())
+        repeated = self.intake("a")
+        self.assertEqual(repeated["case_id"], self.a["case_id"])
+
+        independent = CaseDeliveryFixture()
+        independent.setUp()
+        self.assertNotEqual(independent.a["case_id"], self.a["case_id"])
+        self.assertEqual(independent.intake("a")["case_id"], independent.a["case_id"])
+        self.assertEqual(s.read_case(**self.staff()), before)
+        self.assertEqual(s.read_case(**independent.staff())["revision"], 1)
+
     def test_journey_binds_human_answer_all_signed_parts_and_private_case(self):
         b = self.intake("b")
         approved = self.approve()
