@@ -6,6 +6,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -854,6 +855,18 @@ def test_class_exists(name):
 
 def actual_upload_engine_proof(head):
     """Synthetic control-flow success cannot substitute for actual AV evidence."""
+    # This verifier is invoked as `python infra/dev/functional_verify.py`.
+    # Python puts infra/dev, not the checked-out project root, in sys.path.
+    # Resolve the application package from this immutable source checkout,
+    # never from PYTHONPATH or the caller's working directory.
+    project_root = Path(__file__).resolve().parents[2]
+    require(
+        project_root == Path.cwd().resolve()
+        and (project_root / "apps/upload_security/acceptance.py").is_file(),
+        "Upload scanner acceptance source is outside the checked-out project",
+    )
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
     from apps.upload_security.acceptance import BENIGN, EICAR
 
     path = Path(".local/qa/upload-security-engine/result.json")
