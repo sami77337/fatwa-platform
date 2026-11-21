@@ -130,6 +130,9 @@ class MetaProjectionTests(SimpleTestCase):
 @override_settings(
     FATWA_WEBHOOK_INGRESS_ENABLED=True,
     FATWA_SOURCE_CASE_INTAKE_ENABLED=True,
+    # The campaign profile deliberately keeps the whole casework web off by
+    # default. Opt in explicitly for signed loopback integration fixtures only.
+    FATWA_CASEWORK_WEB_ENABLED=True,
     ALLOWED_HOSTS=["127.0.0.1", "[::1]"],
 )
 class SignedWebhookTests(TransactionTestCase):
