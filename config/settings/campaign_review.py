@@ -15,6 +15,7 @@ INSTALLED_APPS = [
     "apps.case_citations",
     "apps.experimental_publication",
     "apps.source_case_intake",
+    "apps.webhook_ingress",
     "apps.knowledge_links",
     "apps.composite_delivery",
     "apps.library_preview",
@@ -161,6 +162,10 @@ FATWA_ANSWER_MEDIA_ENABLED = False
 FATWA_ANSWER_MEDIA_PRIVATE_ENABLED = False
 FATWA_MEDIA_STORAGE_MIGRATION_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_ENABLED = False
+# The callback is loopback-only and synthetic-account only in this pre-Gate-B profile.
+# Real account credentials and an approved storage/processing policy are unavailable.
+FATWA_WEBHOOK_INGRESS_ENABLED = False
+FATWA_WEBHOOK_INGRESS_PROFILES = None
 FATWA_SOURCE_CASE_INTAKE_DESK_ENABLED = False
 FATWA_SOURCE_CASE_INTAKE_SIMULATOR_ENABLED = False
 FATWA_SOURCE_RIGHTS_ENABLED = False

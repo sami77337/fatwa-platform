@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 
 MAX_RAW = 262144
-SOURCES = frozenset({"telegram", "youtube", "website"})
+SOURCES = frozenset({"telegram", "youtube", "website", "facebook", "messenger", "instagram", "whatsapp"})
 
 
 class IntakeError(ValueError):
@@ -57,7 +57,7 @@ class SourceContext:
         # Explicit fixture-only namespace, not an assertion of provider authenticity.
         if not identifier(self.account).startswith("synthetic-"):
             raise IntakeError("synthetic_account_required")
-        if self.source == "youtube":
+        if self.source in {"youtube", "facebook", "messenger", "instagram", "whatsapp"}:
             identifier(self.conversation)
 
 
@@ -185,8 +185,12 @@ def project(raw: bytes, context: SourceContext) -> Projection:
             _telegram(data, p)
         elif context.source == "youtube":
             _youtube(data, p, context)
-        else:
+        elif context.source == "website":
             _website(data, p)
+        else:
+            from .meta_projection import project_meta
+
+            project_meta(data, p, context)
     except (ValueError, TypeError, KeyError, AttributeError, UnicodeError, RecursionError):
         # Original bytes still persist, even for invalid JSON/unsupported events.
         p.problem = "invalid_or_incomplete_source"
