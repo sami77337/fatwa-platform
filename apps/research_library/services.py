@@ -226,6 +226,8 @@ def _raw(blob):
 
 class Boundary:
     def __init__(self, case, actor, provider):
+        from apps.private_media.links import retain_projection
+
         self.case, self.actor, self.provider = case, actor, provider
         self.namespace = provider.provider_id
         self.identity_state = identity_snapshot(provider)
@@ -238,6 +240,7 @@ class Boundary:
             [actor.valid_until],
         )
         self.heads = {}
+        retain_projection(self.final_pins)
 
     def watch(self, row):
         self.versions.setdefault(str(row.pk), _version_state(row.pk))

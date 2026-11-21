@@ -133,6 +133,15 @@ NEW_WORKFLOWS = {
         "arabic_search_eval_canonicalbenchmarkrun",
         "arabic_search_eval_canonicalbenchmarkdecision",
     ),
+    "apps.operational_workspace.metadata_recovery_support": (),
+    "apps.operational_workspace.lesson_recovery_support": (),
+    "apps.operational_workspace.coordination_recovery_support": ("case_assignments_priorityevent",),
+    "apps.ai_gateway.recovery_support": (
+        "ai_gateway_gatewayrun",
+        "ai_gateway_gatewayoutcome",
+        "ai_gateway_candidatebatch",
+    ),
+    "apps.private_media.recovery_support": (),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -274,6 +283,68 @@ RESTORED_DENIAL_CHECKS = {
         "revoked_read_action": 2,
         "revoked_current_reader": 2,
     },
+    "apps.operational_workspace.metadata_recovery_support": {
+        "disabled_metadata_feature": 1,
+        "disabled_organization": 1,
+        "disabled_workspace": 1,
+        "missing_directory": 1,
+        "missing_operational_authority": 1,
+        "missing_taxonomy_authority": 1,
+        "revoked_current_identity": 1,
+        "revoked_read_case": 1,
+        "revoked_read_metadata": 1,
+        "revoked_exact_classification_read": 1,
+    },
+    "apps.operational_workspace.lesson_recovery_support": {
+        "disabled_lesson_feature": 1,
+        "disabled_scholarly_links": 1,
+        "missing_directory": 1,
+        "missing_operational_authority": 1,
+        "missing_lesson_authority": 1,
+        "revoked_current_identity": 1,
+        "revoked_read_case": 1,
+        "revoked_read_lesson_links": 1,
+        "revoked_target_case_read": 1,
+        "revoked_read_operational_lesson": 1,
+        "revoked_read_lesson_link": 1,
+        "revoked_domain_lesson_read": 1,
+    },
+    "apps.operational_workspace.coordination_recovery_support": {
+        "disabled_coordination": 1,
+        "disabled_assignments": 1,
+        "missing_identity_provider": 1,
+        "missing_operational_authority": 1,
+        "missing_candidate_policy": 1,
+        "missing_priority_policy": 1,
+        "revoked_current_actor": 1,
+        "revoked_coordination_read": 1,
+        "expired_current_grant": 1,
+    },
+    "apps.ai_gateway.recovery_support": {
+        "gateway_disabled": 1,
+        "task_disabled": 1,
+        "missing_gateway_authority": 1,
+        "missing_identity_directory": 1,
+        "missing_provider": 1,
+        "killed_provider": 1,
+        "revoked_source_processing": 1,
+        "revoked_fragment_processing": 1,
+        "revoked_source_read": 1,
+        "revoked_source_cite": 1,
+        "revoked_case_scope": 1,
+        "cross_actor": 1,
+    },
+    "apps.private_media.recovery_support": {
+        "unsigned_private_url": 2,
+        "same_actor_different_browser": 2,
+        "missing_signing_key": 2,
+        "rotated_link_epoch": 2,
+        "missing_current_identity": 2,
+        "revoked_current_identity": 2,
+        "revoked_current_read": 2,
+        "revoked_current_download": 2,
+        "cross_purpose_ticket": 2,
+    },
 }
 
 # Keep the exact executed identities, including the assignment class's inherited
@@ -332,50 +403,42 @@ PRIOR_BROWSER_JOURNEYS = (
 )
 NEW_BROWSER_JOURNEYS = (
     (
-        "apps.canonical_search.browser_matches.SearchMatchBrowserTests."
-        "test_native_exact_question_answer_matches_previous_next_and_current_denials",
+        "apps.canonical_search.browser_matches.SearchMatchBrowserTests.test_native_exact_question_answer_matches_previous_next_and_current_denials",
         ".local/qa/functional-continuation/search-match-browser/result.json",
         "modern",
     ),
     (
-        "apps.operational_workspace.browser_notes.OperationalNotesBrowserTests."
-        "test_native_organizer_notes_preserve_source_and_remain_hidden_from_requester",
+        "apps.operational_workspace.browser_notes.OperationalNotesBrowserTests.test_native_organizer_notes_preserve_source_and_remain_hidden_from_requester",
         ".local/qa/functional-continuation/operational-notes-browser/result.json",
         "modern",
     ),
     (
-        "apps.publication_destinations.browser_tests.PublicationDestinationsBrowserTests."
-        "test_native_distinct_destination_versions_signed_outcomes_correction_and_withdrawal_isolation",
+        "apps.publication_destinations.browser_tests.PublicationDestinationsBrowserTests.test_native_distinct_destination_versions_signed_outcomes_correction_and_withdrawal_isolation",
         ".local/qa/functional-continuation/publication-destinations-browser/result.json",
         "modern",
     ),
     (
-        "apps.research_library.browser_tests.LibraryBrowserTests."
-        "test_native_external_video_rights_versions_and_public_revocation",
+        "apps.research_library.browser_tests.LibraryBrowserTests.test_native_external_video_rights_versions_and_public_revocation",
         ".local/qa/functional-continuation/library-browser/result.json",
         "modern",
     ),
     (
-        "apps.research_library.offline_browser_tests.OfflineLibraryBrowserTests."
-        "test_native_pwa_selection_offline_bytes_revocation_and_shortened_expiry",
+        "apps.research_library.offline_browser_tests.OfflineLibraryBrowserTests.test_native_pwa_selection_offline_bytes_revocation_and_shortened_expiry",
         ".local/qa/functional-continuation/offline-browser/result.json",
         "modern",
     ),
     (
-        "apps.material_import.browser_tests.MaterialImportBrowserTests."
-        "test_native_independent_import_to_actual_library_version",
+        "apps.material_import.browser_tests.MaterialImportBrowserTests.test_native_independent_import_to_actual_library_version",
         ".local/qa/library-operations/import-browser/result.json",
         "modern",
     ),
     (
-        "apps.public_collections.browser_tests.PublicCollectionsBrowserTests."
-        "test_cross_case_native_curation_order_review_release_and_revocation",
+        "apps.public_collections.browser_tests.PublicCollectionsBrowserTests.test_cross_case_native_curation_order_review_release_and_revocation",
         ".local/qa/functional-continuation/collections-browser/result.json",
         "modern",
     ),
     (
-        "apps.case_lifecycle.browser_tests.LifecycleBrowserTests."
-        "test_native_close_archive_restore_reopen_and_requester_followup",
+        "apps.case_lifecycle.browser_tests.LifecycleBrowserTests.test_native_close_archive_restore_reopen_and_requester_followup",
         ".local/qa/functional-completion/lifecycle-browser/result.json",
         "modern",
     ),
@@ -484,6 +547,41 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-continuation/search-benchmark-browser/result.json",
         "modern",
     ),
+    (
+        "apps.operational_workspace.browser_metadata.OperationalMetadataBrowserTests.test_native_organizer_tags_types_and_reviewed_classification_preserve_originals",
+        ".local/qa/functional-continuation/operational-metadata-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.operational_workspace.browser_lessons.OperationalLessonsBrowserTests.test_native_organizer_lesson_proposal_admin_review_and_withdrawal_preserve_sources",
+        ".local/qa/functional-continuation/operational-lessons-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.operational_workspace.browser_coordination.OperationalCoordinationBrowserTests.test_native_organizer_priority_assignment_shared_queue_and_current_revocation",
+        ".local/qa/functional-continuation/operational-coordination-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.ai_gateway.browser_tests.CitationGatewayBrowserTests.test_native_candidates_original_human_handoff_failure_revocation_and_manual_citation",
+        ".local/qa/functional-continuation/ai-citation-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.private_media.browser_tests.PrivateOriginalLinksBrowserTests.test_native_requester_and_staff_media_urls_downloads_and_browser_isolation",
+        ".local/qa/functional-continuation/private-media-links-browser/originals/result.json",
+        "modern",
+    ),
+    (
+        "apps.private_media.browser_tests.PrivateLibraryLinksBrowserTests.test_native_library_playback_download_and_current_download_revocation",
+        ".local/qa/functional-continuation/private-media-links-browser/library/result.json",
+        "modern",
+    ),
+    (
+        "apps.private_media.browser_tests.PrivateRecordingLinksBrowserTests.test_native_recording_and_reviewed_segment_playback_then_current_rights_denial",
+        ".local/qa/functional-continuation/private-media-links-browser/recordings/result.json",
+        "modern",
+    ),
 )
 
 
@@ -517,14 +615,24 @@ def test_class_exists(name):
     )
 
 
+def group_browser_journeys(group):
+    primary = group["browser"]
+    additional = primary.get("additional_journeys", [])
+    require(
+        isinstance(additional, list) and all(isinstance(row, dict) for row in additional),
+        "Additional required browser journeys must be explicit records",
+    )
+    return [primary, *additional]
+
+
 def require_browser_journeys(log):
     require(
         "\nOK\n" in log and not re.search(r"\.\.\. skipped|OK \(skipped=", log),
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["37"],
-        "Exactly 37 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["44"],
+        "Exactly 44 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -532,7 +640,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 37 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 44 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -651,13 +759,14 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         require(not group["pending_service_test_labels"], "Required test implementation is pending")
         for name in group["service_test_classes"]:
             test_class_exists(name)
-        test_class_exists(group["browser"]["test_class"])
-        require(
-            group["browser"]["test_class"].rsplit(".", 1)[0] in browser_labels,
-            "Required browser journey is not registered",
-        )
+        for browser in group_browser_journeys(group):
+            test_class_exists(browser["test_class"])
+            require(
+                browser["test_class"].rsplit(".", 1)[0] in browser_labels,
+                "Required browser journey is not registered",
+            )
     require(
-        {group["browser"]["result_path"] for group in groups}
+        {browser["result_path"] for group in groups for browser in group_browser_journeys(group)}
         == {row[1] for row in NEW_BROWSER_JOURNEYS},
         "The continuation browser proof family changed",
     )
@@ -729,10 +838,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 58
-        and len(expected_tables) == 80
+        and len(new_tables) == 62
+        and len(expected_tables) == 84
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 80 prior and new recovery tables are required",
+        "Exactly the 84 prior and new recovery tables are required",
     )
     require(
         all(
@@ -746,7 +855,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All twenty-seven fresh-process workflow result records are required",
+        "All thirty-two fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

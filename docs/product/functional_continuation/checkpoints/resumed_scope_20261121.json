@@ -1,0 +1,78 @@
+{
+  "schema": "fatwa.resumed-functional-checkpoint.v1",
+  "date": "2026-11-21",
+  "code_source_sha": "231adcd",
+  "pr": "https://github.com/sami77337/fatwa-platform/pull/244",
+  "certification": "PENDING_EXACT_HEAD_SERVICE_BROWSER_ENCRYPTED_RESTORE_RECEIPT",
+  "candidate_count": 91,
+  "functional_groups": 34,
+  "required_browser_identities": 44,
+  "discovered_service_tests": 1093,
+  "required_nonempty_tables": 84,
+  "required_fresh_helpers": 32,
+  "required_current_access_denials": 193,
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "focused_observations": [
+    {
+      "kind": "organizer-integrated",
+      "postgres_major": 17,
+      "source_local_commit": "267c47c",
+      "reported_tests": 144,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "organizer-integrated-pg17.log",
+      "sha256": "248b8230b3d2ed966ed349f8d9133da6b7bea38c1ad2fcfa3a2f94ef5b40ca33",
+      "size": 30216
+    },
+    {
+      "kind": "organizer-integrated",
+      "postgres_major": 18,
+      "source_local_commit": "267c47c",
+      "reported_tests": 144,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "organizer-integrated-pg18.log",
+      "sha256": "1c2a30d789efd4cb5666511098682a5c6ae3e62ef29611b514a948873dffafcf",
+      "size": 30215
+    },
+    {
+      "kind": "coordination-order-fix",
+      "postgres_major": 17,
+      "source_local_commit": "d489ae4",
+      "reported_tests": 10,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "coordination-order-fix-pg17.log",
+      "sha256": "bc51a1b9bd4f4b6356f17b57c6f3bbcb1c19fa283afc96a11070cde401257aa2",
+      "size": 2510
+    },
+    {
+      "kind": "coordination-order-fix",
+      "postgres_major": 18,
+      "source_local_commit": "d489ae4",
+      "reported_tests": 10,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "coordination-order-fix-pg18.log",
+      "sha256": "6b0ca402b7b8835480ba55dc15816a25fd428227ac471f8b20e63fc61c087050",
+      "size": 2509
+    },
+    {
+      "kind": "delivery-race-proof",
+      "postgres_major": 17,
+      "source_local_commit": "9f1e5f1",
+      "reported_tests": 1,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "delivery-race-proof-pg17.log",
+      "sha256": "42b6d95531fd56a5f5b04e1a36daecc0324e49ba25b25e9754a822c3063c195a",
+      "size": 435
+    },
+    {
+      "kind": "delivery-race-proof",
+      "postgres_major": 18,
+      "source_local_commit": "9f1e5f1",
+      "reported_tests": 1,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "delivery-race-proof-pg18.log",
+      "sha256": "0862eb6cc6e77785266c760c9f6e9b89652bd75b4b485851cfcdb68f1ffa6877",
+      "size": 434
+    }
+  ]
+}

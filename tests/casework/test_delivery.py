@@ -6,6 +6,7 @@ from contextvars import copy_context
 from dataclasses import replace
 from datetime import timedelta
 from threading import Event
+from time import monotonic
 from unittest.mock import patch
 
 from django.core.management import call_command
@@ -441,19 +442,19 @@ class CaseDeliveryTests(CaseDeliveryFixture, TransactionTestCase):
         approved = self.approve()
         receipt = self.receipt(self.request())
         followup_locked, staging_started, release = Event(), Event(), Event()
-        original_event, original_resolve = s._event, self.directory.resolve
+        original_event = s._event
+        backend = {}
 
         def held_event(case, action, *args, **kwargs):
             result = original_event(case, action, *args, **kwargs)
             if action == "FOLLOWUP":
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT pg_backend_pid()")
+                    backend["followup"] = cursor.fetchone()[0]
                 followup_locked.set()
-                if not release.wait(10):
+                if not release.wait(20):
                     raise RuntimeError("synthetic-race-timeout")
             return result
-
-        def resolve(subject):
-            staging_started.set()
-            return original_resolve(subject)
 
         def followup():
             connections.close_all()
@@ -470,17 +471,16 @@ class CaseDeliveryTests(CaseDeliveryFixture, TransactionTestCase):
         def stage():
             connections.close_all()
             try:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT pg_backend_pid()")
+                    backend["staging"] = cursor.fetchone()[0]
+                staging_started.set()
                 return self.stage(receipt=receipt)
             finally:
                 connections.close_all()
 
         with (
             patch.object(s, "_event", side_effect=held_event),
-            patch.object(
-                self.directory,
-                "resolve",
-                side_effect=resolve,
-            ),
             ThreadPoolExecutor(max_workers=2) as pool,
         ):
             first = pool.submit(followup)
@@ -488,6 +488,23 @@ class CaseDeliveryTests(CaseDeliveryFixture, TransactionTestCase):
                 self.assertTrue(followup_locked.wait(10))
                 second = pool.submit(stage)
                 self.assertTrue(staging_started.wait(10))
+                # Dependency locking can correctly block before the first
+                # identity callback. Observe the actual PostgreSQL blocker,
+                # rather than requiring an obsolete callback ordering.
+                deadline = monotonic() + 5
+                blockers = []
+                while monotonic() < deadline:
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT pg_blocking_pids(%s)", [backend["staging"]])
+                        blockers = cursor.fetchone()[0]
+                    if backend["followup"] in blockers:
+                        break
+                    if second.done():
+                        second.result()
+                        self.fail("staging completed while followup held its canonical lock")
+                    release.wait(0.02)
+                self.assertIn(backend["followup"], blockers)
+                self.assertFalse(second.done())
             finally:
                 release.set()
             self.assertEqual(first.result(timeout=10)["status"], "UNDER_REVIEW")

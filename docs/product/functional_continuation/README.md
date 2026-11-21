@@ -8,7 +8,7 @@ The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed 2
 
 The later `ac8f5170b82767d759bd656fe9c2ea33cf48fc9f` checkpoint passed614 affected tests,20 protected browser journeys and47-table encrypted restore on each PostgreSQL major. All18 workflows ultimately passed; one B6 browser-startup attempt first stopped before any journey and its unchanged isolated retry passed. Subsequent screenshot review found invisible native audio controls despite keyboard playback. `checkpoints/ac8f517.json` records both the successful execution and that finding. The current source fixes control height and strengthens actual visible-control assertions; it still requires fresh hosted execution.
 
-The current plan contains **70 implemented candidates in 29 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
+The current plan contains **91 implemented candidates in 34 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
 
 ## Selected groups
 
@@ -44,7 +44,14 @@ The current plan contains **70 implemented candidates in 29 functional groups**,
 | الملاحظات الداخلية للمنظم واستبعادها من بوابة السائل | 100 | `apps/operational_workspace/NOTES.md` | `.local/qa/functional-continuation/operational-notes-browser/result.json` |
 | الانتقال إلى التطابق داخل السؤال والجواب | 233 | `apps/canonical_search/MATCH_NAVIGATION.md` | `.local/qa/functional-continuation/search-match-browser/result.json` |
 
-The source extract preserves69 exact specification objects and32 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
+| إدارة المنظم للتصنيف والوسوم ونوع السؤال | 94 | `apps/operational_workspace/METADATA.md` | `.local/qa/functional-continuation/operational-metadata-browser/result.json` |
+| ربط المنظم بالدروس مع مراجعة مستقلة | 95 | `apps/operational_workspace/LESSON_LINKS.md` | `.local/qa/functional-continuation/operational-lessons-browser/result.json` |
+| إدارة الأولوية والتعيين بهوية المنظم الفعلية | 96 | `apps/operational_workspace/COORDINATION.md` | `.local/qa/functional-continuation/operational-coordination-browser/result.json` |
+| بوابة مركزية لمواضع اقتباس مشتقة وتعطل آمن | 198–214 | `apps/ai_gateway/README.md` | `.local/qa/functional-continuation/ai-citation-browser/result.json` |
+
+| الروابط المؤقتة للوسائط الخاصة وعزل الجلسات والأغراض | 383 | `apps/private_media/SIGNED_LINKS_PLAN.md` | `private-media-links-browser/{originals,library,recordings}/result.json`؛ الثلاثة مطلوبة |
+
+The source extract preserves75 exact specification objects and36 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
 
 ## What the continuation adds
 
@@ -56,13 +63,17 @@ The next11 candidates add independently signed bounded retries of exact failed p
 
 The recovered untracked destination app and incomplete organizer-note groundwork add three candidates. Destination correction and withdrawal preserve the other destination and original source. Notes use actual organizer identities and independent read/add grants and stay absent from requester status. The fourth newly implemented candidate adds signed native question/answer match navigation after confirming that worktree held no saved implementation. All four still require integrated browser and encrypted-restore evidence.
 
+The next twenty candidates add actual organizer metadata, lesson links, assignment/priority and seventeen restricted AI-gateway contract, provenance, prohibited-action and failure boundaries. Organizer writes preserve canonical histories and exact current role/resource authority. The only model task accepts existing source positions into separate derivatives; it never saves an answer or citation. Model quality, a real provider, other Luna tasks and the full scholarly-assistance requirement remain uncounted.
+
+The next candidate adds temporary signed private-media locators with three independently required native journeys. The state-free helper verifies restored originals with fresh sessions, current rights and eighteen denials. A retained URL never becomes a bearer access grant.
+
 Stable classification IDs and development fixtures do not establish the owner's final scholarly taxonomy. Synthetic identities do not establish civil identity. Shadow comparisons do not establish production quality or real gold judgments. Native schedule execution does not establish a production cron. Signed synthetic provider results do not establish external delivery. These limits remain visible in each app contract.
 
 ## Required integrated evidence
 
-The explicit registries require **37 exact protected browser identities**: eight inherited and29 continuation journeys. Thirty-six emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
+The explicit registries require **44 exact protected browser identities**: eight inherited and36 continuation journeys. Forty-three emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
 
-The encrypted drill must restore **80 nonempty tables**:22 inherited and58 additionally covered tables, with **27 explicit fresh-process helper results and132 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The latest three covered tables preserve independent destination records, versions and events; internal notes reuse the existing organization history. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
+The encrypted drill must restore **84 nonempty tables**:22 inherited and62 additionally covered tables, with **32 explicit fresh-process helper results and193 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The newest four tables preserve priority history and three sealed AI audit/derivative tables. Organizer metadata and lesson links reuse existing immutable journals; destination histories retain their three independently covered tables. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
 
 Native workflows execute through `config.campaign_urls`. Actual media bytes, play/seek, readable print/export output, offline network failure, current revocation and independently reviewed state transitions are required where applicable. Local tests do not certify a protected browser pass. Browser protection may not be disabled to satisfy evidence.
 

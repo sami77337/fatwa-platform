@@ -189,9 +189,12 @@ def _permit(authority, values):
 
 class Boundary:
     def __init__(self, case, provider):
+        from apps.private_media.links import retain_projection
+
         self.case, self.provider = case, provider
         self.pin = snapshot(case.pk, provider)
         self.actors, self.permissions, self.media_permissions = {}, [], []
+        retain_projection(lambda: assert_projection_state(self.pin))
 
     def actor(self, subject, epoch=None, provider_id=None):
         # RequestDirectory is deliberately bound to the signed-in subject.

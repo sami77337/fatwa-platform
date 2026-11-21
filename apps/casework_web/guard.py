@@ -27,6 +27,8 @@ ROUTES = {
     BASE + "operations/": ("GET", "HEAD", "POST"),
     BASE + "operations/login/": ("GET", "HEAD", "POST"),
     BASE + "operations/logout/": ("POST",),
+    BASE + "ai-citations/": ("POST",),
+    BASE + "ai-citations/panel.mjs": ("GET", "HEAD"),
     BASE + "staff/recording-player.js": ("GET", "HEAD"),
     BASE + "staff/answer-media/related.mjs": ("GET", "HEAD"),
     BASE + "staff/pwa/manifest.webmanifest": ("GET", "HEAD"),
@@ -233,7 +235,10 @@ class CaseworkGuard:
             response["Allow"] = ", ".join(methods)
             return response
         if request.META.get("QUERY_STRING"):
-            return denied("casework_query_not_supported", 400)
+            from apps.private_media.links import admits_query
+
+            if not admits_query(request):
+                return denied("casework_query_not_supported", 400)
         try:
             length = int(request.META.get("CONTENT_LENGTH") or "0")
         except (TypeError, ValueError):

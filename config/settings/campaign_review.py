@@ -52,10 +52,20 @@ INSTALLED_APPS = [
     "apps.development_taxonomy",
     "apps.public_teaching",
     "apps.operational_workspace",
+    "apps.ai_gateway",
 ]
 FATWA_OPERATIONAL_WORKSPACE_ENABLED = False
 FATWA_OPERATIONAL_WORKSPACE_AUTHORITY = None
 FATWA_OPERATIONAL_INTERNAL_NOTES_ENABLED = False
+FATWA_OPERATIONAL_METADATA_ENABLED = False
+FATWA_OPERATIONAL_LESSON_LINKS_ENABLED = False
+FATWA_OPERATIONAL_COORDINATION_ENABLED = False
+FATWA_OPERATIONAL_PRIORITY_POLICY = None
+FATWA_AI_GATEWAY_ENABLED = False
+FATWA_AI_CITATION_CANDIDATES_ENABLED = False
+FATWA_AI_GATEWAY_AUTHORITY = None
+FATWA_AI_CITATION_PROVIDER = None
+FATWA_AI_DISABLED_PROVIDERS = frozenset()
 FATWA_PUBLIC_READER_TOOLS_ENABLED = False
 FATWA_PUBLIC_READER_TOOLS_AUTHORITY = None
 FATWA_REFERENCE_LOOKUP_ENABLED = False
@@ -181,6 +191,7 @@ TEMPLATES[0]["DIRS"] = [
 MIDDLEWARE = [
     "apps.platform_recovery.middleware.MaintenanceGuard",
     "apps.material_api.middleware.MaterialAPIResponses",
+    "apps.private_media.links.PrivateMediaResponses",
     *[
         "apps.library_preview.guard.PreviewCompositionGuard"
         if item == "apps.casework_web.guard.CaseworkGuard"
@@ -190,6 +201,12 @@ MIDDLEWARE = [
 ]
 FATWA_ANSWER_LINKS_ENABLED = False
 FATWA_ANSWER_RELATED_ENABLED = False
+
+# Temporary private locators need explicit independent signing configuration.
+FATWA_PRIVATE_MEDIA_LINKS_ENABLED = False
+FATWA_PRIVATE_MEDIA_LINKS_KEY = None
+FATWA_PRIVATE_MEDIA_LINKS_EPOCH = None
+FATWA_PRIVATE_MEDIA_LINKS_TTL_SECONDS = None
 
 FATWA_IDENTITY_REGISTRY_ENABLED = False
 FATWA_IDENTITY_REGISTRY_AUTHORITY = None

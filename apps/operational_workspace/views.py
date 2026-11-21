@@ -14,7 +14,7 @@ from apps.casework_web.guard import private
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.platform_recovery.integration import MaintenanceUnavailable
 
-from . import access, identity, notes, services
+from . import access, coordination_views, identity, lesson_links, metadata, notes, services
 from .boundary import policy
 
 BASE = access.BASE
@@ -55,11 +55,11 @@ def boundary(request, methods):
     return None
 
 
-def form(request, fields):
+def form(request, fields, *, multiple=()):
     if (
         request.FILES
         or set(request.POST) - fields - {"csrfmiddlewaretoken"}
-        or any(len(request.POST.getlist(key)) != 1 for key in request.POST)
+        or any(len(request.POST.getlist(key)) != 1 for key in request.POST if key not in multiple)
     ):
         raise CaseConflict("operational_form_invalid")
 
@@ -69,6 +69,10 @@ def integer(request, name):
     if type(value) is not str or re.fullmatch(r"0|[1-9][0-9]{0,8}", value) is None:
         raise CaseConflict("operational_form_invalid")
     return int(value)
+
+
+def optional_integer(request, name):
+    return None if request.POST.get(name) in (None, "") else integer(request, name)
 
 
 @csrf_protect
@@ -143,10 +147,170 @@ def workspace(request):
                 case_ref=request.POST.get("case_ref"), section=request.POST.get("section"), **common
             ) as result:
                 response = render(request, "operational_workspace/detail.html", {"detail": result})
+        elif action in {
+            "coordination",
+            "coordination_set",
+            "coordination_clear",
+            "coordination_priority",
+        }:
+            response = coordination_views.dispatch(request, action, common)
         elif action == "notes":
             form(request, {"action", "case_ref"})
             with notes.projection(case_ref=request.POST.get("case_ref"), **common) as result:
                 response = render(request, "operational_workspace/notes.html", {"notes": result})
+        elif action == "lesson_links":
+            form(request, {"action", "case_ref"})
+            with lesson_links.projection(case_ref=request.POST.get("case_ref"), **common) as result:
+                response = render(
+                    request, "operational_workspace/lesson_links.html", {"lessons": result}
+                )
+        elif action == "lesson_link_propose":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "lesson_version_id",
+                    "lesson_sha256",
+                    "reason",
+                    "command_id",
+                    "revision",
+                    "evidence_version",
+                    "target_revision",
+                    "target_evidence_version",
+                    "start_ms",
+                    "end_ms",
+                },
+            )
+            with lesson_links.propose(
+                case_ref=request.POST.get("case_ref"),
+                lesson_version_id=request.POST.get("lesson_version_id"),
+                lesson_sha256=request.POST.get("lesson_sha256"),
+                reason=request.POST.get("reason"),
+                command_id=request.POST.get("command_id"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                expected_target_revision=integer(request, "target_revision"),
+                expected_target_evidence_version=integer(request, "target_evidence_version"),
+                start_ms=optional_integer(request, "start_ms"),
+                end_ms=optional_integer(request, "end_ms"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/lesson_links.html", {"lessons": result}
+                )
+        elif action == "lesson_link_decide":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "link_id",
+                    "link_sha256",
+                    "decision",
+                    "note",
+                    "confirmed",
+                    "command_id",
+                    "sequence",
+                    "revision",
+                    "evidence_version",
+                    "target_revision",
+                    "target_evidence_version",
+                },
+            )
+            with lesson_links.decide(
+                case_ref=request.POST.get("case_ref"),
+                link_id=request.POST.get("link_id"),
+                link_sha256=request.POST.get("link_sha256"),
+                action=request.POST.get("decision"),
+                note=request.POST.get("note"),
+                confirmed=request.POST.get("confirmed") == "yes",
+                command_id=request.POST.get("command_id"),
+                expected_sequence=integer(request, "sequence"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                expected_target_revision=integer(request, "target_revision"),
+                expected_target_evidence_version=integer(request, "target_evidence_version"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/lesson_links.html", {"lessons": result}
+                )
+        elif action == "metadata_editor":
+            form(request, {"action", "case_ref"})
+            with metadata.projection(case_ref=request.POST.get("case_ref"), **common) as result:
+                response = render(
+                    request, "operational_workspace/metadata.html", {"metadata": result}
+                )
+        elif action in {"metadata_tags", "metadata_types"}:
+            field = "tags" if action == "metadata_tags" else "question_types"
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    field,
+                    "command_id",
+                    "metadata_version",
+                    "revision",
+                    "evidence_version",
+                },
+                multiple=("question_types",),
+            )
+            values = (
+                request.POST.get("tags", "").splitlines()
+                if field == "tags"
+                else request.POST.getlist("question_types")
+            )
+            with metadata.update(
+                case_ref=request.POST.get("case_ref"),
+                field=field,
+                values=values,
+                command_id=request.POST.get("command_id"),
+                expected_metadata_version=integer(request, "metadata_version"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/metadata.html", {"metadata": result}
+                )
+        elif action == "metadata_classify":
+            form(
+                request,
+                {
+                    "action",
+                    "case_ref",
+                    "version_id",
+                    "version_digest",
+                    "primary",
+                    "additional",
+                    "reason",
+                    "confirmed",
+                    "command_id",
+                    "classification_version",
+                    "revision",
+                    "evidence_version",
+                },
+                multiple=("additional",),
+            )
+            with metadata.bind_classification(
+                case_ref=request.POST.get("case_ref"),
+                version_id=request.POST.get("version_id"),
+                version_digest=request.POST.get("version_digest"),
+                primary=request.POST.get("primary"),
+                additional=request.POST.getlist("additional"),
+                reason=request.POST.get("reason"),
+                confirmed=request.POST.get("confirmed") == "yes",
+                command_id=request.POST.get("command_id"),
+                expected_classification_version=integer(request, "classification_version"),
+                expected_revision=integer(request, "revision"),
+                expected_evidence_version=integer(request, "evidence_version"),
+                **common,
+            ) as result:
+                response = render(
+                    request, "operational_workspace/metadata.html", {"metadata": result}
+                )
         elif action == "add_note":
             form(
                 request,

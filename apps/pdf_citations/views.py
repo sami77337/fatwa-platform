@@ -15,6 +15,7 @@ from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _form, _integer, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
+from apps.private_media.links import protect
 
 from . import services
 from .guard import boundary
@@ -130,7 +131,7 @@ def workspace(request):
         return denied("pdf_unavailable", 503)
 
 
-def document(request, citation_id, *, review=False, page_only=False):
+def _document(request, citation_id, *, review=False, page_only=False):
     refused = boundary(request)
     if refused:
         return refused
@@ -164,13 +165,19 @@ def document(request, citation_id, *, review=False, page_only=False):
         return denied("pdf_unavailable", 503)
 
 
+document = protect(_document)
+
+
+@protect
 def review_document(request, citation_id):
-    return document(request, citation_id, review=True)
+    return _document(request, citation_id, review=True)
 
 
+@protect
 def selected_page(request, citation_id):
-    return document(request, citation_id, page_only=True)
+    return _document(request, citation_id, page_only=True)
 
 
+@protect
 def review_selected_page(request, citation_id):
-    return document(request, citation_id, review=True, page_only=True)
+    return _document(request, citation_id, review=True, page_only=True)

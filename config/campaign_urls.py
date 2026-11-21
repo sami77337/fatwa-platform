@@ -21,6 +21,7 @@ urlpatterns = [
     path("casework/staff/answer-media/related.mjs", answer_related.script, name="answer_related_script"),
     path("", include("apps.public_teaching.urls")),
     path("casework/precise-citations/", include("apps.precise_citations.urls")),
+    path("casework/ai-citations/", include("apps.ai_gateway.urls")),
     path("", include("apps.public_answer_media.urls")),
     path("casework/staff/library/<uuid:version_id>/file/", library_editor.file, name="library_staff_file"),
     path("casework/staff/library/<uuid:version_id>/download/", library_editor.file, {"download": True}, name="library_staff_download"),

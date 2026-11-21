@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 70,
-  "implemented_scope_candidates": 70,
+  "candidate_count": 91,
+  "implemented_scope_candidates": 91,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 12.59,
+  "candidate_percentage": 16.37,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -2727,6 +2727,681 @@
         "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "organizer_metadata",
+      "title_ar": "إدارة المنظم للتصنيف والوسوم ونوع السؤال",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/METADATA.md",
+      "baseline_gap": "The recovered snapshot lacked this explicit current-role workflow; the implementation reuses canonical source/history owners and does not infer authority from restored rows.",
+      "service_test_labels": [
+        "apps.operational_workspace.test_metadata",
+        "apps.operational_workspace.test_metadata_recovery"
+      ],
+      "service_test_classes": [
+        "apps.operational_workspace.test_metadata.OperationalMetadataTests",
+        "apps.operational_workspace.test_metadata_recovery.OperationalMetadataRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_metadata.OperationalMetadataBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-metadata-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.metadata_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Existing tables are reused and counted once; current authorities are supplied afresh after restoration."
+      },
+      "points": [
+        {
+          "original_id": "94",
+          "original_text": "يمكنه إدارة التصنيفات والـTags وQuestion Type حسب صلاحياته.",
+          "direct_spec_ids": [
+            "SPEC-U03-012"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 96
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "An actual ORGANIZER changes only explicitly granted tags, question types and reviewed exact taxonomy bindings. Independent taxonomy permission, source-version CAS, immutable histories and post-render revocation preserve originals and scholarly authority."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "organizer_lesson_links",
+      "title_ar": "ربط المنظم الفتوى بالدروس مع مراجعة مستقلة",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/LESSON_LINKS.md",
+      "baseline_gap": "The recovered snapshot lacked this explicit current-role workflow; the implementation reuses canonical source/history owners and does not infer authority from restored rows.",
+      "service_test_labels": [
+        "apps.operational_workspace.test_lesson_links",
+        "apps.operational_workspace.test_lesson_recovery"
+      ],
+      "service_test_classes": [
+        "apps.operational_workspace.test_lesson_links.OperationalLessonTests",
+        "apps.operational_workspace.test_lesson_recovery.OperationalLessonRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_lessons.OperationalLessonsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-lessons-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.lesson_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "Existing tables are reused and counted once; current authorities are supplied afresh after restoration."
+      },
+      "points": [
+        {
+          "original_id": "95",
+          "original_text": "يمكنه ربط الفتوى بالدروس.",
+          "direct_spec_ids": [
+            "SPEC-U03-012"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 97
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "An actual ORGANIZER proposes an exact current lesson-version link, under explicit operational and scholarly-link grants on both cases. Independent human review/withdrawal retains original lessons, source bytes and canonical answers without granting media access or scholarly answer approval."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "organizer_coordination",
+      "title_ar": "إدارة المنظم للأولوية والتعيين وفق سياسة صريحة",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/operational_workspace/COORDINATION.md",
+      "baseline_gap": "The recovered snapshot lacked this explicit current-role workflow; the implementation reuses canonical source/history owners and does not infer authority from restored rows.",
+      "service_test_labels": [
+        "apps.case_assignments.test_coordination",
+        "apps.operational_workspace.test_coordination",
+        "apps.operational_workspace.test_coordination_recovery"
+      ],
+      "service_test_classes": [
+        "apps.case_assignments.test_coordination.CoordinationPersistenceTests",
+        "apps.operational_workspace.test_coordination.OperationalCoordinationTests",
+        "apps.operational_workspace.test_coordination_recovery.OperationalCoordinationRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.operational_workspace.browser_coordination.OperationalCoordinationBrowserTests",
+        "result_path": ".local/qa/functional-continuation/operational-coordination-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.operational_workspace.coordination_recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 1,
+        "tables": [
+          "case_assignments_priorityevent"
+        ],
+        "notes": "Existing tables are reused and counted once; current authorities are supplied afresh after restoration."
+      },
+      "points": [
+        {
+          "original_id": "96",
+          "original_text": "يمكنه إدارة الأولوية والتعيين.",
+          "direct_spec_ids": [
+            "SPEC-U03-009",
+            "SPEC-U03-010"
+          ],
+          "decision_ids": [
+            "D-054",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 98
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Actual organizer assignment and priority changes use separate current action/resource grants, independently current target-Mufti scope, an explicit finite priority policy, exact case/history versions, reason and immutable hash-linked journals. The shared Mufti queue sees the same assignment; neither action grants roles, case access or answer approval."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "restricted_ai_citation_gateway",
+      "title_ar": "بوابة مركزية محدودة لمواضع الاقتباس المشتقة",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/ai_gateway/README.md",
+      "baseline_gap": "The recovered snapshot lacked this explicit current-role workflow; the implementation reuses canonical source/history owners and does not infer authority from restored rows.",
+      "service_test_labels": [
+        "apps.ai_gateway.tests",
+        "apps.ai_gateway.test_http",
+        "apps.ai_gateway.test_recovery",
+        "apps.ai_gateway.test_campaign"
+      ],
+      "service_test_classes": [
+        "apps.ai_gateway.tests.CitationGatewayTests",
+        "apps.ai_gateway.test_http.CitationGatewayHTTPTests",
+        "apps.ai_gateway.test_recovery.CitationGatewayRecoveryTests",
+        "apps.ai_gateway.test_campaign.CampaignGatewayTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.ai_gateway.browser_tests.CitationGatewayBrowserTests",
+        "result_path": ".local/qa/functional-continuation/ai-citation-browser/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.ai_gateway.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "tables": [
+          "ai_gateway_gatewayrun",
+          "ai_gateway_gatewayoutcome",
+          "ai_gateway_candidatebatch"
+        ],
+        "notes": "Existing tables are reused and counted once; current authorities are supplied afresh after restoration."
+      },
+      "points": [
+        {
+          "original_id": "198",
+          "original_text": "لا تصدر فتوى.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 200
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "199",
+          "original_text": "لا تكتب جوابًا للسائل.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 201
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "200",
+          "original_text": "لا تنشئ Draft جواب شرعي للشيخ.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 202
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "201",
+          "original_text": "لا تقترح حكمًا شرعيًا.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 203
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "202",
+          "original_text": "لا تكمل جواب الشيخ.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 204
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "203",
+          "original_text": "لا تعيد صياغة السؤال وتعرضه بدل الأصل.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 205
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "204",
+          "original_text": "لا تعتمد جواب الشيخ.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 206
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "205",
+          "original_text": "لا ترسل أو تنشر فتوى.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 207
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "206",
+          "original_text": "لا تدمج هويات الأشخاص.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 208
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "207",
+          "original_text": "لا تغير صلاحيات المستخدمين.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 209
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+        },
+        {
+          "original_id": "208",
+          "original_text": "كل استخدام للـAI يمر عبر AI Gateway مركزي.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 210
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+        },
+        {
+          "original_id": "209",
+          "original_text": "لكل Task مسموح اسم وتعريف واضح.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 211
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+        },
+        {
+          "original_id": "210",
+          "original_text": "لا يوجد Task اسمه Answer Fatwa أو Draft Fatwa.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-020",
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 212
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+        },
+        {
+          "original_id": "211",
+          "original_text": "كل تشغيل AI يسجل النموذج، الإصدار، الـPrompt Version، Schema Version، والنتيجة.",
+          "direct_spec_ids": [
+            "SPEC-U14-027"
+          ],
+          "decision_ids": [
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 213
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Every actual gateway run pins explicit provider key, model identity and independent model version, adapter/task/prompt/schema versions, request/source digests and the terminal result. Immutable SQL seals and current-model rechecks reject substitutions; unavailable providers are audited as unavailable without inventing a model execution."
+        },
+        {
+          "original_id": "212",
+          "original_text": "AI يكتب في جداول مشتقة أو Suggestions، لا في الحقائق الشرعية الأساسية.",
+          "direct_spec_ids": [
+            "SPEC-U14-024"
+          ],
+          "decision_ids": [
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 214
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+        },
+        {
+          "original_id": "213",
+          "original_text": "يمكن تعطيل أي قدرة AI بواسطة Kill Switch.",
+          "direct_spec_ids": [
+            "SPEC-U14-027"
+          ],
+          "decision_ids": [
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 215
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+        },
+        {
+          "original_id": "214",
+          "original_text": "النظام الأساسي يستمر إذا تعطلت Luna.",
+          "direct_spec_ids": [
+            "SPEC-U14-027"
+          ],
+          "decision_ids": [
+            "D-046",
+            "D-064",
+            "D-068"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 216
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "private_media_temporary_links",
+      "title_ar": "روابط مؤقتة موقعة للوسائط الخاصة مع تحقق الوصول الحالي",
+      "implementation_state": "IMPLEMENTED_FOCUSED_PG17_PG18_PASSED_INTEGRATED_PROOFS_PENDING",
+      "contract": "apps/private_media/SIGNED_LINKS_PLAN.md",
+      "baseline_gap": "No per-object temporary private URL implementation was found in the recovered source; session-only private readers were preserved behind the default-off migration switch.",
+      "service_test_labels": [
+        "apps.private_media.test_signed_links",
+        "apps.private_media.test_signed_citation_links",
+        "apps.private_media.test_signed_entrypoints",
+        "apps.private_media.test_link_recovery"
+      ],
+      "service_test_classes": [
+        "apps.private_media.test_signed_links.SignedPrivateOriginalTests",
+        "apps.private_media.test_signed_links.SignedLibraryTests",
+        "apps.private_media.test_signed_links.SignedRecordingTests",
+        "apps.private_media.test_signed_citation_links.SignedTimedCitationTests",
+        "apps.private_media.test_signed_citation_links.SignedPdfCitationTests",
+        "apps.private_media.test_signed_citation_links.SignedPreciseCitationTests",
+        "apps.private_media.test_signed_citation_links.SignedQueryAdmissionTests",
+        "apps.private_media.test_signed_entrypoints.RequesterPortalLinksTests",
+        "apps.private_media.test_signed_entrypoints.SourceHistoryLinksTests",
+        "apps.private_media.test_link_recovery.SignedLinkRecoveryTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.private_media.browser_tests.PrivateOriginalLinksBrowserTests",
+        "result_path": ".local/qa/functional-continuation/private-media-links-browser/originals/result.json",
+        "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        },
+        "additional_journeys": [
+          {
+            "test_class": "apps.private_media.browser_tests.PrivateLibraryLinksBrowserTests",
+            "result_path": ".local/qa/functional-continuation/private-media-links-browser/library/result.json",
+            "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+            "required": {
+              "status": "PASS",
+              "sandbox": true,
+              "widths": [
+                320,
+                1280
+              ],
+              "traces_and_screenshots": true,
+              "unexpected_external_requests": 0,
+              "page_errors": 0,
+              "actual_native_actions": true
+            }
+          },
+          {
+            "test_class": "apps.private_media.browser_tests.PrivateRecordingLinksBrowserTests",
+            "result_path": ".local/qa/functional-continuation/private-media-links-browser/recordings/result.json",
+            "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+            "required": {
+              "status": "PASS",
+              "sandbox": true,
+              "widths": [
+                320,
+                1280
+              ],
+              "traces_and_screenshots": true,
+              "unexpected_external_requests": 0,
+              "page_errors": 0,
+              "actual_native_actions": true
+            }
+          }
+        ]
+      },
+      "recovery": {
+        "helper": "apps.private_media.recovery_support",
+        "status": "LOCAL_HELPER_TEST_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 0,
+        "tables": [],
+        "notes": "No new tables or saved tickets/grants; source originals are included in the existing library inventory. Fresh current sessions and explicit test trust must be supplied after restore."
+      },
+      "points": [
+        {
+          "original_id": "383",
+          "original_text": "الملفات الخاصة تقدم بروابط مؤقتة موقعة.",
+          "direct_spec_ids": [
+            "SPEC-U14-018"
+          ],
+          "decision_ids": [
+            "D-037"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 385
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Issue short-lived per-object byte URLs bound to the current browser/session, exact source version/content, purpose and key generation. Every GET/HEAD/Range rechecks the real domain reader, current rights, source bytes and final session/source/expiry pins. Native staff, requester portal, library, recording and citation entry points use signed URLs; a ticket never grants independent access, and all unsigned private byte readers deny when enabled."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -3233,6 +3908,132 @@
       "from": "NO_IMPLEMENTATION_IN_RECOVERED_SEARCH_MATCH_WORKTREE",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Implemented after verifying the saved worktree had no match-navigation code. 78 affected tests passed on each PG17/18; exact integrated protected browser and encrypted recovery still required."
+    },
+    {
+      "original_id": "94",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "An actual ORGANIZER changes only explicitly granted tags, question types and reviewed exact taxonomy bindings. Independent taxonomy permission, source-version CAS, immutable histories and post-render revocation preserve originals and scholarly authority."
+    },
+    {
+      "original_id": "95",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "An actual ORGANIZER proposes an exact current lesson-version link, under explicit operational and scholarly-link grants on both cases. Independent human review/withdrawal retains original lessons, source bytes and canonical answers without granting media access or scholarly answer approval."
+    },
+    {
+      "original_id": "96",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Actual organizer assignment and priority changes use separate current action/resource grants, independently current target-Mufti scope, an explicit finite priority policy, exact case/history versions, reason and immutable hash-linked journals. The shared Mufti queue sees the same assignment; neither action grants roles, case access or answer approval."
+    },
+    {
+      "original_id": "208",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+    },
+    {
+      "original_id": "209",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+    },
+    {
+      "original_id": "210",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+    },
+    {
+      "original_id": "212",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+    },
+    {
+      "original_id": "213",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+    },
+    {
+      "original_id": "214",
+      "from": "GAP_CONFIRMED_DURING_RECOVERY_AUDIT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All currently implemented model execution passes through one explicit CITATION_CANDIDATES contract. It accepts only existing source identifiers and bounded character ranges, requires independent PROCESS_CONTEXT grants, stores sealed derivatives separately, rechecks current sessions/source permissions, and applies task/provider/global kill switches. Missing/failed/hung providers leave the human composer and manual citation path available. No real model quality, corpus completeness or other Luna task is claimed."
+    },
+    {
+      "original_id": "198",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "199",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "200",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "201",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "202",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "203",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "204",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "205",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "206",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "207",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The registered task and strict output contract reject answer/draft/ruling/completion, source rewriting, approval, delivery/publication, identity merging and permission-changing instructions. Direct PostgreSQL snapshots after a real human answer/citation/approval prove original case sources, human answer/decision/citation histories and all available publication/delivery/identity models unchanged after both valid candidate output and eleven prohibited output shapes. No model-controlled action dispatcher exists."
+    },
+    {
+      "original_id": "211",
+      "from": "AI_BOUNDARY_WITHOUT_EXECUTABLE_ADVERSARIAL_PROOF",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Every actual gateway run pins explicit provider key, model identity and independent model version, adapter/task/prompt/schema versions, request/source digests and the terminal result. Immutable SQL seals and current-model rechecks reject substitutions; unavailable providers are audited as unavailable without inventing a model execution."
+    },
+    {
+      "original_id": "383",
+      "from": "NO_TEMPORARY_PRIVATE_URL_IMPLEMENTATION_IN_RECOVERED_SOURCE",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Issue short-lived per-object byte URLs bound to the current browser/session, exact source version/content, purpose and key generation. Every GET/HEAD/Range rechecks the real domain reader, current rights, source bytes and final session/source/expiry pins. Native staff, requester portal, library, recording and citation entry points use signed URLs; a ticket never grants independent access, and all unsigned private byte readers deny when enabled."
     }
   ],
   "verified_checkpoints": [

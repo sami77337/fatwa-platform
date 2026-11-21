@@ -13,6 +13,7 @@ LABELS = [
     "tests.wave7_foundation.test_runner_lifecycle",
     "tests.casework.test_functional_continuation_receipt",
     "tests.casework.test_editor_profile_compatibility",
+    "tests.casework.test_session_deadline",
     "apps.case_assignments.tests",
     "apps.case_assignments.review_tests",
     "apps.case_organization.tests",
@@ -124,6 +125,21 @@ LABELS = [
     "apps.arabic_search_eval.test_ranking",
     "apps.arabic_search_eval.test_services",
     "apps.arabic_search_eval.test_v14_batch",
+    "apps.operational_workspace.test_metadata",
+    "apps.operational_workspace.test_metadata_recovery",
+    "apps.operational_workspace.test_lesson_links",
+    "apps.operational_workspace.test_lesson_recovery",
+    "apps.case_assignments.test_coordination",
+    "apps.operational_workspace.test_coordination",
+    "apps.operational_workspace.test_coordination_recovery",
+    "apps.ai_gateway.tests",
+    "apps.ai_gateway.test_http",
+    "apps.ai_gateway.test_campaign",
+    "apps.ai_gateway.test_recovery",
+    "apps.private_media.test_signed_links",
+    "apps.private_media.test_signed_citation_links",
+    "apps.private_media.test_signed_entrypoints",
+    "apps.private_media.test_link_recovery",
 ]
 
 BROWSER_LABELS = [
@@ -162,6 +178,11 @@ BROWSER_LABELS = [
     "apps.operational_workspace.browser_tests",
     "apps.operational_workspace.browser_notes",
     "apps.arabic_search_eval.browser_benchmark",
+    "apps.operational_workspace.browser_metadata",
+    "apps.operational_workspace.browser_lessons",
+    "apps.operational_workspace.browser_coordination",
+    "apps.ai_gateway.browser_tests",
+    "apps.private_media.browser_tests",
 ]
 
 

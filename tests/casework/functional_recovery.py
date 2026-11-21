@@ -41,6 +41,11 @@ ADDITIONAL_WORKFLOWS = (
     "apps.library_preview.reference_recovery",
     "apps.operational_workspace.recovery_support",
     "apps.arabic_search_eval.benchmark_recovery_support",
+    "apps.operational_workspace.metadata_recovery_support",
+    "apps.operational_workspace.lesson_recovery_support",
+    "apps.operational_workspace.coordination_recovery_support",
+    "apps.ai_gateway.recovery_support",
+    "apps.private_media.recovery_support",
 )
 
 

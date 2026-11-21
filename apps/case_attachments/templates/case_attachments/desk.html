@@ -1,6 +1,6 @@
-{% extends "casework/base.html" %}
+{% extends "casework/base.html" %}{% load private_media_links %}
 {% block title %}مرفقات القضية الخاصة{% endblock %}
-{% block content %}
+{% block content %}{% if preview.media_url %}{% private_media_url preview.media_url as private_preview_url %}{% endif %}
 <h2>مرفقات القضية الخاصة</h2>
 <p>القضية {{ result.public_ref }} — ملفات اصطناعية فقط. كل مرفق محفوظ بأصله ومرتبط بإصدار وقائع محدد.</p>
 {% if is_staff %}<form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="open"><input type="hidden" name="case_ref" value="{{ result.public_ref }}"><button>العودة إلى القضية</button></form>
@@ -19,9 +19,9 @@
 <input type="hidden" name="attachment_id" value="{{ item.id }}"><button name="action" value="attachment_preview">معاينة {{ item.filename }}</button><button name="action" value="attachment_download">تنزيل الأصل {{ item.filename }}</button></form></section>
 {% empty %}<p>لا توجد مرفقات محفوظة.</p>{% endfor %}
 {% if preview %}<section><h2>معاينة الأصل: {{ preview.filename }}</h2><p>نص المصدر الأصلي دون تحرير — إصدار الوقائع {{ preview.evidence_version }}</p>{% if preview.kind == "text" %}<pre>{{ preview.text }}</pre>
-{% elif preview.kind == "image" %}<img src="{{ preview.media_url }}" alt="معاينة المرفق الاصطناعي {{ preview.filename }}" width="280">
-{% elif preview.kind == "audio" %}<audio controls preload="metadata" src="{{ preview.media_url }}">متصفحك لا يدعم تشغيل الصوت.</audio>
-{% elif preview.kind == "video" %}<video controls preload="metadata" width="280" src="{{ preview.media_url }}">متصفحك لا يدعم تشغيل الفيديو. استخدم تنزيل الأصل.</video>
-{% elif preview.kind == "pdf" %}<iframe title="معاينة PDF الخاصة" src="{{ preview.media_url }}" sandbox width="280" height="400"></iframe>
+{% elif preview.kind == "image" %}<img src="{{ private_preview_url }}" alt="معاينة المرفق الاصطناعي {{ preview.filename }}" width="280">
+{% elif preview.kind == "audio" %}<audio controls preload="metadata" src="{{ private_preview_url }}">متصفحك لا يدعم تشغيل الصوت.</audio>
+{% elif preview.kind == "video" %}<video controls preload="metadata" width="280" src="{{ private_preview_url }}">متصفحك لا يدعم تشغيل الفيديو. استخدم تنزيل الأصل.</video>
+{% elif preview.kind == "pdf" %}<iframe title="معاينة PDF الخاصة" src="{{ private_preview_url }}" sandbox width="280" height="400"></iframe>
 {% endif %}</section>{% endif %}
 {% endblock %}

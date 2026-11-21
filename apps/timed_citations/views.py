@@ -16,6 +16,7 @@ from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _form, _integer, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
+from apps.private_media.links import protect
 
 from . import services
 from .guard import boundary
@@ -128,7 +129,7 @@ def workspace(request):
         return denied("timed_unavailable", 503)
 
 
-def audio(request, citation_id, *, review=False):
+def _audio(request, citation_id, *, review=False):
     refused = boundary(request)
     if refused:
         return refused
@@ -160,5 +161,9 @@ def audio(request, citation_id, *, review=False):
         return denied("timed_unavailable", 503)
 
 
+audio = protect(_audio)
+
+
+@protect
 def review_audio(request, citation_id):
-    return audio(request, citation_id, review=True)
+    return _audio(request, citation_id, review=True)

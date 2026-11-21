@@ -5,6 +5,15 @@
 <nav aria-label="قوائم الإجراءات" id="ops-filters">
 {% for filter in queue.filters %}<form method="post" action="/casework/operations/">{% csrf_token %}<input type="hidden" name="action" value="queue"><button name="filter" value="{{ filter.key }}" aria-pressed="{% if filter.key == queue.selected_filter %}true{% else %}false{% endif %}">{{ filter.label }} <span data-filter-count="{{ filter.key }}">{{ filter.count }}</span></button></form>{% endfor %}
 </nav>
+{% if queue.coordination_cases %}<details id="ops-coordination-index"><summary>إدارة الأولوية والتعيين</summary>
+{% for row in queue.coordination_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><p>{{ row.priority }} — <bdi>{{ row.primary|default:"طابور مشترك" }}</bdi></p><button name="action" value="coordination">الأولوية والتعيين {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+{% if queue.metadata_cases %}<details id="ops-metadata-index"><summary>إدارة البيانات التنظيمية للقضايا المخولة</summary>
+{% for row in queue.metadata_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="metadata_editor">إدارة بيانات {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
+{% if queue.lesson_cases %}<details id="ops-lessons-index"><summary>روابط الدروس للقضايا المخولة</summary>
+{% for row in queue.lesson_cases %}<form method="post" action="/casework/operations/" data-case-ref="{{ row.public_ref }}">{% csrf_token %}<input type="hidden" name="case_ref" value="{{ row.public_ref }}"><button name="action" value="lesson_links">ربط الدروس — {{ row.public_ref }}</button></form>{% endfor %}
+</details>{% endif %}
 <section id="ops-queue" aria-label="قضايا تحتاج إجراء">
 {% for row in queue.rows %}<article data-case-ref="{{ row.public_ref }}"><h2><bdi>{{ row.public_ref }}</bdi></h2><p>{{ row.stage }} — الوقائع {{ row.evidence_version }}</p>
 {% for section in row.pending %}<section data-section="{{ section.key }}"><h3>{{ section.label }}</h3><ul>{% for reason in section.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>

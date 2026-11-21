@@ -858,42 +858,60 @@ def propose_lesson_link(
         _span(version, start_ms, end_ms)
         guard.permit(source, target, "PROPOSE", "LESSON", version.pk, version.sha256)
         answer = _answer(source)
-        old = _replay(
-            CaseLessonLink,
-            command_id,
-            guard,
-            {
-                "case_id": source.pk,
-                "answer_id": answer.pk,
-                "lesson_version_id": version.pk,
-                "reason": reason,
-                "start_ms": start_ms,
-                "end_ms": end_ms,
-            },
+        row, _created = _append_lesson_link_locked(
+            source=source,
+            target=target,
+            version=version,
+            answer=answer,
+            guard=guard,
+            reason=reason,
+            command_id=command_id,
+            start_ms=start_ms,
+            end_ms=end_ms,
         )
-        if old is not None:
-            return old
-        if CaseLessonLink.objects.filter(case=source).count() >= MAX_LINKS:
-            raise cases.CaseConflict("scholarly_relation_limit")
-        for prior in CaseLessonLink.objects.filter(
-            answer=answer, lesson_version=version, start_ms=start_ms, end_ms=end_ms
-        ):
-            if _status(prior)[0] not in {"REJECT", "WITHDRAW"}:
-                raise cases.CaseConflict("scholarly_relation_exists")
-        return _save(
-            CaseLessonLink(
-                case=source,
-                answer=answer,
-                answer_sha256=answer.text_sha256,
-                lesson_version=version,
-                target_case_revision=target.revision,
-                target_evidence_version=target.evidence_version,
-                start_ms=start_ms,
-                end_ms=end_ms,
-                reason=reason,
-                **_audit(guard, source, command_id),
-            )
+        return row
+
+
+def _append_lesson_link_locked(
+    *, source, target, version, answer, guard, reason, command_id, start_ms, end_ms
+):
+    """Immutable persistence only; the caller owns exact scope/grants and source locks."""
+    old = _replay(
+        CaseLessonLink,
+        command_id,
+        guard,
+        {
+            "case_id": source.pk,
+            "answer_id": answer.pk,
+            "lesson_version_id": version.pk,
+            "reason": reason,
+            "start_ms": start_ms,
+            "end_ms": end_ms,
+        },
+    )
+    if old is not None:
+        return old, False
+    if CaseLessonLink.objects.filter(case=source).count() >= MAX_LINKS:
+        raise cases.CaseConflict("scholarly_relation_limit")
+    for prior in CaseLessonLink.objects.filter(
+        answer=answer, lesson_version=version, start_ms=start_ms, end_ms=end_ms
+    ):
+        if _status(prior)[0] not in {"REJECT", "WITHDRAW"}:
+            raise cases.CaseConflict("scholarly_relation_exists")
+    return _save(
+        CaseLessonLink(
+            case=source,
+            answer=answer,
+            answer_sha256=answer.text_sha256,
+            lesson_version=version,
+            target_case_revision=target.revision,
+            target_evidence_version=target.evidence_version,
+            start_ms=start_ms,
+            end_ms=end_ms,
+            reason=reason,
+            **_audit(guard, source, command_id),
         )
+    ), True
 
 
 def _endpoints(link):
@@ -981,50 +999,69 @@ def review_link(
         source, target = locked[source_id], locked[target_id]
         _pins(source, expected_revision, expected_evidence_version)
         _pins(target, expected_target_revision, expected_target_evidence_version)
-        state, history = _verify_link(link)
+        _verify_link(link)
         guard.permit(source, target, action, kind, link.pk, link.sha256)
         if action == "APPROVE":
             if isinstance(link, CaseLessonLink):
                 _lesson(link.lesson_version, locked, guard)
             else:
                 _answer(target, link.target_answer_id, approved=True)
-        old = _replay(
-            LinkDecision,
-            command_id,
-            guard,
-            {
-                "relation_id": link.pk if link_kind == "RELATION" else None,
-                "lesson_link_id": link.pk if link_kind == "LESSON" else None,
-                "action": action,
-                "note": note,
-            },
+        row, _created = _append_link_decision_locked(
+            source=source,
+            target=target,
+            link=link,
+            action=action,
+            note=note,
+            command_id=command_id,
+            expected_sequence=expected_sequence,
+            guard=guard,
         )
-        if old is not None:
-            return old
-        if len(history) != _integer(expected_sequence, zero=True):
-            raise cases.CaseConflict("scholarly_review_changed")
-        allowed = (
-            {"APPROVE", "REJECT"}
-            if state == "PROPOSED"
-            else {"WITHDRAW"}
-            if state == "APPROVE"
-            else set()
+        return row
+
+
+def _append_link_decision_locked(
+    *, source, target, link, action, note, command_id, expected_sequence, guard
+):
+    """Persist a checked transition; never grants review authority or changes an answer."""
+    state, history = _verify_link(link)
+    is_relation = isinstance(link, CaseRelation)
+    old = _replay(
+        LinkDecision,
+        command_id,
+        guard,
+        {
+            "relation_id": link.pk if is_relation else None,
+            "lesson_link_id": None if is_relation else link.pk,
+            "action": action,
+            "note": note,
+        },
+    )
+    if old is not None:
+        return old, False
+    if len(history) != _integer(expected_sequence, zero=True):
+        raise cases.CaseConflict("scholarly_review_changed")
+    allowed = (
+        {"APPROVE", "REJECT"}
+        if state == "PROPOSED"
+        else {"WITHDRAW"}
+        if state == "APPROVE"
+        else set()
+    )
+    if action not in allowed or (action == "APPROVE" and _cycle(link)):
+        raise cases.CaseConflict("scholarly_review_unavailable")
+    return _save(
+        LinkDecision(
+            relation=link if is_relation else None,
+            lesson_link=None if is_relation else link,
+            sequence=len(history) + 1,
+            previous_sha256=history[-1].sha256 if history else link.sha256,
+            target_case_revision=target.revision,
+            target_evidence_version=target.evidence_version,
+            action=action,
+            note=note,
+            **_audit(guard, source, command_id),
         )
-        if action not in allowed or (action == "APPROVE" and _cycle(link)):
-            raise cases.CaseConflict("scholarly_review_unavailable")
-        return _save(
-            LinkDecision(
-                relation=link if link_kind == "RELATION" else None,
-                lesson_link=link if link_kind == "LESSON" else None,
-                sequence=len(history) + 1,
-                previous_sha256=history[-1].sha256 if history else link.sha256,
-                target_case_revision=target.revision,
-                target_evidence_version=target.evidence_version,
-                action=action,
-                note=note,
-                **_audit(guard, source, command_id),
-            )
-        )
+    ), True
 
 
 def _link_projection(link, current, locked, guard):

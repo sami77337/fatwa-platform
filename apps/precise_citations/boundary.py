@@ -259,6 +259,9 @@ def scope(
             raise cases.CaseConflict("precise_citation_scope_bound")
         with ExitStack() as stack:
             guard = Guard(provider, subject_id, locked, stack, before)
+            from apps.private_media.links import retain_projection
+
+            retain_projection(lambda: guard.final_pins(verify_files=False))
             guard.owner_case_id = cases._uuid(case_id)
             row, _ = guard.actor(case_id)
             cases._verify(row)

@@ -454,25 +454,49 @@ def bind(
         primary, additional = _selection(version, primary, additional)
         case = _approved_case(guard, base["case_id"])
         guard.permit(case.pk, "BIND", {"version": str(version.pk), "digest": version.digest})
-        previous = _current(case.pk)
         _start(guard, base, expected_snapshot, expected_revision, expected_evidence_version)
-        row = seal(
-            CaseClassification(
-                case=case,
-                answer_id=case.approved_answer_id,
-                evidence_version=case.evidence_version,
-                sequence=previous.sequence + 1 if previous else 1,
-                previous=previous,
-                version=version,
-                primary_id=primary,
-                additional=additional,
-                reason=reason,
-                request_key=cases._uuid(request_key),
-                **guard.actor_values(),
-            )
+        row = _append_binding_locked(
+            case=case,
+            version=version,
+            primary=primary,
+            additional=additional,
+            reason=reason,
+            request_key=request_key,
+            actor_values=guard.actor_values(),
         )
         guard.written()
         return {"id": str(row.pk), "sequence": row.sequence}
+
+
+def _append_binding_locked(
+    *, case, version, primary, additional, reason, request_key, actor_values
+):
+    """Persist one classification behind the caller's locked, current authority boundary.
+
+    This private primitive supplies no identity or permission. The Mufti caller
+    retains its scope; operational callers independently verify both cases,
+    reviewed version, exact grants, command pins and final rendered projection.
+    """
+    text(reason, 2000)
+    primary, additional = _selection(version, primary, additional)
+    if case.stage != "ANSWERED" or not case.approved_answer_id:
+        raise cases.CaseConflict("development_taxonomy_approved_answer_required")
+    previous = _current(case.pk)
+    return seal(
+        CaseClassification(
+            case=case,
+            answer_id=case.approved_answer_id,
+            evidence_version=case.evidence_version,
+            sequence=previous.sequence + 1 if previous else 1,
+            previous=previous,
+            version=version,
+            primary_id=primary,
+            additional=additional,
+            reason=reason,
+            request_key=cases._uuid(request_key),
+            **actor_values,
+        )
+    )
 
 
 def validate_mapping(source, target, mapping):

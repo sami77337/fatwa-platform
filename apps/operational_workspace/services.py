@@ -14,7 +14,8 @@ from apps.experimental_publication.models import PublicationEdition
 from apps.public_answer_media import services as recording
 from apps.public_answer_media.models import RecordingTranscript
 
-from . import notes, retry_projection
+from . import coordination, lesson_links, notes, retry_projection
+from . import metadata as metadata_editor
 from .boundary import rows, scope
 
 FILTERS = {
@@ -330,13 +331,21 @@ def queue_projection(*, selected_filter="all", **common):
     if type(selected_filter) is not str or selected_filter not in FILTERS:
         raise cases.CaseConflict("operational_filter_invalid")
     with scope(**common) as guard:
-        result, counts = [], {key: 0 for key in FILTERS}
+        result, counts, metadata_cases = [], {key: 0 for key in FILTERS}, []
+        coordination_cases = []
+        lesson_cases = []
         for case in sorted(guard.locked.values(), key=lambda value: value.public_ref):
             if not guard.permit(case, "READ_QUEUE", "queue") or not guard.permit(
                 case, "READ_CASE", "case"
             ):
                 continue
             cases._verify(case)
+            if metadata_editor.available(case, guard):
+                metadata_cases.append({"public_ref": case.public_ref})
+            if coordination.available(case, guard):
+                coordination_cases.append(coordination.summary(case, guard))
+            if lesson_links.available(case, guard):
+                lesson_cases.append({"public_ref": case.public_ref})
             available = sections(case, guard)
             pending = [row for row in available if row["pending"]]
             if not pending:
@@ -360,6 +369,11 @@ def queue_projection(*, selected_filter="all", **common):
             )
         yield {
             "rows": result,
+            "metadata_cases": metadata_cases,
+            "coordination_cases": sorted(
+                coordination_cases, key=lambda row: (row["rank"], row["public_ref"])
+            ),
+            "lesson_cases": lesson_cases,
             "counts": counts,
             "selected_filter": selected_filter,
             "filters": [
@@ -391,4 +405,6 @@ def detail_projection(*, case_ref, section, **common):
             "subject": guard.actor.subject_id,
             "role": guard.actor.role,
             "notes_available": any(notes.access(case, guard).values()),
+            "metadata_available": metadata_editor.available(case, guard),
+            "lesson_links_available": lesson_links.available(case, guard),
         }

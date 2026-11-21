@@ -1,0 +1,17 @@
+{% extends "precise_citations/editor.html" %}
+{% block content %}{{ block.super }}
+<aside id="ai-citation-panel" data-ai-citation="enabled" aria-label="مساعد مواضع الإحالة">
+<h2>مساعد مواضع الإحالة</h2><p>{{ ai_panel.availability }}</p>
+<p>اكتب العبارة التي تريد البحث عن شاهد لها واختر مصدرًا موجودًا ونافذة نصية محددة. تُرسل هذه العبارة ونافذة المصدر فقط بعد فحص إذن معالجة مستقل. لا تُرسل مسودة الجواب تلقائيًا.</p>
+<p>هذه الوحدة تقترح مواضع نصية في المصدر المختار. صحة النسبة ووجه الاستدلال والمراجعة العلمية قرارات بشرية مستقلة.</p>
+{% if ai_panel.state %}<form id="ai-citation-request" method="post" action="/casework/ai-citations/">{% csrf_token %}
+<input name="action" type="hidden" value="request"><input name="state" type="hidden" value="{{ ai_panel.state }}">
+<label for="ai-citation-query">العبارة المختارة للمساعدة</label><input id="ai-citation-query" name="query" maxlength="240" required>
+<label for="ai-citation-source">المصدر الموجود</label><select id="ai-citation-source" name="selection" required><option value="">اختر مصدرًا</option>{% for choice in ai_panel.choices %}<option value="{{ choice.selection }}">{{ choice.title }} — {{ choice.version }}</option>{% endfor %}</select>
+<label for="ai-citation-start">بداية نافذة المصدر (محارف تبدأ من صفر)</label><input id="ai-citation-start" name="start" type="number" min="0" max="15999" value="0" required>
+<label for="ai-citation-end">نهاية النافذة غير المشمولة</label><input id="ai-citation-end" name="end" type="number" min="1" max="16000" required><p>حتى ٤٠٠٠ محرف من نص أصلي لا يتجاوز ١٦٠٠٠ محرف. لا تشمل هذه الوحدة أرقام صفحات أو أزمنة أو مراجع غير رقمية.</p>
+<button data-ai-submit disabled>طلب مواضع مرشحة</button></form>{% endif %}
+<div id="ai-citation-result" data-ai-result="1"><p role="status" tabindex="-1">الجواب ومسار الإحالات اليدوي يعملان مستقلين عن هذه اللوحة.</p></div>
+<noscript><p>تحتاج هذه اللوحة JavaScript للحفاظ على المسودة في مكانها. يمكنك متابعة نموذج الإحالات اليدوي أعلاه.</p></noscript>
+</aside>{% if ai_panel.state %}<script type="module" src="/casework/ai-citations/panel.mjs"></script>{% endif %}
+{% endblock %}

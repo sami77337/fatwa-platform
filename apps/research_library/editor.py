@@ -18,6 +18,7 @@ from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 from apps.platform_recovery.integration import mutation_service
+from apps.private_media.links import protect
 
 from . import services
 from .models import LibraryVersion
@@ -328,6 +329,7 @@ def workspace(request):
         return denied("library_store_unavailable", 503)
 
 
+@protect
 @mutation_service
 def file(request, version_id, download=False):
     try:

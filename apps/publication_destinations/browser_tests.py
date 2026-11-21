@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -21,8 +22,21 @@ OUT = Path(".local/qa/functional-continuation/publication-destinations-browser")
 class PublicationDestinationsBrowserTests(Fixture, LiveServerTestCase):
     host = "127.0.0.1"
     sync = PublicAnswerMediaBrowserTests.sync
-    submit = PublicAnswerMediaBrowserTests.submit
     send = PublicAnswerMediaBrowserTests.send
+
+    def submit(self, page, button):
+        # The three actors share the real loopback request budget. Keep every
+        # native action and the 60/minute application limit; pace this long
+        # scenario instead of clearing the durable throttle or bypassing it.
+        window = int(time.time()) // 60
+        if getattr(self, "_post_window", None) != window:
+            self._post_window, self._post_count = window, 0
+        if self._post_count >= 45:
+            remaining = (window + 1) * 60 - time.time() + 0.2
+            page.wait_for_timeout(max(0, int(remaining * 1000)))
+            self._post_window, self._post_count = int(time.time()) // 60, 0
+        self._post_count += 1
+        return PublicAnswerMediaBrowserTests.submit(self, page, button)
 
     def capture(self, page, label, proof):
         for width in (320, 1280):

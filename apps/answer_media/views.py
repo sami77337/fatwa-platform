@@ -21,6 +21,7 @@ from apps.casework_web.views import InvalidForm, _form, _integer, _provider
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
+from apps.private_media.links import protect
 from apps.private_media.storage import configured_storage
 
 from . import related_views, services
@@ -300,6 +301,7 @@ def _file(row):
     return response
 
 
+@protect
 def staff_file(request, part_id):
     try:
         if request.method not in {"GET", "HEAD"}:
@@ -322,6 +324,7 @@ def staff_file(request, part_id):
         return denied("answer_media_store_unavailable", 503)
 
 
+@protect
 def requester_file(request, part_id):
     try:
         if request.method not in {"GET", "HEAD"}:

@@ -3,6 +3,7 @@
 import json
 import uuid
 
+from django.conf import settings
 from django.core import signing
 from django.core.exceptions import SuspiciousOperation
 from django.db import DatabaseError
@@ -22,6 +23,7 @@ from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 from apps.platform_recovery.integration import mutation_service
+from apps.private_media.links import protect
 
 from . import services, sources
 from .boundary import digest, scope
@@ -116,6 +118,11 @@ def page(
     message="",
     form=None,
 ):
+    render_editor = render
+    if getattr(settings, "FATWA_AI_GATEWAY_ENABLED", False) is True:
+        from apps.ai_gateway.panel import render_composer
+
+        render_editor = render_composer
     with scope(**base) as guard:
         selected = services.current(guard, base["case_id"])
         case = guard.locked[cases._uuid(base["case_id"])]
@@ -151,7 +158,7 @@ def page(
             .values("id", "answer__revision", "subject_id", "created_at")
         )
         return private(
-            render(
+            render_editor(
                 request,
                 "precise_citations/editor.html",
                 {
@@ -331,6 +338,7 @@ def workspace(request):
         return denied("precise_citation_operation_unavailable", 409)
 
 
+@protect
 @mutation_service
 @require_safe
 def source(request, anchor_id, raw=False):
@@ -365,7 +373,15 @@ def source(request, anchor_id, raw=False):
                 response["X-Content-SHA256"] = live["file"]["sha256"]
                 return private(response)
             return private(
-                render(request, "precise_citations/source.html", {"source": live, "anchor": row})
+                render(
+                    request,
+                    "precise_citations/source.html",
+                    {
+                        "source": live,
+                        "anchor": row,
+                        "file_url": "file/",
+                    },
+                )
             )
     except (
         cases.CaseConflict,
