@@ -26,7 +26,13 @@
     const target = new URL(url, location.origin);
     if (target.origin !== location.origin || !target.pathname.startsWith("/library-preview/reading/")) throw Error("reference_url_invalid");
     const response = await fetch(target.href, {cache:"no-store",credentials:"omit",headers:{Accept:"application/json"}});
-    if (!response.ok || !(response.headers.get("Content-Type") || "").includes("application/json")) throw Error("reference_unavailable");
+    if (!response.ok || !(response.headers.get("Content-Type") || "").includes("application/json")) {
+      // A denied descriptor has no usable payload. Release its stream before
+      // returning the unavailable state, including close-delimited responses.
+      // Otherwise a rejected fetch can remain in flight after the page updates.
+      if (response.body) await response.body.cancel();
+      throw Error("reference_unavailable");
+    }
     const row = await response.json();
     if (!validPin(row) || typeof row.title !== "string" || row.title.length > 160
       || row.url !== `/library-preview/editions/${row.publication_id}/`

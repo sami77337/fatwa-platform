@@ -43,6 +43,12 @@ FEATURES = {
     "FATWA_SOURCE_RIGHTS_ENABLED": True,
     "FATWA_SOURCE_RIGHTS_ENFORCED": True,
 }
+NATIVE_FEATURES = {
+    **FEATURES,
+    "ROOT_URLCONF": "config.campaign_urls",
+    # The browser enters through this current-case navigation, not a crafted POST.
+    "FATWA_MUFTI_WORKSPACE_ENABLED": True,
+}
 PROFILES = (
     DestinationProfile("WEBSITE", "site.v1", 24000),
     DestinationProfile("TELEGRAM_CHANNEL", "channel.v1", 6000),

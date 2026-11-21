@@ -12,12 +12,12 @@ from apps.public_answer_media.browser_tests import PublicAnswerMediaBrowserTests
 from . import services
 from .models import DestinationEvent, DestinationRecord, DestinationVersion
 from .recovery_support import digest, source_rows
-from .test_support import CREDENTIALS, FEATURES, Fixture
+from .test_support import CREDENTIALS, NATIVE_FEATURES, Fixture
 
 OUT = Path(".local/qa/functional-continuation/publication-destinations-browser")
 
 
-@override_settings(**{**FEATURES, "ROOT_URLCONF": "config.campaign_urls"})
+@override_settings(**NATIVE_FEATURES)
 class PublicationDestinationsBrowserTests(Fixture, LiveServerTestCase):
     host = "127.0.0.1"
     sync = PublicAnswerMediaBrowserTests.sync
@@ -50,7 +50,11 @@ class PublicationDestinationsBrowserTests(Fixture, LiveServerTestCase):
             ),
             "false",
         )
-        self.assertNotIn("PRIVATE SYNTHETIC", page.locator("main").inner_text())
+        # The authorized private case remains in the surrounding Mufti context.
+        # Only the independent destination copies are candidates for publication.
+        self.assertIn("PRIVATE SYNTHETIC", page.locator("#mufti-original-question").inner_text())
+        for record in page.locator("section[data-destination]").all():
+            self.assertNotIn("PRIVATE SYNTHETIC", record.inner_text())
 
     def select_native(self, page, destination, source):
         self.open_desk(page)

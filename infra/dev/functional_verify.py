@@ -87,6 +87,7 @@ LABELS = [
     "apps.publication_schedules.tests",
     "apps.publication_schedules.test_recovery",
     "apps.publication_destinations.tests",
+    "apps.publication_destinations.test_navigation",
     "apps.publication_destinations.test_recovery",
     "apps.composite_delivery.test_selection",
     "apps.composite_delivery.test_selection_recovery",
