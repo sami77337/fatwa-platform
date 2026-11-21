@@ -95,6 +95,11 @@ class SignedMetaBrowserTests(LiveServerTestCase):
                     self.assertIn("no-store", nav.value.headers["cache-control"])
 
                 click("دخول المكتب")
+                # Campaign login lands at the team workspace. Enter the real
+                # source desk with its CSRF-protected native action first;
+                # no direct view invocation, forged cookie or test-only route.
+                click("مكتب استقبال المصادر", keyboard=True)
+                self.assertEqual(page.locator("#source-filter").count(), 1)
                 page.locator("#source-filter").select_option("messenger")
                 click("تصفية الأحداث", keyboard=True)
                 self.assertEqual(page.locator("article[data-receipt]").count(), 1)
