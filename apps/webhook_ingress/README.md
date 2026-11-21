@@ -102,3 +102,18 @@ plus success-only `result.json` are required for each major. Do not credit this
 journey until actual GitHub Actions and the downloaded archive have passed.
 The existing 55-journey functional scope is unchanged; this is an additional
 independent browser gate, not a substitute for the whole exact-head receipt.
+
+## WhatsApp account/phone scoping
+
+A WhatsApp Cloud webhook carries both the WABA ID (`entry[].id`) and the
+business phone ID (`changes[].value.metadata.phone_number_id`). These are
+**distinct** values. In a synthetic `FATWA_WEBHOOK_INGRESS_PROFILES` profile,
+WhatsApp additionally **requires** a server-owned `phone_number_id` key. The
+entry ID must match the configured `conversation` WABA, and the metadata phone
+must match the configured `phone_number_id`. The payload must also declare
+`messaging_product=whatsapp`. Signed events for a different phone under the
+same WABA are stored as immutable held receipts for independent human review,
+not silently bound to the configured sender or case. Other providers must not
+supply this phone key. No real phone number or WABA is provisioned in the
+current closed fixture profile. Meta's published Webhook envelope distinguishes
+these fields; see its maintained [WhatsApp Cloud API reference](https://www.postman.com/meta/whatsapp-business-platform/documentation/wlk6lh4/whatsapp-cloud-api).

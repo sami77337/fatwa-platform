@@ -36,11 +36,14 @@ def _configured(request):
         return None
     key = str(UUID(match[1]))
     profile = profiles.get(key)
-    if type(profile) is not dict or set(profile) != {
-        "source", "account", "conversation", "secret", "verify_token"
-    }:
+    if type(profile) is not dict:
         return None
-    source = profile["source"]
+    source = profile.get("source")
+    required = {"source", "account", "conversation", "secret", "verify_token"}
+    if source == "whatsapp":
+        required.add("phone_number_id")
+    if set(profile) != required:
+        return None
     secret = profile["secret"]
     verify = profile["verify_token"]
     if (
@@ -53,7 +56,10 @@ def _configured(request):
     ):
         return None
     try:
-        context = SourceContext(source, profile["account"], profile["conversation"])
+        context = SourceContext(
+            source, profile["account"], profile["conversation"],
+            profile.get("phone_number_id", ""),
+        )
         context.validate()
     except (TypeError, IntakeError):
         return None

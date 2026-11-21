@@ -39,6 +39,16 @@ REASONS = {
     "source_edit_requires_review": "تعديل من المصدر؛ لا يستبدل السؤال الأصلي",
     "invalid_or_incomplete_source": "صيغة ناقصة أو غير مدعومة؛ الأصل الخام محفوظ",
     "unsupported_media_requires_review": "نوع وسائط أو مجموعة رسائل غير مدعومة",
+    "meta_batch_requires_review": "دفعة متعددة لا يجوز تحويلها إلى سؤال واحد؛ الأصل محفوظ",
+    "meta_unsupported_update_requires_review": "حدث منصة غير مدعوم؛ يلزم مراجعة المصدر الأصلي",
+    "meta_nonmessage_requires_review": "حدث لا يتضمن رسالة سؤال؛ لا تنشأ قضية تلقائيًا",
+    "meta_echo_requires_review": "رسالة صادرة من الحساب نفسه؛ ليست سؤالًا واردًا",
+    "meta_media_or_action_requires_review": "مرفقات أو إجراءات تفاعلية تحتاج مراجعة منفصلة",
+    "meta_reply_or_edit_requires_review": "رد أو تعديل في المصدر يحتاج تحققًا مستقلًا",
+    "meta_reply_requires_review": "ربط الرد بالمحادثة لم يُتحقق منه؛ يلزم قرار بشري",
+    "meta_nonnew_comment_requires_review": "تعليق ليس إضافة أصلية جديدة؛ لا يستبدل النص السابق",
+    "meta_page_self_event_requires_review": "حدث صادر من الصفحة نفسها؛ ليس سؤالًا خارجيًا",
+    "meta_status_or_error_requires_review": "حالة إرسال أو خطأ مزوّد وليست رسالة سؤال",
 }
 
 

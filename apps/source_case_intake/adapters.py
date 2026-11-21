@@ -50,6 +50,7 @@ class SourceContext:
     source: str
     account: str
     conversation: str = ""
+    resource_id: str = ""  # Server-owned WhatsApp phone_number_id, never a form field.
 
     def validate(self):
         if self.source not in SOURCES:
@@ -59,6 +60,11 @@ class SourceContext:
             raise IntakeError("synthetic_account_required")
         if self.source in {"youtube", "facebook", "messenger", "instagram", "whatsapp"}:
             identifier(self.conversation)
+        if self.source == "whatsapp":
+            if not identifier(self.resource_id).startswith("synthetic-"):
+                raise IntakeError("synthetic_whatsapp_phone_scope_required")
+        elif self.resource_id:
+            raise IntakeError("unexpected_source_resource")
 
 
 @dataclass

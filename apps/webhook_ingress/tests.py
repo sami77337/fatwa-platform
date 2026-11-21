@@ -10,7 +10,7 @@ from django.test import RequestFactory, SimpleTestCase, TransactionTestCase, ove
 from apps.casework.models import Case
 from apps.source_case_intake import http_tests as source_http
 from apps.source_case_intake import services as intake
-from apps.source_case_intake.adapters import SourceContext, project
+from apps.source_case_intake.adapters import IntakeError, SourceContext, project
 from apps.source_case_intake.models import EvidenceBinding, ReviewTicket, SourceReceipt
 from apps.source_case_intake.simulators import raw as encoded, telegram
 from tests.casework.test_http import post
@@ -26,11 +26,14 @@ QUESTION = "هل يحفظ السؤال الاصطناعي كما ورد؟\nنع�
 
 
 def profile(source):
-    return {
+    values = {
         "source": source, "account": "synthetic-platform-account",
         "conversation": "" if source == "telegram" else PAGE,
         "secret": SECRET, "verify_token": VERIFY,
     }
+    if source == "whatsapp":
+        values["phone_number_id"] = "synthetic-phone-id"
+    return values
 
 
 def meta(source, mid="synthetic-mid-1"):
@@ -62,6 +65,7 @@ def meta(source, mid="synthetic-mid-1"):
             "object": "whatsapp_business_account",
             "entry": [{"id": PAGE, "changes": [{
                 "field": "messages", "value": {
+                    "messaging_product": "whatsapp",
                     "metadata": {"phone_number_id": "synthetic-phone-id"},
                     "messages": [{
                         "id": mid, "from": PERSON, "type": "text",
@@ -77,7 +81,10 @@ class MetaProjectionTests(SimpleTestCase):
     def read(self, source, payload=None):
         return project(
             encoded(meta(source) if payload is None else payload),
-            SourceContext(source, "synthetic-account", PAGE),
+            SourceContext(
+                source, "synthetic-account", PAGE,
+                "synthetic-phone-id" if source == "whatsapp" else "",
+            ),
         )
 
     def test_all_four_envelopes_preserve_exact_text_and_scopes(self):
@@ -119,6 +126,24 @@ class MetaProjectionTests(SimpleTestCase):
         wa = meta("whatsapp")
         wa["entry"][0]["changes"][0]["value"]["statuses"] = [{"status": "read"}]
         self.assertEqual(self.read("whatsapp", wa).problem, "meta_status_or_error_requires_review")
+
+    def test_whatsapp_business_phone_and_product_are_independently_scoped(self):
+        # A valid WABA envelope does not authorize data for a second phone.
+        packet = meta("whatsapp")
+        value = packet["entry"][0]["changes"][0]["value"]
+        value["metadata"]["phone_number_id"] = "synthetic-foreign-phone"
+        self.assertEqual(
+            self.read("whatsapp", packet).problem,
+            "invalid_or_incomplete_source",
+        )
+        packet = meta("whatsapp")
+        packet["entry"][0]["changes"][0]["value"]["messaging_product"] = "other"
+        self.assertEqual(
+            self.read("whatsapp", packet).problem,
+            "invalid_or_incomplete_source",
+        )
+        with self.assertRaises(IntakeError):
+            SourceContext("whatsapp", "synthetic-account", PAGE).validate()
 
     def test_duplicate_json_keys_fail_closed(self):
         row = project(
@@ -243,6 +268,22 @@ class SignedWebhookTests(TransactionTestCase):
             set(SourceReceipt.objects.values_list("source", flat=True)),
             {"facebook", "whatsapp"},
         )
+        self.assertFalse(EvidenceBinding.objects.exists())
+
+    def test_signed_foreign_whatsapp_phone_receipt_requires_review_without_case(self):
+        packet = meta("whatsapp")
+        packet["entry"][0]["changes"][0]["value"]["metadata"][
+            "phone_number_id"
+        ] = "synthetic-foreign-phone"
+        raw = encoded(packet)
+        response = self.post("whatsapp", raw)
+        self.assertEqual(response.status_code, 200, response.content)
+        receipt = SourceReceipt.objects.get(source="whatsapp")
+        self.assertEqual(bytes(receipt.raw), raw)
+        self.assertEqual(receipt.problem, "invalid_or_incomplete_source")
+        result = intake.process(receipt_id=receipt.pk, synthetic_fixtures_only=True)
+        self.assertEqual(result["status"], "NEEDS_REVIEW")
+        self.assertFalse(Case.objects.exists())
         self.assertFalse(EvidenceBinding.objects.exists())
 
     def test_feature_closed_and_unapproved_account_never_write(self):

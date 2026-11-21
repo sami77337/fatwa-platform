@@ -112,7 +112,7 @@ def _facebook(entry, projection, context):
     projection.original_text = text(value["message"])
 
 
-def _whatsapp(entry, projection):
+def _whatsapp(entry, projection, context):
     change = _one(entry.get("changes"), projection)
     if change is None:
         return
@@ -122,7 +122,11 @@ def _whatsapp(entry, projection):
     value = change["value"]
     if type(value) is not dict:
         raise IntakeError("meta_whatsapp_value_invalid")
+    if value.get("messaging_product") != "whatsapp":
+        raise IntakeError("meta_messaging_product_invalid")
     phone_id = identifier(value["metadata"]["phone_number_id"])
+    if phone_id != context.resource_id:
+        raise IntakeError("meta_phone_scope_mismatch")
     if "statuses" in value or "errors" in value:
         projection.problem = "meta_status_or_error_requires_review"
         return
@@ -157,6 +161,6 @@ def project_meta(data, projection, context):
     elif context.source == "facebook":
         _facebook(entry, projection, context)
     elif context.source == "whatsapp":
-        _whatsapp(entry, projection)
+        _whatsapp(entry, projection, context)
     else:
         raise IntakeError("meta_source_invalid")
