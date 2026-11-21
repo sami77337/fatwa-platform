@@ -129,6 +129,8 @@ def _metadata(common, snapshot):
         case,
         _,
     ):
+        from apps.data_privacy.integration import allowed
+
         if (case.revision, case.evidence_version) != (
             snapshot["revision"],
             snapshot["evidence_version"],
@@ -155,6 +157,8 @@ def _metadata(common, snapshot):
                     "evidence__version",
                 )
             ):
+                if not allowed("ATTACHMENT", row["id"]):
+                    continue
                 attachments.append(
                     {
                         "id": str(row["id"]),
@@ -171,13 +175,20 @@ def _metadata(common, snapshot):
                 )
         manifest = None
         if snapshot["latest_answer"] and apps.is_installed("apps.answer_media"):
-            from apps.answer_media.models import AnswerManifest
+            from apps.answer_media.models import AnswerManifest, AnswerPart
 
             manifest = (
                 AnswerManifest.objects.filter(answer_id=snapshot["latest_answer"]["id"])
                 .values("sha256", "part_count")
                 .first()
             )
+            if manifest and any(
+                not allowed("ANSWER_PART", identifier)
+                for identifier in AnswerPart.objects.filter(
+                    manifest_id=snapshot["latest_answer"]["id"]
+                ).values_list("pk", flat=True)
+            ):
+                manifest = None
         release = {
             "recorded": False,
             "enabled": getattr(settings, "FATWA_ANSWER_MEDIA_ENABLED", False) is True

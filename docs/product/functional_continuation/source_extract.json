@@ -2,8 +2,8 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 81,
-  "note": "Exact source objects copied from the pinned specification and decision inventories for 100 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
+  "specification_count": 84,
+  "note": "Exact source objects copied from the pinned specification and decision inventories for 103 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
       "original_id": "SPEC-U01-004",
@@ -894,6 +894,39 @@
       "owner_points_source": "143، 391، 392، 393، 394، 395",
       "source_spec_lines_unverified": "1952–1953",
       "parsed_index": 414,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U11-008",
+      "unit": "11",
+      "title": "فحص الملف والعزل",
+      "original_text": "11.8. فحص الملف والعزل\nتُفحص الملفات وفق ضوابط النوع والحجم والأمان المعتمدة قبل إتاحتها للمستخدمين. الملف المحجوب أو الذي تعذر التحقق منه لا يمر إلى النشر أو الفهرسة لمجرد إعادة المحاولة. تظهر حالة مفهومة للمخول، دون كشف أسرار أو تشغيل الملف المشتبه به على جهازه كحل مقترح. اجتياز الفحص التقني لا يثبت صحة المحتوى العلمي.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "384",
+      "source_spec_lines_unverified": "1499–1500",
+      "parsed_index": 321,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U14-009",
+      "unit": "14",
+      "title": "صلاحيات مرنة داخل الحدود المحجوزة",
+      "original_text": "14.9. صلاحيات مرنة داخل الحدود المحجوزة\nيمكن تخصيص صلاحيات المنظمين ومسؤوليهم بقوالب Permission Sets وتعديلات لكل مستخدم. يمكن فصل التصنيف والتحرير المشتق والتوصيل والنشر والاستيراد والتصدير ومراجعة الهويات وإدارة المستخدمين والاطلاع على التدقيق. لا تمنح صلاحية القراءة التصدير الجماعي، ولا يمنح النشر تغيير الحكم. تفاصيل جمع القوالب والاستثناءات وأولوية المنع تحدد في مصفوفة تنفيذية واحدة، لا اجتهادًا مختلفًا بكل شاشة.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "400، 401، 534",
+      "source_spec_lines_unverified": "1917–1918",
+      "parsed_index": 406,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U14-015",
+      "unit": "14",
+      "title": "تغيير الصلاحيات له معاينة وسجل",
+      "original_text": "14.15. تغيير الصلاحيات له معاينة وسجل\nلا يرفع المستخدم صلاحياته أو يمنح خارج ما يملك حق إدارته. كتفصيل مقترح تعرض شاشة التعديل ما سيضاف وما سيسحب ولمن، مع تأكيد وسجل وسبب للعمليات الحساسة بحسب السياسة. تعديل قالب جماعي يوضح المستخدمين المتأثرين قبل التنفيذ، ولا يفتح القدرات الدينية المحجوزة. عدد الموافقات الإدارية الإضافية عند الحاجة ليس محسومًا في هذه الوحدة ولا تفرض موافقتان على كل إجراء روتيني.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "403، 404",
+      "source_spec_lines_unverified": "1941–1942",
+      "parsed_index": 412,
       "acceptance": "HOLD"
     }
   ],
@@ -2358,6 +2391,31 @@
         "p1-library-roundtrip",
         "research",
         "search-baseline"
+      ],
+      "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
+      "status": "DECISION",
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "D-026",
+      "occurrence": 1,
+      "source_header": "2026-09-30 — D-026",
+      "text": "2026-09-30 — D-026\r\nاعتماد نموذج صلاحيات مرن فوق الأدوار الأساسية: ORGANIZER وORGANIZER_ADMIN وMUFTI، مع Permission Sets وقوالب جاهزة وOverrides لكل مستخدم. يمكن تخصيص صلاحيات المنظمين ومسؤولي المنظمين بدقة، مع منعهم من امتلاك أو منح الصلاحيات الشرعية المحجوزة للشيخ مثل إنشاء/اعتماد الفتوى أو تعديل جواب الشيخ. كل تغيير صلاحية يسجل في Audit Log، ولا يجوز للمستخدم رفع صلاحياته أو منح ما هو خارج نطاق الصلاحيات التي يملك حق إدارتها.\r\n",
+      "text_sha256": "9bcc665ac24444cd9b1e20a705f8cd455fb855553c4535db6d8980c75818102b",
+      "source_url": "https://docs.google.com/document/d/1IoGNeCbB8dtMuGZ-BuvlInifmfaHbRos18OF1YUCN2Y/edit",
+      "source_modified": "2026-10-13T07:22:26.752Z",
+      "owner_points": [
+        "84",
+        "85",
+        "400",
+        "401",
+        "402",
+        "403",
+        "404"
+      ],
+      "evidence_ids": [
+        "case-original",
+        "identity"
       ],
       "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
       "status": "DECISION",

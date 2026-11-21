@@ -226,6 +226,7 @@ class PrivacyResponses:
 
     def __call__(self, request):
         from apps.casework_web.guard import denied
+        from apps.staff_sessions.integration import retain_final_guard
 
         from .services import PrivacyDenied
 
@@ -233,9 +234,14 @@ class PrivacyResponses:
             # Retain final response pins without holding a database transaction
             # around authentication or an external candidate provider.
             with projection(atomic=False) as guard:
+                retain_final_guard(
+                    guard.final_pins, failure=PrivacyDenied, code="private_projection_unavailable"
+                )
                 response = self.get_response(request)
                 if getattr(response, "streaming", False) and guard.uses:
                     raise PrivacyDenied("privacy_buffered_projection_required")
                 return response
         except PrivacyDenied:
-            return denied("private_projection_unavailable", 404)
+            response = denied("private_projection_unavailable", 404)
+            response["Referrer-Policy"] = "no-referrer"
+            return response

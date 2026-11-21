@@ -46,6 +46,12 @@ def _check(lease, response):
                 services.reject()
         else:
             services.recheck(binding)
+    # A later binding's callback can revoke a previously checked session or
+    # source. Finish every callback first, then perform only retained pure pins.
+    for binding in lease.bindings.values():
+        if binding.id not in lease.closed_by_request:
+            services.check(binding, authorize=False)
+    integration.check_final_guards(lease)
 
 
 def _stream(iterator, lease, response):
@@ -95,6 +101,11 @@ class SessionContext:
                     response._resource_closers.append(lambda: setattr(lease, "active", False))
                 else:
                     lease.active = False
+                return response
+            except integration.ResponseProjectionDenied as exc:
+                lease.active = False
+                response = denied(str(exc), 404)
+                response["Referrer-Policy"] = "no-referrer"
                 return response
             except (IdentityUnavailable, CaseConflict):
                 lease.active = False

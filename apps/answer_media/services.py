@@ -23,6 +23,8 @@ from apps.delivery_queue.models import RequesterTrackingToken
 from apps.platform_recovery.integration import mutation_context, mutation_service, require_admission
 from apps.private_media.storage import configured_storage
 from apps.private_media.validation import TYPES, MediaValidationError, validate
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from . import youtube
 from .editor_boundary import EditorBoundary, head
@@ -203,6 +205,15 @@ def save_multipart_answer(
         else None
     )
     checked = []
+    scans.answer_files(
+        files=files,
+        case_id=case_id,
+        subject_id=subject_id,
+        provider=provider,
+        expected_revision=expected_revision,
+        expected_evidence_version=expected_evidence_version,
+        synthetic_fixtures_only=synthetic_fixtures_only,
+    )
     try:
         for file in files:
             if type(file) is not dict or set(file) != {"raw", "filename", "media_type"}:
@@ -214,6 +225,7 @@ def save_multipart_answer(
     actor_provider_id = provider.provider_id
     with (
         binding_locks(storage, [media.sha256 for media in checked]),
+        scan_receipts.boundary(),
         cases._staff_case(
             case_id,
             subject_id,
@@ -223,6 +235,8 @@ def save_multipart_answer(
             expected_evidence_version=expected_evidence_version,
         ) as (case, actor),
     ):
+        for media in checked:
+            scan_receipts.require(media.sha256, media.size)
         if case.stage == "NEEDS_CLARIFICATION":
             raise cases.CaseConflict("requester_clarification_still_required")
         retained = []
@@ -460,6 +474,11 @@ def manifest_for_locked_answer(answer):
     manifest = AnswerManifest.objects.filter(answer=answer).first()
     if manifest is None:
         return None
+    from apps.data_privacy.integration import source as privacy
+
+    privacy("ANSWER", answer.pk)
+    for identifier in manifest.parts.values_list("pk", flat=True):
+        privacy("ANSWER_PART", identifier)
     return {
         "answer_id": str(answer.pk),
         "answer_revision": answer.revision,

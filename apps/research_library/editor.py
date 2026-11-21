@@ -263,7 +263,17 @@ def workspace(request):
         common = _common(request, fields["case_ref"])
         file = request.FILES.get("source_file") if action == "rl_save" else None
         raw = file.read(192001) if file else b""
-        with services.material_bindings([raw] if raw else []), synthetic_queue_atomic():
+        if raw:
+            services.scans.library_file(
+                raw=raw,
+                namespace=fields["namespace"],
+                external_id=fields["external_id"],
+                expected_version=_zero(fields["expected_version"]),
+                **common,
+                expected_revision=_integer(fields["revision"]),
+                expected_evidence_version=_integer(fields["evidence_version"]),
+            )
+        with services.material_bindings([raw] if raw else []), services.scan_receipts.boundary():
             if action == "rl_search":
                 return _page(
                     request,

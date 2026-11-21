@@ -151,6 +151,12 @@ NEW_WORKFLOWS = {
         "staff_sessions_proofuse",
     ),
     "apps.data_privacy.recovery_support": ("data_privacy_classificationrevision",),
+    "apps.permission_sets.recovery_support": ("permission_sets_permissionrevision",),
+    "apps.upload_security.recovery_support": (
+        "upload_security_quarantinedfile",
+        "upload_security_uploadadmission",
+        "upload_security_scanattempt",
+    ),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -408,6 +414,36 @@ RESTORED_DENIAL_CHECKS = {
         "ai_not_inherited": 1,
         "classification_management_not_inherited": 1,
         "unclassified_source": 1,
+    },
+    "apps.permission_sets.recovery_support": {
+        "feature_disabled": 1,
+        "runtime_adapter_absent": 1,
+        "directory_absent": 1,
+        "target_inactive": 1,
+        "target_auth_epoch_changed": 1,
+        "target_case_scope_changed": 1,
+        "management_authority_absent": 1,
+        "management_mandate_revoked": 1,
+        "self_grant_rejected": 1,
+        "scientific_override_rejected": 1,
+        "stored_individual_deny": 1,
+        "disabled_template_binding": 1,
+    },
+    "apps.upload_security.recovery_support": {
+        "disabled_saved_quarantine": 1,
+        "missing_scan_policy": 1,
+        "missing_scanner": 1,
+        "synthetic_fixture_disallowed": 1,
+        "changed_engine": 1,
+        "changed_signatures": 1,
+        "changed_scan_policy": 1,
+        "expired_scan_receipt": 1,
+        "blocked_exact_bytes": 1,
+        "unscanned_exact_bytes": 1,
+        "wrong_exact_size": 1,
+        "omitted_app_with_saved_quarantine": 1,
+        "missing_current_staff": 1,
+        "foreign_case_staff": 1,
     },
 }
 
@@ -671,6 +707,16 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-continuation/private-unclassified-work-browser/result.json",
         "modern",
     ),
+    (
+        "apps.permission_sets.browser_tests.PermissionSetsBrowserTests.test_native_templates_individual_denial_audit_disable_and_revert",
+        ".local/qa/functional-continuation/permission-sets-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.upload_security.browser_tests.UploadSecurityBrowserTests.test_native_atomic_reply_quarantine_retry_original_download_and_scan_revocation",
+        ".local/qa/functional-continuation/upload-security-browser/result.json",
+        "modern",
+    ),
 )
 
 
@@ -704,6 +750,93 @@ def test_class_exists(name):
     )
 
 
+def actual_upload_engine_proof(head):
+    """Synthetic control-flow success cannot substitute for actual AV evidence."""
+    from apps.upload_security.acceptance import BENIGN, EICAR
+
+    path = Path(".local/qa/upload-security-engine/result.json")
+    require(path.is_file(), "Actual upload engine evidence is absent")
+    evidence = json.loads(path.read_text())
+    require(
+        evidence.get("schema") == "fatwa.upload-security.clamav-acceptance.v1"
+        and evidence.get("status") == "PASSED"
+        and evidence.get("real_engine_verified") is True
+        and evidence.get("tested_sha") == head
+        and evidence.get("failure_stage") is None
+        and evidence.get("production_changed") is False
+        and evidence.get("domain_rows_written") is False
+        and evidence.get("main_merged") is False
+        and evidence.get("deployment") == "NOT_DEPLOYED",
+        "Actual upload engine did not pass on this exact source",
+    )
+    require(
+        bool(os.environ.get("GITHUB_RUN_ID"))
+        and evidence.get("workflow_run_id") == os.environ["GITHUB_RUN_ID"]
+        and evidence.get("workflow_run_attempt") == os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "Actual upload engine proof belongs to another workflow execution",
+    )
+    scanner = evidence.get("scanner", {})
+    require(
+        scanner.get("mode") == "CONFIGURED"
+        and "synthetic" not in scanner.get("engine_version", "").lower()
+        and bool(scanner.get("engine_version"))
+        and re.fullmatch(r"[0-9a-f]{64}", evidence.get("executable_sha256", ""))
+        and evidence.get("signature_source_reported_by_operator") == "https://database.clamav.net"
+        and {"--official-db-only=yes", "--bytecode-unsigned=no"}
+        <= set(evidence.get("profile", [])),
+        "Actual scanner or official signature provenance is missing",
+    )
+    databases = evidence.get("databases", [])
+    require(
+        len(databases) == 3
+        and {row.get("name") for row in databases} == {"main.cvd", "daily.cvd", "bytecode.cvd"}
+        and all(
+            re.fullmatch(r"[0-9a-f]{64}", row.get("sha256", ""))
+            and type(row.get("size")) is int
+            and row["size"] > 0
+            and type(row.get("declared_signatures")) is int
+            and row["declared_signatures"] > 0
+            for row in databases
+        ),
+        "Actual official database snapshot is incomplete",
+    )
+    expected = (
+        ("BENIGN_SYNTHETIC", BENIGN, "CLEAN"),
+        ("EICAR_STANDARD_68_BYTES", EICAR, "BLOCKED"),
+    )
+    samples = evidence.get("samples", [])
+    require(len(samples) == 2, "Actual scanner samples are incomplete")
+    for sample, (name, raw, status) in zip(samples, expected, strict=True):
+        require(
+            sample.get("name") == name
+            and sample.get("expected") == sample.get("status") == status
+            and sample.get("sha256") == sha(raw)
+            and sample.get("size") == len(raw)
+            and sample.get("complete") is True
+            and type(sample.get("scanned_files")) is int
+            and sample["scanned_files"] == 1
+            and type(sample.get("loaded_signatures")) is int
+            and sample["loaded_signatures"] > 0
+            and sample.get("spec") == scanner,
+            "Actual scanner did not establish complete benign and EICAR outcomes",
+        )
+    reports = evidence.get("reports", [])
+    require(
+        len(reports) == 2
+        and [row.get("return_code") for row in reports] == [0, 1]
+        and all(
+            type(row.get("report")) is str
+            and bool(row["report"])
+            and row.get("report_sha256") == sha(row["report"].encode())
+            for row in reports
+        ),
+        "Actual scanner process diagnostics are absent or changed",
+    )
+    # This prerequisite job runs before the aggregate starts. Run identity and
+    # exact SHA, rather than a later stage's mtime, bind its downloaded artifact.
+    return {**pin(path, 0), "tested_sha": head, "workflow_run_id": evidence["workflow_run_id"]}
+
+
 def group_browser_journeys(group):
     primary = group["browser"]
     additional = primary.get("additional_journeys", [])
@@ -720,8 +853,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["49"],
-        "Exactly 49 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["51"],
+        "Exactly 51 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -729,7 +862,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 49 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 51 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -927,10 +1060,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 67
-        and len(expected_tables) == 89
+        and len(new_tables) == 71
+        and len(expected_tables) == 93
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 89 prior and new recovery tables are required",
+        "Exactly the 93 prior and new recovery tables are required",
     )
     require(
         all(
@@ -944,7 +1077,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All thirty-six fresh-process workflow result records are required",
+        "All thirty-eight fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]
@@ -965,6 +1098,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         "External library originals were omitted from recovery",
     )
     complete = execution["status"] == "PASS" and execution["browser_requested"] is True
+    upload_engine_proof = actual_upload_engine_proof(head) if complete else None
     browser_proofs = []
     browser_test_ids = []
     if complete:
@@ -1016,6 +1150,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         "browser_log_only_proofs": sum("path" not in proof for proof in browser_proofs),
         "stage_receipts": logs,
         "browser_proofs": browser_proofs,
+        "actual_upload_engine_proof": upload_engine_proof,
         "encrypted_recovery_proof": {
             **recovery_pin,
             "prior_nonempty_tables": sorted(PRIOR_TABLES),

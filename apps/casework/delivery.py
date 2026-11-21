@@ -363,9 +363,20 @@ def _requester_delivery_locked(case, verifier):
     if case.stage != "ANSWERED":
         result["delivery_status"] = "CURRENT_APPROVAL_REQUIRED"
         return result
-    cases._answer_citations(case.approved_answer)
-    cases._answer_annotations(case.approved_answer)
-    manifest = cases._answer_manifest(case.approved_answer)
+    from apps.data_privacy.integration import source as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
+    try:
+        privacy("ANSWER", case.approved_answer_id)
+        cases._answer_citations(case.approved_answer)
+        cases._answer_annotations(case.approved_answer)
+        manifest = cases._answer_manifest(case.approved_answer)
+    except PrivacyDenied:
+        # Case access can remain valid while the exact answer or one of its
+        # sources/parts is unavailable. Return no part count or source detail,
+        # while keeping the independent requester conversation usable.
+        result["delivery_status"] = "EVIDENCE_UNAVAILABLE"
+        return result
     if manifest and manifest["requires_human_delivery"]:
         result["delivery_status"] = "UNSUPPORTED_MEDIA_REQUIRES_HUMAN_ACTION"
         return result

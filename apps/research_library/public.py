@@ -11,6 +11,7 @@ from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.library_preview import services as preview
 from apps.platform_recovery.integration import mutation_context
+from apps.upload_security import services as scan_receipts
 
 from . import services
 from .models import LibraryVersion
@@ -115,7 +116,7 @@ def public_projection():
         directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
         snapshot, actors = Snapshot(), []
         snapshot.deadlines.append(selected.valid_until)
-        with synthetic_queue_atomic():
+        with synthetic_queue_atomic(), scan_receipts.projection():
             # The scholarly graph mutex is always acquired before any case lock,
             # matching the existing public knowledge/collection composition.
             from django.db import connection
@@ -139,6 +140,8 @@ def public_projection():
                 if "REVOKE" in actions or "WITHDRAW" in actions:
                     continue
                 try:
+                    if row.blob_id:
+                        scan_receipts.require(row.blob_id, row.blob.size)
                     privacy.public("LIBRARY_VERSION", row.pk)
                     approval = services._approval(row, "PUBLIC_METADATA")
                     release = actions["RELEASE"]

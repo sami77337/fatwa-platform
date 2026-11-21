@@ -72,6 +72,9 @@ def reference(row):
 
 
 def raw_for_owner(row):
+    from apps.upload_security.integration import owner_file
+
+    owner_file(row)
     try:
         return read_original(reference(row))
     except (MediaValidationError, OSError) as exc:

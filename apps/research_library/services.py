@@ -19,6 +19,8 @@ from apps.delivery_queue.services import _canonical
 from apps.platform_recovery.integration import mutation_context, mutation_service
 from apps.private_media.storage import StoredOriginal, configured_storage, read_original
 from apps.private_media.validation import MediaValidationError
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from .authority import LibraryAuthority
 from .models import LibraryBlob, LibraryDecision, LibraryItem, LibraryVersion
@@ -87,6 +89,7 @@ def validate_material(payload, file_bytes=b"", filename="", media_type=""):
         if filename or media_type:
             raise cases.CaseConflict("library_file_invalid")
         return None
+    scans.require_bytes(file_bytes)
     try:
         parsed = validate_file(file_bytes, filename, media_type)
     except MediaValidationError as exc:
@@ -210,6 +213,7 @@ def _version_state(version_id):
 
 
 def _raw(blob):
+    scan_receipts.require(blob.sha256, blob.size)
     try:
         return read_original(
             StoredOriginal(
@@ -288,9 +292,12 @@ def staff_boundary(
     **unused,
 ):
     enabled()
-    with delivery._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (
-        case,
-        actor,
+    with (
+        scan_receipts.boundary(),
+        delivery._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (
+            case,
+            actor,
+        ),
     ):
         if expected_revision is not None:
             cases._versions(case, expected_revision, expected_evidence_version)
@@ -342,6 +349,8 @@ def _permit(case, actor, provider, action, *, namespace="", external_id="", vers
 
 def _watch(row, *, file=False):
     _verify(row)
+    if row.blob_id:
+        scan_receipts.require(row.blob_id, row.blob.size)
     for decision in row.decisions.order_by("sequence"):
         _verify(decision)
     for scope in _SCOPES.get():
@@ -440,6 +449,13 @@ def write_material(
     key = cases._uuid(request_key)
     if type(expected_version) is not int or not 0 <= expected_version < 64:
         raise cases.CaseConflict("library_expected_version_invalid")
+    scans.library_file(
+        raw=file_bytes,
+        namespace=namespace,
+        external_id=external_id,
+        expected_version=expected_version,
+        **base,
+    )
     parsed = validate_material(payload, file_bytes, filename, media_type)
     request_hash = _digest(
         {
@@ -453,9 +469,12 @@ def write_material(
             "expected_version": expected_version,
         }
     )
-    with material_bindings([file_bytes] if parsed else []) as storage, staff_boundary(**base) as (
-        case,
-        actor,
+    with (
+        material_bindings([file_bytes] if parsed else []) as storage,
+        staff_boundary(**base) as (
+            case,
+            actor,
+        ),
     ):
         provider = base["provider"]
         _permit(case, actor, provider, "EDIT", namespace=namespace, external_id=external_id)

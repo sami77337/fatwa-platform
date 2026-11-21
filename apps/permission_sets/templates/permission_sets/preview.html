@@ -1,0 +1,7 @@
+{% extends 'permission_sets/base.html' %}{% block content %}
+<section id="ps-preview"><h2>مراجعة التغيير قبل الحفظ</h2><p>{{ plan.proposal.note }}</p><p>الإصدار المقترح {{ plan.number }} · صالح حتى {{ plan.proposal.valid_until }}</p>
+<h3>التغييرات الصريحة</h3>{% for row in plan.changes %}<article><h4>{{ row.label }} · {{ row.case_ref }}</h4><p>{{ row.before }} ← {{ row.after }}</p></article>{% empty %}<p>لا تغيير في القواعد الصريحة؛ راجع الحالة والمدة والربط.</p>{% endfor %}
+<h3>المستخدمون المتأثرون الآن</h3>{% for user in plan.summaries %}<article data-affected="{{ user.subject }}"><h4>{{ user.subject }} · {{ user.role }}</h4>{% for row in user.changes %}<p>{{ row.label }} · {{ row.case_ref }}: {{ row.before }} ← {{ row.after }}</p>{% empty %}<p>لا اختلاف في النتيجة الحالية للقواعد.</p>{% endfor %}</article>{% empty %}<p>لا يوجد مستخدم مرتبط بهذا القالب حاليًا.</p>{% endfor %}
+<p>تعطيل قالب أو انتهاء مدته يوقف ملف المستخدم المرتبط به حتى إصلاح الربط أو القالب. إدارة هذه القواعد لا تمنح أي اعتماد علمي.</p>
+<form id="ps-confirm" method="post">{% csrf_token %}<input type="hidden" name="action" value="ps_apply"><input type="hidden" name="plan" value="{{ serialized }}"><input type="hidden" name="proof" value="{{ proof }}"><label><input type="checkbox" name="confirmed" value="yes" required>راجعت الموارد والمستخدمين وأعتمد هذا التغيير بسبب مذكور.</label><button type="submit">حفظ النسخة وسجل التدقيق</button></form></section>
+{% endblock %}

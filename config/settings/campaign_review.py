@@ -55,7 +55,15 @@ INSTALLED_APPS = [
     "apps.ai_gateway",
     "apps.staff_sessions",
     "apps.data_privacy",
+    "apps.permission_sets",
+    "apps.upload_security",
 ]
+FATWA_PERMISSION_SETS_ENABLED = False
+FATWA_PERMISSION_SETS_MANAGEMENT_AUTHORITY = None
+FATWA_UPLOAD_SECURITY_ENABLED = False
+FATWA_UPLOAD_SCAN_POLICY = None
+FATWA_UPLOAD_SCANNER = None
+FATWA_UPLOAD_SECURITY_ALLOW_SYNTHETIC = False
 FATWA_STAFF_SESSIONS_ENABLED = False
 FATWA_STAFF_SESSION_AUTHORITY = None
 FATWA_STAFF_SESSION_RUNTIME_EPOCH = None
@@ -201,6 +209,7 @@ MIDDLEWARE = [
     "apps.platform_recovery.middleware.MaintenanceGuard",
     "apps.staff_sessions.middleware.SessionContext",
     "apps.data_privacy.integration.PrivacyResponses",
+    "apps.upload_security.middleware.UploadSecurityResponses",
     "apps.material_api.middleware.MaterialAPIResponses",
     "apps.private_media.links.PrivateMediaResponses",
     *[

@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.casework import services as cases
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.platform_recovery.integration import mutation_context
+from apps.upload_security import services as scan_receipts
 
 from .authority import ImportAuthority
 
@@ -109,7 +110,7 @@ def boundary(*, action="VIEW", namespace="", allow_library_writes=False, **base)
     from apps.research_library import services as library
 
     enabled()
-    with synthetic_queue_atomic():
+    with synthetic_queue_atomic(), scan_receipts.projection():
         with library.staff_boundary(**base) as (case, actor):
             expected = {str(row[0]): tuple(row) for row in library.head_fingerprint(case.pk)}
             history = history_fingerprint(case.pk) if action == "VIEW" else None

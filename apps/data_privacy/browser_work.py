@@ -45,10 +45,18 @@ class PrivateUnclassifiedWorkBrowserTests(WorkFixture, LiveServerTestCase):
             button.press("Enter")
         self.assertEqual(response.value.status, expected, page.locator("body").inner_text()[:500])
 
-    def capture(self, page, name):
+    def capture(self, page, name, *, denial=False):
         for width in (320, 1280):
             page.set_viewport_size({"width": width, "height": 900})
-            self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
+            if denial:
+                # The existing private guard intentionally returns a minimal
+                # JSON denial, not an HTML document with language attributes.
+                self.assertEqual(
+                    json.loads(page.locator("body").inner_text()),
+                    {"error": "staff_case_unavailable"},
+                )
+            else:
+                self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
             self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), width)
             page.screenshot(path=str(OUT / f"{name}-{width}.png"), full_page=True)
 
@@ -186,7 +194,7 @@ class PrivateUnclassifiedWorkBrowserTests(WorkFixture, LiveServerTestCase):
                     str(answer["id"]),
                 ):
                     self.assertNotIn(private, page.content())
-                self.capture(page, "current-work-revoked")
+                self.capture(page, "current-work-revoked", denial=True)
                 self.assertEqual(self.sync(self.state), approved)
                 self.assertEqual(self.sync(self.original_snapshot), before)
 

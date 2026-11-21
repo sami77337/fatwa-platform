@@ -17,6 +17,7 @@ on:
       - 'requirements*.txt'
       - 'pyproject.toml'
       - '.github/workflows/functional-completion.yml'
+      - '.github/workflows/upload-security-engine.yml'
       - 'infra/dev/functional_verify.py'
       - 'infra/dev/functional_scope_receipt.py'
       - 'infra/dev/functional_continuation_receipt.py'
@@ -24,6 +25,8 @@ on:
 permissions:
   contents: read
 jobs:
+  upload-scan-engine:
+    uses: ./.github/workflows/upload-security-engine.yml
   citation-browser:
     # The previous aggregate stalled here after forty successful journeys.
     # Exercise this boundary and the real two-role privacy forms first,
@@ -84,9 +87,12 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
   workspace:
-    needs: citation-browser
+    needs: [citation-browser, upload-scan-engine]
+    # Preserve service/browser/restore diagnostics if the actual engine is
+    # unavailable. The receipt still rejects a missing or failed engine proof.
+    if: ${{ always() && needs.citation-browser.result == 'success' }}
     runs-on: ubuntu-latest
-    # 49 protected journeys, expanded service families and the encrypted drill
+    # 51 protected journeys, expanded service families and the encrypted drill
     # share this bounded job; local affected tests alone already exceed 25 minutes.
     timeout-minutes: 45
     strategy:
@@ -131,6 +137,12 @@ jobs:
       - name: Install browser driver for the connected journey
         run: |
           python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+      - name: Download actual scanner evidence from this workflow
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        continue-on-error: true
+        with:
+          name: actual-upload-scan-engine
+          path: .local/qa/upload-security-engine
       - name: Verify new workflows, encrypted recovery and protected browser
         env:
           FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
@@ -149,6 +161,7 @@ jobs:
           path: |
             .local/qa/functional-completion
             .local/qa/functional-continuation
+            .local/qa/upload-security-engine
             .local/qa/library-operations
             .local/qa/case-assignments/browser
             .local/qa/v6-casework/browser

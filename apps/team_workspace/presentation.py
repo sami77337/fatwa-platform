@@ -85,12 +85,21 @@ def read_workspace_case(*, include_answer_manifest=True, **common):
         common["provider"],
         common["synthetic_fixtures_only"],
     ) as (case, _identity):
+        from apps.data_privacy.integration import evidence_allowed
+
         snapshot = describe(services._staff(case))
-        latest = case.answers.order_by("-revision").first()
+        answer_ids = {answer["id"] for answer in snapshot["answers"]}
+        latest = (
+            case.answers.get(pk=snapshot["latest_answer"]["id"])
+            if snapshot["latest_answer"] else None
+        )
         snapshot["answer_manifest"] = (
             services._answer_manifest(latest) if include_answer_manifest else None
         )
-        evidence = {item.version: item.text for item in case.evidence.all()}
+        evidence = {
+            item.version: item.text for item in case.evidence.all()
+            if evidence_allowed(item)
+        }
         snapshot["timeline"] = [
             {
                 "sequence": event.sequence,
@@ -108,6 +117,8 @@ def read_workspace_case(*, include_answer_manifest=True, **common):
                 ),
             }
             for event in case.events.select_related("answer").order_by("sequence")
+            if (not event.answer_id or str(event.answer_id) in answer_ids)
+            and (event.action not in {"INTAKE", "FOLLOWUP"} or event.evidence_version in evidence)
         ]
         return snapshot
 

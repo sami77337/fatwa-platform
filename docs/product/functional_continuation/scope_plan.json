@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 100,
-  "implemented_scope_candidates": 100,
+  "candidate_count": 103,
+  "implemented_scope_candidates": 103,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 17.99,
+  "candidate_percentage": 18.53,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -3650,7 +3650,8 @@
         "apps.data_privacy.test_publication_plans",
         "apps.data_privacy.test_private_work",
         "apps.data_privacy.test_public_discovery",
-        "apps.data_privacy.test_workspace_search"
+        "apps.data_privacy.test_workspace_search",
+        "apps.data_privacy.test_workspace_overview"
       ],
       "service_test_classes": [
         "apps.data_privacy.test_campaign.CampaignPrivacyTests",
@@ -3696,7 +3697,8 @@
         "apps.data_privacy.test_public_discovery.KnowledgeDiscoveryTests",
         "apps.data_privacy.test_public_discovery.CollectionDiscoveryTests",
         "apps.data_privacy.test_public_discovery.TeachingDiscoveryTests",
-        "apps.data_privacy.test_workspace_search.WorkspaceSearchPrivacyTests"
+        "apps.data_privacy.test_workspace_search.WorkspaceSearchPrivacyTests",
+        "apps.data_privacy.test_workspace_overview.WorkspaceOverviewPrivacyTests"
       ],
       "pending_service_test_labels": [],
       "browser": {
@@ -3737,7 +3739,7 @@
       },
       "recovery": {
         "helper": "apps.data_privacy.recovery_support",
-        "status": "RESTORE_READER_SHADOWED_CALLABLE_FIXED_RERUN_REQUIRED",
+        "status": "ENCRYPTED_RESTORE_PASSED_PG17_PG18_ON_73C3385_EXACT_HEAD_RERUN_REQUIRED",
         "nonempty_model_count": 1,
         "tables": [
           "data_privacy_classificationrevision"
@@ -3839,6 +3841,172 @@
         "source": "SPEC-U14-001",
         "behavior": "Pending classification/transcription does not prevent an explicitly authorized human draft and approval. STAFF READ only, exact identity/source/current policy pins, no default grant and no public or automated purpose.",
         "native_browser": "apps.data_privacy.browser_work.PrivateUnclassifiedWorkBrowserTests.test_native_draft_approval_without_classification_and_current_work_revocation"
+      }
+    },
+    {
+      "id": "audited_permission_sets",
+      "title_ar": "مجموعات الصلاحيات والاستثناءات الفردية وسجل تغييرات مدقق",
+      "implementation_state": "IMPLEMENTED_INTEGRATED_SERVICE_BROWSER_RESTORE_PROOFS_PENDING",
+      "contract": "apps/permission_sets/README.md",
+      "baseline_gap": "Finite independently mandated permission templates and per-user ALLOW/DENY rules use actual identities, roles and exact resources; DENY wins, old and new rules require authority, self-grants and scholarly authority escalation are rejected. Native preview/confirmation, disable and fresh revert append immutable SQL-guarded audit revisions; current operational use and twelve restored-use denials preserve originals. No production role grant or global adapter replacement is inferred.",
+      "service_test_labels": [
+        "apps.permission_sets.test_http",
+        "apps.permission_sets.test_recovery",
+        "apps.permission_sets.tests"
+      ],
+      "service_test_classes": [
+        "apps.permission_sets.test_http.PermissionHTTPTests",
+        "apps.permission_sets.test_recovery.PermissionRecoveryTests",
+        "apps.permission_sets.tests.PermissionTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.permission_sets.browser_tests.PermissionSetsBrowserTests",
+        "result_path": ".local/qa/functional-continuation/permission-sets-browser/result.json",
+        "status": "PROTECTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.permission_sets.recovery_support",
+        "status": "LOCAL_HELPER_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 1,
+        "tables": [
+          "permission_sets_permissionrevision"
+        ],
+        "notes": "Exact immutable journals and current-use denials are checked after encrypted restore; no authority is restored from history."
+      },
+      "points": [
+        {
+          "original_id": "401",
+          "original_text": "يوجد Permission Sets وPer-user Overrides.",
+          "direct_spec_ids": [
+            "SPEC-U14-009"
+          ],
+          "decision_ids": [
+            "D-026",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 403
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Finite independently mandated permission templates and per-user ALLOW/DENY rules use actual identities, roles and exact resources; DENY wins, old and new rules require authority, self-grants and scholarly authority escalation are rejected. Native preview/confirmation, disable and fresh revert append immutable SQL-guarded audit revisions; current operational use and twelve restored-use denials preserve originals. No production role grant or global adapter replacement is inferred."
+        },
+        {
+          "original_id": "404",
+          "original_text": "كل تغيير صلاحيات يدخل Audit Log.",
+          "direct_spec_ids": [
+            "SPEC-U14-015"
+          ],
+          "decision_ids": [
+            "D-026",
+            "D-067"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 406
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Finite independently mandated permission templates and per-user ALLOW/DENY rules use actual identities, roles and exact resources; DENY wins, old and new rules require authority, self-grants and scholarly authority escalation are rejected. Native preview/confirmation, disable and fresh revert append immutable SQL-guarded audit revisions; current operational use and twelve restored-use denials preserve originals. No production role grant or global adapter replacement is inferred."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PROOFS_PENDING_FINAL_COMPOSITION",
+        "counted_as_integrated_completion": false
+      }
+    },
+    {
+      "id": "current_upload_security",
+      "title_ar": "حجر الملفات وفحص الأمان وربط القراءة بالنتيجة الحالية",
+      "implementation_state": "IMPLEMENTED_INTEGRATED_SERVICE_BROWSER_RESTORE_PROOFS_PENDING",
+      "contract": "apps/upload_security/README.md",
+      "baseline_gap": "All seven binary ingress paths in the campaign composition retain immutable exact bytes in quarantine and require bounded current complete scan receipts before canonical writes. Existing file type/size limits remain independent. Actual ClamAV with fresh official signed databases must admit the benign input and reject EICAR on this same commit; synthetic scanner tests alone cannot certify this point. Native atomic retry/download and fourteen restored-use denials require current scanner, exact bytes and independent source/privacy authority. The separate stateless legacy transcript-workbench profile and production deployment are outside this development composition.",
+      "service_test_labels": [
+        "apps.upload_security.test_acceptance",
+        "apps.upload_security.test_admission",
+        "apps.upload_security.test_clamav",
+        "apps.upload_security.test_entrypoints",
+        "apps.upload_security.test_http",
+        "apps.upload_security.test_ledger",
+        "apps.upload_security.test_privacy",
+        "apps.upload_security.test_recovery",
+        "apps.upload_security.test_transcripts"
+      ],
+      "service_test_classes": [
+        "apps.upload_security.test_acceptance.ClamAVAcceptanceAvailabilityTests",
+        "apps.upload_security.test_admission.MissingScannerAdmissionTests",
+        "apps.upload_security.test_clamav.ClamAVAdapterContractTests",
+        "apps.upload_security.test_entrypoints.DomainUploadAdmissionTests",
+        "apps.upload_security.test_entrypoints.LibraryUploadAdmissionTests",
+        "apps.upload_security.test_entrypoints.ImportUploadAdmissionTests",
+        "apps.upload_security.test_http.NativeUploadBoundaryTests",
+        "apps.upload_security.test_ledger.UploadScanLedgerTests",
+        "apps.upload_security.test_privacy.UploadPrivacyCompositionTests",
+        "apps.upload_security.test_recovery.UploadSecurityRecoveryTests",
+        "apps.upload_security.test_transcripts.TranscriptUploadAdmissionTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.upload_security.browser_tests.UploadSecurityBrowserTests",
+        "result_path": ".local/qa/functional-continuation/upload-security-browser/result.json",
+        "status": "PROTECTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.upload_security.recovery_support",
+        "status": "LOCAL_HELPER_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "tables": [
+          "upload_security_quarantinedfile",
+          "upload_security_uploadadmission",
+          "upload_security_scanattempt"
+        ],
+        "notes": "Exact immutable journals and current-use denials are checked after encrypted restore; no authority is restored from history."
+      },
+      "points": [
+        {
+          "original_id": "384",
+          "original_text": "Uploads تمر بفحص نوع الملف والحجم والأمان.",
+          "direct_spec_ids": [
+            "SPEC-U11-008"
+          ],
+          "decision_ids": [
+            "D-031"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 386
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "All seven binary ingress paths in the campaign composition retain immutable exact bytes in quarantine and require bounded current complete scan receipts before canonical writes. Existing file type/size limits remain independent. Actual ClamAV with fresh official signed databases must admit the benign input and reject EICAR on this same commit; synthetic scanner tests alone cannot certify this point. Native atomic retry/download and fourteen restored-use denials require current scanner, exact bytes and independent source/privacy authority. The separate stateless legacy transcript-workbench profile and production deployment are outside this development composition."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PROOFS_PENDING_FINAL_COMPOSITION",
+        "counted_as_integrated_completion": false
       }
     }
   ],
@@ -4526,6 +4694,24 @@
         "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
         "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
       }
+    },
+    {
+      "original_id": "401",
+      "from": "DECISION",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Finite independently mandated permission templates and per-user ALLOW/DENY rules use actual identities, roles and exact resources; DENY wins, old and new rules require authority, self-grants and scholarly authority escalation are rejected. Native preview/confirmation, disable and fresh revert append immutable SQL-guarded audit revisions; current operational use and twelve restored-use denials preserve originals. No production role grant or global adapter replacement is inferred."
+    },
+    {
+      "original_id": "404",
+      "from": "DECISION",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Finite independently mandated permission templates and per-user ALLOW/DENY rules use actual identities, roles and exact resources; DENY wins, old and new rules require authority, self-grants and scholarly authority escalation are rejected. Native preview/confirmation, disable and fresh revert append immutable SQL-guarded audit revisions; current operational use and twelve restored-use denials preserve originals. No production role grant or global adapter replacement is inferred."
+    },
+    {
+      "original_id": "384",
+      "from": "PARTIAL",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "All seven binary ingress paths in the campaign composition retain immutable exact bytes in quarantine and require bounded current complete scan receipts before canonical writes. Existing file type/size limits remain independent. Actual ClamAV with fresh official signed databases must admit the benign input and reject EICAR on this same commit; synthetic scanner tests alone cannot certify this point. Native atomic retry/download and fourteen restored-use denials require current scanner, exact bytes and independent source/privacy authority. The separate stateless legacy transcript-workbench profile and production deployment are outside this development composition."
     }
   ],
   "verified_checkpoints": [
@@ -4542,5 +4728,12 @@
     "design_original_id": "530",
     "overall_completion_claim": false,
     "external_policy_data_and_production_decisions": "Tracked separately; no invented data, credentials, grants or owner acceptance"
+  },
+  "required_upload_engine_proof": {
+    "path": ".local/qa/upload-security-engine/result.json",
+    "same_tested_sha": true,
+    "real_engine_verified": true,
+    "official_signed_databases": true,
+    "synthetic_stub_cannot_pass": true
   }
 }

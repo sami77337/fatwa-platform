@@ -160,7 +160,14 @@ Late revocation withholds the result and rolls back a newly staged plan.
 
 AI candidate retrieval, quality reports, team inbox rows and identity joins also
 apply the current classification boundary before restricted data or counts are
-returned. The enabled feature never invents a classification for a newly created
+returned. The connected Mufti frame uses the already admitted answer/evidence
+set for its timeline; it cannot reconstruct hidden content from canonical event
+relations. Attachment metadata and manifest counts require exact child READ,
+and core manifest consumers check every part before any DTO or byte validation.
+Missing answer/source permission makes requester delivery evidence unavailable
+while preserving the independently authorized case conversation.
+
+The enabled feature never invents a classification for a newly created
 answer or derivative. Human classification remains independent of authoring.
 
 The real protected two-role, four-level native journey passed on PostgreSQL 17

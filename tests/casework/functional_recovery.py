@@ -50,6 +50,8 @@ ADDITIONAL_WORKFLOWS = (
     "apps.operational_workspace.publication_recovery_support",
     "apps.staff_sessions.recovery_support",
     "apps.data_privacy.recovery_support",
+    "apps.permission_sets.recovery_support",
+    "apps.upload_security.recovery_support",
 )
 
 

@@ -176,6 +176,19 @@ LABELS = [
     "apps.data_privacy.test_private_work",
     "apps.data_privacy.test_public_discovery",
     "apps.data_privacy.test_workspace_search",
+    "apps.data_privacy.test_workspace_overview",
+    "apps.permission_sets.test_http",
+    "apps.permission_sets.test_recovery",
+    "apps.permission_sets.tests",
+    "apps.upload_security.test_acceptance",
+    "apps.upload_security.test_admission",
+    "apps.upload_security.test_clamav",
+    "apps.upload_security.test_entrypoints",
+    "apps.upload_security.test_http",
+    "apps.upload_security.test_ledger",
+    "apps.upload_security.test_privacy",
+    "apps.upload_security.test_recovery",
+    "apps.upload_security.test_transcripts",
 ]
 
 BROWSER_LABELS = [
@@ -224,6 +237,8 @@ BROWSER_LABELS = [
     "apps.staff_sessions.browser_tests",
     "apps.data_privacy.browser_tests",
     "apps.data_privacy.browser_work",
+    "apps.permission_sets.browser_tests",
+    "apps.upload_security.browser_tests",
 ]
 
 

@@ -17,6 +17,25 @@ class Lease:
     active: bool = True
     bindings: dict = field(default_factory=dict)
     closed_by_request: set = field(default_factory=set)
+    final_guards: list = field(default_factory=list)
+
+
+class ResponseProjectionDenied(Exception):
+    """An admitted response was invalidated after its domain middleware ended."""
+
+
+def retain_final_guard(check, *, failure, code):
+    """Retain a pure check until after every final session authority callback."""
+    if enabled():
+        context().final_guards.append((check, failure, code))
+
+
+def check_final_guards(lease):
+    for check, failure, code in lease.final_guards:
+        try:
+            check()
+        except failure as exc:
+            raise ResponseProjectionDenied(code) from exc
 
 
 def enabled():

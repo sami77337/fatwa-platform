@@ -135,8 +135,9 @@ class AnswerUseBundle:
     repeat all callbacks, then all byte checks, then every pure pin together.
     """
 
-    def __init__(self, citation_guards, media_pin, earliest):
+    def __init__(self, citation_guards, media_pin, earliest, scan_pin):
         self.citation_guards, self.media_pin, self.earliest = citation_guards, media_pin, earliest
+        self.scan_pin = scan_pin
 
     def callbacks(self):
         for guard in self.citation_guards:
@@ -154,6 +155,7 @@ class AnswerUseBundle:
         self.media_pin.final_pins()
         if self.earliest[0] is not None and self.earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
+        self.scan_pin.check()
 
 
 @contextmanager
@@ -164,12 +166,17 @@ def _answer_use_boundary():
     earliest = [None]
     token = _TIMED_USE_DEADLINES.set((*_TIMED_USE_DEADLINES.get(), earliest))
     from apps.precise_citations.integration import answer_use_boundary
+    from apps.upload_security.services import projection as scan_projection
 
     from .media_boundary import media_projection_boundary
 
     try:
-        with answer_use_boundary() as citation_guards, media_projection_boundary() as media_pin:
-            yield AnswerUseBundle(citation_guards, media_pin, earliest)
+        with (
+            scan_projection() as scan_pin,
+            answer_use_boundary() as citation_guards,
+            media_projection_boundary() as media_pin,
+        ):
+            yield AnswerUseBundle(citation_guards, media_pin, earliest, scan_pin)
         if earliest[0] is not None and earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
     finally:

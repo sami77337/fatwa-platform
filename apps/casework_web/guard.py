@@ -178,6 +178,8 @@ def _budget(request):
             BASE + "operations/login/",
             BASE + "sessions/",
             BASE + "operations/sessions/",
+            BASE + "staff/mfa/",
+            BASE + "operations/mfa/",
         }:
             # Session forms can actively verify a credential. Charge every POST
             # to the existing login budget without parsing an untrusted body.
@@ -230,6 +232,27 @@ class CaseworkGuard:
             methods = (
                 ("GET", "POST")
                 if getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", False) is True
+                else None
+            )
+        if request.path in {BASE + "staff/permissions/", BASE + "operations/permissions/"}:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_PERMISSION_SETS_ENABLED", False) is True
+                else None
+            )
+        if request.path in {BASE + "staff/mfa/", BASE + "operations/mfa/"}:
+            methods = (
+                ("GET", "HEAD", "POST")
+                if getattr(settings, "FATWA_STAFF_MFA_ENABLED", False) is True
+                else None
+            )
+        if request.path in {
+            BASE + "staff/record-lifecycle/",
+            BASE + "operations/record-lifecycle/",
+        }:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_RECORD_SUPPRESSION_ENABLED", False) is True
                 else None
             )
         if methods is None and (

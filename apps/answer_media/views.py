@@ -18,11 +18,12 @@ from apps.casework_web import requester_workspace
 from apps.casework_web.access import RequestDirectory, current_staff
 from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _form, _integer, _provider
-from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable
 from apps.private_media.links import protect
 from apps.private_media.storage import configured_storage
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from . import related_views, services
 from .editor_boundary import EditorBoundary, head
@@ -109,17 +110,30 @@ def _enhanced():
 
 @contextmanager
 def _editor_transaction(request, common):
-    if not _enhanced():
-        yield
-        return
     storage = configured_storage()
     digests = []
+    files = []
     for uploaded in request.FILES.values():
         if uploaded.size > 192000:
             raise InvalidForm("answer_media_too_large")
-        digests.append(sha256(uploaded.read(192001)).hexdigest())
+        raw = uploaded.read(192001)
+        digests.append(sha256(raw).hexdigest())
+        files.append({"raw": raw, "filename": uploaded.name, "media_type": uploaded.content_type})
         uploaded.seek(0)
-    with binding_locks(storage, digests), synthetic_queue_atomic():
+    if files:
+        scans.answer_files(
+            files=files,
+            **common,
+            expected_revision=_integer(request.POST["revision"]),
+            expected_evidence_version=_integer(request.POST["evidence_version"]),
+        )
+    if not _enhanced():
+        # Keep external digest locks outside the owned command/render unit even
+        # when enhanced editor features are off.
+        with binding_locks(storage, digests), scan_receipts.boundary():
+            yield
+        return
+    with binding_locks(storage, digests), scan_receipts.boundary():
         editor = EditorBoundary(common["provider"])
         yield
         editor.check()
