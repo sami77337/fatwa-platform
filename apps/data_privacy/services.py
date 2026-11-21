@@ -63,6 +63,9 @@ def recorded(kind, identifier):
 
 
 def applicable(kind, identifier):
+    from apps.record_suppression.integration import require as current_material
+
+    current_material(kind, identifier)
     if enabled():
         return True
     if recorded(kind, identifier):
@@ -380,6 +383,7 @@ class Projection:
     def __init__(self):
         self.flag = (type(getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", None)), enabled())
         self.uses = []
+        self.retained_suppression = []
 
     def callbacks(self):
         for use in self.uses:
@@ -389,6 +393,8 @@ class Projection:
         if (type(getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", None)), enabled()) != self.flag:
             raise PrivacyDenied("privacy_configuration_changed")
         for use in self.uses:
+            use.final_pins()
+        for use in self.retained_suppression:
             use.final_pins()
 
     def finish(self):

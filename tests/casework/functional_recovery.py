@@ -52,10 +52,21 @@ ADDITIONAL_WORKFLOWS = (
     "apps.data_privacy.recovery_support",
     "apps.permission_sets.recovery_support",
     "apps.upload_security.recovery_support",
+    "apps.staff_mfa.recovery_support",
+    "apps.record_suppression.recovery_support",
 )
 
 
 def restored(fixture):
+    from apps.record_suppression.recovery_support import current_floor
+
+    # The independent current floor is required before any restored feature may
+    # read a source. It supplies no identity, privacy or administrative grant.
+    with current_floor(fixture["additional_workflows"]["apps.record_suppression.recovery_support"]):
+        _restored_with_current_floor(fixture)
+
+
+def _restored_with_current_floor(fixture):
     from django.db import IntegrityError, transaction
     from django.test import override_settings
 

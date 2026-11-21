@@ -189,6 +189,16 @@ LABELS = [
     "apps.upload_security.test_privacy",
     "apps.upload_security.test_recovery",
     "apps.upload_security.test_transcripts",
+    "apps.staff_mfa.test_campaign",
+    "apps.staff_mfa.test_downgrade",
+    "apps.staff_mfa.test_primitives",
+    "apps.staff_mfa.test_recovery",
+    "apps.staff_mfa.tests",
+    "apps.record_suppression.test_http",
+    "apps.record_suppression.test_readers",
+    "apps.record_suppression.test_recovery",
+    "apps.record_suppression.test_sessions",
+    "apps.record_suppression.tests",
 ]
 
 BROWSER_LABELS = [
@@ -239,6 +249,8 @@ BROWSER_LABELS = [
     "apps.data_privacy.browser_work",
     "apps.permission_sets.browser_tests",
     "apps.upload_security.browser_tests",
+    "apps.staff_mfa.browser_tests",
+    "apps.record_suppression.browser_tests",
 ]
 
 

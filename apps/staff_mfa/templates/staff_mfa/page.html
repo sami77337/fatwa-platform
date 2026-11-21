@@ -1,0 +1,29 @@
+{% extends "casework/base.html" %}
+{% block title %}التحقق الإضافي للحساب{% endblock %}
+{% block content %}
+<h2>التحقق الإضافي للحساب</h2>
+{% if pending %}
+<section id="mfa-pending"><h3>استكمال إثبات ملكية الحساب</h3>
+<p>لم تُفتح مساحة العمل بهذه الخطوة. أكمل العامل الثاني في هذه الصفحة.</p>
+{% if pending.can_enroll and not pending.pending %}
+<form method="post" action="{{ path }}">{% csrf_token %}<input type="hidden" name="action" value="enroll"><button>تسجيل عامل تحقق لهذا الحساب</button></form>
+{% endif %}
+{% if manual_key %}<article id="mfa-enrollment-secret"><h3>مفتاح التسجيل</h3><p>أضف هذا المفتاح إلى تطبيق التحقق الذي تستخدمه، ثم أدخل الرمز الناتج لتأكيد التسجيل. يظهر المفتاح في هذه الاستجابة فقط.</p><p class="original"><code id="mfa-manual-key">{{ manual_key }}</code></p><p>النمط: TOTP · الخوارزمية: <bdi>{{ setup.algorithm }}</bdi> · طول الرمز: {{ setup.digits }} · الفترة: {{ setup.period }} ثانية.</p></article>{% endif %}
+{% if pending.pending or pending.has_factor %}
+<form method="post" action="{{ path }}">{% csrf_token %}<input type="hidden" name="action" value="verify">
+<label for="mfa-code">رمز تطبيق التحقق</label><input id="mfa-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" minlength="6" maxlength="8" required>
+<button>{% if pending.purpose == "REVOKE" %}تأكيد إبطال عامل التحقق{% elif pending.pending %}تأكيد تسجيل العامل والدخول{% else %}إكمال التحقق والدخول{% endif %}</button></form>
+{% endif %}
+{% if pending.can_recover %}<details id="mfa-recovery"><summary>فقدت تطبيق التحقق</summary><p>استخدم رمز استرداد محفوظًا لهذا الحساب. تُبطل هذه الخطوة العامل السابق، ثم يلزم تأكيد عامل بديل قبل فتح مساحة العمل.</p>
+<form method="post" action="{{ path }}">{% csrf_token %}<input type="hidden" name="action" value="recover"><label for="mfa-recovery-code">رمز الاسترداد</label><input id="mfa-recovery-code" name="recovery_code" type="password" autocomplete="off" maxlength="66" required><button>استرداد العامل برمز محفوظ</button></form></details>{% endif %}
+{% if not pending.pending and not pending.can_enroll and not pending.has_factor and not pending.can_recover %}<p>لا يوجد مسار تسجيل أو استرداد متاح وفق الإذن الحالي.</p>{% endif %}
+</section>
+{% elif completed %}
+<section id="mfa-completed"><h3>اكتمل التحقق بعاملين</h3><p>تبقى صلاحيات حسابك وقضاياك كما هي.</p>
+{% if codes %}<h4>رموز الاسترداد</h4><p>احفظ الرموز في مكان آمن. يظهر كل رمز هنا مرة واحدة، ويُستخدم مرة واحدة مع إثبات الحساب لإعداد عامل بديل.</p><ul id="mfa-recovery-codes">{% for code in codes %}<li><code class="original">{{ code }}</code></li>{% endfor %}</ul>{% endif %}</section>
+{% elif managed %}
+<section id="mfa-managed"><h3>عامل التحقق المسجل</h3><p>يوجد عامل تحقق نشط لهذا الحساب.</p><p>إبطاله يمنع استعمال جلساته السابقة، ويلزم مسار استرداد مستقل لتسجيل بديل.</p>
+<form method="post" action="{{ path }}">{% csrf_token %}<input type="hidden" name="action" value="revoke_start"><label for="mfa-primary">إثبات الدخول الحالي للحساب</label><input id="mfa-primary" name="credential" type="password" autocomplete="current-password" maxlength="1024" required><button>إعادة التحقق لإبطال العامل</button></form></section>
+{% endif %}
+{% if completed or managed %}<p><a href="{{ home }}">فتح مساحة العمل</a></p>{% else %}<p><a href="{{ home }}login/">بدء محاولة دخول جديدة</a></p>{% endif %}
+{% endblock %}

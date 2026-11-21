@@ -13,6 +13,7 @@ from django.db import connection
 from apps.casework import delivery
 from apps.casework import services as cases
 from apps.casework.models import Case, CaseDelivery, CaseEvent
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.models import (
     ApprovalClaim,
     DeliveryIntent,
@@ -216,8 +217,18 @@ class ProjectionGuard:
     watermark: str
     permissions: list = field(default_factory=list)
     identities: dict = field(default_factory=dict)
+    material_uses: list = field(default_factory=list)
 
     def permit(self, case, action, resource=None, *, required=True):
+        from apps.record_suppression.catalog import SuppressionDenied
+        from apps.record_suppression.integration import require as current_material
+
+        try:
+            self.material_uses.append(current_material("CASE", case.pk))
+        except SuppressionDenied:
+            if required:
+                raise
+            return False
         resource = resource or _resource(case)
         arguments = dict(
             provider_id=self.provider_id,
@@ -288,8 +299,11 @@ class ProjectionGuard:
             or _snapshot(self.locked) != self.watermark
         ):
             raise cases.CaseConflict("lifecycle_projection_changed")
+        for use in self.material_uses:
+            use.final_pins()
 
 
+@privacy.contextual
 @contextmanager
 def projection_boundary(*, subject_id, provider, synthetic_fixtures_only=False, case_ids=None):
     """Locks and pre-read pins cover all row callbacks and the caller's render."""

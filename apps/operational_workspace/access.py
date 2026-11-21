@@ -23,7 +23,7 @@ def binding(request, values):
     return browser_proof(request, SALT, json.dumps(values, sort_keys=True, separators=(",", ":")))
 
 
-def set_cookie(request, response, directory, actor):
+def set_cookie(request, response, directory, actor, *, mfa_grant=None):
     identity.configured(directory)
     identity.validate(actor)
     values = {
@@ -42,6 +42,7 @@ def set_cookie(request, response, directory, actor):
             actor,
             surface="OPERATIONS",
             deadline=datetime.fromisoformat(values["until"]),
+            mfa_grant=mfa_grant,
         )
     except IdentityUnavailable as exc:
         raise CaseConflict("operational_session_unavailable") from exc
@@ -74,6 +75,7 @@ def current(request, directory):
         original_values = dict(values)
         signature = values.pop("binding")
         values.pop("session_id", None)
+        values.pop("mfa_proof", None)
         until = datetime.fromisoformat(values["until"])
         if not identity.valid_deadline(until) or not compare_digest(
             signature, binding(request, values)

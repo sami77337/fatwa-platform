@@ -67,6 +67,11 @@ ROUTES = (
         "case_id",
     ),
     (
+        rf"/casework/staff/media-jobs/{UUID}/output/",
+        "media_derivatives.DerivativeJob",
+        "case_id",
+    ),
+    (
         rf"/casework/staff/timed-citations/{UUID}/(?P<use>audio|review-audio)/",
         "timed_citations.TimedCitation",
         "case_id",
@@ -198,6 +203,7 @@ def _reader_flags(model_name):
         ),
         "research_library.LibraryVersion": ("FATWA_RESEARCH_LIBRARY_ENABLED",),
         "public_answer_media.RecordingTranscript": ("FATWA_PUBLIC_ANSWER_MEDIA_ENABLED",),
+        "media_derivatives.DerivativeJob": ("FATWA_MEDIA_DERIVATIVES_ENABLED",),
         "timed_citations.TimedCitation": ("FATWA_TIMED_CITATIONS_ENABLED",),
         "pdf_citations.PdfCitation": ("FATWA_PDF_CITATIONS_ENABLED",),
         "precise_citations.CitationAnchor": ("FATWA_PRECISE_CITATIONS_ENABLED",),

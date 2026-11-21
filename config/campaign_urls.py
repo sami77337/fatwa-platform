@@ -29,6 +29,8 @@ def privacy_workspace(request):
 
 
 urlpatterns = [
+    path("", include("apps.record_suppression.urls")),
+    path("", include("apps.staff_mfa.urls")),
     path("", include("apps.permission_sets.urls")),
     path("casework/staff/privacy/", privacy_workspace),
     path("casework/operations/privacy/", privacy_workspace),

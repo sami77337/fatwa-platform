@@ -59,6 +59,10 @@ RECORDING_SEGMENT_ROUTE = re.compile(
     r"/casework/staff/recording-transcripts/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/segments/[0-5]/"
 )
+MEDIA_DERIVATIVE_ROUTE = re.compile(
+    r"/casework/staff/media-jobs/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/output/"
+)
 PRECISE_CITATION_ROUTE = re.compile(
     r"/casework/precise-citations/(?:sources|print|export)/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
@@ -255,6 +259,11 @@ class CaseworkGuard:
                 if getattr(settings, "FATWA_RECORD_SUPPRESSION_ENABLED", False) is True
                 else None
             )
+        if getattr(settings, "FATWA_MEDIA_DERIVATIVES_ENABLED", False) is True:
+            if request.path == BASE + "staff/media-jobs/":
+                methods = ("GET", "HEAD", "POST")
+            elif MEDIA_DERIVATIVE_ROUTE.fullmatch(request.path):
+                methods = ("GET", "HEAD")
         if methods is None and (
             PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
             or LIBRARY_MEDIA_ROUTE.fullmatch(request.path)

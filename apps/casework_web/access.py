@@ -87,7 +87,7 @@ def _binding(request, provider, subject, epoch, until):
     )
 
 
-def set_staff_cookie(request, response, provider, identity):
+def set_staff_cookie(request, response, provider, identity, *, mfa_grant=None):
     validate_identity(identity)
     until = min(identity.valid_until, timezone.now() + timedelta(seconds=TTL)).isoformat()
     values = {
@@ -106,6 +106,7 @@ def set_staff_cookie(request, response, provider, identity):
         identity,
         surface="CASEWORK",
         deadline=datetime.fromisoformat(until),
+        mfa_grant=mfa_grant,
     )
     response.set_signed_cookie(
         COOKIE,

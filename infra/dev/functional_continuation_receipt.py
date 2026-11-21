@@ -157,6 +157,18 @@ NEW_WORKFLOWS = {
         "upload_security_uploadadmission",
         "upload_security_scanattempt",
     ),
+    "apps.staff_mfa.recovery_support": (
+        "staff_mfa_account",
+        "staff_mfa_challenge",
+        "staff_mfa_factor",
+        "staff_mfa_proof",
+        "staff_mfa_attempt",
+        "staff_mfa_recoverycode",
+        "staff_mfa_factorrevocation",
+        "staff_mfa_recoveryuse",
+        "staff_mfa_sessionassurance",
+    ),
+    "apps.record_suppression.recovery_support": ("record_suppression_suppressionevent",),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -445,6 +457,34 @@ RESTORED_DENIAL_CHECKS = {
         "missing_current_staff": 1,
         "foreign_case_staff": 1,
     },
+    "apps.staff_mfa.recovery_support": {
+        "mfa_disabled": 1,
+        "missing_key": 1,
+        "missing_authority": 1,
+        "missing_directory": 1,
+        "session_registry_disabled": 1,
+        "missing_runtime_epoch": 1,
+        "revoked_audit_grant": 1,
+        "cross_actor_audit": 1,
+        "inactive_actor": 1,
+        "restored_primary_challenge": 1,
+        "restored_session_assurance": 1,
+        "restored_factor_login": 1,
+        "restored_legacy_factor_veto": 1,
+        "restored_legacy_missing_app": 1,
+    },
+    "apps.record_suppression.recovery_support": {
+        "feature_disabled": 1,
+        "journal_absent": 1,
+        "floor_stale": 1,
+        "floor_missing": 1,
+        "directory_absent": 1,
+        "management_mandate_revoked": 1,
+        "restored_deleted_answer": 1,
+        "late_projection_change": 1,
+        "newer_floor_blocks_old_sql": 1,
+        "reapplied_current_deletion": 1,
+    },
 }
 
 # Keep the exact executed identities, including the assignment class's inherited
@@ -717,6 +757,16 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-continuation/upload-security-browser/result.json",
         "modern",
     ),
+    (
+        "apps.staff_mfa.browser_tests.StaffMfaBrowserTests.test_native_two_roles_real_totp_factor_revocation_and_one_use_recovery",
+        ".local/qa/functional-continuation/staff-mfa-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.record_suppression.browser_tests.RecordSuppressionBrowserTests.test_native_preview_soft_delete_current_denials_and_audited_restore",
+        ".local/qa/functional-continuation/record-suppression-browser/result.json",
+        "modern",
+    ),
 )
 
 
@@ -853,8 +903,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["51"],
-        "Exactly 51 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["53"],
+        "Exactly 53 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -862,7 +912,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 51 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 53 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -1060,10 +1110,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 71
-        and len(expected_tables) == 93
+        and len(new_tables) == 81
+        and len(expected_tables) == 103
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 93 prior and new recovery tables are required",
+        "Exactly the 103 prior and new recovery tables are required",
     )
     require(
         all(
@@ -1077,7 +1127,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All thirty-eight fresh-process workflow result records are required",
+        "All forty fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

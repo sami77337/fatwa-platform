@@ -191,7 +191,10 @@ def _answer_annotations(answer, *, actor=None, provider=None):
     Editing flags cannot erase restored annotations from this check.
     """
     from apps.precise_citations.integration import require_for_answer
+    from apps.record_suppression.integration import require as current_material
 
+    if answer is not None:
+        current_material("ANSWER", answer.pk)
     precise_deadline = require_for_answer(answer, actor=actor, provider=provider)
     timed_deadline = _answer_timed(answer, actor=actor, provider=provider)
     timed_deadline = min((value for value in (precise_deadline, timed_deadline) if value is not None), default=None)
@@ -463,6 +466,9 @@ def _ticket(case):
 
 
 def _public(case):
+    from apps.record_suppression.integration import require as current_material
+
+    current_material("CASE", case.pk)
     clarification = None
     if case.stage == "NEEDS_CLARIFICATION":
         event = case.events.filter(action="CLARIFICATION").order_by("-sequence").first()

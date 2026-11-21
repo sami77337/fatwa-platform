@@ -62,10 +62,15 @@ def context():
 
 
 def fields():
-    return {"session_id"} if enabled() else set()
+    from apps.staff_mfa import integration as mfa
+
+    return ({"session_id"} if enabled() else set()) | mfa.fields()
 
 
-def issue_cookie(request, values, provider, actor, *, surface, deadline):
+def issue_cookie(request, values, provider, actor, *, surface, deadline, mfa_grant=None):
+    from apps.staff_mfa import integration as mfa
+
+    mfa.issue_cookie(request, values, grant=mfa_grant, provider=provider, actor=actor, surface=surface)
     if enabled():
         from . import services
 
@@ -76,10 +81,14 @@ def issue_cookie(request, values, provider, actor, *, surface, deadline):
             surface=surface,
             browser_binding=values["binding"],
             deadline=deadline,
+            mfa_grant=mfa_grant,
         )
 
 
 def current_cookie(request, values, provider, actor, *, surface, deadline):
+    from apps.staff_mfa import integration as mfa
+
+    mfa.current_cookie(request, values, surface=surface)
     if enabled():
         from . import services
 
@@ -92,6 +101,7 @@ def current_cookie(request, values, provider, actor, *, surface, deadline):
             browser_binding=values["binding"],
             deadline=deadline,
             lease=lease,
+            mfa_proof=values.get("mfa_proof", ""),
         )
         key = (surface, id(provider), actor.subject_id)
         previous = lease.bindings.get(key)

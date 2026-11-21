@@ -94,6 +94,10 @@ class UploadSecurityBrowserTests(ScanFixture, LiveServerTestCase):
         }
         before = recovery_support.source_pins(self.receipt["case_id"])
         text = "  رد بشري اصطناعي محفوظ في المسودة\nمع مرفق منفصل  "
+        # Native multipart form submission serializes textarea line endings as
+        # CRLF. Compare the exact submitted value, including surrounding spaces,
+        # without normalizing the canonical evidence saved by the service.
+        submitted_text = text.replace("\n", "\r\n")
         blocked = b"SYNTHETIC blocked upload; no actual malware or detection claim\n"
         unavailable = b"SYNTHETIC unavailable-engine input\n"
         try:
@@ -168,7 +172,7 @@ class UploadSecurityBrowserTests(ScanFixture, LiveServerTestCase):
                     case = self.sync(lambda: Case.objects.get(pk=self.receipt["case_id"]))
                     self.assertEqual(
                         self.sync(lambda: list(case.evidence.values_list("text", flat=True))).count(
-                            text
+                            submitted_text
                         ),
                         1,
                     )

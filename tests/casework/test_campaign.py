@@ -24,6 +24,7 @@ class CampaignProfileTests(SimpleTestCase):
             "apps.platform_recovery.middleware.MaintenanceGuard",
             "apps.staff_sessions.middleware.SessionContext",
             "apps.data_privacy.integration.PrivacyResponses",
+            "apps.upload_security.middleware.UploadSecurityResponses",
             "apps.material_api.middleware.MaterialAPIResponses",
             "apps.private_media.links.PrivateMediaResponses",
             *[
@@ -39,6 +40,18 @@ class CampaignProfileTests(SimpleTestCase):
         self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_RUNTIME_EPOCH)
         self.assertFalse(campaign_review.FATWA_DATA_PRIVACY_ENABLED)
         self.assertIsNone(campaign_review.FATWA_DATA_PRIVACY_AUTHORITY)
+        self.assertFalse(campaign_review.FATWA_UPLOAD_SECURITY_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_UPLOAD_SCAN_POLICY)
+        self.assertIsNone(campaign_review.FATWA_UPLOAD_SCANNER)
+        self.assertFalse(campaign_review.FATWA_UPLOAD_SECURITY_ALLOW_SYNTHETIC)
+        self.assertFalse(campaign_review.FATWA_PERMISSION_SETS_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_PERMISSION_SETS_MANAGEMENT_AUTHORITY)
+        self.assertFalse(campaign_review.FATWA_STAFF_MFA_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_STAFF_MFA_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_STAFF_MFA_KEY)
+        self.assertFalse(campaign_review.FATWA_RECORD_SUPPRESSION_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_RECORD_SUPPRESSION_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_RECORD_SUPPRESSION_JOURNAL)
         self.assertFalse(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_ENABLED)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_KEY)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_EPOCH)

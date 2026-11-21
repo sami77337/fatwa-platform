@@ -117,6 +117,26 @@ def login(request):
         if request.method == "POST":
             form(request, {"credential"})
             authority, authority_epoch = policy()
+            from apps.staff_mfa import integration as mfa
+
+            if mfa.enabled():
+                from apps.staff_mfa.views import begin
+
+                before = identity.epoch(directory)
+                response = begin(
+                    request,
+                    provider=directory,
+                    surface="OPERATIONS",
+                    credential=request.POST.get("credential"),
+                )
+                current = policy()
+                if (
+                    current[0] is not authority
+                    or current[1] != authority_epoch
+                    or identity.epoch(directory) != before
+                ):
+                    raise CaseConflict("operational_login_changed")
+                return private(response, head=False)
             actor = identity.authenticate(directory, request.POST.get("credential"))
             before = identity.epoch(directory)
             response = access.set_cookie(request, HttpResponse(status=303), directory, actor)

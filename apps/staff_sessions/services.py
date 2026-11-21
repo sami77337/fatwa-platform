@@ -200,9 +200,12 @@ def fresh_identity(provider, expected):
     return actor
 
 
-def issue(*, provider, actor, surface, browser_binding, deadline):
+def issue(*, provider, actor, surface, browser_binding, deadline, mfa_grant=None):
+    from apps.staff_mfa import integration as mfa
+
     authority = configured(provider)
     actor = identity(actor)
+    mfa.before_issue(grant=mfa_grant, provider=provider, actor=actor, surface=surface)
     before = epoch(authority), epoch(provider)
     if (
         surface not in SURFACES
@@ -245,6 +248,7 @@ def issue(*, provider, actor, surface, browser_binding, deadline):
             authority_digest=digest(before[0]),
             expires_at=expiry,
         )
+        mfa.attach(row, grant=mfa_grant, provider=provider, actor=actor, surface=surface)
         if before != (epoch(authority), epoch(provider)) or expiry <= timezone.now():
             reject()
     return str(row.id)
@@ -263,9 +267,12 @@ class Binding:
     directory_epoch: str
     runtime: str
     lease: object
+    mfa: object = None
 
 
-def bind(*, provider, actor, session_id, surface, browser_binding, deadline, lease):
+def bind(*, provider, actor, session_id, surface, browser_binding, deadline, lease, mfa_proof=""):
+    from apps.staff_mfa import integration as mfa
+
     authority = configured(provider)
     actor = identity(actor)
     binding = Binding(
@@ -280,12 +287,15 @@ def bind(*, provider, actor, session_id, surface, browser_binding, deadline, lea
         epoch(provider),
         runtime_digest(),
         lease,
+        mfa.capture(provider=provider, actor=actor, session_id=session_id, proof_id=mfa_proof),
     )
     check(binding, actor=actor)
     return binding
 
 
 def check(binding, *, actor=None, lock=False, authorize=True):
+    from apps.staff_mfa import integration as mfa
+
     if type(binding) is not Binding or not binding.lease.active:
         reject()
     if (
@@ -313,6 +323,9 @@ def check(binding, *, actor=None, lock=False, authorize=True):
         reject()
     if actor is not None and digest(claims(identity(actor))) != row.claims_digest:
         reject()
+    mfa.check(
+        binding.mfa, provider=binding.provider, actor=binding.actor, authorize=authorize, lock=lock
+    )
     if authorize:
         permit(
             binding.authority,
