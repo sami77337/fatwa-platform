@@ -3,6 +3,7 @@
 import re
 import uuid
 from functools import wraps
+from hashlib import sha256
 from pathlib import Path
 
 from django.core.exceptions import DisallowedHost, SuspiciousOperation
@@ -213,10 +214,48 @@ def _private_read(view):
 
 
 def _file_response(request, data):
-    response = HttpResponse(data["raw"], content_type=data["media_type"])
+    # Authorization and the complete source hash have already been checked by
+    # the surrounding projection. A range never bypasses those checks or reads
+    # a different file. Chromium needs a genuine byte-range response to seek
+    # within a reviewed original before the user starts playback.
+    raw = data["raw"]
+    size = len(raw)
+    etag = '"' + sha256(raw).hexdigest() + '"'
+    status, body, content_range = 200, raw, None
+    requested = request.headers.get("Range")
+    if (
+        request.method == "GET"
+        and requested is not None
+        and request.headers.get("If-Range", etag) == etag
+    ):
+        match = re.fullmatch(r"bytes=([0-9]{0,20})-([0-9]{0,20})", requested)
+        start, end = 0, size - 1
+        valid = match is not None and bool(match[1] or match[2]) and size > 0
+        if valid:
+            if not match[1]:
+                suffix = int(match[2])
+                valid = suffix > 0
+                start = max(0, size - suffix)
+            else:
+                start = int(match[1])
+                end = min(int(match[2]), size - 1) if match[2] else size - 1
+                valid = start <= end and start < size
+        if valid:
+            status, body = 206, raw[start : end + 1]
+            content_range = f"bytes {start}-{end}/{size}"
+        else:
+            # Multipart and malformed ranges are deliberately unsupported;
+            # there is no dynamic file seek, multipart amplification or cache.
+            status, body = 416, b""
+            content_range = f"bytes */{size}"
+    response = HttpResponse(body, status=status, content_type=data["media_type"])
     response["Content-Disposition"] = f'inline; filename="{data["filename"]}"'
     response["Content-Security-Policy"] = "sandbox; default-src 'none'; frame-ancestors 'none'"
-    response["Content-Length"] = str(len(data["raw"]))
+    response["Content-Length"] = str(len(body))
+    response["Accept-Ranges"] = "bytes"
+    response["ETag"] = etag
+    if content_range is not None:
+        response["Content-Range"] = content_range
     return private(response, head=request.method == "HEAD")
 
 

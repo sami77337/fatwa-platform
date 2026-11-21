@@ -33,9 +33,9 @@ export function initializeSegment(player) {
     player.dataset.segmentState = "unavailable";
     return;
   }
-  const events = ["loadedmetadata", "loadeddata", "durationchange", "canplay", "seeked"];
+  const events = ["loadedmetadata", "loadeddata", "durationchange", "canplay", "progress", "seeked"];
   const deadline = Date.now() + 15000;
-  let finished = false, attempts = 0, timer = null;
+  let finished = false, attempts = 0, timer = null, nextAttempt = 0;
   const clean = () => {
     if (timer !== null) clearTimeout(timer);
     timer = null;
@@ -64,9 +64,20 @@ export function initializeSegment(player) {
       say("الموضع الموثق جاهز. اضغط تشغيل للاستماع؛ لا تشغيل تلقائيًا.");
       return;
     }
+    // Metadata can be ready before the native media pipeline exposes a
+    // seekable range. Assigning currentTime then can clamp back to zero and
+    // emit a rapid series of seeked events. Wait for actual seekability rather
+    // than consuming all attempts while the original is still loading.
+    const ranges = player.seekable;
+    let seekable = false;
+    for (let index = 0; index < ranges.length; index += 1) {
+      if (ranges.start(index) <= start && ranges.end(index) >= start) seekable = true;
+    }
+    if (!seekable || Date.now() < nextAttempt) { later(); return; }
     if (attempts >= 20) { fail(); return; }
     if (!player.seeking && Math.abs(player.currentTime - start) > 0.025) {
       attempts += 1;
+      nextAttempt = Date.now() + 100;
       try { player.currentTime = start; } catch (_) { /* Retry only within the bounded initialization. */ }
     }
     later();

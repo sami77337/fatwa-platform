@@ -1,6 +1,7 @@
 """Actual campaign dispatcher, signed composer, browser auth and final rendering."""
 
 import json
+from hashlib import sha256
 from unittest.mock import patch
 from urllib.parse import urlencode
 
@@ -101,10 +102,11 @@ class CitationHTTPTests(CitationFixture, TransactionTestCase):
         anchor = row.anchors.get()
         source = client.get(f"/casework/precise-citations/sources/{anchor.pk}/")
         self.assertContains(source, '<mark id="cited-position">مصدر اصطناعي')
-        self.assertEqual(
-            client.get(f"/casework/precise-citations/sources/{anchor.pk}/file/").content,
-            "مصدر اصطناعي دقيق محفوظ للإحالة".encode(),
-        )
+        original = client.get(f"/casework/precise-citations/sources/{anchor.pk}/file/")
+        expected_bytes = "مصدر اصطناعي دقيق محفوظ للإحالة".encode("utf-8")
+        self.assertEqual(original.content, expected_bytes)
+        self.assertEqual(original["Content-Type"], "text/plain; charset=utf-8")
+        self.assertEqual(original["X-Content-SHA256"], sha256(expected_bytes).hexdigest())
         printed = client.get(f"/casework/precise-citations/print/{row.pk}/")
         self.assertContains(printed, "محارف المصدر 1–12")
         exported = client.get(f"/casework/precise-citations/export/{row.pk}/")

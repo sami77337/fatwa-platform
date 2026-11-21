@@ -96,7 +96,7 @@ class PublicAnswerMediaBrowserTests(MediaFixture, LiveServerTestCase):
         state = None
         for _ in range(120):
             state = player.evaluate(
-                "e => ({ready:e.readyState,time:e.currentTime,duration:e.duration,paused:e.paused,error:e.error?.code || null})"
+                "e => ({ready:e.readyState,time:e.currentTime,duration:e.duration,paused:e.paused,error:e.error?.code || null,segment:e.dataset.segmentState,seekable:Array.from({length:e.seekable.length},(_,i)=>[e.seekable.start(i),e.seekable.end(i)]),buffered:Array.from({length:e.buffered.length},(_,i)=>[e.buffered.start(i),e.buffered.end(i)])})"
             )
             if (
                 state["ready"] >= 1
@@ -236,7 +236,12 @@ class PublicAnswerMediaBrowserTests(MediaFixture, LiveServerTestCase):
                         "clicked_recording_url": public_url,
                     }
                     self.assertEqual(response.status, 200)
-                    self.assertEqual(source_response.value.status, 200)
+                    self.assertEqual(source_response.value.status, 206)
+                    self.assertEqual(
+                        source_response.value.headers.get("content-range"),
+                        f"bytes 0-{len(audio()) - 1}/{len(audio())}",
+                    )
+                    self.assertEqual(source_response.value.headers.get("accept-ranges"), "bytes")
                     self.assertEqual(source_response.value.body(), audio())
                     self.assertNotIn(
                         "private-original",

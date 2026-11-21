@@ -4,6 +4,7 @@ import re
 import tempfile
 import uuid
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 from unittest.mock import patch
 
@@ -110,6 +111,112 @@ class MediaHTTPTests(MediaFixture, TransactionTestCase):
         response = post(self.client, "/casework/staff/", self.save_form(extra="forbidden"), page)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(RecordingTranscript.objects.count(), 1)
+
+    def test_exact_original_ranges_support_native_seek_without_source_transformation(self):
+        transcript = self.review(self.save())
+        released = self.release(transcript)
+        raw = audio()
+        routes = (
+            (self.client, f"/casework/staff/recording-parts/{self.part.pk}/audio/"),
+            (self.client, f"/casework/staff/recording-transcripts/{transcript['id']}/audio/"),
+            (self.client_for(), f"/library-preview/recordings/{released['id']}/audio/"),
+        )
+        for client, path in routes:
+            for requested, start, end in (
+                ("bytes=0-", 0, len(raw) - 1),
+                ("bytes=16044-32043", 16044, 32043),
+                ("bytes=-44", len(raw) - 44, len(raw) - 1),
+                ("bytes=96000-999999999", 96000, len(raw) - 1),
+            ):
+                with self.subTest(path=path, requested=requested):
+                    response = client.get(path, HTTP_RANGE=requested)
+                    self.assertEqual(response.status_code, 206, response.content[:100])
+                    self.assertEqual(response.content, raw[start : end + 1])
+                    self.assertEqual(response["Content-Range"], f"bytes {start}-{end}/{len(raw)}")
+                    self.assertEqual(response["Content-Length"], str(end - start + 1))
+                    self.assertEqual(response["Accept-Ranges"], "bytes")
+                    self.assertEqual(response["ETag"], '"' + sha256(raw).hexdigest() + '"')
+                    self.assertEqual(response["Content-Type"], "audio/wav")
+                    self.assertIn("no-store", response["Cache-Control"])
+                    self.assertIn("default-src 'none'", response["Content-Security-Policy"])
+                    if path.startswith("/casework/"):
+                        self.assertIn("sandbox", response["Content-Security-Policy"])
+            response = client.get(path)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, raw)
+            self.assertNotIn("Content-Range", response)
+            head = client.head(path, HTTP_RANGE="bytes=16044-32043")
+            self.assertEqual(head.status_code, 200)
+            self.assertEqual(head.content, b"")
+            self.assertEqual(head["Content-Length"], str(len(raw)))
+            self.assertNotIn("Content-Range", head)
+
+    def test_range_bounds_and_validator_never_select_an_alternative_original(self):
+        transcript = self.review(self.save())
+        path = f"/casework/staff/recording-transcripts/{transcript['id']}/audio/"
+        for requested in (
+            "bytes=96044-",
+            "bytes=10-2",
+            "bytes=-0",
+            "bytes=-",
+            "bytes=0-1,4-5",
+            "items=0-10",
+            "bytes=" + "9" * 30 + "-",
+        ):
+            with self.subTest(requested=requested):
+                response = self.client.get(path, HTTP_RANGE=requested)
+                self.assertEqual(response.status_code, 416)
+                self.assertEqual(response.content, b"")
+                self.assertEqual(response["Content-Range"], f"bytes */{len(audio())}")
+                self.assertEqual(response["Content-Length"], "0")
+        etag = '"' + sha256(audio()).hexdigest() + '"'
+        accepted = self.client.get(path, HTTP_RANGE="bytes=44-45", HTTP_IF_RANGE=etag)
+        self.assertEqual(accepted.status_code, 206)
+        self.assertEqual(accepted.content, audio()[44:46])
+        changed = self.client.get(path, HTTP_RANGE="bytes=44-45", HTTP_IF_RANGE='"old-source"')
+        self.assertEqual(changed.status_code, 200)
+        self.assertEqual(changed.content, audio())
+        self.assertNotIn("Content-Range", changed)
+
+    def test_each_range_rechecks_reader_and_current_public_release(self):
+        transcript = self.review(self.save())
+        released = self.release(transcript)
+        private_path = f"/casework/staff/recording-transcripts/{transcript['id']}/audio/"
+        public_path = f"/library-preview/recordings/{released['id']}/audio/"
+        public_client = self.client_for()
+        self.assertEqual(self.client.get(private_path, HTTP_RANGE="bytes=0-43").status_code, 206)
+        self.assertEqual(public_client.get(public_path, HTTP_RANGE="bytes=0-43").status_code, 206)
+        self.authority.denied.add("READ_TRANSCRIPT")
+        refused = self.client.get(private_path, HTTP_RANGE="bytes=44-100")
+        self.assertEqual(refused.status_code, 404)
+        self.assertNotIn("Content-Range", refused)
+        self.assertNotIn("ETag", refused)
+        self.authority.denied.clear()
+        self.decide(released, "WITHDRAW")
+        for requested in ("bytes=44-100", "bytes=999999999-"):
+            refused = public_client.get(public_path, HTTP_RANGE=requested)
+            self.assertEqual(refused.status_code, 404)
+            self.assertNotIn("Content-Range", refused, "withdrawn source length must not leak")
+            self.assertNotIn("ETag", refused)
+
+    def test_late_current_rights_revocation_discards_already_built_range(self):
+        transcript = self.review(self.save())
+        released = self.release(transcript)
+        path = f"/library-preview/recordings/{released['id']}/audio/"
+        original = views._file_response
+
+        def revoke(request, data):
+            response = original(request, data)
+            self.assertEqual(response.status_code, 206)
+            self.rights.denied.add("publisher")
+            return response
+
+        with patch.object(views, "_file_response", side_effect=revoke):
+            refused = self.client_for().get(path, HTTP_RANGE="bytes=0-43")
+        self.assertEqual(refused.status_code, 404)
+        self.assertNotIn("Content-Range", refused)
+        self.assertNotIn("ETag", refused)
+        self.assertNotEqual(refused.content, audio()[:44])
 
     def test_actual_storage_reader_revocation_after_projection_closes_is_still_rejected(self):
         self.review(self.save())

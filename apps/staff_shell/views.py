@@ -33,6 +33,11 @@ def asset(request, name):
         response = HttpResponse(raw, content_type=ASSETS[name])
         if name == "sw.mjs":
             response["Service-Worker-Allowed"] = ROOT
+            # The worker has its own response CSP. It needs only same-origin
+            # network reads; the HTML page's policy cannot grant those reads.
+            response["Content-Security-Policy"] = (
+                "default-src 'none'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+            )
     else:
         return denied("staff_installation_unavailable", 404)
     return private(response, head=request.method == "HEAD")

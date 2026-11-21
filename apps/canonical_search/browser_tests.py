@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 
 from django.db import close_old_connections, connections
 from django.test import LiveServerTestCase, override_settings
+from django.utils.html import escape
 
 from apps.casework.models import CaseEvent, CaseSource
 
@@ -44,6 +45,7 @@ class CanonicalSearchBrowserTests(SearchFixture, LiveServerTestCase):
             button.press("Enter")
         self.assertEqual(navigation.value.status, code)
         self.assertIn("no-store", navigation.value.headers.get("cache-control", ""))
+        return navigation.value
 
     def capture(self, page, name):
         for width in (320, 1280):
@@ -106,9 +108,13 @@ class CanonicalSearchBrowserTests(SearchFixture, LiveServerTestCase):
                 self.assertEqual(page.locator(".canonical-hit").count(), 2)
                 self.capture(page, "explicit-fuzzy")
                 form = page.locator('.canonical-hit[data-kind="QUESTION"] form').first
-                self.submit(page, "cs_source", form=form)
+                source_response = self.submit(page, "cs_source", form=form)
+                # The response and canonical source retain CRLF. HTML parsing
+                # normalizes literal CR/CRLF to LF in text nodes (not the data).
+                self.assertIn(escape(self.question).encode(), source_response.body())
                 self.assertEqual(
-                    page.locator("#canonical-source-text").text_content(), self.question
+                    page.locator("#canonical-source-text").text_content(),
+                    self.question.replace("\r\n", "\n").replace("\r", "\n"),
                 )
                 self.capture(page, "exact-original")
                 self.assertEqual(self.sync(lambda: CaseEvent.objects.count()), before)

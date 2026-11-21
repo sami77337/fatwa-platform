@@ -355,8 +355,14 @@ def source(request, anchor_id, raw=False):
             if raw:
                 if not live["raw"] or not live["file"]:
                     return denied("precise_citation_file_unavailable", 404)
-                response = HttpResponse(live["raw"], content_type=live["file"]["media_type"])
+                media_type = live["file"]["media_type"]
+                # TXT originals are validated as UTF-8 before retention. Keep
+                # their exact bytes and tell the browser how to display them.
+                if media_type == "text/plain":
+                    media_type = "text/plain; charset=utf-8"
+                response = HttpResponse(live["raw"], content_type=media_type)
                 response["Content-Disposition"] = "inline; filename=source"
+                response["X-Content-SHA256"] = live["file"]["sha256"]
                 return private(response)
             return private(
                 render(request, "precise_citations/source.html", {"source": live, "anchor": row})

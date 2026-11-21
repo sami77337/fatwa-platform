@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, {mock} from "node:test";
 import {initializeSegment} from "./static/public_answer_media/player.mjs";
 
 class NativeMedia extends EventTarget {
@@ -11,6 +11,7 @@ class NativeMedia extends EventTarget {
     this.status = {textContent:""};
     this.parentElement = {querySelector: () => this.status};
     this.readyState = 0; this.duration = NaN; this.seeking = false;
+    this.seekable = {length:1, start:() => 0, end:() => 6};
     this.paused = true; this.error = null; this.position = 0;
     this.assignments = []; this.blocked = false;
     Object.assign(this, changes);
@@ -70,9 +71,25 @@ test("requires a same-origin exact original route and never fetches a replacemen
 });
 
 test("a not-yet-seekable native player may retry when its actual data becomes ready", () => {
+  const clock = mock.method(Date, "now", () => 1000);
   const audio = new NativeMedia({readyState:1, duration:6, blocked:true});
   initializeSegment(audio); assert.equal(audio.currentTime, 0);
+  clock.mock.mockImplementation(() => 1100);
   audio.blocked = false; audio.readyState = 4; audio.emit("loadeddata"); audio.emit("seeked");
+  assert.equal(audio.currentTime, 1);
+  assert.equal(audio.dataset.segmentState, "ready");
+  assert.equal(audio.paused, true);
+  clock.mock.restore();
+});
+
+test("metadata and bytes alone do not consume attempts before native seekability", () => {
+  const audio = new NativeMedia({readyState:4, duration:6, seekable:{length:0}});
+  initializeSegment(audio);
+  for (let index = 0; index < 30; index += 1) audio.emit("canplay");
+  assert.deepEqual(audio.assignments, []);
+  assert.equal(audio.dataset.segmentState, "pending");
+  audio.seekable = {length:1, start:() => 0, end:() => 6};
+  audio.emit("progress"); audio.emit("seeked");
   assert.equal(audio.currentTime, 1);
   assert.equal(audio.dataset.segmentState, "ready");
   assert.equal(audio.paused, true);
@@ -87,10 +104,27 @@ test("native failures stop initialization and retain an honest unavailable messa
 });
 
 test("repeated native seek refusal stops at its finite attempt limit", () => {
+  let time = 1000;
+  const clock = mock.method(Date, "now", () => time);
   const audio = new NativeMedia({readyState:4, duration:6, blocked:true});
   initializeSegment(audio);
-  for (let index = 0; index < 30; index += 1) audio.emit("canplay");
+  for (let index = 0; index < 30; index += 1) { time += 100; audio.emit("canplay"); }
   assert.equal(audio.assignments.length, 20);
   assert.equal(audio.dataset.segmentState, "unavailable");
   assert.equal(audio.paused, true);
+  clock.mock.restore();
+});
+
+test("rapid native seeked events cannot exhaust attempts while one seek settles", () => {
+  let time = 1000;
+  const clock = mock.method(Date, "now", () => time);
+  const audio = new NativeMedia({readyState:4, duration:6, blocked:true});
+  initializeSegment(audio);
+  for (let index = 0; index < 30; index += 1) audio.emit("seeked");
+  assert.equal(audio.assignments.length, 1);
+  assert.equal(audio.dataset.segmentState, "pending");
+  time += 100; audio.blocked = false; audio.emit("canplay"); audio.emit("seeked");
+  assert.equal(audio.currentTime, 1);
+  assert.equal(audio.dataset.segmentState, "ready");
+  clock.mock.restore();
 });

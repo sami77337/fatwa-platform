@@ -148,7 +148,13 @@ class PreciseCitationBrowserTests(CitationFixture, LiveServerTestCase):
                             "link", name="فتح الأصل الموثق بالحقوق الحالية", exact=True
                         ),
                     )
+                self.assertEqual(
+                    original.value.headers["content-type"], "text/plain; charset=utf-8"
+                )
                 self.assertEqual(original.value.body(), "مصدر اصطناعي دقيق محفوظ للإحالة".encode())
+                self.assertIn(
+                    "مصدر اصطناعي دقيق محفوظ للإحالة", author.locator("body").inner_text()
+                )
                 self.open_case(author, "precise_open")
                 with author.expect_download() as downloading:
                     author.get_by_role("link", name="تنزيل مرجع الإحالات", exact=True).click()

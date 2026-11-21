@@ -40,6 +40,10 @@ class StaffShellHTTPTests(TransactionTestCase):
             self.assertIn("no-store", response["Cache-Control"])
         worker = client.get("/casework/staff/pwa/sw.mjs")
         self.assertEqual(worker["Service-Worker-Allowed"], "/casework/staff/")
+        self.assertEqual(worker["Content-Security-Policy"],
+                         "default-src 'none'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'")
+        self.assertIn("no-store", worker["Cache-Control"])
+        self.assertEqual(client.head("/casework/staff/pwa/sw.mjs")["Content-Security-Policy"], worker["Content-Security-Policy"])
         self.assertIn(b'request.method !== "GET"', worker.content)
         self.assertNotIn(b"caches.open", worker.content)
         page = client.get("/casework/staff/login/")
