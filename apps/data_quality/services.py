@@ -11,6 +11,8 @@ from django.utils import timezone
 from apps.case_citations.services import _projection_expiry_guard
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 from apps.platform_recovery.integration import mutation_context, mutation_service
@@ -100,6 +102,10 @@ def _attribution(case):
             if event.action in {"APPROVE", "RETURN_FOR_CHANGES"}
             else None
         )
+        if event.answer_id:
+            privacy.current("ANSWER", event.answer_id)
+        if event.decision_id:
+            privacy.current("ANSWER", event.decision.answer_id)
         if record is not None and (
             event.subject_id != record.subject_id
             or any(
@@ -121,6 +127,7 @@ def _answer_files(case, actor, common):
 
     answer = case.answers.order_by("-revision").first()
     if answer is not None:
+        privacy.current("ANSWER", answer.pk)
         cases._answer_citations(answer)
         cases._answer_annotations(answer, actor=actor, provider=common["provider"])
         manifest_for_locked_answer(answer)
@@ -131,6 +138,7 @@ def _references(case, actor, common):
 
     answer = case.answers.order_by("-revision").first()
     if answer is not None:
+        privacy.current("ANSWER", answer.pk)
         read_citations(case_id=str(case.pk), answer_id=str(answer.pk), **common)
         cases._answer_annotations(answer, actor=actor, provider=common["provider"])
 
@@ -169,11 +177,23 @@ def _reports(case, common, report_policy):
     )
 
 
+def _verify_available(case):
+    # A diagnostic result is itself a projection of its original inputs. Do not
+    # grade hidden answer/attachment integrity or infer that a withheld source
+    # is broken. The generic incomplete check exposes no source identity/count.
+    for identifier in case.answers.values_list("pk", flat=True):
+        privacy.current("ANSWER", identifier)
+    for evidence in case.evidence.all():
+        if not privacy.evidence_allowed(evidence):
+            raise PrivacyDenied("privacy_quality_source_unavailable")
+    cases._verify(case)
+
+
 def _inspect_case(case, actor, common, report_policy):
     integrity = _probe(
         "canonical",
         "الأصل والوقائع والإصدارات والسجل",
-        lambda: cases._verify(case),
+        lambda: _verify_available(case),
         failure="سجل مطلوب مفقود أو غير متسق مع إصدارات القضية وبصماتها؛ يحتاج إصلاحًا تشغيليًا مخوّلًا.",
     )
     checks = [integrity]
@@ -305,6 +325,7 @@ def _record_pins(case_ids):
 
 
 @mutation_context
+@privacy.contextual
 @contextmanager
 def projection(*, subject_id, provider, page=1, case_ref=None, synthetic_fixtures_only=False):
     enabled()
@@ -325,8 +346,23 @@ def projection(*, subject_id, provider, page=1, case_ref=None, synthetic_fixture
                 available = available.filter(public_ref=case_ref)
                 if not available.exists():
                     raise cases.CaseConflict("quality_case_unavailable")
-            count = available.count()
-            rows = list(available.select_for_update()[(page - 1) * PAGE_SIZE : page * PAGE_SIZE])
+            visible = []
+            # Valid identities contain at most 64 case refs. Apply independent
+            # source classification before any page/count is constructed.
+            for case in available.select_for_update():
+                actor = cases._identity(provider, subject_id, case)
+                if _actor(actor) != _actor(initial):
+                    raise cases.CaseConflict("quality_identity_changed")
+                try:
+                    with privacy.staff_case(case, actor, provider):
+                        privacy.current("CASE", case.pk, action="SEARCH")
+                except PrivacyDenied:
+                    if case_ref is not None:
+                        raise
+                    continue
+                visible.append(case)
+            count = len(visible)
+            rows = visible[(page - 1) * PAGE_SIZE : page * PAGE_SIZE]
             identifiers = [case.pk for case in rows]
             configuration = _configuration()
             report_policy = _report_policy_pin()
@@ -336,7 +372,8 @@ def projection(*, subject_id, provider, page=1, case_ref=None, synthetic_fixture
                 actor = cases._identity(provider, subject_id, case)
                 if _actor(actor) != _actor(initial):
                     raise cases.CaseConflict("quality_identity_changed")
-                inspected.append(_inspect_case(case, actor, common, report_policy))
+                with privacy.staff_case(case, actor, provider):
+                    inspected.append(_inspect_case(case, actor, common, report_policy))
             result = {
                 "rows": inspected,
                 "scanned_at": timezone.now(),

@@ -68,6 +68,9 @@ def permissions(case, actor, provider, selected, include_files):
         policy.permit(case, actor, provider, "EXPORT_SENSITIVE", selected)
     if include_files and selected.kind in MEDIA:
         policy.permit(case, actor, provider, "EXPORT_MEDIA", selected)
+    from apps.data_privacy.resource_hooks import permit as privacy
+
+    privacy(case, actor, provider, "EXPORT", selected)
 
 
 def read(*, case, actor, provider, selected, ordinal, include_files):

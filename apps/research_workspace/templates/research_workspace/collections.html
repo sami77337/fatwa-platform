@@ -19,6 +19,7 @@
 {% else %}
   <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_rename" %}<label for="collection-title">عنوان المجموعة</label><input id="collection-title" name="title" maxlength="160" required value="{{ result.title }}"><button>حفظ العنوان</button></form>
   <form method="post" action="/casework/staff/">{% include "research_workspace/collection_fields.html" with action="research_collection_archive" %}<button>أرشفة المجموعة</button></form>
+  {% if result.can_add_approved_fatwa %}<form method="post" action="/casework/staff/" id="collection-add-approved-fatwa">{% include "research_workspace/collection_fields.html" with action="research_collection_add_fatwa" %}<button>حفظ الفتوى المعتمدة الحالية ضمن المجموعة</button></form>{% endif %}
 {% endif %}
 {% if opened %}
 <section aria-label="المواد المختارة للمقارنة" id="collection-comparison">

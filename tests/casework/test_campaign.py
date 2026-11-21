@@ -22,6 +22,12 @@ class CampaignProfileTests(SimpleTestCase):
 
         expected_middleware = [
             "apps.platform_recovery.middleware.MaintenanceGuard",
+            "apps.staff_sessions.middleware.SessionContext",
+            "apps.media_derivatives.policy.DerivativeResponses",
+            "apps.data_privacy.integration.PrivacyResponses",
+            "apps.upload_security.middleware.UploadSecurityResponses",
+            "apps.material_api.middleware.MaterialAPIResponses",
+            "apps.private_media.links.PrivateMediaResponses",
             *[
                 "apps.library_preview.guard.PreviewCompositionGuard"
                 if item == "apps.casework_web.guard.CaseworkGuard"
@@ -30,6 +36,39 @@ class CampaignProfileTests(SimpleTestCase):
             ],
         ]
         self.assertEqual(campaign_review.MIDDLEWARE, expected_middleware)
+        self.assertFalse(campaign_review.FATWA_STAFF_SESSIONS_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_STAFF_SESSION_RUNTIME_EPOCH)
+        self.assertFalse(campaign_review.FATWA_DATA_PRIVACY_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_DATA_PRIVACY_AUTHORITY)
+        self.assertFalse(campaign_review.FATWA_UPLOAD_SECURITY_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_UPLOAD_SCAN_POLICY)
+        self.assertIsNone(campaign_review.FATWA_UPLOAD_SCANNER)
+        self.assertFalse(campaign_review.FATWA_UPLOAD_SECURITY_ALLOW_SYNTHETIC)
+        self.assertFalse(campaign_review.FATWA_PERMISSION_SETS_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_PERMISSION_SETS_MANAGEMENT_AUTHORITY)
+        self.assertFalse(campaign_review.FATWA_STAFF_MFA_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_STAFF_MFA_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_STAFF_MFA_KEY)
+        self.assertFalse(campaign_review.FATWA_RECORD_SUPPRESSION_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_RECORD_SUPPRESSION_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_RECORD_SUPPRESSION_JOURNAL)
+        self.assertFalse(campaign_review.FATWA_MEDIA_DERIVATIVES_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_MEDIA_DERIVATIVES_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_MEDIA_DERIVATIVES_PROCESSOR)
+        self.assertIsNone(campaign_review.FATWA_MEDIA_DERIVATIVES_WORKER_DIRECTORY)
+        self.assertFalse(campaign_review.FATWA_DERIVED_MAINTENANCE_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_DERIVED_MAINTENANCE_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_DERIVED_MAINTENANCE_JOURNAL)
+        self.assertFalse(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_KEY)
+        self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_EPOCH)
+        self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_TTL_SECONDS)
+        self.assertFalse(campaign_review.FATWA_MATERIAL_API_ENABLED)
+        self.assertFalse(campaign_review.FATWA_PUBLICATION_DESTINATIONS_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_PUBLICATION_DESTINATIONS_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_PUBLICATION_DESTINATION_PROFILES)
+        self.assertIsNone(campaign_review.FATWA_PUBLICATION_DESTINATIONS_PROVIDER_VERIFIER)
         from apps.casework_web.guard import CaseworkGuard
         from apps.library_preview.guard import PreviewCompositionGuard
 

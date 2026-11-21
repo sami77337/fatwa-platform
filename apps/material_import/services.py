@@ -12,6 +12,8 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.platform_recovery.integration import mutation_service
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from . import formats, policy
 from .models import (
@@ -51,7 +53,11 @@ def _parse(batch):
     raw = bytes(batch.raw)
     if sha256(raw).hexdigest() != batch.raw_sha256:
         raise cases.CaseConflict("import_source_integrity")
-    return formats.parse(raw, batch.filename)
+    scans.require_bytes(raw)
+    parsed = formats.parse(raw, batch.filename)
+    for file in parsed.files.values():
+        scan_receipts.require(file.sha256, file.size)
+    return parsed
 
 
 def _pins(case, base):
@@ -573,14 +579,20 @@ def read_batch(*, batch_id, **base):
 
 @mutation_service
 def stage(*, raw, filename, namespace, provenance, rights_basis, request_key, **base):
-    parsed = formats.parse(raw, filename)
+    parsed = scans.import_source(raw=raw, filename=filename, namespace=namespace, **base)
     formats.identifier(namespace)
     if parsed.origin and parsed.origin["namespace"] != namespace:
         raise formats.ImportInputError("roundtrip_namespace_mismatch")
     formats.text(provenance, 1000)
     formats.text(rights_basis, 1000)
     raw_sha = sha256(raw).hexdigest()
-    with policy.boundary(**base, action="STAGE", namespace=namespace) as (case, actor):
+    with (
+        scan_receipts.boundary(),
+        policy.boundary(**base, action="STAGE", namespace=namespace) as (case, actor),
+    ):
+        scans.require_bytes(raw)
+        for file in parsed.files.values():
+            scan_receipts.require(file.sha256, file.size)
         _pins(case, base)
         existing = ImportBatch.objects.filter(
             case=case, namespace=namespace, raw_sha256=raw_sha
@@ -812,6 +824,7 @@ def _apply_group(*, batch_id, plan_id, group_key, request_key, command_sequence,
     raw_files = _group_files(batch_id=batch_id, plan_id=plan_id, group_key=group_key, **base)
     with (
         _library().material_bindings(raw_files),
+        scan_receipts.boundary(),
         policy.boundary(**base, action="APPLY", allow_library_writes=True) as (case, actor),
     ):
         _pins(case, base)

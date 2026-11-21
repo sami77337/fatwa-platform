@@ -1,0 +1,9 @@
+{% extends "library_preview/base.html" %}{% block title %}{{ lesson.title }} — الدرس{% endblock %}{% block content %}
+{% if lesson.series %}<nav aria-label="هوية السلسلة"><a href="{{ lesson.series.url }}">{{ lesson.series.title }}</a> · إصدار السلسلة {{ lesson.series.number }}</nav>{% endif %}
+<article><h1>{{ lesson.title }}</h1><p>إصدار الإتاحة {{ lesson.number }} · نسخة الدرس المصدر {{ lesson.lesson.lesson_version }}</p><p class="body">{{ lesson.summary }}</p>
+{% if lesson.lesson.scholars %}<p>المعلمون المنسوب إليهم هذا الدرس: {% for scholar in lesson.lesson.scholars %}<a href="{% url 'teaching_scholar' scholar.id %}">{{ scholar.name }}</a>{% if not forloop.last %}، {% endif %}{% endfor %}</p>{% endif %}
+<audio class="library-player" controls preload="metadata" src="{{ lesson.audio_url }}">التسجيل غير قابل للتشغيل في هذا المتصفح.</audio><p>اضغط تشغيل للاستماع إلى الأصل المحدد لهذه النسخة. لا تشغيل تلقائيًا ولا تفريغ أو توقيت مفترض.</p>
+<p><a href="/library-preview/knowledge/publications/{{ lesson.lesson.publication_id }}/ar/">الفتوى المرتبطة بهذا الدرس والمصرح بعرضها</a></p></article>
+{% if lesson.series %}<nav aria-label="التنقل بين دروس السلسلة">{% if lesson.previous %}<a rel="prev" href="{{ lesson.previous.url }}">الدرس السابق: {{ lesson.previous.title }}</a>{% endif %}{% if lesson.next %}<a rel="next" href="{{ lesson.next.url }}">الدرس التالي: {{ lesson.next.title }}</a>{% endif %}</nav>{% endif %}
+<p><a href="{% url 'teaching_catalog' %}">العودة إلى الدروس والسلاسل</a></p>
+{% endblock %}

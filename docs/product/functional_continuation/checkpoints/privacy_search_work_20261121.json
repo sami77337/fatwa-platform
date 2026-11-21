@@ -1,0 +1,250 @@
+{
+  "schema": "fatwa.resumed-functional-checkpoint.v1",
+  "date": "2026-11-21",
+  "pr": "https://github.com/sami77337/fatwa-platform/pull/244",
+  "parent_remote_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+  "code_source_sha": "73c3385906d8db432c5b6a3ae62f7994a4724fff",
+  "certification": "PENDING_EXACT_HEAD_NATIVE_SERVICE_RESTORE",
+  "candidate_count": 100,
+  "group_count": 38,
+  "service_discovery_unique": 1322,
+  "protected_browser_identities": 49,
+  "recovery_required": {
+    "nonempty_tables": 89,
+    "helpers": 36,
+    "current_use_denials": 240
+  },
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "focused_observations": [
+    {
+      "kind": "legacy-and-composite-delivery",
+      "postgres_major": 17,
+      "source_local_commit": "560dec5e9daf351c7eb6db13870ec055d120e15a",
+      "tests": 52,
+      "seconds": 103.99,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-delivery-pg17.log",
+      "sha256": "6cbb0e62b176c277d56675412d14b03ccc8b99b6e6c83068026ad8e39215c8c5",
+      "bytes": 10150
+    },
+    {
+      "kind": "legacy-and-composite-delivery",
+      "postgres_major": 18,
+      "source_local_commit": "560dec5e9daf351c7eb6db13870ec055d120e15a",
+      "tests": 52,
+      "seconds": 105.019,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-delivery-pg18.log",
+      "sha256": "46dfae8ae1986dc945e1dd8a82f8d64748f28eb850321766e49d67df2fb362a1",
+      "bytes": 10149
+    },
+    {
+      "kind": "pending-classification-private-work",
+      "postgres_major": 17,
+      "source_local_commit": "63372eae8399a4be96f7c1a22cf0efb4d189348b",
+      "tests": 6,
+      "seconds": 4.436,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "unclassified-work-fixed-pg17.log",
+      "sha256": "12e42e930643e55d707b3c810f5a95c0ca7e44f9d1c840dec92e72fce54b0839",
+      "bytes": 1536
+    },
+    {
+      "kind": "pending-classification-private-work",
+      "postgres_major": 18,
+      "source_local_commit": "63372eae8399a4be96f7c1a22cf0efb4d189348b",
+      "tests": 6,
+      "seconds": 4.411,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "unclassified-work-fixed-pg18.log",
+      "sha256": "3fda2e7d82a7c748acd5a89c17bd19ccf72ca42c3a4525039292740b9911102a",
+      "bytes": 1535
+    },
+    {
+      "kind": "staff-search-privacy-and-regression",
+      "postgres_major": 17,
+      "source_local_commit": "67baaae42842d6afeb4f9bd689c750ad226a4cf6",
+      "tests": 37,
+      "seconds": 24.789,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "staff-search-privacy-pg17.log",
+      "sha256": "0c2bed32f2856ce4dbb57f0b9c9b11f9fc600c182bd4f531319e14e34b66c995",
+      "bytes": 7302
+    },
+    {
+      "kind": "staff-search-privacy-and-regression",
+      "postgres_major": 18,
+      "source_local_commit": "67baaae42842d6afeb4f9bd689c750ad226a4cf6",
+      "tests": 37,
+      "seconds": 26.254,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "staff-search-privacy-pg18.log",
+      "sha256": "7217137ca8b5f70c009670646df01892299238798e1dda18da159232c6accf0a",
+      "bytes": 7301
+    },
+    {
+      "kind": "publication-destinations-and-schedules",
+      "postgres_major": 17,
+      "source_local_commit": "cc54ad028cba15591bf7896e83fc6c0887af123e",
+      "tests": 28,
+      "seconds": 69.876,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-publication-plans-pg17.log",
+      "sha256": "9b32dfeebc690fbcfba826348a424c41d9522c743078d0196d693cf51b094c52",
+      "bytes": 6376
+    },
+    {
+      "kind": "publication-destinations-and-schedules",
+      "postgres_major": 18,
+      "source_local_commit": "cc54ad028cba15591bf7896e83fc6c0887af123e",
+      "tests": 28,
+      "seconds": 69.852,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-publication-plans-pg18.log",
+      "sha256": "4248e1ae9915a3d5b7928ebaae2d37a31bb72d9a5086472e8f6c19e9b42f49db",
+      "bytes": 6375
+    },
+    {
+      "kind": "public-library-api-offline-search",
+      "postgres_major": 17,
+      "source_local_commit": "a09767f3660fe0d21a24bb87368764f1343310c3",
+      "tests": 33,
+      "seconds": 23.955,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-public-material-search-pg17.log",
+      "sha256": "e5230802b409396b5a034daf7abafaa20efd85c30bb7cdaeea5d3de64899ea8a",
+      "bytes": 6377
+    },
+    {
+      "kind": "public-library-api-offline-search",
+      "postgres_major": 18,
+      "source_local_commit": "a09767f3660fe0d21a24bb87368764f1343310c3",
+      "tests": 33,
+      "seconds": 24.236,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-public-material-search-pg18.log",
+      "sha256": "f4117ad4d08425517dbd35412c96a0e31a79c7b607c53112347020bb2a71298e",
+      "bytes": 6376
+    },
+    {
+      "kind": "public-knowledge-collection-teaching-search",
+      "postgres_major": 17,
+      "source_local_commit": "6af78818eb83b04666acf0fd6e81cf9968b15771",
+      "tests": 8,
+      "seconds": 123.161,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "public-discovery-privacy-first-pg17.log",
+      "sha256": "930f7d5b0fe4edebea70798301eeb22ad303f27b658010dd97b04fb411c8d625",
+      "bytes": 1892
+    },
+    {
+      "kind": "public-knowledge-collection-teaching-search",
+      "postgres_major": 18,
+      "source_local_commit": "6af78818eb83b04666acf0fd6e81cf9968b15771",
+      "tests": 8,
+      "seconds": 122.196,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "public-discovery-privacy-first-pg18.log",
+      "sha256": "d7a0e7e97218c92e7fa509a1cb8b5786ffce70f5233acee246de9bdc7ded0b12",
+      "bytes": 1891
+    }
+  ],
+  "native_classification_checkpoint": {
+    "head_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+    "run": 44904565838,
+    "status": "CLASSIFICATION_ONLY_PASS_AI_FINAL_COMPARISON_FAILED",
+    "artifacts": [
+      {
+        "postgres_major": 17,
+        "id": 14707900208,
+        "sha256": "797f3438e567b8a30abc29b0e936ca9b70fef334314886cef12658ff9721beae",
+        "result_path": "data-privacy-browser/result.json",
+        "result": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "actual_roles": [
+            "MUFTI",
+            "ORGANIZER_ADMIN"
+          ],
+          "levels": [
+            "PUBLIC",
+            "INTERNAL",
+            "CONFIDENTIAL",
+            "RESTRICTED"
+          ],
+          "history_rows": 5,
+          "management_grants_no_content_read": true,
+          "post_render_revocation_denied": true,
+          "originals_unchanged": true,
+          "external_requests": [],
+          "page_errors": []
+        },
+        "archive_downloaded_and_inspected": true
+      },
+      {
+        "postgres_major": 18,
+        "id": 14706974439,
+        "sha256": "7c76a4c9a083a5b3db6727caa63a8887b893e998b66fc1564650016de9b7f933",
+        "result_path": "data-privacy-browser/result.json",
+        "result": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "actual_roles": [
+            "MUFTI",
+            "ORGANIZER_ADMIN"
+          ],
+          "levels": [
+            "PUBLIC",
+            "INTERNAL",
+            "CONFIDENTIAL",
+            "RESTRICTED"
+          ],
+          "history_rows": 5,
+          "management_grants_no_content_read": true,
+          "post_render_revocation_denied": true,
+          "originals_unchanged": true,
+          "external_requests": [],
+          "page_errors": []
+        },
+        "archive_downloaded_and_inspected": true
+      }
+    ]
+  },
+  "preserved_restore_failures": [
+    {
+      "postgres_major": 17,
+      "source_local_commit": "c4680034cc01adf69af12a9e1401c1a793c727d4",
+      "log_name": "privacy100-encrypted-restore-pg17.log",
+      "sha256": "70287efc7e2f00408ad1956f6859c13f56b848b85651d9723cf66882cafa657e",
+      "status": "FAILED_NOT_CREDITED",
+      "cause": "The fresh private-work positive check reused the read callable name for a DTO. Fixed by preserving the callable; all thirteen denial checks remain unchanged."
+    },
+    {
+      "postgres_major": 18,
+      "source_local_commit": "c4680034cc01adf69af12a9e1401c1a793c727d4",
+      "log_name": "privacy100-encrypted-restore-pg18.log",
+      "sha256": "716f7870a7e7b9a60c1d13a7267e4e775d875ae206278c45c55d6705d3f16874",
+      "status": "FAILED_NOT_CREDITED",
+      "cause": "The fresh private-work positive check reused the read callable name for a DTO. Fixed by preserving the callable; all thirteen denial checks remain unchanged."
+    }
+  ],
+  "ai_native_fix": {
+    "source": "e8cb5973a2cad05bfc722ed169d9a354a29fb029",
+    "cause": "Native URL-encoded textarea submission uses CRLF; the product retains the exact request. Proof now captures and compares the actual native POST, without changing persisted text or weakening revocation checks.",
+    "status": "HOSTED_RERUN_REQUIRED"
+  },
+  "pending": [
+    "The integrated 1322-service, 49-browser and encrypted-restore receipt has not passed on this source.",
+    "Upload quarantine, permission-template administration and actual MFA are separate incomplete worktrees.",
+    "External providers, approved source datasets and production policies remain independently unresolved. Final design is excluded."
+  ]
+}

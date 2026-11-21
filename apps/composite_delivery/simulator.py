@@ -22,7 +22,7 @@ from apps.delivery_queue.signed_provider_receipts import (
     provider_signing_payload,
 )
 
-from .models import CompositeDelivery
+from .models import CompositeDelivery, CompositeRetry
 from .services import SIMULATOR_PROVIDER, _enabled
 
 
@@ -46,10 +46,28 @@ class OfflineProviderSimulator:
         queue._postgres_only()
         intent = DeliveryIntent.objects.get(pk=lease.intent_key)
         queue._authenticate_attempt(intent, lease)
-        binding = CompositeDelivery.objects.select_related("decision").get(approval=intent.approval)
+        binding = (
+            CompositeDelivery.objects.select_related("decision")
+            .filter(approval=intent.approval)
+            .first()
+        )
+        logical_ordinal = intent.ordinal
+        retry = None
+        if binding is None:
+            retry = CompositeRetry.objects.select_related("delivery__decision").get(
+                approval=intent.approval
+            )
+            binding = retry.delivery
+            logical_ordinal = retry.logical_ordinal
+            if (
+                intent.ordinal != 1
+                or part.get("queue_ordinal") != 1
+                or part.get("retry_id") != str(retry.pk)
+            ):
+                raise queue.QueueConflict("simulator_retry_binding_required")
         canonical = AnswerPart.objects.get(
             manifest_id=binding.decision.answer_id,
-            ordinal=intent.ordinal,
+            ordinal=logical_ordinal,
         )
         if (
             str(canonical.pk) != part["id"]
@@ -58,7 +76,7 @@ class OfflineProviderSimulator:
             or canonical.kind != part["kind"]
             or canonical.media_type != part["media_type"]
             or intent.provider != SIMULATOR_PROVIDER
-            or intent.ordinal != part["ordinal"]
+            or logical_ordinal != part["ordinal"]
             or intent.payload_sha256 != part["envelope_sha256"]
             or sha256(part["raw"]).hexdigest() != part["sha256"]
             or len(part["raw"]) != part["size"]

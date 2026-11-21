@@ -1,0 +1,94 @@
+{
+  "schema": "fatwa.local-focused-observations.v1",
+  "records": [
+    {
+      "log_name": "mfa-cc68e92-composed-pg17.log",
+      "sha256": "2c22b7d877c4defa46d0104a7d525128e99320923d91920cec18137f9e40adb5",
+      "tested_sha": "cc68e925edb53b4b87cf83c17847339f8eb52b61",
+      "tests": 80,
+      "tail": "fter_scan_revocation (apps.upload_security.test_http.NativeUploadBoundaryTests.test_last_native_renderer_cannot_commit_library_version_after_scan_revocation) ... ok\ntest_library_native_scan_precedes_outer_command_and_render_transaction (apps.upload_security.test_http.NativeUploadBoundaryTests.test_library_native_scan_precedes_outer_command_and_render_transaction) ... ok\ntest_private_get_head_and_range_require_current_receipt_and_live_domain_rights (apps.upload_security.test_http.NativeUploadBoundaryTests.test_private_get_head_and_range_require_current_receipt_and_live_domain_rights) ... ok\ntest_authenticated_encryption_is_bound_to_the_exact_factor (apps.staff_mfa.test_primitives.PrimitiveTests.test_authenticated_encryption_is_bound_to_the_exact_factor) ... ok\ntest_exact_ascii_token_and_explicit_finite_clock_window (apps.staff_mfa.test_primitives.PrimitiveTests.test_exact_ascii_token_and_explicit_finite_clock_window) ... ok\ntest_no_unbounded_or_weak_parameters (apps.staff_mfa.test_primitives.PrimitiveTests.test_no_unbounded_or_weak_parameters) ... ok\ntest_rfc_6238_appendix_b_all_eighteen_reference_vectors (apps.staff_mfa.test_primitives.PrimitiveTests.test_rfc_6238_appendix_b_all_eighteen_reference_vectors) ... ok\n\n----------------------------------------------------------------------\nRan 80 tests in 105.409s\n\nOK\nFound 80 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "mfa-cc68e92-composed-pg18.log",
+      "sha256": "12fe35ca652c06c3efa57de646ff930a013debdedb2f2133b05c7b4163bf5fe2",
+      "tested_sha": "cc68e925edb53b4b87cf83c17847339f8eb52b61",
+      "tests": 80,
+      "tail": "fter_scan_revocation (apps.upload_security.test_http.NativeUploadBoundaryTests.test_last_native_renderer_cannot_commit_library_version_after_scan_revocation) ... ok\ntest_library_native_scan_precedes_outer_command_and_render_transaction (apps.upload_security.test_http.NativeUploadBoundaryTests.test_library_native_scan_precedes_outer_command_and_render_transaction) ... ok\ntest_private_get_head_and_range_require_current_receipt_and_live_domain_rights (apps.upload_security.test_http.NativeUploadBoundaryTests.test_private_get_head_and_range_require_current_receipt_and_live_domain_rights) ... ok\ntest_authenticated_encryption_is_bound_to_the_exact_factor (apps.staff_mfa.test_primitives.PrimitiveTests.test_authenticated_encryption_is_bound_to_the_exact_factor) ... ok\ntest_exact_ascii_token_and_explicit_finite_clock_window (apps.staff_mfa.test_primitives.PrimitiveTests.test_exact_ascii_token_and_explicit_finite_clock_window) ... ok\ntest_no_unbounded_or_weak_parameters (apps.staff_mfa.test_primitives.PrimitiveTests.test_no_unbounded_or_weak_parameters) ... ok\ntest_rfc_6238_appendix_b_all_eighteen_reference_vectors (apps.staff_mfa.test_primitives.PrimitiveTests.test_rfc_6238_appendix_b_all_eighteen_reference_vectors) ... ok\n\n----------------------------------------------------------------------\nRan 80 tests in 106.380s\n\nOK\nFound 80 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "suppression-checkpoint-pg17.log",
+      "sha256": "22d5fefabc8e99c732413aa3490322ad108470ccd6e888fa1598c5f679f6f8a1",
+      "passed": true,
+      "tail": "blic_range_projection_discards_bytes_after_new_deletion (apps.record_suppression.test_readers.MediaSuppressionTests.test_late_public_range_projection_discards_bytes_after_new_deletion) ... ok\ntest_private_and_public_bytes_follow_source_without_physically_deleting_file (apps.record_suppression.test_readers.MediaSuppressionTests.test_private_and_public_bytes_follow_source_without_physically_deleting_file) ... ok\ntest_saved_fts_generation_has_no_stale_snippet_count_or_open (apps.record_suppression.test_readers.SearchSuppressionTests.test_saved_fts_generation_has_no_stale_snippet_count_or_open) ... ok\ntest_restored_current_case_and_deleted_answer_require_independent_floor (apps.record_suppression.test_recovery.SuppressionRecoveryTests.test_restored_current_case_and_deleted_answer_require_independent_floor) ... ok\ntest_last_session_callback_withholds_already_rendered_operational_case (apps.record_suppression.test_sessions.SuppressionSessionTests.test_last_session_callback_withholds_already_rendered_operational_case) ... ok\n\n----------------------------------------------------------------------\nRan 30 tests in 41.277s\n\nOK\nFound 30 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "suppression-checkpoint-pg18.log",
+      "sha256": "8bd4ebcab8129cef4d71981ff281ddcbacca82eb723e042979c54a31d0f89fb3",
+      "passed": true,
+      "tail": "blic_range_projection_discards_bytes_after_new_deletion (apps.record_suppression.test_readers.MediaSuppressionTests.test_late_public_range_projection_discards_bytes_after_new_deletion) ... ok\ntest_private_and_public_bytes_follow_source_without_physically_deleting_file (apps.record_suppression.test_readers.MediaSuppressionTests.test_private_and_public_bytes_follow_source_without_physically_deleting_file) ... ok\ntest_saved_fts_generation_has_no_stale_snippet_count_or_open (apps.record_suppression.test_readers.SearchSuppressionTests.test_saved_fts_generation_has_no_stale_snippet_count_or_open) ... ok\ntest_restored_current_case_and_deleted_answer_require_independent_floor (apps.record_suppression.test_recovery.SuppressionRecoveryTests.test_restored_current_case_and_deleted_answer_require_independent_floor) ... ok\ntest_last_session_callback_withholds_already_rendered_operational_case (apps.record_suppression.test_sessions.SuppressionSessionTests.test_last_session_callback_withholds_already_rendered_operational_case) ... ok\n\n----------------------------------------------------------------------\nRan 30 tests in 41.618s\n\nOK\nFound 30 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "suppression-current-floor-pg17.log",
+      "sha256": "57cfa476a624dc5e65a14cdc28f1ff585ca0ce92bd3c8ceb4c3768e9b9d09975",
+      "passed": true,
+      "tail": "SYNTHETIC_POSTGRES=postgres (PostgreSQL) 17.11 (Debian 17.11-0+deb13u1); fresh owned cluster\ntest_floor_scope_composes_an_existing_reader_without_administrative_grants (apps.record_suppression.test_recovery.SuppressionRecoveryTests.test_floor_scope_composes_an_existing_reader_without_administrative_grants) ... ok\ntest_restored_current_case_and_deleted_answer_require_independent_floor (apps.record_suppression.test_recovery.SuppressionRecoveryTests.test_restored_current_case_and_deleted_answer_require_independent_floor) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 1.952s\n\nOK\nFound 2 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "suppression-current-floor-pg18.log",
+      "sha256": "b36a70347a28f6c257182b65fd81084f0b0c9d0b61a99fcb16cfeaed5f1cd8ab",
+      "passed": true,
+      "tail": "SYNTHETIC_POSTGRES=postgres (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2); fresh owned cluster\ntest_floor_scope_composes_an_existing_reader_without_administrative_grants (apps.record_suppression.test_recovery.SuppressionRecoveryTests.test_floor_scope_composes_an_existing_reader_without_administrative_grants) ... ok\ntest_restored_current_case_and_deleted_answer_require_independent_floor (apps.record_suppression.test_recovery.SuppressionRecoveryTests.test_restored_current_case_and_deleted_answer_require_independent_floor) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 2.198s\n\nOK\nFound 2 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "suppression-legacy-profile-pg17.log",
+      "sha256": "f5050e61f9b4789579c18a027ed64f37aa52d59d6e356cf66d52980609996135",
+      "passed": true,
+      "tail": "nfusion_and_cross_case_reads_writes (tests.casework.test_http.CaseworkHTTPTests.test_staff_auth_role_confusion_and_cross_case_reads_writes) ... ok\ntest_staff_cookie_invalidates_on_epoch_provider_and_csrf_binding_change (tests.casework.test_http.CaseworkHTTPTests.test_staff_cookie_invalidates_on_epoch_provider_and_csrf_binding_change) ... ok\ntest_stale_web_form_rejected_without_partial_answer (tests.casework.test_http.CaseworkHTTPTests.test_stale_web_form_rejected_without_partial_answer) ... ok\ntest_trusted_recovery_rotates_and_revoke_removes_access (tests.casework.test_http.CaseworkHTTPTests.test_trusted_recovery_rotates_and_revoke_removes_access) ... ok\ntest_two_intakes_original_exact_public_ref_and_idempotent_replay (tests.casework.test_http.CaseworkHTTPTests.test_two_intakes_original_exact_public_ref_and_idempotent_replay) ... ok\ntest_unknown_and_nonliteral_hosts_rejected_before_reading_or_writing (tests.casework.test_http.CaseworkHTTPTests.test_unknown_and_nonliteral_hosts_rejected_before_reading_or_writing) ... ok\n\n----------------------------------------------------------------------\nRan 33 tests in 6.399s\n\nOK\nFound 33 test(s).\nSystem check identified no issues (0 silenced).\n"
+    },
+    {
+      "log_name": "suppression-legacy-profile-pg18.log",
+      "sha256": "75341ffa7d41cc0193044a95fcb90b884b188dcbc8c0ee70e6eb22abaac72776",
+      "passed": true,
+      "tail": "nfusion_and_cross_case_reads_writes (tests.casework.test_http.CaseworkHTTPTests.test_staff_auth_role_confusion_and_cross_case_reads_writes) ... ok\ntest_staff_cookie_invalidates_on_epoch_provider_and_csrf_binding_change (tests.casework.test_http.CaseworkHTTPTests.test_staff_cookie_invalidates_on_epoch_provider_and_csrf_binding_change) ... ok\ntest_stale_web_form_rejected_without_partial_answer (tests.casework.test_http.CaseworkHTTPTests.test_stale_web_form_rejected_without_partial_answer) ... ok\ntest_trusted_recovery_rotates_and_revoke_removes_access (tests.casework.test_http.CaseworkHTTPTests.test_trusted_recovery_rotates_and_revoke_removes_access) ... ok\ntest_two_intakes_original_exact_public_ref_and_idempotent_replay (tests.casework.test_http.CaseworkHTTPTests.test_two_intakes_original_exact_public_ref_and_idempotent_replay) ... ok\ntest_unknown_and_nonliteral_hosts_rejected_before_reading_or_writing (tests.casework.test_http.CaseworkHTTPTests.test_unknown_and_nonliteral_hosts_rejected_before_reading_or_writing) ... ok\n\n----------------------------------------------------------------------\nRan 33 tests in 6.047s\n\nOK\nFound 33 test(s).\nSystem check identified no issues (0 silenced).\n"
+    }
+  ],
+  "native_upload_correction": {
+    "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44910119961",
+    "tested_sha": "6cdd3fc902cad83f269565e2aac94553e6d37487",
+    "artifact_id": 14710190872,
+    "archive_sha256": "1fbd4ef24e274c7103347cb7f2286604b36ac3709dd2936ea8b2c31d432d48d3",
+    "actual_multipart_text_line_endings": "CRLF",
+    "fixture_textarea_line_endings": "LF",
+    "final_submission_http": 303,
+    "correction": "Compare exact expected serialized native text; canonical service and original whitespace unchanged.",
+    "new_protected_browser_proof": "PENDING"
+  },
+  "registered_candidates": 105,
+  "registered_services": 1479,
+  "registered_browsers": 53,
+  "registered_tables": 103,
+  "registered_helpers": 40,
+  "registered_denials": 290,
+  "integrated_status": "PENDING",
+  "main_merged": false,
+  "production_changed": false,
+  "scope_contract_failure": {
+    "tested_sha": "8e6ca3cc6f3bfc601f43d5111f3c3ae69d12a544",
+    "log_sha256": "e49e5a15d48742d853cf76570f2d8db71d57c9b2779b7be573b90e501696b2ef",
+    "cause": "New owner387 remained in explicit_exclusions from the older close/archive-only lane, so the strict verifier correctly rejected the candidate plan.",
+    "fix": "Retain the prior exclusion in scope_changes and explicitly promote only the independently implemented soft-delete point. The rejection condition itself is unchanged."
+  },
+  "scope_contract_retest": {
+    "source_commit": "358e9ce",
+    "tests": 9,
+    "duration_seconds": 85.864,
+    "status": "PASS",
+    "log_sha256": "258c020935fda4883385375b2a573827baca299c7b789d538c81a1a003ed69cf",
+    "rejection_conditions_weakened": false
+  },
+  "interrupted_local_aggregate": {
+    "source_commit": "8e6ca3cc6f3bfc601f43d5111f3c3ae69d12a544",
+    "status": "INCOMPLETE_NO_CREDIT",
+    "observation": "Four local executor handles were unavailable after owned-cluster startup. Logs contain no completed test or restore result. Cause not established; no pass is inferred. The next focused rerun keeps each executor handle actively observed."
+  }
+}

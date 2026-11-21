@@ -93,7 +93,7 @@ class RecordingSources:
             )
         return result
 
-    def finish(self):
+    def verify_bytes(self):
         if self.configuration[0]:
             from apps.public_answer_media import services as recordings
 
@@ -101,7 +101,16 @@ class RecordingSources:
             # after its final check. Finish every byte read before the pure pass.
             for pin in self.snapshots.values():
                 recordings.assert_snapshot(pin)
+
+    def final_pins(self):
+        if self.configuration[0]:
+            from apps.public_answer_media import services as recordings
+
             for pin in self.snapshots.values():
                 recordings.assert_projection_state(pin)
         if _configuration() != self.configuration:
             raise cases.CaseConflict("search_recording_policy_changed")
+
+    def finish(self):
+        self.verify_bytes()
+        self.final_pins()

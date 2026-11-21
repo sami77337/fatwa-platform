@@ -1,0 +1,110 @@
+{
+  "schema": "fatwa.development-container-evidence.v1",
+  "tested_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+  "run": "https://github.com/sami77337/fatwa-platform/actions/runs/44904565936",
+  "status": "PASS_ON_EXACT_RECORDED_SOURCE",
+  "original_owner_point": "453",
+  "claim": "Committed-source development containers on PostgreSQL 17 and 18; no production orchestration, host deployment or image publication.",
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "artifacts": [
+    {
+      "id": 14706913123,
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/44904565936/artifacts/14706913123",
+      "archive_sha256": "467f9d3d465c8b56bd4796997db270ffdb5ccf80ab702013411d542765647eb0",
+      "inspected_result": {
+        "base_image": "python@sha256:a5a7017efc5969e00ae2b91c8eb0631049a569652aa4ffc4501769049ae45c72",
+        "build_log_sha256": "d9432b368a436879ab24471ac90a6a5892ce87b98801ffe9162c1d4e9c8034c5",
+        "built_image_id": "sha256:d3f60bf4e4ac6c97fc1f4cc7f86620d08242e27f71dde3b516f54b63a68a0c35",
+        "container_id": "33a0aaf66ceb4fe034be29c699869d0e500ed43672f2e87357b616de89ce8fd7",
+        "deployment": "NOT_DEPLOYED",
+        "network": "none",
+        "postgres_major": 17,
+        "published_image": false,
+        "runtime": {
+          "database": "wave7_synthetic_v6local",
+          "database_user": "wave7_synthetic",
+          "deployment": "NOT_DEPLOYED",
+          "native_tests": 4,
+          "postgres": "PostgreSQL 17.12 (Debian 17.12-1.pgdg12+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+          "postgres_major": 17,
+          "production": false,
+          "python": "3.13.18 (main, Nov  5 2026, 07:59:44) [GCC 12.2.0]",
+          "schema": "fatwa.development-container-runtime.v1",
+          "source_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+          "source_write_rejected": true,
+          "status": "PASS",
+          "test_labels": [
+            "apps.staff_sessions.test_campaign.CampaignSessionTests",
+            "tests.casework.test_campaign.CampaignProfileTests"
+          ],
+          "uid": 10001
+        },
+        "runtime_log_sha256": "76a6dee46150534675e46bc9be6a053dc78a0eb46ae31abdcfd6fca6394c100c",
+        "source_archive_sha256": "b89273b53e80f415273f9cf3d68eedae6ce10e9c53ba5cf3827029f82e98d181",
+        "source_read_only": true,
+        "source_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+        "status": "PASS"
+      }
+    },
+    {
+      "id": 14707726422,
+      "url": "https://github.com/sami77337/fatwa-platform/actions/runs/44904565936/artifacts/14707726422",
+      "archive_sha256": "39394bd9486e030fe0a52f7ec166e0f32fe6f953f47a7a30b6693050490d949c",
+      "inspected_result": {
+        "base_image": "python@sha256:a5a7017efc5969e00ae2b91c8eb0631049a569652aa4ffc4501769049ae45c72",
+        "build_log_sha256": "5c74ddf954b9402bfb76f51bd9e06bf723a7e922c1a4ce579fc80110e76ebb7e",
+        "built_image_id": "sha256:b0e743197f91fe6e30262afaaf837c05c99a9f607cdbc065c2808114b0e6f6f2",
+        "container_id": "77261154ddedbcefa8ca4beaa7bedddf9d9af43640f5248495512118f1ec284a",
+        "deployment": "NOT_DEPLOYED",
+        "network": "none",
+        "postgres_major": 18,
+        "published_image": false,
+        "runtime": {
+          "database": "wave7_synthetic_v6local",
+          "database_user": "wave7_synthetic",
+          "deployment": "NOT_DEPLOYED",
+          "native_tests": 4,
+          "postgres": "PostgreSQL 18.7 (Debian 18.7-1.pgdg12+5) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+          "postgres_major": 18,
+          "production": false,
+          "python": "3.13.18 (main, Nov  5 2026, 07:59:44) [GCC 12.2.0]",
+          "schema": "fatwa.development-container-runtime.v1",
+          "source_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+          "source_write_rejected": true,
+          "status": "PASS",
+          "test_labels": [
+            "apps.staff_sessions.test_campaign.CampaignSessionTests",
+            "tests.casework.test_campaign.CampaignProfileTests"
+          ],
+          "uid": 10001
+        },
+        "runtime_log_sha256": "c21de3add2953a65d829f5cc66dda48fffe39f958422850ed5c1fbc4a856f3da",
+        "source_archive_sha256": "b89273b53e80f415273f9cf3d68eedae6ce10e9c53ba5cf3827029f82e98d181",
+        "source_read_only": true,
+        "source_sha": "ad92317507375aaabfb7b22aabb958495ab8614b",
+        "status": "PASS"
+      }
+    }
+  ],
+  "owner_source": {
+    "original_id": "453",
+    "original_text": "Containerized environments.",
+    "direct_spec_ids": [
+      "SPEC-U16-005"
+    ],
+    "decision_ids": [
+      "D-039"
+    ],
+    "source_locator": {
+      "sheet": "نقاط المالك",
+      "parsed_index": 455
+    }
+  },
+  "prior_failure": {
+    "tested_sha": "baad1ebcc3cc427fa12f650171eff7fae196179f",
+    "run": "https://github.com/sami77337/fatwa-platform/actions/runs/44902976905",
+    "status": "FAILED_NOT_CREDITED",
+    "cause": "Plain DiscoverRunner created an unwitnessed database and was correctly rejected. The subsequent source uses the configured ownership-aware runner; the ownership guard was retained."
+  }
+}

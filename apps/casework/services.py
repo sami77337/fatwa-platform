@@ -127,6 +127,37 @@ def _answer_timed(answer, *, actor=None, provider=None):
     return earliest
 
 
+class AnswerUseBundle:
+    """Existing canonical source guards retained for coordinated outer checks.
+
+    These references grant no identity, source or operation. The original
+    contexts still run their ordinary exit checks. A composed boundary can
+    repeat all callbacks, then all byte checks, then every pure pin together.
+    """
+
+    def __init__(self, citation_guards, media_pin, earliest, scan_pin):
+        self.citation_guards, self.media_pin, self.earliest = citation_guards, media_pin, earliest
+        self.scan_pin = scan_pin
+
+    def callbacks(self):
+        for guard in self.citation_guards:
+            for source in guard.libraries.values():
+                source.check_permissions()
+            guard.callbacks()
+
+    def verify_bytes(self):
+        for guard in self.citation_guards:
+            guard.verify_bytes()
+
+    def final_pins(self):
+        for guard in self.citation_guards:
+            guard.final_pins(verify_files=False)
+        self.media_pin.final_pins()
+        if self.earliest[0] is not None and self.earliest[0] <= timezone.now():
+            raise CaseConflict("timed_grant_expired")
+        self.scan_pin.check()
+
+
 @contextmanager
 def _answer_use_boundary():
     # Private audio/PDF annotation uses contribute here. Book collections keep their
@@ -135,12 +166,17 @@ def _answer_use_boundary():
     earliest = [None]
     token = _TIMED_USE_DEADLINES.set((*_TIMED_USE_DEADLINES.get(), earliest))
     from apps.precise_citations.integration import answer_use_boundary
+    from apps.upload_security.services import projection as scan_projection
 
     from .media_boundary import media_projection_boundary
 
     try:
-        with answer_use_boundary(), media_projection_boundary():
-            yield
+        with (
+            scan_projection() as scan_pin,
+            answer_use_boundary() as citation_guards,
+            media_projection_boundary() as media_pin,
+        ):
+            yield AnswerUseBundle(citation_guards, media_pin, earliest, scan_pin)
         if earliest[0] is not None and earliest[0] <= timezone.now():
             raise CaseConflict("timed_grant_expired")
     finally:
@@ -155,7 +191,10 @@ def _answer_annotations(answer, *, actor=None, provider=None):
     Editing flags cannot erase restored annotations from this check.
     """
     from apps.precise_citations.integration import require_for_answer
+    from apps.record_suppression.integration import require as current_material
 
+    if answer is not None:
+        current_material("ANSWER", answer.pk)
     precise_deadline = require_for_answer(answer, actor=actor, provider=provider)
     timed_deadline = _answer_timed(answer, actor=actor, provider=provider)
     timed_deadline = min((value for value in (precise_deadline, timed_deadline) if value is not None), default=None)
@@ -427,6 +466,9 @@ def _ticket(case):
 
 
 def _public(case):
+    from apps.record_suppression.integration import require as current_material
+
+    current_material("CASE", case.pk)
     clarification = None
     if case.stage == "NEEDS_CLARIFICATION":
         event = case.events.filter(action="CLARIFICATION").order_by("-sequence").first()
@@ -443,7 +485,13 @@ def _public(case):
     }
 
 
-def _staff(case):
+def _staff(case, *, search=False):
+    from apps.data_privacy.integration import allowed, evidence_allowed
+
+    visible_answers = [
+        a for a in case.answers.order_by("revision")
+        if allowed("ANSWER", a.pk) and (not search or allowed("ANSWER", a.pk, action="SEARCH"))
+    ]
     result = _public(case)
     result.update(
         {
@@ -453,6 +501,7 @@ def _staff(case):
             "followups": [
                 {"version": e.version, "text": e.text}
                 for e in case.evidence.filter(version__gt=1).order_by("version")
+                if evidence_allowed(e) and (not search or evidence_allowed(e, action="SEARCH"))
             ],
             "answers": [
                 {
@@ -461,14 +510,15 @@ def _staff(case):
                     "evidence_version": a.evidence_version,
                     "text": a.text,
                 }
-                for a in case.answers.order_by("revision")
+                for a in visible_answers
             ],
             "clarifications": list(
                 case.events.filter(action="CLARIFICATION")
                 .order_by("sequence")
                 .values_list("note", flat=True)
             ),
-            "approved_answer_id": str(case.approved_answer_id) if case.approved_answer_id else None,
+            "approved_answer_id": str(case.approved_answer_id)
+            if case.approved_answer_id in {a.pk for a in visible_answers} else None,
         }
     )
     return result
@@ -561,21 +611,30 @@ def _staff_case(
         identity = _identity(provider, subject_id, case)
         if before.auth_epoch != identity.auth_epoch:
             raise CaseConflict("case_identity_changed")
-        _verify(case)
-        if expected_revision is not None:
-            _versions(case, expected_revision, expected_evidence_version)
-        with _answer_use_boundary():
+        from apps.data_privacy.integration import staff_case as privacy_scope
+
+        with privacy_scope(case, identity, provider), _answer_use_boundary():
+            _verify(case)
+            if expected_revision is not None:
+                _versions(case, expected_revision, expected_evidence_version)
             yield case, identity
 
 
 @mutation_service
-def read_case(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+def read_case(*, case_id, subject_id, provider, synthetic_fixtures_only=False, search=False):
     with _staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
-        return _staff(case)
+        if search:
+            from apps.data_privacy.integration import current, evidence_allowed
+            from apps.data_privacy.services import PrivacyDenied
+
+            current("CASE", case.pk, action="SEARCH")
+            if not evidence_allowed(case.evidence.get(version=1), action="SEARCH"):
+                raise PrivacyDenied("privacy_original_search_required")
+        return _staff(case, search=search)
 
 
 @mutation_service
-def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
+def list_cases(*, subject_id, provider, synthetic_fixtures_only=False, search=False):
     _guard(synthetic_fixtures_only)
     try:
         identity = resolve_identity(provider, subject_id)
@@ -587,12 +646,21 @@ def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
         .order_by("created_at")
         .values_list("id", flat=True)
     )
-    return [
-        read_case(
-            case_id=pk, subject_id=subject_id, provider=provider, synthetic_fixtures_only=True
-        )
-        for pk in rows
-    ]
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.services import PrivacyDenied
+
+    result = []
+    with projection():
+        for pk in rows:
+            try:
+                row = read_case(
+                    case_id=pk, subject_id=subject_id, provider=provider,
+                    synthetic_fixtures_only=True, search=search,
+                )
+            except PrivacyDenied:
+                continue
+            result.append(row)
+    return result
 
 
 @mutation_service
@@ -692,6 +760,9 @@ def record_decision(
         ).first()
         if answer is None or case.stage == "NEEDS_CLARIFICATION":
             raise CaseConflict("current_answer_required")
+        from apps.data_privacy.integration import source as private_source
+
+        private_source("ANSWER", answer.pk)
         if CaseDecision.objects.filter(answer=answer).exists():
             raise CaseConflict("answer_already_decided")
         # The human decision covers every immutable part of this exact revision,
@@ -756,8 +827,10 @@ def _token_case(token, ack):
             or grant.expires_at <= timezone.now()
         ):
             raise CaseConflict("case_token_invalid_or_expired")
-        _verify(case)
-        with _answer_use_boundary():
+        from apps.data_privacy.integration import requester_case as privacy_scope
+
+        with privacy_scope(case, digest), _answer_use_boundary():
+            _verify(case)
             yield case
 
 

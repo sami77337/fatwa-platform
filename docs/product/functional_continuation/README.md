@@ -1,16 +1,17 @@
 # Functional continuation: original requirements and exact execution evidence
 
-This additive scope starts after the unchanged prior57-point batch. Its denominator is556 original owner points, pinned to the SHA-256 in `scope_plan.json`; tests, commits, files and elapsed work are not progress units. Every included point retains its exact original wording and direct specification IDs. No original matrix, decision or historical acceptance result is rewritten.
+This additive scope follows the unchanged prior 57-point batch. Its denominator is 556 original owner points, pinned in `scope_plan.json`. Every selected point retains its exact original wording, direct specification IDs and source locator. Tests, commits, elapsed time and file counts do not measure requirement completion. No original inventory, owner decision or historical acceptance result is rewritten.
 
 ## Verified checkpoint and current scope
 
-The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed20 additional points (3.597122%) on real PostgreSQL17 and18:478 affected tests per major,13 exact protected browser identities,37 nonempty restored tables,7 fresh-process helper results and18 missing/revoked-trust denial reads. Both artifact ZIPs were downloaded, hashed and independently inspected. All18 commit workflows passed. `checkpoints/210b1cc.json` records its source tree, run and artifact identities. This is historical evidence for that exact commit, not current-head certification.
+The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed 20 additional points (3.597122%) on real PostgreSQL 17 and 18: 478 affected tests per major, 13 exact protected browser identities, 37 nonempty restored tables, seven fresh-process helper results and 18 current-trust denial reads. Both artifact archives were downloaded, hashed and independently inspected. All 18 commit workflows passed. `checkpoints/210b1cc.json` records that exact commit. It does not certify a later source tree.
 
-The current source plan contains **35 implemented candidates in12 functional groups**: the historical20 plus15 newly integrated points. **Zero points are certified by the current plan alone.** A new exact-commit PG17/18 service, protected browser and encrypted restoration run must pass before35 may be credited.35/556 is6.294964%, below the authorized additional10–12% target of56–66 points; the selected scope is still21 candidates short of56.
+The later `ac8f5170b82767d759bd656fe9c2ea33cf48fc9f` checkpoint passed614 affected tests,20 protected browser journeys and47-table encrypted restore on each PostgreSQL major. All18 workflows ultimately passed; one B6 browser-startup attempt first stopped before any journey and its unchanged isolated retry passed. Subsequent screenshot review found invisible native audio controls despite keyboard playback. `checkpoints/ac8f517.json` records both the successful execution and that finding. The current source fixes control height and strengthens actual visible-control assertions; it still requires fresh hosted execution.
 
-## Selected functional groups
+The current plan contains **107 implemented candidates in 44 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
 
-| Group | Exact original IDs | Contract | Required protected proof |
+## Selected groups
+| المجموعة الوظيفية | البنود الأصلية | عقد التنفيذ | دليل المتصفح المطلوب |
 | --- | --- | --- | --- |
 | مكتبة المواد والنسخ وحقوق الاستخدام المستقلة | 286, 287, 288, 289 | `apps/research_library/README.md` | `.local/qa/functional-continuation/library-browser/result.json` |
 | مركز استيراد دائم وتصدير نسخ قابلة لإعادة الاستيراد | 348, 350, 351, 352, 353, 354, 355, 356, 361 | `apps/material_import/README.md` | `.local/qa/library-operations/import-browser/result.json` |
@@ -24,29 +25,78 @@ The current source plan contains **35 implemented candidates in12 functional gro
 | تثبيت واجهة الشيخ كتطبيق مع تحقق وصول مباشر | 55 | `apps/staff_shell/README.md` | `.local/qa/functional-continuation/staff-pwa-browser/result.json` |
 | الوضع الداكن مع بقاء المحتوى المنشور مقروءاً | 255 | `apps/staff_shell/README.md` | `.local/qa/functional-continuation/dark-mode-browser/result.json` |
 | الانتقال من تطابق التفريغ إلى موضع التسجيل الأصلي | 234 | `apps/canonical_search/README.md` | `.local/qa/functional-continuation/search-recording-browser/result.json` |
+| إضافة مرجع YouTube بشري وحفظ الرابط الأصلي | 73 | `apps/answer_media/YOUTUBE_LINK.md` | `.local/qa/functional-continuation/youtube-answer-browser/result.json` |
+| بحث المواد المرتبطة في لوحة مستقلة عن مسودة الجواب | 492 | `apps/answer_media/RELATED_MATERIALS.md` | `.local/qa/functional-continuation/answer-related-browser/result.json` |
+| فصل الشخص عن هوية المنصة وربطها ودمجها وفصلها بمراجعة بشرية | 153, 156, 158, 421, 439 | `apps/identity_registry/README.md` | `.local/qa/functional-continuation/identities-browser/result.json` |
+| حفظ المرجع والمشاركة والطباعة والتنزيل بحسب السياسة الحالية | 278 | `apps/public_reader_tools/README.md` | `.local/qa/functional-continuation/reader-tools-browser/result.json` |
+| واجهة قراءة للمطورين على المواد المسموح بها | 370 | `apps/material_api/README.md` | `.local/qa/functional-continuation/material-api-browser/result.json` |
+| جدولة نشر نسخة مراجعة وإلغاؤها وتنفيذها عند الاستحقاق | 138 | `apps/publication_schedules/README.md` | `.local/qa/functional-continuation/publication-schedules-browser/result.json` |
+| اختيار الجزء النصي وحده من جواب مركب قبل الإرسال | 122 | `apps/composite_delivery/SELECTION.md` | `.local/qa/functional-continuation/composite-choice-browser/result.json` |
+| شجرة تصنيف مستقلة ومعرّفات ثابتة وترحيل مراجع قابل للعكس | 159, 161, 162, 164, 165 | `apps/development_taxonomy/README.md` | `.local/qa/functional-continuation/taxonomy-browser/result.json` |
+| قاموس مرادفات بإصدارات ومقارنة بحث فعلية قبل اعتماد التغيير | 222, 247 | `docs/product/functional_continuation/search_governance/README.md` | `.local/qa/functional-continuation/search-governance-browser/result.json` |
+| مواد العلماء والدروس والسلاسل المنشورة بمراجعة مستقلة | 281, 290 | `apps/public_teaching/README.md` | `.local/qa/functional-continuation/public-teaching-browser/result.json` |
+| إعادة محاولة الجزء الفاشل بخطة مستقلة مع منع التكرار | 127 | `apps/composite_delivery/RETRY.md` | `.local/qa/functional-continuation/composite-retry-browser/result.json` |
+| البحث المباشر برقم FT وإظهاره للنسخة المصرح بها | 217, 266 | `apps/library_preview/REFERENCES.md` | `.local/qa/functional-continuation/fatwa-reference-browser/result.json` |
+| طوابير المنظم بهويته الفعلية وصلاحيات مستقلة لكل قضية | 495, 496, 497, 498, 499, 500 | `apps/operational_workspace/README.md` | `.local/qa/functional-continuation/operational-browser/result.json` |
+| قياس البحث الفعلي بأحكام مستقلة ومقاييس لكل استعلام | 242, 245 | `docs/product/functional_continuation/search_benchmark/README.md` | `.local/qa/functional-continuation/search-benchmark-browser/result.json` |
+| سجل مستقل ونسخ مصرح بها لكل وجهة نشر | 136, 137 | `apps/publication_destinations/README.md` | `.local/qa/functional-continuation/publication-destinations-browser/result.json` |
+| الملاحظات الداخلية للمنظم واستبعادها من بوابة السائل | 100 | `apps/operational_workspace/NOTES.md` | `.local/qa/functional-continuation/operational-notes-browser/result.json` |
+| الانتقال إلى التطابق داخل السؤال والجواب | 233 | `apps/canonical_search/MATCH_NAVIGATION.md` | `.local/qa/functional-continuation/search-match-browser/result.json` |
+| إدارة المنظم للتصنيف والوسوم ونوع السؤال | 94 | `apps/operational_workspace/METADATA.md` | `.local/qa/functional-continuation/operational-metadata-browser/result.json` |
+| ربط المنظم بالدروس مع مراجعة مستقلة | 95 | `apps/operational_workspace/LESSON_LINKS.md` | `.local/qa/functional-continuation/operational-lessons-browser/result.json` |
+| إدارة الأولوية والتعيين بهوية المنظم الفعلية | 96 | `apps/operational_workspace/COORDINATION.md` | `.local/qa/functional-continuation/operational-coordination-browser/result.json` |
+| بوابة مركزية لمواضع اقتباس مشتقة وتعطل آمن | 198–214 | `apps/ai_gateway/README.md` | `.local/qa/functional-continuation/ai-citation-browser/result.json` |
+| الروابط المؤقتة للوسائط الخاصة وعزل الجلسات والأغراض | 383 | `apps/private_media/SIGNED_LINKS_PLAN.md` | `private-media-links-browser/{originals,library,recordings}/result.json`؛ الثلاثة مطلوبة |
+| تحرير المنظّم للتفريغ مع حصر اعتماد المعنى بالمفتي | 97 | `apps/operational_workspace/TRANSCRIPTS.md` | `operational-transcripts-browser/result.json` |
+| إدارة المنظّم للنسخ المعدّة للنشر ومراجعتها وسحبها | 99 | `apps/operational_workspace/PUBLICATION.md` | `operational-publication-browser/result.json` |
+| جلسات الموظفين وإعادة التحقق المرتبطة بالعملية | 406, 407 | `apps/staff_sessions/README.md` | `staff-sessions-browser/result.json` |
 
-The current source extract preserves38 exact specification records and19 decision occurrences, with their original acceptance state. Referencing a detailed specification does not claim every sentence of it is complete.
+| تصنيف الخصوصية والمنح المستقلة للقراءة والبحث والتصدير والنشر والمعالجة | 391, 392, 393, 394, 395 | `apps/data_privacy/CONTRACT.md` | `data-privacy-browser/result.json` |
+| مجموعات الصلاحيات والاستثناءات الفردية والسجل المدقق | 401, 404 | `apps/permission_sets/README.md` | `permission-sets-browser/result.json` |
+| حجر الملفات وفحص الأمان وربط القراءة بالنتيجة الحالية | 384 | `apps/upload_security/README.md` | `upload-security-browser/result.json` ونتيجة المحرك الفعلي المستقلة |
+| التحقق الإضافي للشيخ والإدارة الحساسة واستعادة العامل | 405 | `apps/staff_mfa/README.md` | `staff-mfa-browser/result.json` |
+| الحذف المنطقي واستعادة المواد ومنع إحيائها من SQL قديم | 387 | `apps/record_suppression/README.md` | `record-suppression-browser/result.json` |
+| مشتقات تقنية مستقلة للوسائط مع حفظ الأصل والتفريغ البشري | 382 | `apps/media_derivatives/README.md` | `media-derivatives-browser/result.json` |
+| صيانة مشتقات البحث والاقتراحات دون محو العمل البشري | 443؛ 509 جزئي غير محتسب | `apps/derived_maintenance/README.md` | `derived-maintenance-browser/result.json` |
 
-## Concrete additions and non-overlap
+The source extract preserves88 exact specification objects and38 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
 
-The first five groups add a typed material/version library, canonical staged import with independently reviewed execution and real video round-trip, cross-case reviewed public collections, reversible case close/archive/restore, and an installable explicitly selected offline material reader.
+## What the continuation adds
 
-The seven added groups close different gaps: real PostgreSQL Arabic FTS and pg_trgm over authorized canonical sources; reviewed public answer audio/transcripts/segments and transcript revision history; phrase-bound exact source citations with historical answer parts and readable print/export references; actual decoded requester video originals completing the existing image/file/audio path; an independently scoped staff PWA; actual system dark mode; and a genuine FTS transcript result opening the pinned original audio timestamp. Standalone media players or source cards do not substitute for the connected native workflows.
+The first 35 candidates cover a typed source/version library, independently reviewed imports and actual video round-trip, public collections, reversible lifecycle operations, explicit offline reading, real PostgreSQL Arabic FTS/fuzzy search, reviewed published recordings/transcripts, exact phrase citations, original requester video, staff installation, system dark mode and real search-to-recording navigation.
 
-None overlaps the previous57 IDs retained in `scope_plan.json.previous_batch.original_ids`. Historical image/audio support is exercised as regression evidence when completing whole point25; it is not credited again. The existing attachment table is newly covered with video originals in the continuation recovery inventory, not described as a newly created table. Recording search reuses the existing search/media recovery owners; it adds no extra table count. Staff PWA and dark mode add no durable server tables, private case cache or queued private writes.
+The next 20 candidates add a human-authored immutable YouTube reference, an independent related-source panel preserving the actual unsaved composer, separate Person/platform identity with reviewed merge/split, public reader actions, an allowed-material developer API, exact-edition future scheduling, explicit signed text-only composite delivery, a separate reviewed development classification tree with migration/rollback, independently reviewed synonym dictionaries and real shadow comparisons, and public scholar materials with ordered lesson series and actual audio playback.
 
-## Required integrated verification
+The next11 candidates add independently signed bounded retries of exact failed parts, native FT lookup with separate public-reference disclosure, an actual organizer queue with five derived operational lanes, and actual canonical-search evaluation with independently authored judgments, paired SQL runs and Precision/Recall/MRR/coverage. The queue preserves the actor's real role and adds no scholarly approval authority. The benchmark keeps the earlier title-word engine separate and does not manufacture a specialist gold corpus.
 
-`RECEIPTS.md` defines the strict execution boundary. The current explicit registries require20 exact protected browser identities:8 inherited and12 continuation journeys.19 emit their original JSON/screenshot/trace formats; the inherited browser-audio journey retains its actual execution-log proof. An unrelated replacement test, skipped journey, stale artifact or correct aggregate count with a wrong identity must fail.
+The recovered untracked destination app and incomplete organizer-note groundwork add three candidates. Destination correction and withdrawal preserve the other destination and original source. Notes use actual organizer identities and independent read/add grants and stay absent from requester status. The fourth newly implemented candidate adds signed native question/answer match navigation after confirming that worktree held no saved implementation. All four still require integrated browser and encrypted-restore evidence.
 
-Encrypted restoration must preserve47 nonempty tables:22 inherited and25 additionally covered tables, from11 explicit fresh-process helper results.37 current-access denial reads are required across the relevant helpers, each followed by a real positive read after restoring the explicit fixture authority. All immutable histories, canonical references, actual originals and source/target database fingerprints remain unchanged by the drill. Current credentials are never reconstructed from stored release history.
+The next twenty candidates add actual organizer metadata, lesson links, assignment/priority and seventeen restricted AI-gateway contract, provenance, prohibited-action and failure boundaries. Organizer writes preserve canonical histories and exact current role/resource authority. The only model task accepts existing source positions into separate derivatives; it never saves an answer or citation. Model quality, a real provider, other Luna tasks and the full scholarly-assistance requirement remain uncounted.
 
-Native workflows execute through `config.campaign_urls`. Real media byte checks, actual seek/playback, exact print/export content, true offline network failure, installability, readable light/dark surfaces and revocation are enforced by their protected journeys. Local service checks do not establish a hosted browser pass. An OS that cannot launch sandboxed Chromium leaves browser evidence pending; it does not justify disabling sandbox/CSP/authentication protections.
+The next candidate adds temporary signed private-media locators with three independently required native journeys. The state-free helper verifies restored originals with fresh sessions, current rights and eighteen denials. A retained URL never becomes a bearer access grant.
 
-## Exclusions and acceptance boundary
+Stable classification IDs and development fixtures do not establish the owner's final scholarly taxonomy. Synthetic identities do not establish civil identity. Shadow comparisons do not establish production quality or real gold judgments. Native schedule execution does not establish a production cron. Signed synthetic provider results do not establish external delivery. These limits remain visible in each app contract.
 
-The explicit exclusion list retains all original rows outside the selected scope. A local archive is not an official dataset release, a developer API or a webhook. A library or curated collection is not yet the separate scholar-material/lesson catalogue workflow. Reader save/share/print/download tools are a separate unit. Search mechanics do not establish independently approved gold judgments, corpus completeness, final weights, live shadow governance or a complete AI rebuild capability. Earlier PDF/timed-reader and citation-card behavior is not counted anew.
+## Required integrated evidence
 
-D-072 continues to defer specialized U10 hadith functionality beyondV1. D-069's fiqh reference TOC is not a final global taxonomy. D-067 does not convert held permission rows into accepted grants. No real requester corpus, scientific ruling, final role policy, production provider or final branding approval is inferred. Client offline copies cannot promise remote erasure while the device is unreachable.
+The explicit registries require **55 exact protected browser identities**: eight inherited and47 continuation journeys. Fifty-four emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
 
-**NOT_DEPLOYED / GATES_HOLD.** GateB remainsNOT_PASSED, GatesC/D/E remainHOLD and Phase01 remainsBLOCKED. Feature flags and independent authorities remain default closed. A bounded synthetic development receipt does not authorize a main merge, deployment, irreversible retention action or production acceptance.
+The encrypted drill must restore **108 nonempty tables**:22 inherited and86 additionally covered tables, with **42 explicit fresh-process helper results and319 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The new session feature adds four immutable session/proof journals, alongside the earlier priority and three AI audit/derivative tables. Organizer metadata and lesson links reuse existing immutable journals; destination histories retain their three independently covered tables. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
+
+Native workflows execute through `config.campaign_urls`. Actual media bytes, play/seek, readable print/export output, offline network failure, current revocation and independently reviewed state transitions are required where applicable. Local tests do not certify a protected browser pass. Browser protection may not be disabled to satisfy evidence.
+
+## Remaining work and boundaries
+
+Three pinned additive audits reconcile all556 original owner rows against code and test evidence; audit classifications themselves grant no credit. Remaining functional work includes further organizer actions, lifecycle/sensitivity policies, controlled integration adapters and other gaps identified by those audits. Real provider credentials, scientific datasets and owner policy decisions are separate dependencies; they must not be invented or replaced by synthetic assertions.
+
+Owner120 has an implemented native publication proposal when a YouTube destination cannot receive the current answer form. It deliberately remains blocked and uncounted: no externally verified public fatwa page is configured, so the proposal contains no sendable URL and creates no outgoing delivery. A loopback preview is not a substitute for that dependency. Owner243's real specialist corpus,244's real judgments and246's broader ranking/normalization/embedding variants are also uncounted.
+
+The current exclusion list is a batch boundary, not a claim that all unselected functionality is unnecessary. D-072's specialized hadith-library deferral, D-067's final role-policy hold and D-069's final taxonomy/corpus boundaries remain unchanged. The owner inventory and original acceptance states remain authoritative. Final visual design (owner row 530) is excluded by the current user request.
+
+Gate B remains NOT_PASSED; Gates C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED. A passing development receipt does not change these states.
+
+The classification ledger adds one immutable table and thirteen named restored-use denials. Every privacy test family, including native management, scholarly/public derivatives, precise sources, delivery adapters and AI/report/inbox consumers, is registered. The protected two-role classification journey passed on both majors at `ad923175`; the required exact-head aggregate must run it again.
+
+The upload candidate additionally requires the actual ClamAV prerequisite artifact from the same workflow run and exact commit, with official signed databases, complete benign CLEAN and EICAR BLOCKED observations, and retained process reports. Synthetic scan-control tests cannot satisfy this requirement. A failed prerequisite still allows collection of the other diagnostic stages, but the final receipt rejects absent or failed real-engine proof. No production scanner or role policy is enabled.
+
+Owner509 remains partial and uncounted: disposal/regeneration covers the existing central-gateway CandidateBatch, while alternative-engine transcription under SPEC-U11-020 is unavailable. The independent current derivative-clearance floor now composes with the suppression floor before every restored reader.

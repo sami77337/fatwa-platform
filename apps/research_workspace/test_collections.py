@@ -92,6 +92,49 @@ class CollectionTests(CollectionFixture, TransactionTestCase):
             ["CREATE", "ADD", "ADD", "NOTE", "MOVE", "REMOVE"],
         )
 
+    def test_approved_fatwa_current_only_and_private_note_revoke(self):
+        original_events = CaseEvent.objects.count()
+        resource = collections.current_approved_resource(**self.common)
+        self.assertEqual(resource.kind, "APPROVED_FATWA")
+        self.assertEqual(
+            services.open_resource(**self.common, resource=resource)["text"],
+            "PRIVATE ANSWER",
+        )
+        collection = self.change(
+            self.create(), "ADD", resource=resource,
+            note="PRIVATE APPROVED ANSWER QUOTATION",
+        )
+        self.assertEqual(CaseEvent.objects.count(), original_events)
+        item = self.read(collection)["items"][0]
+        self.assertTrue(item["available"])
+        self.assertEqual(item["kind"], "APPROVED_FATWA")
+        with self.assertRaises(cases.CaseConflict):
+            self.change(
+                collection, "ADD", resource=replace(resource, sha256="0" * 64)
+            )
+        self.rights.denied.add(("APPROVED_FATWA", "READ_TEXT"))
+        hidden = self.read(collection)["items"][0]
+        self.assertEqual(
+            hidden, dict(id=item["id"], ordinal=1, available=False)
+        )
+        with self.assertRaises(cases.CaseConflict):
+            collections.open_items(
+                **self.common, collection_id=collection["id"],
+                expected_revision=collection["collection_revision"],
+                item_ids=[item["id"]],
+            )
+        self.rights.denied.clear()
+        pins = self.pins()
+        cases.save_answer(
+            **self.common,
+            expected_revision=pins["expected_case_revision"],
+            expected_evidence_version=pins["expected_evidence_version"],
+            text="NEW UNSAVED APPROVAL DRAFT",
+        )
+        self.assertFalse(self.read(collection)["items"][0]["available"])
+        with self.assertRaises(cases.CaseConflict):
+            collections.current_approved_resource(**self.common)
+
     def test_saved_search_instructions_replay_with_current_rights_not_cached_results(self):
         collection = self.create()
         filters = dict(
@@ -470,6 +513,43 @@ class CollectionHTTPTests(CollectionFixture, TransactionTestCase):
         self.assertEqual(rerun.context["filters"]["kind"], "TRANSCRIPT")
         self.assertEqual(ResearchItem.objects.count(), current_count)
 
+    def test_signed_native_add_current_approved_fatwa_and_revoked_view(self):
+        self.create()
+        client, page = self.login()
+        listing = self.open_http(client, page)
+        opened = self.send(
+            client, listing, "research_collection_open",
+            state=listing.context["result"]["collections"][0]["state"],
+        )
+        self.assertEqual(opened.status_code, 200)
+        self.assertContains(opened, "collection-add-approved-fatwa")
+        saved = self.send(
+            client, opened, "research_collection_add_fatwa",
+            state=opened.context["result"]["state"],
+        )
+        self.assertEqual(saved.status_code, 200, saved.content)
+        item = saved.context["result"]["items"][0]
+        self.assertEqual(item["kind"], "APPROVED_FATWA")
+        compared = self.send(
+            client, saved, "research_collection_view", state=item["state"]
+        )
+        self.assertEqual(compared.status_code, 200, compared.content)
+        self.assertContains(compared, "PRIVATE ANSWER")
+        invalid = self.send(
+            client, compared, "research_collection_add_fatwa",
+            state=compared.context["result"]["state"],
+            source_state="forged-untrusted-source",
+        )
+        self.assertEqual(invalid.status_code, 400)
+        self.rights.denied.add(("APPROVED_FATWA", "READ_TEXT"))
+        denied = self.send(
+            client, compared, "research_collection_open",
+            state=compared.context["result"]["state"],
+        )
+        self.assertEqual(denied.status_code, 200)
+        self.assertNotContains(denied, "PRIVATE ANSWER")
+        self.assertContains(denied, "مرجع غير متاح")
+
     def test_browser_binding_tampering_csrf_extra_fields_and_stale_submission(self):
         collection = self.create()
         client, page = self.login()
@@ -572,6 +652,23 @@ class CollectionLedgerTests(CollectionFixture, TransactionTestCase):
         )
         policy.enable()
         self.addCleanup(policy.disable)
+
+    def test_canonical_approved_fatwa_is_not_external_reference_ledger(self):
+        # The signed Casework answer belongs to the same locked case. No
+        # source-ledger CITE/EXPORT right may be inferred from this READ.
+        with override_settings(FATWA_SOURCE_RIGHTS_ENFORCED=True):
+            resource = collections.current_approved_resource(**self.common)
+            self.assertEqual(resource.kind, "APPROVED_FATWA")
+            collection = self.change(self.create(), "ADD", resource=resource)
+            self.assertTrue(self.read(collection)["items"][0]["available"])
+            self.assertEqual(
+                services.open_resource(**self.common, resource=resource)["text"],
+                "PRIVATE ANSWER",
+            )
+            with self.assertRaises(cases.CaseConflict):
+                self.change(
+                    collection, "ADD", resource=replace(resource, sha256="f" * 64)
+                )
 
     def test_actual_current_ledger_revalidation_does_not_inherit_saved_reference_access(self):
         self.grant(row=2)

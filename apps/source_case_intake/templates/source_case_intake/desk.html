@@ -1,8 +1,9 @@
 {% extends "casework/base.html" %}
+{% load private_media_links %}
 {% block title %}مكتب استقبال المصادر{% endblock %}
 {% block content %}
 <h2>مكتب استقبال المصادر</h2>
-<p>أحداث اصطناعية محفوظة من Telegram وYouTube والموقع. لا اتصال بحسابات حقيقية ولا إرسال خارجي.</p>
+<p>أحداث اصطناعية محفوظة من Telegram وYouTube والموقع وFacebook وMessenger وInstagram وWhatsApp. لا اتصال بحسابات حقيقية ولا إرسال خارجي.</p>
 <nav aria-label="تنقل مكتب المصادر">
   <form method="post" action="/casework/staff/">{% csrf_token %}<button name="action" value="source_return">العودة إلى نتائج البحث</button></form>
   <form method="post" action="/casework/staff/">{% csrf_token %}<button name="action" value="source_inbox">الأحداث المحفوظة</button></form>
@@ -26,6 +27,10 @@
     <option value="telegram" {% if inbox.source_filter == "telegram" %}selected{% endif %}>Telegram</option>
     <option value="youtube" {% if inbox.source_filter == "youtube" %}selected{% endif %}>YouTube</option>
     <option value="website" {% if inbox.source_filter == "website" %}selected{% endif %}>الموقع</option>
+    <option value="facebook" {% if inbox.source_filter == "facebook" %}selected{% endif %}>Facebook</option>
+    <option value="messenger" {% if inbox.source_filter == "messenger" %}selected{% endif %}>Messenger</option>
+    <option value="instagram" {% if inbox.source_filter == "instagram" %}selected{% endif %}>Instagram</option>
+    <option value="whatsapp" {% if inbox.source_filter == "whatsapp" %}selected{% endif %}>WhatsApp</option>
   </select>
   <label for="state-filter">حالة الاستقبال</label>
   <select id="state-filter" name="state">
@@ -103,7 +108,10 @@
 {% elif not selected.receipt.public_ref %}<p>هذه الرسالة لا تقبل قرار ربط الآن. لا تُستبدل الأصول المعدلة أو المتعارضة ولا تُكرر الرسائل المرتبطة.</p>{% endif %}
 {% if selected.declared_files %}
 <article><h3>الملفات المعلنة في الأصل</h3>{% for file in selected.declared_files %}<p><bdi>{{ file.source_file_id }}</bdi> · {{ file.filename|default:"اسم غير مذكور" }} · <bdi>{{ file.media_type }}</bdi></p>{% endfor %}
-{% for file in selected.linked_files %}<p>مرفق محفوظ: <a href="/casework/staff/attachments/{{ file.attachment_id }}/">{{ file.attachment__filename }}</a> · إصدار الوقائع {{ file.attachment__evidence__version }} · <code>{{ file.attachment__sha256 }}</code></p>{% endfor %}</article>
+{% for file in selected.linked_files %}
+{% url 'staff_attachment_file' attachment_id=file.attachment_id as linked_file_url %}
+{% private_media_url linked_file_url as linked_file_url %}
+<p>مرفق محفوظ: <a href="{{ linked_file_url }}">{{ file.attachment__filename }}</a> · إصدار الوقائع {{ file.attachment__evidence__version }} · <code>{{ file.attachment__sha256 }}</code></p>{% endfor %}</article>
 {% if selected.receipt.public_ref %}
 <form method="post" action="/casework/staff/" enctype="multipart/form-data" id="source-upload">{% csrf_token %}
   <input type="hidden" name="action" value="source_attach"><input type="hidden" name="receipt_id" value="{{ selected.receipt.receipt_id }}">{% if selected.receipt.public_ref %}<input type="hidden" name="case_ref" value="{{ selected.receipt.public_ref }}">{% endif %}<input type="hidden" name="proof" value="{{ selected.proof }}">
@@ -126,8 +134,10 @@
   <form method="post" action="/casework/staff/">{% csrf_token %}<input type="hidden" name="action" value="source_open"><input type="hidden" name="receipt_id" value="{{ item.origin.receipt_id }}">{% if history.public_ref %}<input type="hidden" name="case_ref" value="{{ history.public_ref }}">{% endif %}<button>فتح أصل الوقائع {{ item.version }}</button></form>
   {% else %}<p>هذه الوقائع محفوظة في القضية دون حدث مرتبط من مكتب المصادر.</p>{% endif %}
   {% if item.file %}
-{% if item.file.kind == "audio" %}<audio controls preload="none" aria-label="استماع إلى {{ item.file.filename }}" src="/casework/staff/attachments/{{ item.file.id }}/"></audio>{% elif item.file.kind == "image" %}<img loading="lazy" alt="معاينة المرفق {{ item.file.filename }}" src="/casework/staff/attachments/{{ item.file.id }}/">{% elif item.file.media_type == "application/pdf" %}<iframe loading="lazy" title="معاينة {{ item.file.filename }}" src="/casework/staff/attachments/{{ item.file.id }}/"></iframe>{% endif %}
-<p><a href="/casework/staff/attachments/{{ item.file.id }}/">فتح المرفق {{ item.file.filename }}</a> · <code>{{ item.file.sha256 }}</code></p>{% endif %}
+{% url 'staff_attachment_file' attachment_id=item.file.id as timeline_file_url %}
+{% private_media_url timeline_file_url as timeline_file_url %}
+{% if item.file.kind == "audio" %}<audio controls preload="none" aria-label="استماع إلى {{ item.file.filename }}" src="{{ timeline_file_url }}"></audio>{% elif item.file.kind == "image" %}<img loading="lazy" alt="معاينة المرفق {{ item.file.filename }}" src="{{ timeline_file_url }}">{% elif item.file.media_type == "application/pdf" %}<iframe loading="lazy" title="معاينة {{ item.file.filename }}" src="{{ timeline_file_url }}"></iframe>{% endif %}
+<p><a href="{{ timeline_file_url }}">فتح المرفق {{ item.file.filename }}</a> · <code>{{ item.file.sha256 }}</code></p>{% endif %}
   {% if item.source_file_id %}<p>معرّف الملف في الأصل: <bdi>{{ item.source_file_id }}</bdi></p>{% endif %}
 </article>
 {% endfor %}

@@ -1,0 +1,116 @@
+{
+  "schema": "fatwa.resumed-functional-checkpoint.v1",
+  "date": "2026-11-21",
+  "pr": "https://github.com/sami77337/fatwa-platform/pull/244",
+  "parent_remote_sha": "baad1ebcc3cc427fa12f650171eff7fae196179f",
+  "code_source_sha": "398a473543cbcc6dcd8b13b550f8f82c7931f11a",
+  "certification": "PENDING_EXACT_HEAD_NATIVE_SERVICE_RESTORE",
+  "candidate_count": 95,
+  "privacy_status": "INSTALLED_DEFAULT_OFF_NOT_YET_REGISTERED_OR_CREDITED",
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "focused_observations": [
+    {
+      "kind": "public-reader-exports",
+      "postgres_major": 17,
+      "source_local_commit": "83fad3efaea0ccadba60c0559da8cdf2c198e551",
+      "tests": 17,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-reader-exports-pg17.log",
+      "sha256": "f5708dcaaccb8e0d9ed5acba644d342845453a24b7f71d69ff1eec6a543f31e3",
+      "bytes": 3585
+    },
+    {
+      "kind": "public-reader-exports",
+      "postgres_major": 18,
+      "source_local_commit": "83fad3efaea0ccadba60c0559da8cdf2c198e551",
+      "tests": 17,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-reader-exports-pg18.log",
+      "sha256": "303642f70bb78ba514d8e0a2a285f27dc9586baa0fa0eaf81a98beca3cc32bba",
+      "bytes": 3584
+    },
+    {
+      "kind": "scholarly-privacy",
+      "postgres_major": 17,
+      "source_local_commit": "8ff461772a9697420789986a860d1cb0dffc4675",
+      "tests": 94,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "scholarly-privacy-regression-pg17.log",
+      "sha256": "36e95ad16c90d8711cd01487227c1bc8c3c7ee62e5c08c05a55a83877ad989b4",
+      "bytes": 19469
+    },
+    {
+      "kind": "scholarly-privacy",
+      "postgres_major": 18,
+      "source_local_commit": "8ff461772a9697420789986a860d1cb0dffc4675",
+      "tests": 94,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "scholarly-privacy-regression-pg18.log",
+      "sha256": "591a9399c883b643696e90634c1bb8eb5bf4104883f64e1323a93bfb1a5682b2",
+      "bytes": 19468
+    },
+    {
+      "kind": "native-privacy-and-recovery-helper",
+      "postgres_major": 17,
+      "source_local_commit": "7df2122026fbd8b8cff0d494c150e97dca921b61",
+      "tests": 9,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-native-restore-pg17.log",
+      "sha256": "79a91dab1ca7ba140ee1c3e36ff09a23e10bb9841eb34dfe1561c8104e646ec6",
+      "bytes": 2147
+    },
+    {
+      "kind": "native-privacy-and-recovery-helper",
+      "postgres_major": 18,
+      "source_local_commit": "7df2122026fbd8b8cff0d494c150e97dca921b61",
+      "tests": 9,
+      "status": "PASS_FOCUSED_ONLY",
+      "log_name": "privacy-native-restore-pg18.log",
+      "sha256": "55a866d491f89bc3209f00bdb8f14c641f8c39fc30f101c9ebb2bc4d9dbf5c76",
+      "bytes": 2146
+    }
+  ],
+  "preserved_failures": [
+    {
+      "kind": "hosted-ai-diagnostic",
+      "run": 44902976617,
+      "head_sha": "baad1ebcc3cc427fa12f650171eff7fae196179f",
+      "status": "CANCELLED_AT_10_MINUTES_NOT_CREDITED",
+      "observation": "On both majors the database probe completed and seven panel submissions completed. The eighth submission is the expected revocation denial. No database/server worker remained blocked. Response.body() is an unbounded diagnostic call before the next recorded step; it is now removed while exact HTTP status and bounded native denied-result assertions remain mandatory. A new hosted run must confirm the fix.",
+      "artifacts": [
+        {
+          "postgres_major": 17,
+          "id": 14707146102,
+          "sha256": "4f624c34ff1d9eb3de58d7304e0f052798506123e7db603a3d95f40d5c736f3b"
+        },
+        {
+          "postgres_major": 18,
+          "id": 14706921877,
+          "sha256": "564b935a73daf3ff4b2eca5bdbf3cae635b3505898d1f4f486769116d27b6c1b"
+        }
+      ]
+    },
+    {
+      "kind": "hosted-container-owned-database",
+      "run": 44902976905,
+      "status": "FAILED_NOT_CREDITED",
+      "cause": "The isolated container built and bootstrapped owned PostgreSQL, but plain DiscoverRunner created an unwitnessed test database. Runtime now honors the configured ownership-aware runner through get_runner(settings). Hosted runtime verification is pending."
+    },
+    {
+      "kind": "hosted-v11-v12-source-denial-contract",
+      "runs": [
+        44902976651,
+        44902976612
+      ],
+      "status": "FAILED_NOT_CREDITED",
+      "cause": "A revoked source returns current_source_rights_required where the knowledge relationship API promises knowledge_publication_unavailable. The actual uniform denial contract is under repair; the source permission must remain enforced."
+    }
+  ],
+  "remaining": [
+    "Precise/timed/PDF privacy hooks and actual organizer library source purpose are being finalized.",
+    "The privacy aggregate registry, encrypted restore and protected native proof remain pending.",
+    "Upload malware quarantine and configurable permission administration are in separate in-progress worktrees.",
+    "Final visual design is excluded. No production settings, credentials, merge or deployment are authorized by this checkpoint."
+  ]
+}

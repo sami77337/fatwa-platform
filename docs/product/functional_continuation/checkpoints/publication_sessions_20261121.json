@@ -1,0 +1,175 @@
+{
+  "schema": "fatwa.resumed-functional-checkpoint.v1",
+  "date": "2026-11-21",
+  "pr": "https://github.com/sami77337/fatwa-platform/pull/244",
+  "parent_remote_sha": "dcfc6a0daa5db4d240744de79a3fddadfdc28c80",
+  "code_source_sha": "d7eb928229402105bf19037058f5a29151c18509",
+  "certification": "PENDING_EXACT_HEAD_SERVICE_BROWSER_ENCRYPTED_RESTORE_RECEIPT",
+  "candidate_count": 95,
+  "functional_groups": 37,
+  "required_browser_identities": 47,
+  "discovered_service_tests": 1171,
+  "required_nonempty_tables": 88,
+  "required_fresh_helpers": 35,
+  "required_current_access_denials": 227,
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "focused_observations": [
+    {
+      "kind": "publication-transcript-coordination",
+      "log_name": "publication-integrated-pg17.log",
+      "source_local_commit": "be9ae9e72b66777db30ffd4a41cda9fc0292c1ed",
+      "tests": 48,
+      "status": "PASS_FOCUSED_ONLY",
+      "bytes": 11111,
+      "sha256": "2708413a7b0f11a061027723508d96613bb56fcfbc2196666537dc9899ef3139"
+    },
+    {
+      "kind": "publication-transcript-coordination",
+      "log_name": "publication-integrated-pg18.log",
+      "source_local_commit": "be9ae9e72b66777db30ffd4a41cda9fc0292c1ed",
+      "tests": 48,
+      "status": "PASS_FOCUSED_ONLY",
+      "bytes": 11110,
+      "sha256": "31675bf0dbca3b8d2b0891cdc046418a82218caaebb685c7b8a4e40f5f399538"
+    },
+    {
+      "kind": "private-privacy-hooks",
+      "log_name": "privacy-private-hooks-pg17.log",
+      "source_local_commit": "e75c357745c5ee6c133ef7abbbcf1557b1f5b3bc",
+      "tests": 38,
+      "status": "PASS_FOCUSED_ONLY",
+      "bytes": 8592,
+      "sha256": "0dc239c684ff43d983f91178d5933563877d8a5b8077381dad1cca28c44a597a"
+    },
+    {
+      "kind": "private-privacy-hooks",
+      "log_name": "privacy-private-hooks-pg18.log",
+      "source_local_commit": "e75c357745c5ee6c133ef7abbbcf1557b1f5b3bc",
+      "tests": 38,
+      "status": "PASS_FOCUSED_ONLY",
+      "bytes": 8591,
+      "sha256": "b845c16af69d5379246d4a60f67e75592f3816a3657f491ce7c5f6d246592b69"
+    },
+    {
+      "kind": "public-home-metadata-recording-regression",
+      "log_name": "public-navigation-home-fixed-pg17.log",
+      "source_local_commit": "58406486e638deb24b2098a921bf28d9076e5006",
+      "tests": 1,
+      "status": "PASS_FOCUSED_ONLY",
+      "bytes": 466,
+      "sha256": "1575cf3beb3aa2f320d8c5f1ee05e5a3b79979cd3ecd1c5675de17a71fdbda89"
+    },
+    {
+      "kind": "public-home-metadata-recording-regression",
+      "log_name": "public-navigation-home-fixed-pg18.log",
+      "source_local_commit": "58406486e638deb24b2098a921bf28d9076e5006",
+      "tests": 1,
+      "status": "PASS_FOCUSED_ONLY",
+      "bytes": 465,
+      "sha256": "03a12f26637c99fde05a06fbd20c2a06d5a8b5691c12f9449e28157472d6a3d9"
+    },
+    {
+      "kind": "receipt-registry",
+      "log_name": "session-receipt-fixed.log",
+      "source_local_commit": "65dcb76584be12637c1a263f6cc253fb722e1f4f",
+      "tests": 8,
+      "status": "PASS_PURE_FIXTURES_NOT_RUNTIME_PROOF",
+      "bytes": 1829,
+      "sha256": "75f40ed0b87f0be5a9bd909b4ba376655edfd75d51b311518b9d6fbfe3e607c6"
+    },
+    {
+      "kind": "native-session-route-and-encrypted-restore",
+      "postgres_major": 17,
+      "source_local_commit": "d7eb928229402105bf19037058f5a29151c18509",
+      "status": "PASS_FOCUSED_AND_LOCAL_ENCRYPTED_RESTORE",
+      "tests": 3,
+      "tables": 88,
+      "helpers": 35,
+      "denials": 227,
+      "log_name": "sessions-native-recovery95-pg17.log",
+      "bytes": 59414,
+      "sha256": "a7a85049ec877435259fb83a347416a7c487cb140ff3f3f56dcbcd4e214d34ff",
+      "recovery_report_sha256": "df3cdb6341f67670020141fa9ef84b390f9df1d58a706e083a1dcfd16671e81b"
+    },
+    {
+      "kind": "native-session-route-and-encrypted-restore",
+      "postgres_major": 18,
+      "source_local_commit": "d7eb928229402105bf19037058f5a29151c18509",
+      "status": "PASS_FOCUSED_AND_LOCAL_ENCRYPTED_RESTORE",
+      "tests": 3,
+      "tables": 88,
+      "helpers": 35,
+      "denials": 227,
+      "log_name": "sessions-native-recovery95-pg18.log",
+      "bytes": 59413,
+      "sha256": "0add499ead50201f14b75bc18c561c4b0286df87389ec4c8b1bec7b8690fc700",
+      "recovery_report_sha256": "6cafda2dab25fa9ec035879dc0425a03295ca7a587a22ea8152b0e2a33a16e4e"
+    }
+  ],
+  "preserved_failures": [
+    {
+      "source_local_commit": "05df27287f446de604f06bafcefc872ac3abdef1",
+      "kind": "session-campaign-and-receipt-composition",
+      "cause": "Session service returned its documented 303 redirect; the operations view returned its existing 409 denial. New test expectations incorrectly asked for 200/403. The exact recovery inventory also retained the earlier 62-table continuation subtotal and 84-table rejection message while four session journals had been added. Product denial and response behavior were retained; only new assertions and the strict expanded inventory were corrected.",
+      "reported_tests_per_major": 50,
+      "status": "FAILED_NOT_CREDITED"
+    },
+    {
+      "source_local_commit": "760b2d5",
+      "kind": "public-navigation-fixture",
+      "cause": "One new selected-home fixture called a helper requiring an absent member method. The explicit collection save API now constructs the fixture; 19 other affected tests passed before the one-case correction passed independently on both PostgreSQL majors.",
+      "reported_tests_per_major": 20,
+      "failed_per_major": 1,
+      "status": "FAILED_NOT_CREDITED_AS_WHOLE_SUITE"
+    },
+    {
+      "kind": "hosted-fast9-startup",
+      "head_sha": "3c4c1d7ceabc2492423bddb88afeebb7e76f1b63",
+      "tested_merge_sha": "10c50503c7b8aa2bbd85aa641f6b609c38ca50a9",
+      "run": 44901056859,
+      "job": 136836839662,
+      "artifact": 14706275772,
+      "artifact_sha256": "61d748d377e55f3904222794bdc54a3f1ebf65cda8ba59efc42df6125bb6a378",
+      "stage": "browser_startup",
+      "timeout_ms": 10000,
+      "views": [],
+      "retry": "ONE_UNCHANGED_ISOLATED_JOB_RETRY_PASSED",
+      "status": "FAILED_FIRST_ATTEMPT_NOT_RETROACTIVELY_CHANGED",
+      "retry_job": 136837361202
+    },
+    {
+      "kind": "hosted-ai-browser-stall",
+      "head_sha": "b9d87e255d3dc69e51493e433b43288ff195b039",
+      "run": 44898331577,
+      "status": "CANCELLED_AT_45_MINUTES_NOT_CREDITED",
+      "browser_journeys_completed_per_major": 40,
+      "next_journey": "apps.ai_gateway.browser_tests.CitationGatewayBrowserTests.test_native_candidates_original_human_handoff_failure_revocation_and_manual_citation",
+      "cause": "NOT_YET_CONFIRMED; the last completed capture shows original and unsaved draft. A bounded native diagnostic gate records subsequent stages and thread stacks without changing the protected browser or assertions.",
+      "artifacts": [
+        {
+          "postgres_major": 17,
+          "id": 14706540953,
+          "sha256": "a7051f2fae1647d390f7ce70eb7e1f4f27fa61320d4756df386ddddb357d66c7"
+        },
+        {
+          "postgres_major": 18,
+          "id": 14706421359,
+          "sha256": "d7565b310a85ba2aac1937169eaf9cc5e8a71781ca8f9679c288572b76d95492"
+        }
+      ]
+    }
+  ],
+  "partial_saved_work": [
+    {
+      "module": "apps.data_privacy",
+      "status": "LEDGER_PRIVATE_PUBLIC_SOURCE_SEARCH_EXPORT_AI_NATIVE_EDITOR_SAVED_NOT_INSTALLED_OR_COUNTED",
+      "remaining": "Final public dependency, operational, scholarly graph and exact-source composition plus protected-browser/recovery evidence remain in progress. Partial hooks are saved without enabling the application."
+    }
+  ],
+  "scope_limits": [
+    "Fresh credential confirmation is not MFA; no production identity provider, credential or sensitive-operation policy was invented.",
+    "Recorded privacy metadata has no implicit READ, AI, export or publication grant. Partial code is excluded from the candidate total.",
+    "The 17 successful hosted workflows observed at dcfc6a0 do not certify its still-running functional aggregate or this newer source."
+  ]
+}

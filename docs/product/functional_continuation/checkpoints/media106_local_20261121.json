@@ -1,0 +1,73 @@
+{
+  "schema": "fatwa.focused-app-checkpoint.v1",
+  "complete_plan_certified": false,
+  "composition_requires_hosted_browser_and_full_restoration": true,
+  "media": {
+    "committed_code_and_test_sha": "2a5d664c0f139cb5d56623d33fde6d73ee4b5c30",
+    "execution_note": "The app and test bytes remained fixed during the 48-test runs; README/REVIEW were finalized during the run before this commit was created. This is focused code evidence, not an exact frozen aggregate run.",
+    "runs": [
+      {
+        "postgres_major": 17,
+        "tests": 48,
+        "seconds": 134.52,
+        "status": "PASS",
+        "log_sha256": "581c6472f2d63b0e3bd38cf261e31d9b0e92949c7af38bd44e7073fc253480c9"
+      },
+      {
+        "postgres_major": 18,
+        "tests": 48,
+        "seconds": 134.704,
+        "status": "PASS",
+        "log_sha256": "6dea323d425a65a9c290b65162910f124adaa51471377c902556a95ef70ce3a4"
+      }
+    ]
+  },
+  "requester_refusal": {
+    "tested_sha": "727f81022d73e376805d9d26c4ad9e329196e00c",
+    "red_on": "066e381dc62726a3ac7b1a732f8d467914929c26",
+    "observed_before": "GET /casework/status/ with an already suppressed valid capability returned 200 without redirects and without private content.",
+    "change": "Only current PrivacyDenied becomes 404; absent/invalid capability remains the ordinary 200 locked page. GET/HEAD, capability removal and later explicit restore are verified.",
+    "runs": [
+      {
+        "postgres_major": 17,
+        "tests": 21,
+        "seconds": 37.111,
+        "status": "PASS",
+        "log_sha256": "85c018fb2c34d6973a7ca3b43e1cb1caad09b4564731b4a12affc7a9f3ac6556"
+      },
+      {
+        "postgres_major": 18,
+        "tests": 21,
+        "seconds": 36.624,
+        "status": "PASS",
+        "log_sha256": "47c99979c68a6e963840f0e7ed389addeecb4e2c4c6ee112ba59bc25edb7ed31"
+      }
+    ]
+  },
+  "final_focused_composition": {
+    "tested_sha": "db8450a90d376e8657c280f3771998cf1178dcf2",
+    "registered_service_test_count": 1529,
+    "registered_protected_browser_count": 54,
+    "registry_counts_are_not_execution_results": true,
+    "runs": [
+      {
+        "postgres_major": 17,
+        "tests": 26,
+        "seconds": 46.672,
+        "status": "PASS",
+        "library_queries": 90,
+        "required_library_queries_less_than": 100,
+        "log_sha256": "77f942359815dc4af8960034cbf72303f0c6c4739e661ad2becf324d8d6e807e"
+      },
+      {
+        "postgres_major": 18,
+        "tests": 26,
+        "seconds": 48.05,
+        "status": "PASS",
+        "library_queries": 90,
+        "required_library_queries_less_than": 100,
+        "log_sha256": "f9793a3bd12a98f9944170de98002b68aeab0820890ea66323fdfeda83fe612a"
+      }
+    ]
+  }
+}

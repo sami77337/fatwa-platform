@@ -1,0 +1,16 @@
+{% extends 'data_privacy/base.html' %}
+{% block content %}
+<section id="privacy-record" data-target="{{ item.id }}" data-level="{{ item.level }}" data-digest="{{ item.digest }}">
+<h2>سجل {{ item.kind }}{% if item.case_ref %} · {{ item.case_ref }}{% endif %}</h2>
+<p>معرّف المادة: <code>{{ item.id }}</code></p><p class="state">التصنيف الحالي: {% if item.level %}{{ item.level }}{% else %}لم يصنف بعد{% endif %}</p>
+{% if saved %}<p role="status">حُفظ قرار التصنيف في سجل مستقل. يبقى كل استعمال خاضعًا لإذنه الحالي.</p>{% endif %}
+{% if item.source_changed %}<p>تغيّرت نسخة المصدر؛ القرار الجديد مرتبط بالنسخة الحالية فقط.</p>{% endif %}
+<form id="privacy-classify" method="post">{% csrf_token %}
+<input type="hidden" name="action" value="privacy_classify"><input type="hidden" name="kind" value="{{ item.kind }}"><input type="hidden" name="identifier" value="{{ item.id }}"><input type="hidden" name="expected_digest" value="{{ item.digest }}"><input type="hidden" name="source_digest" value="{{ item.source_digest }}"><input type="hidden" name="request_key" value="{{ request_key }}"><input type="hidden" name="proof" value="{{ proof }}">
+<label for="privacy-level">التصنيف الذي قررته لهذه المادة</label><select id="privacy-level" name="level" required><option value="">اختر صراحة</option>{% for value,label in levels %}<option value="{{ value }}">{{ label }} · {{ value }}</option>{% endfor %}</select>
+<label for="privacy-note">سبب القرار</label><textarea id="privacy-note" name="note" required maxlength="1000" rows="4"></textarea>
+<label><input type="checkbox" name="confirmed" value="yes" required>راجعت المادة المقصودة وسياسة التصنيف وأعتمد هذا القرار البشري.</label><button type="submit">حفظ قرار التصنيف</button></form>
+<h2>تاريخ القرارات</h2>{% for row in item.history %}<article data-revision="{{ row.revision }}"><h3>القرار {{ row.revision }} · {{ row.level }}</h3><p>{{ row.note }}</p><p>{{ row.created_at|date:'c' }} · {{ row.subject_id }}</p></article>{% empty %}<p>لا يوجد قرار تصنيف محفوظ بعد.</p>{% endfor %}
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="privacy_open"><button type="submit">العودة إلى قائمة المواد</button></form>
+</section>
+{% endblock %}

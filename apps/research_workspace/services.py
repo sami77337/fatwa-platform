@@ -13,6 +13,7 @@ from apps.case_attachments import services as attachments
 from apps.case_attachments.models import CaseAttachment
 from apps.case_citations import services as citations
 from apps.casework import services as cases
+from apps.casework.models import AnswerRevision
 from apps.delivery_queue import services as queue
 from apps.editorial_search.query_terms import normalize_editorial_search
 from apps.experimental_publication import services as publication
@@ -173,6 +174,31 @@ def _transcript(case, actor, provider, identifier, action):
     return resource, entry
 
 
+def _approved_fatwa(case, actor, provider, identifier, action):
+    """Only a currently Mufti-approved case answer, never a saved draft."""
+    answer = (
+        AnswerRevision.objects.filter(pk=cases._uuid(identifier), case=case)
+        .first()
+    )
+    if (
+        answer is None
+        or case.stage != "ANSWERED"
+        or case.approved_answer_id != answer.pk
+        or case.evidence_version != answer.evidence_version
+        or sha256(answer.text.encode("utf-8")).hexdigest() != answer.text_sha256
+    ):
+        raise cases.CaseConflict("research_approved_fatwa_unavailable")
+    resource = Resource("APPROVED_FATWA", str(answer.pk), answer.text_sha256)
+    require(actor, provider, case, action, resource)
+    return resource, {
+        "title": "الفتوى المعتمدة",
+        "answer_revision": answer.revision,
+        "text": answer.text,
+        "sha256": answer.text_sha256,
+        "case_ref": case.public_ref,
+    }
+
+
 def _media_resource(row):
     return Resource(
         "ATTACHMENT" if isinstance(row, CaseAttachment) else "ANSWER_MEDIA", str(row.pk), row.sha256
@@ -275,6 +301,9 @@ def search(
         cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor),
         citations._projection_expiry_guard(),
     ):
+        from apps.data_privacy.integration import staff as privacy
+
+        privacy("CASE", case.pk, provider=provider, actor=actor, action="SEARCH")
         editions = [
             e
             for e in ReferenceEdition.objects.select_related("work")
@@ -460,6 +489,10 @@ def open_resource(*, case_id, subject_id, provider, resource, synthetic_fixtures
             }
         elif resource.kind == "KNOWLEDGE":
             fresh, result = _knowledge(case, actor, provider, resource.identifier, "READ_METADATA")
+        elif resource.kind == "APPROVED_FATWA":
+            fresh, result = _approved_fatwa(
+                case, actor, provider, resource.identifier, "READ_TEXT"
+            )
         elif resource.kind in {"ATTACHMENT", "ANSWER_MEDIA"}:
             row = next((r for r in _media_rows(case) if _media_resource(r) == resource), None)
             if row is None:
@@ -493,6 +526,7 @@ def open_resource(*, case_id, subject_id, provider, resource, synthetic_fixtures
             "REFERENCE": "READ_METADATA",
             "TRANSCRIPT": "READ_TEXT",
             "KNOWLEDGE": "READ_METADATA",
+            "APPROVED_FATWA": "READ_TEXT",
         }.get(resource.kind, "READ_MEDIA")
         require(actor, provider, case, action, fresh)
         _recheck(case, actor, provider)

@@ -126,6 +126,66 @@ def _recheck(case, actor, provider, provider_id):
         raise cases.CaseConflict("organization_identity_changed")
 
 
+def _append_locked(
+    *,
+    case,
+    actor,
+    provider_id,
+    value,
+    command,
+    command_sha,
+    expected_metadata_version,
+    expected_revision,
+    expected_evidence_version,
+):
+    """Append behind a caller-owned canonical lock and current authorization boundary.
+
+    This private persistence primitive grants no access. The public Mufti service
+    retains its strict identity checks; the operational notes caller independently
+    requires current READ/ADD grants and permits only a server-copied metadata
+    snapshot plus a note. Each caller rechecks current authority before commit.
+    """
+    rows = _rows(case)
+    replay = next(
+        (
+            row
+            for row in rows
+            if row.command_id == command
+            and row.subject_id == actor.subject_id
+            and row.provider_id == provider_id
+        ),
+        None,
+    )
+    if replay:
+        if replay.command_sha256 != command_sha:
+            raise cases.CaseConflict("organization_command_reused")
+        return _projection(case, rows), None
+    cases._mutation_versions(expected_revision, expected_evidence_version)
+    if (case.revision, case.evidence_version) != (expected_revision, expected_evidence_version):
+        raise cases.CaseConflict("organization_case_changed")
+    if len(rows) != expected_metadata_version:
+        raise cases.CaseConflict("organization_version_changed")
+    previous = rows[-1] if rows else None
+    if (
+        not value["note"]
+        and value["tags"] == (previous.tags if previous else [])
+        and value["question_types"] == (previous.question_types if previous else [])
+    ):
+        raise cases.CaseConflict("organization_no_change")
+    row = OrganizationRevision.objects.create(
+        case=case,
+        version=len(rows) + 1,
+        **value,
+        sha256=_digest(value),
+        command_id=command,
+        command_sha256=command_sha,
+        subject_id=actor.subject_id,
+        provider_id=provider_id,
+        auth_epoch=actor.auth_epoch,
+    )
+    return _projection(case, [*rows, row]), row
+
+
 @mutation_service
 def snapshot(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
     _enabled()
@@ -167,47 +227,19 @@ def save(
         }
     )
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
-        rows = _rows(case)
-        replay = next(
-            (
-                row
-                for row in rows
-                if row.command_id == command
-                and row.subject_id == actor.subject_id
-                and row.provider_id == provider.provider_id
-            ),
-            None,
-        )
-        if replay:
-            if replay.command_sha256 != command_sha:
-                raise cases.CaseConflict("organization_command_reused")
-            _recheck(case, actor, provider, provider_id)
-            return _projection(case, rows)
-        cases._mutation_versions(expected_revision, expected_evidence_version)
-        if (case.revision, case.evidence_version) != (expected_revision, expected_evidence_version):
-            raise cases.CaseConflict("organization_case_changed")
-        if len(rows) != expected_metadata_version:
-            raise cases.CaseConflict("organization_version_changed")
-        previous = rows[-1] if rows else None
-        if (
-            not note
-            and tags == (previous.tags if previous else [])
-            and question_types == (previous.question_types if previous else [])
-        ):
-            raise cases.CaseConflict("organization_no_change")
-        row = OrganizationRevision.objects.create(
+        result, _row = _append_locked(
             case=case,
-            version=len(rows) + 1,
-            **value,
-            sha256=_digest(value),
-            command_id=command,
-            command_sha256=command_sha,
-            subject_id=actor.subject_id,
+            actor=actor,
             provider_id=provider.provider_id,
-            auth_epoch=actor.auth_epoch,
+            value=value,
+            command=command,
+            command_sha=command_sha,
+            expected_metadata_version=expected_metadata_version,
+            expected_revision=expected_revision,
+            expected_evidence_version=expected_evidence_version,
         )
         _recheck(case, actor, provider, provider_id)
-        return _projection(case, [*rows, row])
+        return result
 
 
 @mutation_service

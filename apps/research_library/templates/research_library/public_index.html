@@ -1,6 +1,7 @@
 {% extends "library_preview/base.html" %}
 {% block title %}المكتبة — المصادر والنسخ المتاحة{% endblock %}
 {% block content %}
+{% if material_api_enabled %}<p><a href="{% url 'material_api:docs' %}">واجهة المواد للمطورين</a></p>{% endif %}
 <h1>المصادر والنسخ المتاحة</h1><p>الكتاب ونسخته وملفه هويات مختلفة. تظهر هنا المواد التي ما زال السماح بعرضها قائمًا.</p>
 {% if offline_enabled %}<p><a href="{% url 'research_library:offline' %}">اختيار مواد للقراءة دون اتصال وإعداد الأرشيف</a></p>{% endif %}
 <form method="get"><label for="library-query">ابحث بالعنوان أو المصدر أو صاحب المادة</label><input id="library-query" name="q" value="{{ query }}" maxlength="160"><label for="library-kind">نوع المادة</label><select id="library-kind" name="kind"><option value="">جميع المواد</option>{% for code,label in kinds.items %}<option value="{{ code }}" {% if kind == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button>بحث</button></form>

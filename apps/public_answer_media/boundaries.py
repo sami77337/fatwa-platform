@@ -189,11 +189,27 @@ def _permit(authority, values):
 
 class Boundary:
     def __init__(self, case, provider):
+        from apps.private_media.links import retain_projection
+
         self.case, self.provider = case, provider
         self.pin = snapshot(case.pk, provider)
         self.actors, self.permissions, self.media_permissions = {}, [], []
+        retain_projection(lambda: assert_projection_state(self.pin))
 
     def actor(self, subject, epoch=None, provider_id=None):
+        """Resolve a canonical author, decision maker or meaning approver as MUFTI."""
+        return self._actor(subject, epoch, provider_id, editorial=False)
+
+    def editorial_actor(self, subject, epoch=None, provider_id=None):
+        """Resolve the real author/reviewer of an immutable editorial derivative.
+
+        This never admits a caller to the MUFTI-only staff boundary or supplies
+        scholarly authority. Canonical authors and meaning approvers continue
+        to use actor(), including while reading an organizer's transcript.
+        """
+        return self._actor(subject, epoch, provider_id, editorial=True)
+
+    def _actor(self, subject, epoch, provider_id, *, editorial):
         # RequestDirectory is deliberately bound to the signed-in subject.
         # Recorded authors/reviewers are re-resolved through the separately
         # pinned trusted directory, never through a fabricated browser identity.
@@ -204,14 +220,25 @@ class Boundary:
         )
         if directory is None or directory.provider_id != self.provider.provider_id:
             raise cases.CaseConflict("recording_identity_changed")
-        actor = cases._identity(directory, subject, self.case)
+        actor = self._resolve(directory, subject, editorial)
         if (epoch is not None and actor.auth_epoch != epoch) or (
             provider_id is not None and self.provider.provider_id != provider_id
         ):
             raise cases.CaseConflict("recording_identity_changed")
-        self.actors[(id(directory), subject)] = (directory, identity_pin(actor))
+        self.actors[(id(directory), subject, editorial)] = (directory, identity_pin(actor))
         self.pin.deadlines.append(actor.valid_until)
         return actor
+
+    def _resolve(self, directory, subject, editorial):
+        if not editorial:
+            return cases._identity(directory, subject, self.case)
+        from apps.operational_workspace.identity import validate
+
+        try:
+            actor = directory.resolve(subject)
+        except Exception as exc:
+            raise cases.CaseConflict("recording_editorial_identity_unavailable") from exc
+        return validate(actor, subject_id=subject, case_ref=self.case.public_ref)
 
     def permit(self, actor, action, resource):
         values = dict(
@@ -262,9 +289,11 @@ class Boundary:
             _permit(self.pin.authority, values)
         for actor, part in self.media_permissions:
             self._media(actor, part)
-        for (_, subject), (directory, expected) in self.actors.items():
-            if identity_pin(cases._identity(directory, subject, self.case)) != expected:
+        for (_, subject, editorial), (directory, expected) in self.actors.items():
+            fresh = self._resolve(directory, subject, editorial)
+            if identity_pin(fresh) != expected:
                 raise cases.CaseConflict("recording_identity_changed")
+            self.pin.deadlines.append(fresh.valid_until)
 
     def finish(self):
         self.callbacks()

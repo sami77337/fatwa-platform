@@ -18,6 +18,8 @@ from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.mufti_review.identity import IdentityUnavailable, resolve_identity
 from apps.platform_recovery.integration import mutation_service
 from apps.private_media.storage import configured_storage
+from apps.upload_security import integration as scans
+from apps.upload_security import services as scan_receipts
 
 from .adapters import IntakeError, SourceContext, digest, project
 from .models import (
@@ -322,9 +324,36 @@ def attach_fixture(
     method performs no network access and never bypasses V8 validation or limits.
     """
     _guard(synthetic_fixtures_only)
+
+    def authorize():
+        with synthetic_queue_atomic():
+            source = _receipt(receipt_id)
+            _lock(source.source, source.account)
+            binding = EvidenceBinding.objects.filter(receipt=source).first()
+            if binding is None or source_file_id not in [
+                item["source_file_id"] for item in source.attachments
+            ]:
+                raise IntakeError("declared_bound_attachment_required")
+            with cases._token_case(token, True) as owner:
+                if owner.pk != binding.case_id:
+                    raise IntakeError("source_case_identity_mismatch")
+                if staff_subject_id is not None or staff_provider is not None:
+                    actor = cases._identity(staff_provider, staff_subject_id, owner)
+                else:
+                    actor = None
+                if expected_revision is not None or expected_evidence_version is not None:
+                    cases._mutation_versions(expected_revision, expected_evidence_version)
+                    cases._versions(owner, expected_revision, expected_evidence_version)
+                return (
+                    scans.staff_admission(owner, actor, staff_provider, "SOURCE_ATTACHMENT")
+                    if actor
+                    else scans.requester_admission(owner, token, "SOURCE_ATTACHMENT")
+                )
+
+    scans.prepare_authorized([raw], authorize)
     checked = attachments._validate(raw, filename, media_type)
     storage = configured_storage()
-    with binding_locks(storage, [checked.sha256]), synthetic_queue_atomic():
+    with binding_locks(storage, [checked.sha256]), scan_receipts.boundary():
         row = _receipt(receipt_id)
         _lock(row.source, row.account)
         bound = EvidenceBinding.objects.filter(receipt=row).first()
@@ -394,28 +423,39 @@ def staff_origins(*, case_id, subject_id, provider, synthetic_fixtures_only=Fals
     """Authorized desk projection; source IDs are text, never trusted HTML/URLs."""
     _guard(synthetic_fixtures_only)
     with cases._staff_case(case_id, subject_id, provider, True) as (case, _):
+        from apps.data_privacy.integration import allowed as privacy_allowed
+
         bindings = EvidenceBinding.objects.filter(case=case).select_related("receipt", "evidence")
         return [
             {
                 **_origin(b.receipt),
                 "evidence_version": b.evidence.version,
                 "attachments": list(
-                    AttachmentBinding.objects.filter(receipt=b.receipt).values(
+                    item for item in AttachmentBinding.objects.filter(receipt=b.receipt).values(
                         "source_file_id", "attachment_id"
-                    )
+                    ) if privacy_allowed("ATTACHMENT", item["attachment_id"])
                 ),
             }
             for b in bindings.order_by("evidence__version")
+            if privacy_allowed("SOURCE_RECEIPT", b.receipt_id)
         ]
 
 
 @mutation_service
-def staff_raw(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False):
+def staff_raw(*, receipt_id, subject_id, provider, synthetic_fixtures_only=False, usage="EXPORT"):
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.integration import staff as privacy
+
     _guard(synthetic_fixtures_only)
+    if usage not in {"READ", "EXPORT"}:
+        raise IntakeError("source_raw_usage_invalid")
     row = _receipt(receipt_id)
     bound = EvidenceBinding.objects.filter(receipt=row).first()
     if bound:
-        with cases._staff_case(bound.case_id, subject_id, provider, True):
+        with cases._staff_case(bound.case_id, subject_id, provider, True) as (_, actor):
+            privacy("SOURCE_RECEIPT", row.pk, actor=actor, provider=provider, action=usage)
             return bytes(row.raw)
-    _reviewer(provider, subject_id)
-    return bytes(row.raw)
+    with projection():
+        actor = _reviewer(provider, subject_id)
+        privacy("SOURCE_RECEIPT", row.pk, actor=actor, provider=provider, action=usage)
+        return bytes(row.raw)

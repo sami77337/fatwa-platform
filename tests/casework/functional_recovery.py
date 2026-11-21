@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 import uuid
+from contextlib import ExitStack
 from pathlib import Path
 
 import django
@@ -22,13 +23,59 @@ ADDITIONAL_WORKFLOWS = (
     "apps.public_collections.recovery_support",
     "apps.case_lifecycle.recovery_support",
     "apps.canonical_search.recovery_support",
+    "apps.canonical_search.match_recovery_support",
     "apps.public_answer_media.recovery_support",
     "apps.precise_citations.recovery_support",
     "apps.case_attachments.video_recovery",
+    "apps.answer_media.youtube_recovery_support",
+    "apps.identity_registry.recovery_support",
+    "apps.public_reader_tools.recovery_support",
+    "apps.material_api.recovery_support",
+    "apps.publication_schedules.recovery_support",
+    "apps.publication_destinations.recovery_support",
+    "apps.operational_workspace.notes_recovery_support",
+    "apps.composite_delivery.selection_recovery",
+    "apps.development_taxonomy.recovery_support",
+    "apps.canonical_search.governance_recovery_support",
+    "apps.public_teaching.recovery_support",
+    "apps.composite_delivery.retry_recovery",
+    "apps.library_preview.reference_recovery",
+    "apps.operational_workspace.recovery_support",
+    "apps.arabic_search_eval.benchmark_recovery_support",
+    "apps.operational_workspace.metadata_recovery_support",
+    "apps.operational_workspace.lesson_recovery_support",
+    "apps.operational_workspace.coordination_recovery_support",
+    "apps.ai_gateway.recovery_support",
+    "apps.private_media.recovery_support",
+    "apps.operational_workspace.transcript_recovery_support",
+    "apps.operational_workspace.publication_recovery_support",
+    "apps.staff_sessions.recovery_support",
+    "apps.data_privacy.recovery_support",
+    "apps.permission_sets.recovery_support",
+    "apps.upload_security.recovery_support",
+    "apps.staff_mfa.recovery_support",
+    "apps.media_derivatives.recovery_support",
+    "apps.derived_maintenance.recovery_support",
+    "apps.record_suppression.recovery_support",
 )
 
 
 def restored(fixture):
+    from apps.derived_maintenance.recovery_support import current_floor as derived_floor
+    from apps.record_suppression.recovery_support import current_floor as suppression_floor
+
+    # The independent current floor is required before any restored feature may
+    # read a source. It supplies no identity, privacy or administrative grant.
+    with (
+        derived_floor(fixture["additional_workflows"]["apps.derived_maintenance.recovery_support"]),
+        suppression_floor(
+            fixture["additional_workflows"]["apps.record_suppression.recovery_support"]
+        ),
+    ):
+        _restored_with_current_floor(fixture)
+
+
+def _restored_with_current_floor(fixture):
     from django.db import IntegrityError, transaction
     from django.test import override_settings
 
@@ -241,9 +288,19 @@ def drill(pg_bin):
                             action_note="إجراء بشري موثق",
                             verification_note="تحقق اصطناعي" if action == "RESOLVE" else "",
                         )
-                additional = {
-                    name: importlib.import_module(name).populate() for name in ADDITIONAL_WORKFLOWS
-                }
+                additional = {}
+                with ExitStack() as current_floors:
+                    for name in ADDITIONAL_WORKFLOWS:
+                        helper = importlib.import_module(name)
+                        additional[name] = helper.populate()
+                        if name in {
+                            "apps.derived_maintenance.recovery_support",
+                            "apps.record_suppression.recovery_support",
+                        }:
+                            # Later populations may consume an existing source or
+                            # index. Supply only its independent current floor;
+                            # each helper still creates its own explicit grants.
+                            current_floors.enter_context(helper.current_floor(additional[name]))
                 control = root / "control"
                 control.mkdir(mode=0o700)
                 maintenance.initialize(root=control, storage=storage, synthetic_fixtures_only=True)
@@ -320,7 +377,10 @@ def drill(pg_bin):
                         observed = json.loads(line)
                     except json.JSONDecodeError:
                         continue
-                    if not isinstance(observed, dict) or "verified_restored_workflow" not in observed:
+                    if (
+                        not isinstance(observed, dict)
+                        or "verified_restored_workflow" not in observed
+                    ):
                         continue
                     name = observed["verified_restored_workflow"]
                     assert name in ADDITIONAL_WORKFLOWS and name not in restored_results
@@ -346,7 +406,9 @@ def drill(pg_bin):
                 assert maintenance.status(root=control)["phase"] == "FROZEN"
                 receipt = {
                     "status": "PASS",
-                    "tested_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                    "tested_sha": subprocess.check_output(
+                        ["git", "rev-parse", "HEAD"], text=True
+                    ).strip(),
                     "postgres_major": postgres_major,
                     "tables": {name: before["tables"][name] for name in tables},
                     "durable_original_references": references,
@@ -363,7 +425,9 @@ def drill(pg_bin):
                     "plaintext_dump_present": bool(list(root.rglob("database.dump"))),
                 }
                 assert receipt["plaintext_dump_present"] is False
-                proof = Path(".local/qa/functional-continuation") / f"recovery-pg{postgres_major}.json"
+                proof = (
+                    Path(".local/qa/functional-continuation") / f"recovery-pg{postgres_major}.json"
+                )
                 proof.parent.mkdir(parents=True, exist_ok=True)
                 proof.write_text(json.dumps(receipt, indent=2) + "\n")
                 print(json.dumps(receipt, indent=2))

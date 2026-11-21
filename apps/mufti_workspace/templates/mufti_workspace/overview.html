@@ -1,6 +1,7 @@
 {% extends "casework/base.html" %}
 {% block title %}مساحة المفتي — القضية الحالية{% endblock %}
 {% block content %}
+{% if reference_lookup_enabled %}{% include "library_preview/staff_reference_form.html" %}{% endif %}
 {% with rendered_case=selected selected=mufti_workspace.case %}
 {% if assignment %}{% include "case_assignments/panel.html" with selected=rendered_case %}{% endif %}
 <section aria-labelledby="mufti-work-heading">

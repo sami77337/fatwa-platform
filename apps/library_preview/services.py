@@ -6,7 +6,7 @@ canonical services validate their current approval and bindings under the case l
 """
 
 import os
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
 
 from django.conf import settings
@@ -16,6 +16,7 @@ from django.utils import timezone
 from apps.case_citations import services as citations
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
 from apps.editorial_search.query_terms import normalize_editorial_search
 from apps.experimental_publication import services as publication
 from apps.experimental_publication.models import PublicationEdition
@@ -114,6 +115,52 @@ def _grant(selected: PreviewPolicy, publication_id: str):
     return next((g for g in selected.publications if g.publication_id == str(publication_id)), None)
 
 
+def _privacy_publisher(edition):
+    from apps.data_privacy import services as classification
+    from apps.operational_workspace.identity import resolve as resolve_publisher
+
+    if not classification.applicable("PUBLICATION", str(edition.pk)):
+        return None
+    event = edition.actions.filter(action="APPROVE").first()
+    directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
+    if event is None or directory is None or directory.provider_id != event.provider_id:
+        raise classification.PrivacyDenied("privacy_publication_actor_required")
+    actor = resolve_publisher(directory, event.subject_id, case_ref=edition.case.public_ref)
+    if actor.auth_epoch != event.auth_epoch:
+        raise classification.PrivacyDenied("privacy_publication_actor_changed")
+    return classification.staff_principal(directory, actor)
+
+
+def _privacy_source(edition, kind, identifier):
+    """The recorded publisher retains a current independent right over originals."""
+    from apps.data_privacy import services as classification
+
+    if not classification.applicable(kind, str(identifier)):
+        return
+    principal = _privacy_publisher(edition)
+    if principal is None:
+        raise classification.PrivacyDenied("privacy_publication_actor_required")
+    classification.require(kind, identifier, principal=principal, action="PUBLISH")
+
+
+def _privacy_edition(edition, *, action="READ"):
+    from apps.data_privacy import services as classification
+    from apps.data_privacy.resource_hooks import _references
+
+    privacy.public("PUBLICATION", edition.pk, action=action)
+    _privacy_source(edition, "ANSWER", edition.answer_id)
+    for item in edition.citations:
+        source = item["source"]
+        identifiers = _references(
+            edition.case, edition_id=source["edition_id"], source_row_id=source["source_row_id"]
+        )
+        if not identifiers and classification.enabled():
+            raise classification.PrivacyDenied("privacy_registered_source_required")
+        for identifier in identifiers:
+            _privacy_source(edition, "SOURCE_VERSION", identifier)
+
+
+@privacy.public_contextual
 @contextmanager
 def _current(selected: PreviewPolicy, publication_id: str):
     grant = _grant(selected, publication_id)
@@ -122,12 +169,14 @@ def _current(selected: PreviewPolicy, publication_id: str):
     edition = PublicationEdition.objects.filter(pk=grant.publication_id).first()
     if edition is None:
         raise PreviewUnavailable()
-    with transaction.atomic():
+    with transaction.atomic(), ExitStack() as privacy_stack:
         from apps.precise_citations.integration import lock_dependencies
 
         lock_dependencies(edition.case_id)
         case = Case.objects.select_for_update().get(pk=edition.case_id)
         try:
+            _privacy_edition(edition)
+            privacy_stack.enter_context(privacy.published_sources(_privacy_publisher(edition)))
             cases._verify(case)
             publication._approved(case, edition)
             publication._verify(edition)
@@ -207,6 +256,7 @@ def _relationships(selected: PreviewPolicy, edition: PublicationEdition) -> dict
             continue
         if row.heading_id:
             try:
+                _privacy_source(edition, "KNOWLEDGE_REVISION", row.pk)
                 # Locked, exact-reference-only adapter. Do not call knowledge.browse:
                 # that staff projection can resolve private transcript bundles.
                 heading = row.heading
@@ -229,9 +279,10 @@ def _relationships(selected: PreviewPolicy, edition: PublicationEdition) -> dict
             # raw-evidence URL, timing, source name, or path to the staff API.
             # Private transcript rights cannot authorize anonymous metadata.
             # With rights enforced, even relationship existence remains private.
+            from apps.data_privacy.services import enabled as privacy_enabled
             from apps.source_rights.enforcement import required
 
-            if not required():
+            if not required() and not privacy_enabled():
                 private_related = True
     return {"references": references, "private_related": private_related}
 
@@ -259,6 +310,7 @@ def _history(selected: PreviewPolicy, edition: PublicationEdition) -> list[dict]
         if not _independent(old) or old.content_sha256 != grant.content_sha256:
             continue
         try:
+            _privacy_edition(old)
             publication._verify(old)
         except cases.CaseConflict:
             continue
@@ -288,6 +340,7 @@ def filters(*, query: str = "", category: str = "", material: str = "", page: in
     return {"query": query, "category": category, "material": material, "page": page}
 
 
+@privacy.public_contextual
 @contextmanager
 def _media_boundary():
     from apps.casework.media_boundary import media_projection_boundary
@@ -334,6 +387,7 @@ def browse(*, query: str = "", category: str = "", material: str = "", page: int
         for grant in selected.publications:
             try:
                 with _current(selected, grant.publication_id) as edition:
+                    _privacy_edition(edition, action="SEARCH")
                     projected = _projection(selected, edition)
                 # Publish to the response collection only after the context's
                 # return-boundary checks succeeded. Failed exits cannot leave a

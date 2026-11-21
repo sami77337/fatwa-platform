@@ -25,10 +25,14 @@ def text_digest(value):
     return sha256(value.encode()).hexdigest()
 
 
-def normalize(value):
+def fold(value):
+    """The normalization profile before whitespace collapse, on a derived copy."""
     value = unicodedata.normalize("NFKC", value).translate(_TRANSLATE).casefold()
-    value = "".join(c for c in value if c != "ـ" and unicodedata.category(c) != "Mn")
-    return re.sub(r"\s+", " ", value).strip()
+    return "".join(c for c in value if c != "ـ" and unicodedata.category(c) != "Mn")
+
+
+def normalize(value):
+    return re.sub(r"\s+", " ", fold(value)).strip()
 
 
 def query(value, mode):

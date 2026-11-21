@@ -24,7 +24,15 @@ ROUTES = {
     BASE + "staff/": ("GET", "HEAD", "POST"),
     BASE + "staff/quality/": ("GET", "HEAD"),
     BASE + "staff/logout/": ("POST",),
+    BASE + "operations/": ("GET", "HEAD", "POST"),
+    BASE + "operations/login/": ("GET", "HEAD", "POST"),
+    BASE + "operations/logout/": ("POST",),
+    BASE + "sessions/": ("GET", "HEAD", "POST"),
+    BASE + "operations/sessions/": ("GET", "HEAD", "POST"),
+    BASE + "ai-citations/": ("POST",),
+    BASE + "ai-citations/panel.mjs": ("GET", "HEAD"),
     BASE + "staff/recording-player.js": ("GET", "HEAD"),
+    BASE + "staff/answer-media/related.mjs": ("GET", "HEAD"),
     BASE + "staff/pwa/manifest.webmanifest": ("GET", "HEAD"),
     BASE + "staff/pwa/install.mjs": ("GET", "HEAD"),
     BASE + "staff/pwa/sw.mjs": ("GET", "HEAD"),
@@ -50,6 +58,14 @@ RECORDING_MEDIA_ROUTE = re.compile(
 RECORDING_SEGMENT_ROUTE = re.compile(
     r"/casework/staff/recording-transcripts/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/segments/[0-5]/"
+)
+MEDIA_DERIVATIVE_ROUTE = re.compile(
+    r"/casework/staff/media-jobs/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/output/"
+)
+WEBHOOK_ROUTE = re.compile(
+    r"/casework/webhooks/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
 )
 PRECISE_CITATION_ROUTE = re.compile(
     r"/casework/precise-citations/(?:sources|print|export)/"
@@ -134,6 +150,20 @@ def private(response, *, head=False):
         policy = response["Content-Security-Policy"]
         if "script-src" not in policy:
             response["Content-Security-Policy"] = policy + "; script-src 'self'"
+    if (
+        enabled()
+        and getattr(settings, "FATWA_ANSWER_RELATED_ENABLED", False) is True
+        and response.status_code == 200
+        and response.get("Content-Type", "").startswith("text/html")
+        and not getattr(response, "streaming", False)
+        and b'data-answer-related="enabled"' in response.content
+        and "sandbox" not in response["Content-Security-Policy"]
+    ):
+        policy = response["Content-Security-Policy"]
+        for directive in ("script-src", "connect-src"):
+            if directive not in policy:
+                policy += "; " + directive + " 'self'"
+        response["Content-Security-Policy"] = policy
     if head:
         response.content = b""
     return response
@@ -151,9 +181,18 @@ def _budget(request):
     if request.method == "POST":
         if request.path == BASE:
             group = "intake"
-        elif request.path == BASE + "staff/login/":
+        elif request.path in {
+            BASE + "staff/login/",
+            BASE + "operations/login/",
+            BASE + "sessions/",
+            BASE + "operations/sessions/",
+            BASE + "staff/mfa/",
+            BASE + "operations/mfa/",
+        }:
+            # Session forms can actively verify a credential. Charge every POST
+            # to the existing login budget without parsing an untrusted body.
             group = "login"
-        elif "/staff/" in request.path:
+        elif "/staff/" in request.path or request.path.startswith(BASE + "operations/"):
             group = "staff"
         else:
             group = "requester"
@@ -197,6 +236,56 @@ class CaseworkGuard:
         if re.fullmatch(r"(?:127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", host) is None:
             return denied("casework_host_invalid", 400)
         methods = ROUTES.get(request.path)
+        webhook = (
+            getattr(settings, "FATWA_WEBHOOK_INGRESS_ENABLED", False) is True
+            and WEBHOOK_ROUTE.fullmatch(request.path) is not None
+        )
+        if webhook:
+            methods = ("GET", "POST")
+        if request.path in {BASE + "staff/webhooks/", BASE + "operations/webhooks/"}:
+            methods = (
+                ("GET", "HEAD", "POST")
+                if getattr(settings, "FATWA_WEBHOOK_INGRESS_ENABLED", False) is True
+                else None
+            )
+        if request.path in {BASE + "staff/privacy/", BASE + "operations/privacy/"}:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", False) is True
+                else None
+            )
+        if request.path in {BASE + "staff/permissions/", BASE + "operations/permissions/"}:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_PERMISSION_SETS_ENABLED", False) is True
+                else None
+            )
+        if request.path in {BASE + "staff/mfa/", BASE + "operations/mfa/"}:
+            methods = (
+                ("GET", "HEAD", "POST")
+                if getattr(settings, "FATWA_STAFF_MFA_ENABLED", False) is True
+                else None
+            )
+        if request.path in {
+            BASE + "staff/record-lifecycle/",
+            BASE + "operations/record-lifecycle/",
+        }:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_RECORD_SUPPRESSION_ENABLED", False) is True
+                else None
+            )
+        if getattr(settings, "FATWA_MEDIA_DERIVATIVES_ENABLED", False) is True:
+            if request.path == BASE + "staff/media-jobs/":
+                methods = ("GET", "HEAD", "POST")
+            elif MEDIA_DERIVATIVE_ROUTE.fullmatch(request.path):
+                methods = ("GET", "HEAD")
+        if request.path in {BASE + "staff/derived-data/", BASE + "operations/derived-data/"}:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_DERIVED_MAINTENANCE_ENABLED", False) is True
+                else None
+            )
         if methods is None and (
             PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
             or LIBRARY_MEDIA_ROUTE.fullmatch(request.path)
@@ -214,8 +303,19 @@ class CaseworkGuard:
             response = denied("casework_method_not_supported", 405)
             response["Allow"] = ", ".join(methods)
             return response
-        if request.META.get("QUERY_STRING"):
-            return denied("casework_query_not_supported", 400)
+        if webhook:
+            from apps.webhook_ingress.transport import admit_request
+
+            error = admit_request(request)
+            if error:
+                response = denied(*error)
+                response["Referrer-Policy"] = "no-referrer"
+                return response
+        if request.META.get("QUERY_STRING") and not webhook:
+            from apps.private_media.links import admits_query
+
+            if not admits_query(request):
+                return denied("casework_query_not_supported", 400)
         try:
             length = int(request.META.get("CONTENT_LENGTH") or "0")
         except (TypeError, ValueError):
@@ -229,4 +329,7 @@ class CaseworkGuard:
                 return response
         except (DatabaseError, SyntheticWriteDenied, MaintenanceUnavailable):
             return denied("casework_store_unavailable", 503)
-        return private(self.get_response(request), head=request.method == "HEAD")
+        response = private(self.get_response(request), head=request.method == "HEAD")
+        if webhook:
+            response["Referrer-Policy"] = "no-referrer"
+        return response

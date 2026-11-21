@@ -1,0 +1,80 @@
+{
+  "schema": "fatwa.recovered-work-provenance.v1",
+  "date": "2026-11-21",
+  "source_conversation": "https://chatgpt.com/c/6b002be6-7300-83ed-8948-a52a090bf6fd",
+  "anchor": {
+    "pr": 243,
+    "sha": "ac8f5170b82767d759bd656fe9c2ea33cf48fc9f",
+    "tree": "3ea9c17e4fcf2e5f80416c3e57b5810184e0a49c",
+    "confirmed_workflows": 18,
+    "confirmed_functional_run": 44885715061
+  },
+  "local_anchor_equivalent": "9b7a1f2b64248455ba0b5548dec70d83ff5d45f0",
+  "local_recovered_source": "256c7e87534844e264b6b017e995e3e60ae062f6",
+  "recovered_tree": "7438e352423bf39b238da1a6e5c1c7b78b06c9bd",
+  "published_recovery_sha": "402629155cdbcd49d9ac3cd23e89714866708e4c",
+  "published_recovery_pr": 244,
+  "restored_paths": 277,
+  "original_worktrees_inspected": 46,
+  "original_dirty_remnants": [
+    "fatwa-operational-notes: three tracked source files",
+    "fatwa-publication-destinations: twenty-one untracked app files"
+  ],
+  "empty_worktree": "fatwa-search-match-navigation: no differences from recovered source",
+  "saved_recovery_evidence": [
+    {
+      "file": "continuation66-recovery-pg17.log",
+      "sha256": "1054b8d272ff792f187cf3c6d326cb117c9e351c88e5af376c86ee6c7babe49f",
+      "bytes": 38466,
+      "tested_sha": "256c7e87534844e264b6b017e995e3e60ae062f6",
+      "status": "PASS",
+      "postgres_major": 17,
+      "nonempty_tables": 77,
+      "restored_workflow_results": 24,
+      "denial_reads": 110,
+      "full_browser_certification": false
+    },
+    {
+      "file": "continuation66-recovery-pg18.log",
+      "sha256": "9bfe0b9f10429ab1b02a317daf1ad0eadc04afac44c150169f7e4e539f2d5d11",
+      "bytes": 38465,
+      "tested_sha": "256c7e87534844e264b6b017e995e3e60ae062f6",
+      "status": "PASS",
+      "postgres_major": 18,
+      "nonempty_tables": 77,
+      "restored_workflow_results": 24,
+      "denial_reads": 110,
+      "full_browser_certification": false
+    }
+  ],
+  "not_recovered_as_complete_code": [
+    "AI task gateway",
+    "temporary signed private-media link workflow"
+  ],
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "first_restored_ci": {
+    "tested_sha": "402629155cdbcd49d9ac3cd23e89714866708e4c",
+    "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44892197362",
+    "status": "FAILED_NOT_CERTIFIED",
+    "browser_test_count_per_major": 35,
+    "pg17": {
+      "failures": 4,
+      "errors": 4
+    },
+    "pg18": {
+      "failures": 3,
+      "errors": 4
+    },
+    "observed_issues": [
+      "Legacy profiles imported optional library models through the answer identity guard.",
+      "Maintenance admission was displaced from the first middleware position.",
+      "Native tests selected hidden old journey forms instead of visible current navigation.",
+      "The choice test imported an unrelated TestCase class and caused unintended discovery.",
+      "The browser textarea DOM uses LF but native multipart submits CRLF; persistence must match actual submitted bytes.",
+      "The long taxonomy browser journey exceeded the unchanged per-minute request budget.",
+      "Public preview fixture dependencies, a teaching helper collision and concurrent print requests require correction."
+    ],
+    "certified_new_points": 0
+  }
+}

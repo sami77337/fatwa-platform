@@ -15,6 +15,8 @@ from apps.answer_media.models import AnswerPart
 from apps.case_attachments import services as attachments
 from apps.case_attachments.models import CaseAttachment
 from apps.casework import services as cases
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.platform_recovery.integration import mutation_service
 from apps.private_media.validation import MediaValidationError, validate
 from apps.research_workspace.rights import Resource, require
@@ -88,6 +90,7 @@ def _rights(case, actor, provider, snapshot):
 
 def _source(case, actor, provider, kind, identifier):
     """Internal adapter: caller already owns the authorized canonical case lock."""
+    privacy.original("CASE", case.pk, provider=provider, actor=actor)
     identifier = cases._uuid(identifier)
     if kind == "ATTACHMENT":
         attachments._enabled()
@@ -108,10 +111,17 @@ def _source(case, actor, provider, kind, identifier):
         )
         if owner is None or owner.kind != "AUDIO":
             raise cases.CaseConflict("timed_source_unavailable")
+        privacy.original("ANSWER", owner.manifest.answer_id, provider=provider, actor=actor)
         version, recorded = owner.manifest.answer.revision, owner.metadata
     else:
         raise cases.CaseConflict("timed_source_kind_invalid")
     pin = {"kind": kind, "id": str(owner.pk), "sha256": owner.sha256}
+    privacy.original(
+        "ATTACHMENT" if kind == "ATTACHMENT" else "ANSWER_PART",
+        owner.pk,
+        provider=provider,
+        actor=actor,
+    )
     _rights(case, actor, provider, pin)
     if kind == "ATTACHMENT":
         raw = attachments._check(owner)
@@ -157,6 +167,7 @@ def _draft(case):
         or hasattr(answer, "decision")
     ):
         raise cases.CaseConflict("timed_current_unreviewed_answer_required")
+    privacy.source("ANSWER", answer.pk)
     return answer
 
 
@@ -184,6 +195,7 @@ def _state(row):
 
 
 def _validate(row, case, actor, provider):
+    privacy.original("ANSWER", row.answer_id, provider=provider, actor=actor)
     if row.snapshot_sha256 != _digest(row.snapshot) or row.duration_ms != row.snapshot.get(
         "duration_ms"
     ):
@@ -381,6 +393,7 @@ def open_audio(
         }
 
 
+@privacy.projected
 @projection_expiry_guard()
 def for_locked_answer(*, answer, actor, provider):
     """Integrator hook before canonical approval/use; no automatic relation cloning.
@@ -469,6 +482,8 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
                 if row.previous_id:
                     _validate(row.previous, case, actor, provider)
                 entry["reason"] = row.reason
+            except PrivacyDenied:
+                continue
             except cases.CaseConflict:
                 pass
             history.append(entry)

@@ -35,13 +35,14 @@ TRIGGERS = tuple(name.removesuffix("()") for name in FUNCTIONS)
 
 
 @contextmanager
-def fixture(ref, *, grants=(), valid_until=None):
+def fixture(ref, *, grants=(), valid_until=None, provider_id="synthetic-publication-directory"):
     directory = Directory([ref])
+    directory.provider_id = provider_id
     flags = {
         **FEATURES,
         "FATWA_SCHOLARLY_LINKS_ENABLED": False,
         "FATWA_CASEWORK_IDENTITY_PROVIDER": directory,
-        "FATWA_PUBLIC_KNOWLEDGE_AUTHORITY": FixtureAuthority(ref),
+        "FATWA_PUBLIC_KNOWLEDGE_AUTHORITY": FixtureAuthority(ref, provider_id=provider_id),
         "FATWA_EXPERIMENTAL_PUBLICATION_AUTHORITY": Authority(ref),
         "FATWA_LIBRARY_PREVIEW_POLICY": PreviewPolicy(
             tuple(grants), (), valid_until or timezone.now() + timedelta(minutes=55), True
@@ -86,15 +87,20 @@ def _approve_release(common, receipt, row):
 
 
 def populate():
+    seed_key = uuid.uuid4().hex
     receipt = cases.intake_case(
         original_question="PRIVATE public-knowledge recovery question",
-        requester_id="public-knowledge-recovery-requester",
-        source_event_id="public-knowledge-recovery-event",
-        idempotency_key="public-knowledge-recovery-intake",
+        requester_id="public-knowledge-recovery-requester-" + seed_key,
+        source_event_id="public-knowledge-recovery-event-" + seed_key,
+        idempotency_key="public-knowledge-recovery-intake-" + seed_key,
         synthetic_fixtures_only=True,
     )
     valid_until = timezone.now() + timedelta(minutes=55)
-    with fixture(receipt["public_ref"], valid_until=valid_until) as directory:
+    with fixture(
+        receipt["public_ref"],
+        valid_until=valid_until,
+        provider_id="synthetic-public-knowledge-recovery-" + seed_key,
+    ) as directory:
         common = _common(receipt, directory)
         saved = cases.save_answer(
             **common, **_pins(receipt), text="PRIVATE immutable Arabic source for recovery"
@@ -150,6 +156,7 @@ def populate():
         return {
             "case_id": receipt["case_id"],
             "public_ref": receipt["public_ref"],
+            "provider_id": directory.provider_id,
             "publication_id": str(edition.pk),
             "publication_sha256": edition.content_sha256,
             "answer_id": str(answer.pk),
@@ -186,7 +193,12 @@ def verify_restored(pins):
     if deadline <= timezone.now():
         raise AssertionError("Recovery verification exceeded the original explicit release window")
     grant = PublicationGrant(pins["publication_id"], pins["publication_sha256"])
-    with fixture(pins["public_ref"], grants=(grant,), valid_until=deadline):
+    with fixture(
+        pins["public_ref"],
+        grants=(grant,),
+        valid_until=deadline,
+        provider_id=pins["provider_id"],
+    ):
         client = Client(REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1")
         scholar_url = f"/library-preview/knowledge/scholars/{pins['scholar_id']}/"
         translation_url = f"/library-preview/knowledge/publications/{pins['publication_id']}/en/"

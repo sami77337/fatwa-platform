@@ -1,0 +1,5 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>المعالجة الخلفية للوسائط</title><link rel="stylesheet" href="/casework/casework.css"></head><body><main>
+<h1>المعالجة الخلفية للوسائط</h1><p>المشتقات التقنية منفصلة عن الأصل. إخفاق معالجة اختيارية لا يحذف الملف السليم المتاح.</p>
+<p><a href="/casework/staff/">مساحة العمل</a></p>
+{% for case in cases %}<form method="post" action="{{ base }}">{% csrf_token %}<input type="hidden" name="action" value="media_jobs_open"><input type="hidden" name="case_ref" value="{{ case.public_ref }}"><button type="submit">فتح مهام <bdi>{{ case.public_ref }}</bdi></button></form>{% empty %}<p>لا توجد قضية مخولة.</p>{% endfor %}
+</main></body></html>

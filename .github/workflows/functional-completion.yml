@@ -17,6 +17,7 @@ on:
       - 'requirements*.txt'
       - 'pyproject.toml'
       - '.github/workflows/functional-completion.yml'
+      - '.github/workflows/upload-security-engine.yml'
       - 'infra/dev/functional_verify.py'
       - 'infra/dev/functional_scope_receipt.py'
       - 'infra/dev/functional_continuation_receipt.py'
@@ -24,9 +25,79 @@ on:
 permissions:
   contents: read
 jobs:
-  workspace:
+  upload-scan-engine:
+    uses: ./.github/workflows/upload-security-engine.yml
+  citation-browser:
+    # Exercise the new native boundaries before the longer aggregate. Recent
+    # runs found media layout failures only after 53 successful journeys.
+    # The aggregate still repeats and requires every registered journey.
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['17', '18']
+    env:
+      FATWA_PRODUCTION: '0'
+      FATWA_WAVE7_SYNTHETIC_WRITES: '1'
+      DJANGO_SETTINGS_MODULE: config.settings.campaign_review
+      EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PG_EXPECTED_MAJOR: ${{ matrix.postgres }}
+      FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
+      FATWA_BROWSER_SANDBOX: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install pinned native journey runtime
+        run: |
+          python -m pip install --no-deps -r requirements.txt
+          python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+      - name: Install the exact PostgreSQL major
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /tmp/fatwa-pgdg.asc
+          test "$(gpg --batch --show-keys --with-colons /tmp/fatwa-pgdg.asc | awk -F: '$1 == "fpr" {print $10; exit}')" = B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+          sudo install -m 644 /tmp/fatwa-pgdg.asc /usr/share/keyrings/fatwa-pgdg.asc
+          . /etc/os-release
+          printf 'deb [signed-by=/usr/share/keyrings/fatwa-pgdg.asc] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$VERSION_CODENAME" | sudo tee /etc/apt/sources.list.d/fatwa-pgdg.list
+          sudo apt-get update -qq
+          sudo install -d /etc/postgresql-common
+          printf 'create_main_cluster = false\n' | sudo tee /etc/postgresql-common/createcluster.conf
+          sudo apt-get install -y --no-install-recommends "postgresql-$PG_EXPECTED_MAJOR" ffmpeg
+      - name: Verify native candidate privacy and derivative boundaries with current grants
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python infra/dev/with_casework_postgres.py \
+            --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" \
+            --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
+            python manage.py test apps.ai_gateway.browser_tests apps.data_privacy.browser_tests apps.data_privacy.browser_work apps.media_derivatives.browser_tests apps.derived_maintenance.browser_tests --noinput --verbosity 2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: citation-native-pg${{ matrix.postgres }}
+          path: |
+            .local/qa/functional-continuation/ai-citation-browser
+            .local/qa/functional-continuation/data-privacy-browser
+            .local/qa/functional-continuation/private-unclassified-work-browser
+            .local/qa/functional-continuation/media-derivatives-browser
+            .local/qa/functional-continuation/derived-maintenance-browser
+          include-hidden-files: true
+          if-no-files-found: error
+  workspace:
+    needs: [citation-browser, upload-scan-engine]
+    # Preserve service/browser/restore diagnostics if the actual engine is
+    # unavailable. The receipt still rejects a missing or failed engine proof.
+    if: ${{ always() && needs.citation-browser.result == 'success' }}
+    runs-on: ubuntu-latest
+    # The measured frozen 1526-case service run takes up to 3157 seconds locally;
+    # 55 protected journeys and the encrypted drill add about 13 minutes. Keep
+    # every acceptance stage and a finite allowance for the expanded suite.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -69,6 +140,12 @@ jobs:
       - name: Install browser driver for the connected journey
         run: |
           python -m pip install --only-binary=:all: --no-deps playwright==1.62.0 pyee==13.0.1 greenlet==3.5.5
+      - name: Download actual scanner evidence from this workflow
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        continue-on-error: true
+        with:
+          name: actual-upload-scan-engine
+          path: .local/qa/upload-security-engine
       - name: Verify new workflows, encrypted recovery and protected browser
         env:
           FATWA_FASTBUILD_BROWSER: /usr/bin/google-chrome
@@ -87,6 +164,7 @@ jobs:
           path: |
             .local/qa/functional-completion
             .local/qa/functional-continuation
+            .local/qa/upload-security-engine
             .local/qa/library-operations
             .local/qa/case-assignments/browser
             .local/qa/v6-casework/browser

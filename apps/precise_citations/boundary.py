@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision, Case, CaseDecision
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import _canonical, synthetic_queue_atomic
 from apps.mufti_review.identity import resolve_identity
 from apps.platform_recovery.integration import mutation_context
@@ -136,7 +137,14 @@ class Guard:
         actor = cases._identity(self.provider, self.subject, row)
         self.actors[row.pk] = actor
         self.deadlines.append(actor.valid_until)
+        privacy.original("CASE", row.pk, provider=self.provider, actor=actor)
         return row, actor
+
+    def original(self, case_id, kind, identifier, *, action="READ"):
+        _, actor = self.actor(case_id)
+        return privacy.original(
+            kind, identifier, provider=self.provider, actor=actor, action=action
+        )
 
     def permit(self, case_id, action, kind="ANSWER", identifier="", source_digest=""):
         row, actor = self.actor(case_id)
@@ -153,6 +161,18 @@ class Guard:
         self.call(values)
         if values not in self.permissions:
             self.permissions.append(values)
+        operation = "EXPORT" if action in {"EXPORT", "EXPORT_SOURCE"} else "READ"
+        if operation == "EXPORT":
+            privacy.original("CASE", row.pk, provider=self.provider, actor=actor, action=operation)
+        target = {
+            "LIBRARY": "LIBRARY_VERSION",
+            "ANSWER": "ANSWER",
+            "ANSWER_PART": "ANSWER_PART",
+        }.get(kind)
+        if target and identifier:
+            privacy.original(
+                target, identifier, provider=self.provider, actor=actor, action=operation
+            )
         return row, actor
 
     def call(self, values):
@@ -225,6 +245,7 @@ class Guard:
 
 
 @mutation_context
+@privacy.contextual
 @contextmanager
 def scope(
     *,
@@ -259,10 +280,18 @@ def scope(
             raise cases.CaseConflict("precise_citation_scope_bound")
         with ExitStack() as stack:
             guard = Guard(provider, subject_id, locked, stack, before)
+            from apps.private_media.links import retain_projection
+
+            retain_projection(lambda: guard.final_pins(verify_files=False))
             guard.owner_case_id = cases._uuid(case_id)
-            row, _ = guard.actor(case_id)
+            row, actor = guard.actor(case_id)
             cases._verify(row)
-            yield guard
-            guard.callbacks()
+            from apps.data_privacy.services import enabled as privacy_enabled
+            from apps.data_privacy.services import staff_principal
+
+            principal = staff_principal(provider, actor) if privacy_enabled() else None
+            with privacy.using(principal):
+                yield guard
+                guard.callbacks()
         # Nested source readers can execute callbacks on exit; pure checks run last.
         guard.final_pins()

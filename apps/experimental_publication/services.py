@@ -108,15 +108,24 @@ def _require_publication_sources(case, citations):
     Called under the canonical case lock on every publication transition/read.
     Persisted editorial text and approval history are retained when rights lapse.
     """
+    annotation_deadline = cases._answer_annotations(case.approved_answer)
+    citation_deadline = _require_publication_citations(case, citations)
+    return min(
+        (value for value in (annotation_deadline, citation_deadline) if value is not None),
+        default=None,
+    )
+
+
+def _require_publication_citations(case, citations):
+    """Recheck ordinary source grants without reopening retained annotation guards."""
     from apps.source_rights.enforcement import required
 
-    annotation_deadline = cases._answer_annotations(case.approved_answer)
     if not required():
-        return annotation_deadline
+        return None
     from apps.case_citations.services import _rights_services
 
     rights = _rights_services()  # Missing/disabled registry cannot become an empty grant.
-    deadlines = [annotation_deadline] if annotation_deadline is not None else []
+    deadlines = []
     for item in citations:
         for usage in ("READ", "CITE", "PREVIEW_METADATA"):
             deadline = rights.reference_permission_deadline_for_locked_case(
@@ -130,7 +139,60 @@ def _require_publication_sources(case, citations):
     return min(deadlines, default=None)
 
 
+def _append_action_locked(*, case, edition, actor, provider, action, reviewed, before_append):
+    """Existing journal transition under an admitted caller's canonical case lock.
+
+    This private primitive grants no role or operation. Public MUFTI callers and
+    the operational manager supply their own final admission callback, while
+    sharing the exact source, citation, transition and independence predicates.
+    """
+    if action not in {"REVIEW", "APPROVE", "WITHDRAW"} or not callable(before_append):
+        raise cases.CaseConflict("publication_action_invalid")
+    _verify(edition)
+    if edition.case_id != case.pk:
+        raise cases.CaseConflict("publication_unavailable")
+    existing = set(edition.actions.values_list("action", flat=True))
+    if action in existing or "WITHDRAW" in existing:
+        raise cases.CaseConflict("publication_transition_invalid")
+    if action != "WITHDRAW":
+        from apps.data_privacy.integration import current as privacy
+
+        privacy("PUBLICATION", edition.pk, action="PUBLISH" if action == "APPROVE" else "READ")
+        privacy("ANSWER", edition.answer_id, action="PUBLISH")
+        answer, decision = _approved(case, edition)
+        if edition.citations != _citation_snapshot(answer):
+            raise cases.CaseConflict("publication_citation_source_changed")
+        _require_publication_sources(case, edition.citations)
+        if edition.number != PublicationEdition.objects.filter(case=case).count():
+            raise cases.CaseConflict("publication_edition_changed")
+        if action == "REVIEW":
+            if reviewed is not True or existing:
+                raise cases.CaseConflict("explicit_redaction_review_required")
+        else:
+            if existing != {"REVIEW"}:
+                raise cases.CaseConflict("redaction_review_required")
+            reviewer = edition.actions.get(action="REVIEW")
+            actors = {
+                (edition.provider_id, edition.subject_id),
+                (decision.provider_id, decision.subject_id),
+                (reviewer.provider_id, reviewer.subject_id),
+            }
+            if (provider.provider_id, actor.subject_id) in actors:
+                raise cases.CaseConflict("independent_publication_approver_required")
+    before_append()
+    return PublicationAction.objects.create(
+        edition=edition,
+        action=action,
+        subject_id=actor.subject_id,
+        provider_id=provider.provider_id,
+        auth_epoch=actor.auth_epoch,
+    )
+
+
 def _projection(edition, *, editorial=False, rights_usage="READ"):
+    from apps.data_privacy.integration import current as privacy
+
+    privacy("PUBLICATION", edition.pk)
     _verify(edition)
     if not editorial:
         _require_publication_sources(edition.case, edition.citations)
@@ -196,6 +258,9 @@ def create_edition(
         expected_evidence_version=expected_evidence_version,
     ) as (case, identity):
         answer, decision = _approved(case)
+        from apps.data_privacy.integration import current as privacy
+
+        privacy("ANSWER", answer.pk, action="PUBLISH")
         if source_edition_id is not None:
             _correction_source(case, source_edition_id)
         number = PublicationEdition.objects.filter(case=case).count() + 1
@@ -217,6 +282,16 @@ def create_edition(
             provider_id=provider.provider_id,
             auth_epoch=identity.auth_epoch,
         )
+        from apps.data_privacy.services import enabled as privacy_enabled
+
+        if privacy_enabled():
+            # The creator knows the submitted inputs. A new saved copy still
+            # needs its own human label before any subsequent read or release.
+            return {
+                "id": str(edition.pk),
+                "number": edition.number,
+                "classification_required": True,
+            }
         return _projection(edition, editorial=True)
 
 
@@ -238,44 +313,33 @@ def act(
         edition = PublicationEdition.objects.filter(pk=cases._uuid(edition_id), case=case).first()
         if edition is None:
             raise cases.CaseConflict("publication_unavailable")
-        _verify(edition)
-        existing = set(edition.actions.values_list("action", flat=True))
-        if action in existing or "WITHDRAW" in existing:
-            raise cases.CaseConflict("publication_transition_invalid")
-        if action == "WITHDRAW":
+
+        # Admission precedes independence details, as on the original MUFTI
+        # path. Recheck at append as well, after any source callbacks.
+        if action in {"APPROVE", "WITHDRAW"}:
             _authority(actor, provider, case, action)
-        else:
-            answer, decision = _approved(case, edition)
-            if edition.citations != _citation_snapshot(answer):
-                raise cases.CaseConflict("publication_citation_source_changed")
-            _require_publication_sources(case, edition.citations)
-            if edition.number != PublicationEdition.objects.filter(case=case).count():
-                raise cases.CaseConflict("publication_edition_changed")
-            if action == "REVIEW":
-                if reviewed is not True or existing:
-                    raise cases.CaseConflict("explicit_redaction_review_required")
-            else:
+
+        def final_admission():
+            if action in {"APPROVE", "WITHDRAW"}:
                 _authority(actor, provider, case, action)
-                if existing != {"REVIEW"}:
-                    raise cases.CaseConflict("redaction_review_required")
-                reviewer = edition.actions.get(action="REVIEW")
-                actors = {
-                    (edition.provider_id, edition.subject_id),
-                    (decision.provider_id, decision.subject_id),
-                    (reviewer.provider_id, reviewer.subject_id),
-                }
-                if (provider.provider_id, actor.subject_id) in actors:
-                    raise cases.CaseConflict("independent_publication_approver_required")
-        current = cases._identity(provider, subject_id, case)
-        if current.auth_epoch != actor.auth_epoch:
-            raise cases.CaseConflict("publication_identity_changed")
-        PublicationAction.objects.create(
+            current = cases._identity(provider, subject_id, case)
+            if current.auth_epoch != actor.auth_epoch:
+                raise cases.CaseConflict("publication_identity_changed")
+
+        _append_action_locked(
+            case=case,
             edition=edition,
+            actor=actor,
+            provider=provider,
             action=action,
-            subject_id=actor.subject_id,
-            provider_id=provider.provider_id,
-            auth_epoch=actor.auth_epoch,
+            reviewed=reviewed,
+            before_append=final_admission,
         )
+        if action == "WITHDRAW":
+            from apps.data_privacy.integration import allowed as privacy_allowed
+
+            if not privacy_allowed("PUBLICATION", edition.pk):
+                return {"id": str(edition.pk), "number": edition.number, "state": "WITHDRAWN"}
         return _projection(edition, editorial=True)
 
 
@@ -303,10 +367,12 @@ def editorial_case(*, edition_id, subject_id, provider, synthetic_fixtures_only=
 
 @mutation_service
 def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+    from apps.data_privacy.integration import allowed as privacy_allowed
+
     _enabled()
     with cases._staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, actor):
         current = None
-        if case.approved_answer_id:
+        if case.approved_answer_id and privacy_allowed("ANSWER", case.approved_answer_id):
             answer, _ = _approved(case)
             current = {"text": answer.text, "revision": answer.revision}
         rows = list(
@@ -315,6 +381,7 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
             .prefetch_related("actions")
             .order_by("-number")
         )
+        rows = [row for row in rows if privacy_allowed("PUBLICATION", row.pk)]
         latest_number = rows[0].number if rows else 0
         latest_published = next(
             (e for e in rows if any(a.action == "APPROVE" for a in e.actions.all())), None
@@ -445,21 +512,37 @@ LIBRARY_PAGE_SIZE = 12
 
 @mutation_service
 def library(*, subject_id, provider, query="", category="", synthetic_fixtures_only=False):
-    return _library(subject_id=subject_id, provider=provider, query=query, category=category,
-                    synthetic_fixtures_only=synthetic_fixtures_only)
+    return _library(
+        subject_id=subject_id,
+        provider=provider,
+        query=query,
+        category=category,
+        synthetic_fixtures_only=synthetic_fixtures_only,
+    )
 
 
 @mutation_service
-def library_catalog(*, subject_id, provider, query="", category="", page=1,
-                    synthetic_fixtures_only=False):
+def library_catalog(
+    *, subject_id, provider, query="", category="", page=1, synthetic_fixtures_only=False
+):
     """One rights-current collection supplies rows, facets, count and bounded pages."""
     if type(page) is not int or not 1 <= page <= 100:
         raise cases.CaseConflict("publication_page_invalid")
-    return _library(subject_id=subject_id, provider=provider, query=query, category=category,
-                    page=page, synthetic_fixtures_only=synthetic_fixtures_only)
+    return _library(
+        subject_id=subject_id,
+        provider=provider,
+        query=query,
+        category=category,
+        page=page,
+        synthetic_fixtures_only=synthetic_fixtures_only,
+    )
 
 
 def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, page=None):
+    from apps.data_privacy.integration import projection
+    from apps.data_privacy.integration import staff as privacy
+    from apps.data_privacy.services import PrivacyDenied
+
     _enabled()
     cases._text(query, optional=True)
     cases._text(category, optional=True)
@@ -476,25 +559,34 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
     # preflight; it does not create a second authorization path.
     from apps.precise_citations.integration import answer_use_boundary
 
-    with synthetic_queue_atomic(), answer_use_boundary(), ExitStack() as stack:
+    with projection(), synthetic_queue_atomic(), answer_use_boundary(), ExitStack() as stack:
         from apps.precise_citations.integration import prelock_cases
 
         prelock_cases([row["case_id"] for row in scoped])
         locked = {}
         for row in sorted(scoped, key=lambda row: row["case_id"]):
-            locked[row["case_id"]] = stack.enter_context(
-                cases._staff_case(row["case_id"], subject_id, provider, True)
-            )
+            try:
+                context = stack.enter_context(
+                    cases._staff_case(row["case_id"], subject_id, provider, True)
+                )
+                privacy("CASE", context[0].pk, provider=provider, actor=context[1], action="SEARCH")
+                locked[row["case_id"]] = context
+            except PrivacyDenied:
+                continue
         for row in scoped:
+            if row["case_id"] not in locked:
+                continue
             case, actor = locked[row["case_id"]]
             # Withdrawal never resurrects an older publication.
             edition = (
                 PublicationEdition.objects.filter(case=case, actions__action="APPROVE")
-                .order_by("-number").first()
+                .order_by("-number")
+                .first()
             )
             if edition is None or edition.actions.filter(action="WITHDRAW").exists():
                 continue
             try:
+                privacy("PUBLICATION", edition.pk, provider=provider, actor=actor, action="SEARCH")
                 _approved(case, edition)
                 _verify(edition)
                 if edition.citations != _citation_snapshot(edition.answer):
@@ -524,8 +616,15 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
             source_text = " ".join(
                 str(item["source"].get(key, ""))
                 for item in public["citations"]
-                for key in ("work_title", "edition_title", "edition_key", "heading_title",
-                            "publisher", "printed_part", "printed_page")
+                for key in (
+                    "work_title",
+                    "edition_title",
+                    "edition_key",
+                    "heading_title",
+                    "publisher",
+                    "printed_part",
+                    "printed_page",
+                )
             )
             haystack = normalize_editorial_search(
                 " ".join((public["title"], public["category"], public["body"], source_text))
@@ -538,10 +637,12 @@ def _library(*, subject_id, provider, query, category, synthetic_fixtures_only, 
         if page is not None:
             start = (page - 1) * LIBRARY_PAGE_SIZE
             result = {
-                "publications": output[start:start + LIBRARY_PAGE_SIZE],
-                "categories": sorted({row["category"] for row, _ in available},
-                                     key=normalize_editorial_search),
-                "total": len(output), "page": page,
+                "publications": output[start : start + LIBRARY_PAGE_SIZE],
+                "categories": sorted(
+                    {row["category"] for row, _ in available}, key=normalize_editorial_search
+                ),
+                "total": len(output),
+                "page": page,
                 "has_previous": page > 1,
                 "has_next": start + LIBRARY_PAGE_SIZE < len(output),
             }

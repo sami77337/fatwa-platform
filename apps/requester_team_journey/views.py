@@ -48,6 +48,36 @@ def staff(request):
             handler = PANELS.get(request.COOKIES.get(PANEL_COOKIE), team_workspace)
             return handler(request)
         action = request.POST.get("action", "")
+        if django_apps.is_installed("apps.identity_registry"):
+            from apps.identity_registry.editor import ACTIONS as IDENTITY_ACTIONS
+            from apps.identity_registry.editor import workspace as identity_workspace
+
+            if action in IDENTITY_ACTIONS:
+                return _panel(identity_workspace(request), "cases")
+        if django_apps.is_installed("apps.publication_destinations"):
+            from apps.publication_destinations.views import ACTIONS as DESTINATION_ACTIONS
+            from apps.publication_destinations.views import workspace as destination_workspace
+
+            if action in DESTINATION_ACTIONS:
+                return _panel(destination_workspace(request), "cases")
+        if django_apps.is_installed("apps.publication_schedules"):
+            from apps.publication_schedules.views import ACTIONS as SCHEDULE_ACTIONS
+            from apps.publication_schedules.views import workspace as schedule_workspace
+
+            if action in SCHEDULE_ACTIONS:
+                return _panel(schedule_workspace(request), "cases")
+        if django_apps.is_installed("apps.development_taxonomy"):
+            from apps.development_taxonomy.editor import ACTIONS as TAXONOMY_ACTIONS
+            from apps.development_taxonomy.editor import workspace as taxonomy_workspace
+
+            if action in TAXONOMY_ACTIONS:
+                return _panel(taxonomy_workspace(request), "cases")
+        if django_apps.is_installed("apps.public_teaching"):
+            from apps.public_teaching.views import ACTIONS as TEACHING_ACTIONS
+            from apps.public_teaching.views import workspace as teaching_workspace
+
+            if action in TEACHING_ACTIONS:
+                return _panel(teaching_workspace(request), "cases")
         if django_apps.is_installed("apps.precise_citations"):
             from apps.precise_citations.editor import ACTIONS as PRECISE_CITATION_ACTIONS
             from apps.precise_citations.editor import workspace as precise_citation_workspace
@@ -180,10 +210,12 @@ def staff(request):
 
             if action in COMPOSITE_ACTIONS:
                 return _panel(composite(request), "cases")
-        if action in {"answer_media", "answer_media_save", "answer_media_release", "answer_media_reorder"}:
+        if django_apps.is_installed("apps.answer_media"):
+            from apps.answer_media.views import ACTIONS as ANSWER_MEDIA_ACTIONS
             from apps.answer_media.views import staff as answer_media
 
-            return _panel(answer_media(request), "cases")
+            if action in ANSWER_MEDIA_ACTIONS:
+                return _panel(answer_media(request), "cases")
         if action in {"attachment_list", "attachment_preview", "attachment_download"}:
             from apps.case_attachments.views import staff as attachments
 

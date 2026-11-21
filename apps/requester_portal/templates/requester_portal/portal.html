@@ -1,4 +1,5 @@
 {% extends "casework/base.html" %}
+{% load private_media_links %}
 {% block title %}بوابة السائل الخاصة{% endblock %}
 {% block content %}
 <h2>بوابة السائل الخاصة</h2>
@@ -49,12 +50,15 @@
 <p>إصدار الجواب {{ result.answer.revision }} · مرتبط بالوقائع الحالية.</p>
 <article><h4>نص الجواب المصرح به</h4><p class="original" id="authorized-answer">{{ result.answer.text }}</p></article>
 {% for part in result.answer.parts %}
+{% url 'answer_media_requester_file' part_id=part.id as part_url %}
+{% private_media_url part_url 'DOWNLOAD' as part_download_url %}
+{% private_media_url part_url as part_url %}
 <article><h4>الجزء {{ part.ordinal }}: <bdi>{{ part.filename }}</bdi></h4>
 <p>{{ part.media_type }} · {{ part.size }} بايت</p>
-{% if part.kind == 'AUDIO' %}<audio controls preload="none" aria-label="صوت الجواب {{ part.ordinal }}" src="/casework/status/answer-media/{{ part.id }}/"></audio>
-{% elif part.kind == 'IMAGE' %}<img loading="lazy" src="/casework/status/answer-media/{{ part.id }}/" alt="صورة الجواب {{ part.filename }}">
-{% else %}<details><summary>معاينة ملف الجواب {{ part.ordinal }}</summary><iframe loading="lazy" title="ملف الجواب {{ part.filename }}" src="/casework/status/answer-media/{{ part.id }}/"></iframe></details>{% endif %}
-<p><a href="/casework/status/answer-media/{{ part.id }}/">فتح جزء الجواب {{ part.ordinal }}</a> · <a href="/casework/status/answer-media/{{ part.id }}/" download>تنزيل جزء الجواب {{ part.ordinal }}</a></p>
+{% if part.kind == 'AUDIO' %}<audio controls preload="none" aria-label="صوت الجواب {{ part.ordinal }}" src="{{ part_url }}"></audio>
+{% elif part.kind == 'IMAGE' %}<img loading="lazy" src="{{ part_url }}" alt="صورة الجواب {{ part.filename }}">
+{% else %}<details><summary>معاينة ملف الجواب {{ part.ordinal }}</summary><iframe loading="lazy" title="ملف الجواب {{ part.filename }}" src="{{ part_url }}"></iframe></details>{% endif %}
+<p><a href="{{ part_url }}">فتح جزء الجواب {{ part.ordinal }}</a> · <a href="{{ part_download_url }}" download>تنزيل جزء الجواب {{ part.ordinal }}</a></p>
 </article>{% endfor %}
 {% if result.answer.citations %}<section aria-label="مصادر الجواب"><h4>إحالات الجواب المصرح بها</h4>
 <p>المعروض عنوان الفهرس وموضعه الموثق، وليس متن الكتاب أو اقتباسًا مولدًا.</p>
@@ -81,10 +85,13 @@
 <section id="attachments" aria-labelledby="attachments-heading"><h3 id="attachments-heading">مرفقات السؤال</h3>
 {% if result.attachments_enabled %}
 {% for attachment in result.attachments %}<article id="attachment-{{ attachment.id }}"><h4><bdi>{{ attachment.filename }}</bdi></h4><p>الوقائع {{ attachment.evidence_version }} · {{ attachment.size }} بايت</p>
-{% if attachment.kind == 'audio' %}<audio controls preload="none" aria-label="مرفق صوتي {{ attachment.filename }}" src="/casework/status/attachments/{{ attachment.id }}/"></audio>
-{% elif attachment.kind == 'image' %}<img loading="lazy" src="/casework/status/attachments/{{ attachment.id }}/" alt="مرفق السؤال {{ attachment.filename }}">
-{% else %}<details><summary>معاينة المرفق {{ forloop.counter }}</summary><iframe loading="lazy" title="مرفق السؤال {{ attachment.filename }}" src="/casework/status/attachments/{{ attachment.id }}/"></iframe></details>{% endif %}
-<p><a href="/casework/status/attachments/{{ attachment.id }}/">فتح المرفق {{ forloop.counter }}</a> · <a href="/casework/status/attachments/{{ attachment.id }}/" download>تنزيل المرفق {{ forloop.counter }}</a></p></article>
+{% url 'requester_attachment_file' attachment_id=attachment.id as attachment_url %}
+{% private_media_url attachment_url 'DOWNLOAD' as attachment_download_url %}
+{% private_media_url attachment_url as attachment_url %}
+{% if attachment.kind == 'audio' %}<audio controls preload="none" aria-label="مرفق صوتي {{ attachment.filename }}" src="{{ attachment_url }}"></audio>
+{% elif attachment.kind == 'image' %}<img loading="lazy" src="{{ attachment_url }}" alt="مرفق السؤال {{ attachment.filename }}">
+{% else %}<details><summary>معاينة المرفق {{ forloop.counter }}</summary><iframe loading="lazy" title="مرفق السؤال {{ attachment.filename }}" src="{{ attachment_url }}"></iframe></details>{% endif %}
+<p><a href="{{ attachment_url }}">فتح المرفق {{ forloop.counter }}</a> · <a href="{{ attachment_download_url }}" download>تنزيل المرفق {{ forloop.counter }}</a></p></article>
 {% empty %}<p>لا توجد مرفقات محفوظة.</p>{% endfor %}
 {% if not result.clarification %}
 <form method="post" action="/casework/status/" enctype="multipart/form-data">{% csrf_token %}

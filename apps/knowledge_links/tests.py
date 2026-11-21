@@ -54,14 +54,20 @@ class Fixture:
         super().setUp()
         self.catalog_id = source_fixture()
         self.heading = ReferenceHeading.objects.get(edition_id=self.catalog_id, source_row_id=2)
+        # This fixture is also composed by recovery helpers in one database.
+        # A fresh seed must not replay an earlier fixture's advanced case.
+        seed_key = uuid.uuid4().hex
         self.receipt = cases.intake_case(
             original_question="PRIVATE QUESTION requester@example.test",
-            source_event_id="knowledge-event",
-            requester_id="knowledge-requester",
-            idempotency_key="knowledge-intake",
+            source_event_id="knowledge-event-" + seed_key,
+            requester_id="knowledge-requester-" + seed_key,
+            idempotency_key="knowledge-intake-" + seed_key,
             synthetic_fixtures_only=True,
         )
         self.directory = Directory([self.receipt["public_ref"]])
+        self.directory.provider_id = getattr(
+            self, "fixture_provider_id", self.directory.provider_id
+        )
         self.common = dict(
             case_id=self.receipt["case_id"],
             subject_id="editor",

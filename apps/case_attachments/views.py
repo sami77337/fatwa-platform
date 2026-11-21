@@ -18,6 +18,7 @@ from apps.casework_web.guard import denied, private
 from apps.casework_web.views import InvalidForm, _form, _integer, _provider
 from apps.intake_workflow.guards import SyntheticWriteDenied
 from apps.mufti_review.identity import IdentityUnavailable, validate_identity
+from apps.private_media import links
 
 from . import services
 
@@ -48,7 +49,13 @@ def _page(request, result, *, token=None, is_staff=False, preview=None):
     )
 
 
-def _download(row):
+def _download(row, request, *, is_staff):
+    if links.enabled():
+        audience = "staff" if is_staff else "status"
+        url = links.issue(
+            request, f"/casework/{audience}/attachments/{row['id']}/", purpose="DOWNLOAD"
+        )
+        return private(HttpResponse(status=303, headers={"Location": url}))
     return private(
         HttpResponse(
             row["raw"],
@@ -115,7 +122,7 @@ def requester(request):
                 synthetic_fixtures_only=True,
             )
             if action == "attachment_download":
-                return _download(row)
+                return _download(row, request, is_staff=False)
             preview = _preview(row, is_staff=False)
         return _page(request, result, token=token, preview=preview)
     except (InvalidForm, SuspiciousOperation):
@@ -160,7 +167,7 @@ def staff(request):
         if action in {"attachment_preview", "attachment_download"}:
             row = services.staff_read(**common, attachment_id=fields["attachment_id"])
             if action == "attachment_download":
-                return _download(row)
+                return _download(row, request, is_staff=True)
             preview = _preview(row, is_staff=True)
         return _page(request, result, is_staff=True, preview=preview)
     except (InvalidForm, SuspiciousOperation):
@@ -197,6 +204,7 @@ def _inline(row):
     return response
 
 
+@links.protect
 @sensitive_variables("token", "row")
 def requester_file(request, attachment_id):
     if request.method not in {"GET", "HEAD"} or request.GET:
@@ -213,6 +221,7 @@ def requester_file(request, attachment_id):
         return denied("casework_store_unavailable", 503)
 
 
+@links.protect
 def staff_file(request, attachment_id):
     if request.method not in {"GET", "HEAD"} or request.GET:
         return denied("attachment_unavailable", 404)

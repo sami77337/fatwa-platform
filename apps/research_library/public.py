@@ -7,9 +7,11 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.library_preview import services as preview
 from apps.platform_recovery.integration import mutation_context
+from apps.upload_security import services as scan_receipts
 
 from . import services
 from .models import LibraryVersion
@@ -26,6 +28,17 @@ class Snapshot:
         if result is None:
             raise preview.PreviewUnavailable()
         return result
+
+    def search_records(self):
+        """Admit exact SEARCH before a catalog computes filters, facets or counts."""
+        from apps.data_privacy.services import PrivacyDenied
+
+        for row in self.records.values():
+            try:
+                privacy.public("LIBRARY_VERSION", row["version_id"], action="SEARCH")
+            except PrivacyDenied:
+                continue
+            yield row
 
     def locate(self, public_id, number):
         result = next(
@@ -51,6 +64,10 @@ class Snapshot:
         row = self.read(version_id)
         if usage not in {"PUBLIC_CONTENT", "DOWNLOAD", "OFFLINE", "EXPORT", "CITE"} or usage not in row["uses"]:
             raise preview.PreviewUnavailable()
+        privacy.public(
+            "LIBRARY_VERSION", version_id,
+            action="EXPORT" if usage in {"DOWNLOAD", "OFFLINE", "EXPORT"} else "READ",
+        )
         if usage != "PUBLIC_CONTENT":
             policy, release_values = self.authorizations[str(version_id)]
             values = {**release_values, "action": usage}
@@ -87,6 +104,7 @@ def _actor(event, row, directory, policy):
 
 
 @mutation_context
+@privacy.public_contextual
 @contextmanager
 def public_projection():
     try:
@@ -98,7 +116,7 @@ def public_projection():
         directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
         snapshot, actors = Snapshot(), []
         snapshot.deadlines.append(selected.valid_until)
-        with synthetic_queue_atomic():
+        with synthetic_queue_atomic(), scan_receipts.projection():
             # The scholarly graph mutex is always acquired before any case lock,
             # matching the existing public knowledge/collection composition.
             from django.db import connection
@@ -122,12 +140,17 @@ def public_projection():
                 if "REVOKE" in actions or "WITHDRAW" in actions:
                     continue
                 try:
+                    if row.blob_id:
+                        scan_receipts.require(row.blob_id, row.blob.size)
+                    privacy.public("LIBRARY_VERSION", row.pk)
                     approval = services._approval(row, "PUBLIC_METADATA")
                     release = actions["RELEASE"]
                     checked = []
                     for event in (actions["REVIEW"], approval, release):
                         actor, values = _actor(event, row, directory, policy)
                         checked.append((actor, values, row))
+                    privacy.staff("LIBRARY_VERSION", row.pk, provider=directory,
+                                  actor=checked[-1][0], action="PUBLISH")
                     actors.extend(checked)
                 except (cases.CaseConflict, KeyError):
                     continue

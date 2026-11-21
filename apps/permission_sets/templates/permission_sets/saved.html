@@ -1,0 +1,4 @@
+{% extends 'permission_sets/base.html' %}{% block content %}
+<section id="ps-saved" data-version="{{ result.saved.number }}" data-digest="{{ result.saved.digest }}"><h2>حُفظ التغيير وسجل التدقيق</h2><p>الإصدار {{ result.saved.number }} · {{ result.saved.note }}</p><p>تطبق الصلاحيات الحالية عند كل استعمال. تبقى الإصدارات السابقة محفوظة.</p>
+<form id="ps-open-saved" method="post">{% csrf_token %}<input type="hidden" name="action" value="ps_inspect"><input type="hidden" name="kind" value="{{ result.saved.kind }}"><input type="hidden" name="key" value="{{ result.saved.key }}"><button type="submit">عرض السجل الحالي</button></form></section>
+{% endblock %}

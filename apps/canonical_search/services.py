@@ -2,6 +2,9 @@
 
 import uuid
 from contextlib import contextmanager
+from datetime import datetime
+from functools import reduce
+from operator import and_, or_
 
 from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramWordSimilarity
 from django.db import connection
@@ -11,7 +14,7 @@ from django.db.models.functions import Least
 from apps.casework import services as cases
 from apps.platform_recovery.integration import mutation_service
 
-from . import policy, sources
+from . import policy, sources, taxonomy
 from .models import SearchDocument, SearchGeneration
 from .text import FUZZY_THRESHOLD, PROFILE, canonical, digest, normalize, query, text_digest
 
@@ -26,7 +29,13 @@ def _body(row):
     for field in row._meta.fields:
         if field.name not in excluded:
             value = getattr(row, field.attname)
-            result[field.attname] = str(value) if isinstance(value, uuid.UUID) else value
+            result[field.attname] = (
+                str(value)
+                if isinstance(value, uuid.UUID)
+                else value.isoformat()
+                if isinstance(value, datetime)
+                else value
+            )
     return result
 
 
@@ -51,6 +60,10 @@ def _generation(case, available):
     if row is None:
         return None, {}, "MISSING"
     _verify(row)
+    from apps.derived_maintenance.integration import cleared
+
+    if cleared("SEARCH_INDEX", row.pk):
+        return row, {}, "CLEARED"
     if row.profile != PROFILE or row.source_fingerprint != digest(sources.fingerprint([case.pk])):
         return row, {}, "STALE"
     documents = list(SearchDocument.objects.filter(generation=row).order_by("ordinal"))
@@ -147,6 +160,10 @@ def rebuild(
         ).first()
         if replay:
             _verify(replay)
+            from apps.derived_maintenance.integration import cleared
+
+            if cleared("SEARCH_INDEX", replay.pk):
+                raise cases.CaseConflict("search_request_cleared")
             if previous is None or previous.pk != replay.pk:
                 raise cases.CaseConflict("search_request_superseded")
             if (
@@ -160,8 +177,11 @@ def rebuild(
             raise cases.CaseConflict("search_rebuild_stale")
         if previous:
             _verify(previous)
+            from apps.derived_maintenance.integration import cleared
+
             if (
-                previous.source_fingerprint == source_fingerprint
+                not cleared("SEARCH_INDEX", previous.pk)
+                and previous.source_fingerprint == source_fingerprint
                 and previous.manifest == manifest
                 and previous.profile == PROFILE
             ):
@@ -233,7 +253,7 @@ def fuzzy_threshold():
                 )
 
 
-def _queryset(ids, value, mode):
+def _queryset(ids, value, mode, expansions=None):
     normalized, tokens = query(value, mode)
     rows = SearchDocument.objects.filter(pk__in=ids)
     if mode == "LITERAL":
@@ -241,7 +261,23 @@ def _queryset(ids, value, mode):
             score=Value(1.0, output_field=FloatField())
         )
     if mode == "FTS":
-        expression = SearchQuery(normalized, config="simple", search_type="plain")
+        expression = (
+            reduce(
+                and_,
+                [
+                    reduce(
+                        or_,
+                        [
+                            SearchQuery(term, config="simple", search_type="plain")
+                            for term in (token, *expansions.get(token, ()))
+                        ],
+                    )
+                    for token in tokens
+                ],
+            )
+            if expansions
+            else SearchQuery(normalized, config="simple", search_type="plain")
+        )
         return rows.filter(vector=expression).annotate(
             score=SearchRank("vector", expression, cover_density=True)
         )
@@ -251,19 +287,24 @@ def _queryset(ids, value, mode):
     return rows.annotate(score=scores[0] if len(scores) == 1 else Least(*scores))
 
 
-def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1):
+def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1,
+                      expansions=None, eligible_case_ids=None, taxonomy_info=None):
     query(value, mode)
+    if expansions is not None and mode != "FTS":
+        raise cases.CaseConflict("search_dictionary_fts_only")
     if kind not in KINDS or type(page) is not int or not 1 <= page <= MAX_RESULTS // PAGE_SIZE:
         raise cases.CaseConflict("search_query_invalid")
     allowed, cases_by_document, statuses = {}, {}, []
     for case in context.cases.values():
+        if eligible_case_ids is not None and str(case.pk) not in eligible_case_ids:
+            continue
         _, usable, status = _case_data(context, case)
         statuses.append(status)
         for identifier, source in usable.items():
             if kind == "ALL" or source.kind == kind:
                 allowed[identifier] = source
                 cases_by_document[identifier] = case
-    rows = _queryset(list(allowed), value, mode).order_by(
+    rows = _queryset(list(allowed), value, mode, expansions).order_by(
         "-score", "generation__case_id", "ordinal", "pk"
     )
     if mode == "FUZZY":
@@ -292,7 +333,7 @@ def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1):
                 "mode": mode,
             }
         )
-    return {
+    response = {
         "results": result,
         "total": len(matched),
         "limited": limited,
@@ -305,12 +346,25 @@ def search_in_context(context, *, value, mode="FTS", kind="ALL", page=1):
         "mode": mode,
         "kind": kind,
     }
+    if taxonomy_info is not None:
+        response["taxonomy"] = taxonomy_info
+    return response
 
 
 @mutation_service
-def search(*, value, mode="FTS", kind="ALL", page=1, scope="CASE", **base):
-    with policy.boundary(**base, action="SEARCH", scope=scope) as context:
-        return search_in_context(context, value=value, mode=mode, kind=kind, page=page)
+def search(*, value, mode="FTS", kind="ALL", page=1, scope="CASE",
+           taxonomy_version=None, taxonomy_node=None, taxonomy_children=False, **base):
+    # Taxonomy locks must precede canonical search locks to avoid inversion.
+    # Neither boundary releases its rights or source-version pins before return.
+    with taxonomy.reviewed_selector(
+        **base, version_id=taxonomy_version, node_id=taxonomy_node,
+        descendants=taxonomy_children,
+    ) as selection, policy.boundary(**base, action="SEARCH", scope=scope) as context:
+        eligible = selection.case_ids(context.cases) if selection else None
+        return search_in_context(
+            context, value=value, mode=mode, kind=kind, page=page,
+            eligible_case_ids=eligible, taxonomy_info=selection.info if selection else None,
+        )
 
 
 def open_in_context(context, *, case_id, generation_id, document_id):

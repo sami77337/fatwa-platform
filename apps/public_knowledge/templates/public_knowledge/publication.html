@@ -9,6 +9,7 @@
 {% if edition.question %}<section><h2>السؤال المنشور</h2><p class="body">{{ edition.question|linebreaksbr }}</p></section>{% endif %}
 <section><h2>الجواب{% if edition.language != 'ar' %} — الترجمة المراجعة{% endif %}</h2><div class="body" itemprop="text" id="public-answer">{{ edition.body|linebreaksbr }}</div></section></article>
 {% if recordings_url %}<p><a href="{{ recordings_url }}">فتح التسجيل والتفريغ المراجع</a></p>{% endif %}
+{% if reader_tools_url %}<p><a href="{{ reader_tools_url }}">حفظ ومشاركة وطباعة الجواب</a></p>{% endif %}
 {% if edition.topics %}<section><h2>الموضوعات</h2>{% for topic in edition.topics %}<p><a href="{{ topic.url }}">{{ topic.title }}</a></p>{% endfor %}</section>{% endif %}
 <section><h2>الإحالات المصرح بها</h2>{% for reference in edition.references %}<article><h3><a href="{{ reference.url }}">{{ reference.heading_title }}</a></h3><p>{{ reference.work_title }} · {{ reference.edition_title }} · الجزء {{ reference.printed_part }} · الصفحة {{ reference.printed_page }}</p></article>{% empty %}<p>لا توجد إحالات متاحة في هذه المعاينة.</p>{% endfor %}</section>
 <section><h2>فتاوى بعلاقات بشرية موثقة</h2>{% for target in related %}<p>{{ target.label }}: <a href="{{ target.url }}">{{ target.title }}</a></p>{% empty %}<p>لا توجد علاقات فتاوى متاحة حاليًا.</p>{% endfor %}</section>

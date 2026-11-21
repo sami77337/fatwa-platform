@@ -6,6 +6,8 @@ from django.conf import settings
 
 def connected_navigation(request):
     return {
+        "reference_lookup_enabled": apps.is_installed("apps.library_preview")
+        and getattr(settings, "FATWA_REFERENCE_LOOKUP_ENABLED", False) is True,
         "precise_citations_navigation": apps.is_installed("apps.precise_citations")
         and getattr(settings, "FATWA_PRECISE_CITATIONS_ENABLED", False) is True,
         "public_answer_media_navigation": apps.is_installed("apps.public_answer_media")

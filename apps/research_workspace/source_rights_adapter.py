@@ -6,13 +6,14 @@ checks. Missing app/configuration/registration/review/usage is closed by default
 
 from django.apps import apps
 from django.db import connection
+from hashlib import sha256
 
-from apps.casework.models import Case
+from apps.casework.models import AnswerRevision, Case
 from apps.knowledge_links.models import KnowledgeRevision
 from apps.reference.models import ReferenceEdition
 from apps.transcript_case_links.models import TranscriptLink
 
-from .rights import ResearchRights
+from .rights import ResearchRights, Resource
 
 
 class SourceRightsAdapter(ResearchRights):
@@ -24,6 +25,24 @@ class SourceRightsAdapter(ResearchRights):
     def permits(self, *, provider_id, subject_id, auth_epoch, case_ref, action, resource):
         if not connection.in_atomic_block:
             return False
+        # A canonical approved answer is owned by Casework, not the external
+        # TOC/transcript SourceRights registry. This does not bypass the
+        # independent ResearchRights, privacy, case-owner or identity guards.
+        if resource.kind == "APPROVED_FATWA":
+            if action not in {"DISCOVER", "READ_TEXT"}:
+                return False
+            case = Case.objects.filter(public_ref=case_ref).first()
+            if case is None or case.stage != "ANSWERED" or not case.approved_answer_id:
+                return False
+            answer = AnswerRevision.objects.filter(
+                pk=case.approved_answer_id, case=case,
+                evidence_version=case.evidence_version,
+            ).first()
+            return (
+                answer is not None
+                and sha256(answer.text.encode("utf-8")).hexdigest() == answer.text_sha256
+                and resource == Resource("APPROVED_FATWA", str(answer.pk), answer.text_sha256)
+            )
         if resource.kind in {"ATTACHMENT", "ANSWER_MEDIA"}:
             return (
                 action in {"DISCOVER", "READ_MEDIA"}

@@ -32,13 +32,25 @@ class ContinuationReceiptTests(unittest.TestCase):
         }
         for group in plan["groups"]:
             paths.add(Path(group["contract"]))
-            for name in [*group["service_test_classes"], group["browser"]["test_class"]]:
+            for name in [
+                *group["service_test_classes"],
+                *(browser["test_class"] for browser in receipts.group_browser_journeys(group)),
+            ]:
                 paths.add(Path(name.rsplit(".", 1)[0].replace(".", "/") + ".py"))
         for path in paths:
             (folder / path).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(REPOSITORY / path, folder / path)
         self.enterContext(chdir(folder))
-        self.enterContext(patch.dict(os.environ, {"FATWA_BROWSER_SANDBOX": "1"}))
+        self.enterContext(
+            patch.dict(
+                os.environ,
+                {
+                    "FATWA_BROWSER_SANDBOX": "1",
+                    "GITHUB_RUN_ID": "receipt-fixture-run",
+                    "GITHUB_RUN_ATTEMPT": "1",
+                },
+            )
+        )
 
         def git(command, **kwargs):
             if command == ["git", "rev-parse", "HEAD"]:
@@ -102,6 +114,59 @@ class ContinuationReceiptTests(unittest.TestCase):
             }
         self.recovery_path = Path(".local/qa/functional-continuation/recovery-pg17.json")
         self.json(self.recovery_path, self.recovery)
+        # Deliberate temporary verifier inputs; these never leave this fixture
+        # or count as actual scanner execution evidence.
+        from apps.upload_security.acceptance import BENIGN, EICAR
+
+        scanner = {"mode": "CONFIGURED", "engine_version": "verifier-fixture-version"}
+        self.engine = {
+            "schema": "fatwa.upload-security.clamav-acceptance.v1",
+            "status": "PASSED",
+            "real_engine_verified": True,
+            "tested_sha": HEAD,
+            "failure_stage": None,
+            "production_changed": False,
+            "domain_rows_written": False,
+            "main_merged": False,
+            "deployment": "NOT_DEPLOYED",
+            "workflow_run_id": "receipt-fixture-run",
+            "workflow_run_attempt": "1",
+            "scanner": scanner,
+            "executable_sha256": "e" * 64,
+            "signature_source_reported_by_operator": "https://database.clamav.net",
+            "profile": ["--official-db-only=yes", "--bytecode-unsigned=no"],
+            "databases": [
+                {"name": name, "sha256": "d" * 64, "size": 512, "declared_signatures": 1}
+                for name in ("main.cvd", "daily.cvd", "bytecode.cvd")
+            ],
+            "samples": [
+                {
+                    "name": name,
+                    "sha256": receipts.sha(raw),
+                    "size": len(raw),
+                    "expected": status,
+                    "status": status,
+                    "complete": True,
+                    "scanned_files": 1,
+                    "loaded_signatures": 1,
+                    "spec": scanner,
+                }
+                for name, raw, status in (
+                    ("BENIGN_SYNTHETIC", BENIGN, "CLEAN"),
+                    ("EICAR_STANDARD_68_BYTES", EICAR, "BLOCKED"),
+                )
+            ],
+            "reports": [
+                {
+                    "return_code": code,
+                    "report": "verifier fixture",
+                    "report_sha256": receipts.sha(b"verifier fixture"),
+                }
+                for code in (0, 1)
+            ],
+        }
+        self.engine_path = Path(".local/qa/upload-security-engine/result.json")
+        self.json(self.engine_path, self.engine)
         for _, path, schema in (*receipts.PRIOR_BROWSER_JOURNEYS, *receipts.NEW_BROWSER_JOURNEYS):
             if path is None:
                 continue
@@ -159,7 +224,7 @@ class ContinuationReceiptTests(unittest.TestCase):
             method = identity.rsplit(".", 1)[1]
             # Real Django startup/HTTP output can interrupt the first status line.
             detail = (
-                "Found 20 test(s).\nSystem check identified no issues.\nok" if index == 0 else "ok"
+                "Found 55 test(s).\nSystem check identified no issues.\nok" if index == 0 else "ok"
             )
             lines.append(f"{method} ({identity}) ... {detail}")
         self.log("browser", "\n".join(lines) + f"\nRan {len(identities)} tests in 0.001s\n\nOK\n")
@@ -171,22 +236,48 @@ class ContinuationReceiptTests(unittest.TestCase):
 
     def test_full_inventory_records_all_prior_and_additional_evidence(self):
         result = self.receipt()
-        self.assertEqual(result["protected_browser_tests"], 20)
+        self.assertEqual(result["protected_browser_tests"], 55)
         self.assertEqual(
-            (result["prior_browser_journeys"], result["additional_browser_journeys"]), (8, 12)
+            (result["prior_browser_journeys"], result["additional_browser_journeys"]), (8, 47)
         )
         self.assertEqual(
-            (result["browser_json_proofs"], result["browser_log_only_proofs"]), (19, 1)
+            (result["browser_json_proofs"], result["browser_log_only_proofs"]), (54, 1)
         )
-        self.assertEqual(len(result["browser_proofs"]), 20)
+        self.assertEqual(len(result["browser_proofs"]), 55)
         recovery = result["encrypted_recovery_proof"]
-        self.assertEqual(recovery["total_nonempty_tables"], 47)
+        self.assertEqual(recovery["total_nonempty_tables"], 108)
         self.assertEqual(
-            (recovery["prior_nonempty_table_count"], recovery["new_nonempty_table_count"]), (22, 25)
+            (recovery["prior_nonempty_table_count"], recovery["new_nonempty_table_count"]), (22, 86)
         )
-        self.assertEqual(len(recovery["restored_workflow_results"]), 11)
-        self.assertEqual(recovery["fresh_process_denied_reads"], 37)
-        self.assertEqual(result["completed_additional_original_owner_points"], 35)
+        self.assertEqual(len(recovery["restored_workflow_results"]), 42)
+        self.assertEqual(recovery["fresh_process_denied_reads"], 319)
+        self.assertEqual(result["completed_additional_original_owner_points"], 107)
+        self.assertEqual(result["actual_upload_engine_proof"]["tested_sha"], HEAD)
+
+    def test_synthetic_missing_stale_or_incomplete_engine_cannot_certify_uploads(self):
+        self.engine_path.unlink()
+        with self.assertRaisesRegex(RuntimeError, "Actual upload engine evidence is absent"):
+            receipts.actual_upload_engine_proof(HEAD)
+        for changes, message in (
+            ({"status": "UNAVAILABLE"}, "did not pass"),
+            ({"real_engine_verified": False}, "did not pass"),
+            ({"tested_sha": "a" * 40}, "did not pass"),
+            ({"workflow_run_id": "other-run"}, "another workflow"),
+            ({"scanner": {"mode": "SYNTHETIC", "engine_version": "fixture"}}, "provenance"),
+            ({"databases": self.engine["databases"][:2]}, "snapshot is incomplete"),
+            ({"samples": self.engine["samples"][:1]}, "samples are incomplete"),
+            ({"reports": []}, "diagnostics"),
+        ):
+            self.json(self.engine_path, {**self.engine, **changes})
+            with self.subTest(changes=changes), self.assertRaisesRegex(RuntimeError, message):
+                receipts.actual_upload_engine_proof(HEAD)
+        invalid = copy.deepcopy(self.engine)
+        invalid["samples"][1]["status"] = "CLEAN"
+        self.json(self.engine_path, invalid)
+        with self.assertRaisesRegex(RuntimeError, "benign and EICAR"):
+            receipts.actual_upload_engine_proof(HEAD)
+        self.json(self.engine_path, self.engine)
+        receipts.actual_upload_engine_proof(HEAD)
 
     def test_missing_or_replaced_journey_cannot_pass_despite_all_json_proofs(self):
         identities = [
@@ -194,7 +285,7 @@ class ContinuationReceiptTests(unittest.TestCase):
         ]
         without_audio = [identity for identity in identities if "BrowserAudioTests" not in identity]
         for observed, reason in (
-            (without_audio, "Exactly 20"),
+            (without_audio, "Exactly 55"),
             (without_audio + ["unrelated.tests.ExampleTests.test_other"], "omitted or replaced"),
         ):
             with self.subTest(reason=reason):
@@ -210,6 +301,18 @@ class ContinuationReceiptTests(unittest.TestCase):
             "public_answer_media_transcriptaction",
             "precise_citations_citationanchor",
             "case_attachments_caseattachment",
+            "answer_media_answerpart",
+            "identity_registry_identitymembership",
+            "publication_schedules_scheduleoutcome",
+            "publication_destinations_destinationrecord",
+            "publication_destinations_destinationversion",
+            "publication_destinations_destinationevent",
+            "development_taxonomy_caseclassification",
+            "canonical_search_shadowcomparison",
+            "public_teaching_teachingaction",
+            "composite_delivery_compositeretry",
+            "arabic_search_eval_canonicalbenchmarkrun",
+            "arabic_search_eval_canonicalbenchmarkdecision",
         ):
             for operation in ("omit", "replace", "empty"):
                 with self.subTest(name=name, operation=operation):
@@ -222,7 +325,7 @@ class ContinuationReceiptTests(unittest.TestCase):
                             recovery["tables"][name + "_unrelated"] = previous
                     self.json(self.recovery_path, recovery)
                     with self.assertRaisesRegex(
-                        RuntimeError, "47 prior and new|empty prior or new"
+                        RuntimeError, "108 prior and new|empty prior or new"
                     ):
                         self.receipt()
 
@@ -251,21 +354,26 @@ class ContinuationReceiptTests(unittest.TestCase):
                     else:
                         results[helper]["positive_reads_after_denial"] = False
                     self.json(self.recovery_path, recovery)
-                    with self.assertRaisesRegex(RuntimeError, "eleven fresh-process|denial proof"):
+                    with self.assertRaisesRegex(
+                        RuntimeError, "forty-two fresh-process|denial proof"
+                    ):
                         self.receipt()
         recovery = copy.deepcopy(self.recovery)
         recovery["restored_workflow_results"].pop("apps.public_knowledge.recovery_support")
         self.json(self.recovery_path, recovery)
-        with self.assertRaisesRegex(RuntimeError, "eleven fresh-process"):
+        with self.assertRaisesRegex(RuntimeError, "forty-two fresh-process"):
             self.receipt()
 
-    def test_missing_or_stale_prior_and_new_proofs_cannot_pass_all_20_tests(self):
+    def test_missing_or_stale_prior_and_new_proofs_cannot_pass_all_55_tests(self):
         for path in (
             ".local/qa/case-assignments/browser/assignments.json",
             ".local/qa/v6-casework/browser/evidence.json",
             ".local/qa/functional-continuation/library-browser/result.json",
             ".local/qa/functional-continuation/citations-browser/result.json",
             ".local/qa/functional-continuation/search-recording-browser/result.json",
+            ".local/qa/functional-continuation/identities-browser/result.json",
+            ".local/qa/functional-continuation/taxonomy-browser/result.json",
+            ".local/qa/functional-continuation/public-teaching-browser/result.json",
         ):
             for operation in ("omit", "stale"):
                 with self.subTest(path=path, operation=operation):
@@ -280,6 +388,14 @@ class ContinuationReceiptTests(unittest.TestCase):
                             self.receipt()
                     finally:
                         artifact.write_bytes(raw)
+
+    def test_missing_actual_page_error_evidence_cannot_be_substituted_by_console_key(self):
+        path = Path(".local/qa/functional-continuation/citations-browser/result.json")
+        proof = json.loads(path.read_text())
+        proof["console_errors"] = proof.pop("page_errors")
+        self.json(path, proof)
+        with self.assertRaisesRegex(RuntimeError, "Browser error or unexpected external request"):
+            self.receipt()
 
     def test_service_only_run_remains_pending_with_zero_browser_credit(self):
         self.execution.update(status="SERVICE_HTTP_RECOVERY_ONLY", browser_requested=False)

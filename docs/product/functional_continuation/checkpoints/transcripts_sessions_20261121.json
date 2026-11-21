@@ -1,0 +1,103 @@
+{
+  "schema": "fatwa.resumed-functional-checkpoint.v1",
+  "date": "2026-11-21",
+  "pr": "https://github.com/sami77337/fatwa-platform/pull/244",
+  "parent_remote_sha": "b9d87e255d3dc69e51493e433b43288ff195b039",
+  "code_source_sha": "07c0cc94f6b6e015b3e99bbb83236fce02303f3a",
+  "certification": "PENDING_EXACT_HEAD_SERVICE_BROWSER_ENCRYPTED_RESTORE_RECEIPT",
+  "candidate_count": 92,
+  "functional_groups": 35,
+  "required_browser_identities": 45,
+  "discovered_service_tests": 1128,
+  "required_nonempty_tables": 84,
+  "required_fresh_helpers": 33,
+  "required_current_access_denials": 206,
+  "main_merged": false,
+  "deployment": "NOT_DEPLOYED",
+  "focused_observations": [
+    {
+      "kind": "pilot-session-fix",
+      "postgres_major": 17,
+      "source_local_commit": "fb86165b1c8977c623ffb48acd5fc479458c664e",
+      "reported_tests": 25,
+      "status": "PASS_FOCUSED_ONLY",
+      "v11_startup_smoke": true,
+      "log_name": "pilot-session-fixed-pg17.log",
+      "sha256": "27d68b5e2c0defb2126132c6bf17d90d9584c0f3193848f76415df685c709d5a",
+      "size": 5369
+    },
+    {
+      "kind": "pilot-session-fix",
+      "postgres_major": 18,
+      "source_local_commit": "fb86165b1c8977c623ffb48acd5fc479458c664e",
+      "reported_tests": 25,
+      "status": "PASS_FOCUSED_ONLY",
+      "v11_startup_smoke": true,
+      "log_name": "pilot-session-fixed-pg18.log",
+      "sha256": "fe492b9f29f55211cd1214bbda23017dc6b218c55db4c268c25c1bc37069da2e",
+      "size": 5368
+    },
+    {
+      "kind": "transcript-coordination-citation-integration",
+      "postgres_major": 17,
+      "source_local_commit": "c14833bbe778a33bb27cd763d511eb1d5a74caee",
+      "reported_tests": 53,
+      "status": "PASS_FOCUSED_ONLY",
+      "v11_startup_smoke": false,
+      "log_name": "transcripts-integrated-pg17.log",
+      "sha256": "42ad0c9296f5a2634914ccef3335b365283ec68d3561c97ec5e574744d90ae10",
+      "size": 12068
+    },
+    {
+      "kind": "transcript-coordination-citation-integration",
+      "postgres_major": 18,
+      "source_local_commit": "c14833bbe778a33bb27cd763d511eb1d5a74caee",
+      "reported_tests": 53,
+      "status": "PASS_FOCUSED_ONLY",
+      "v11_startup_smoke": false,
+      "log_name": "transcripts-integrated-pg18.log",
+      "sha256": "f3f20e3caa2a4d204b1846f6c8b84f4b98faa2ff432662b1180635d948116b12",
+      "size": 12067
+    }
+  ],
+  "preserved_failures": [
+    {
+      "source_sha": "b9d87e255d3dc69e51493e433b43288ff195b039",
+      "runs": [
+        44898331568,
+        44898331629,
+        44898331587,
+        44898331664
+      ],
+      "cause": "Pilot fixture compared a browser-expiry-bounded identity to an uncapped trusted identity; both read admission and return signing now retain the shorter deadline with all other claims unchanged.",
+      "status": "FIXED_FOCUSED_NOT_YET_HOSTED"
+    },
+    {
+      "source_sha": "b9d87e255d3dc69e51493e433b43288ff195b039",
+      "runs": [
+        44898331869,
+        44898331588,
+        44898331566
+      ],
+      "cause": "Existing exact middleware inventory did not include the new header-only PrivateMediaResponses wrapper. Expected inventory and default-closed settings assertions are updated and included in the functional aggregate.",
+      "status": "FIXED_FOCUSED_NOT_YET_HOSTED"
+    },
+    {
+      "source_local_commit": "8726c15fb44133fa3cbfd7e375c736330d421a85",
+      "tests": 25,
+      "passed": 24,
+      "failed": 1,
+      "cause": "The first pilot comparison fix exposed the remaining uncapped identity comparison in return-permission signing; retained here rather than reported as a passing run."
+    }
+  ],
+  "partial_saved_work": [
+    {
+      "agent_source_commit": "8e968d9ad54506f428e1885bc745f63674441a0c",
+      "root_commit": "07c0cc9",
+      "module": "apps.data_privacy",
+      "status": "LEDGER_CHECKPOINT_ONLY_NOT_INSTALLED_OR_COUNTED",
+      "focused_tests_per_postgres_major": 11,
+      "missing": "Native classification flows, coverage of all read/search/export/publication/AI entry points, integrated recovery and browser evidence remain in progress."
+    }
+  ]
+}

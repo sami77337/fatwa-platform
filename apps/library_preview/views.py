@@ -10,9 +10,11 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from apps.public_answer_media.navigation import publication_recordings_url
+from apps.public_reader_tools.navigation import publication_tools_url
 
-from . import services
+from . import fatwa_references, services
 from .guard import safe_read
+from .navigation import teaching_catalog_url
 
 
 def _knowledge_url(publication_id=None):
@@ -78,6 +80,8 @@ def index(request):
         row["url"] = reverse("library_preview:detail", args=[row["id"]]) + "?" + _query(chosen)
     result.update(_navigation(chosen))
     result["knowledge_url"] = _knowledge_url()
+    result["teaching_url"] = teaching_catalog_url()
+    result["reference_lookup_enabled"] = fatwa_references.enabled()
     result["previous_url"] = "?" + _query(chosen, page=chosen["page"] - 1)
     result["next_url"] = "?" + _query(chosen, page=chosen["page"] + 1)
     return render(request, "library_preview/index.html", result)
@@ -86,7 +90,14 @@ def index(request):
 @safe_read
 def detail(request, publication_id):
     chosen = _filters(request)
+    if fatwa_references.optional_grant(publication_id) is not None:
+        with fatwa_references.projection(publication_id=publication_id) as result:
+            return _detail(request, publication_id, chosen, **result)
     edition = services.read(str(publication_id))
+    return _detail(request, publication_id, chosen, edition=edition)
+
+
+def _detail(request, publication_id, chosen, *, edition, fatwa_reference=""):
     for source in edition["references"] + edition["relations"]["references"]:
         source["url"] = _source_url(publication_id, source["position"], chosen)
     return render(
@@ -94,11 +105,21 @@ def detail(request, publication_id):
         "library_preview/detail.html",
         {
             "edition": edition,
+            "fatwa_reference": fatwa_reference,
             "knowledge_url": _knowledge_url(publication_id),
             "recordings_url": publication_recordings_url(publication_id),
+            "reader_tools_url": publication_tools_url(publication_id),
             **_navigation(chosen),
         },
     )
+
+
+@safe_read
+def by_reference(request):
+    if set(request.GET) != {"ref"} or len(request.GET.getlist("ref")) != 1:
+        raise services.InvalidFilter()
+    with fatwa_references.projection(reference=request.GET["ref"]) as result:
+        return _detail(request, result["edition"]["id"], services.filters(), **result)
 
 
 @safe_read

@@ -37,15 +37,16 @@ FEATURES = {
 
 
 class FixtureAuthority(PublicKnowledgeAuthority):
-    def __init__(self, ref):
+    def __init__(self, ref, *, provider_id="synthetic-publication-directory"):
         self.ref, self.denied = ref, set()
+        self.provider_id = provider_id
 
     def projection_epoch(self):
-        return repr((self.ref, sorted(self.denied)))
+        return repr((self.provider_id, self.ref, sorted(self.denied)))
 
     def permits(self, **values):
         return (
-            values["provider_id"] == "synthetic-publication-directory"
+            values["provider_id"] == self.provider_id
             and values["subject_id"] in {"editor", "other", "publisher"}
             and values["auth_epoch"] == "epoch-1"
             and values["case_ref"] == self.ref
@@ -58,7 +59,9 @@ class FixtureAuthority(PublicKnowledgeAuthority):
 class CurationFixture(PreviewFixture):
     def setUp(self):
         super().setUp()
-        self.curation_authority = FixtureAuthority(self.receipt["public_ref"])
+        self.curation_authority = FixtureAuthority(
+            self.receipt["public_ref"], provider_id=self.directory.provider_id
+        )
         configured = override_settings(
             FATWA_PUBLIC_KNOWLEDGE_AUTHORITY=self.curation_authority,
             FATWA_CASEWORK_IDENTITY_PROVIDER=self.directory,

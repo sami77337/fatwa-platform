@@ -65,6 +65,7 @@ def stylesheet(request):
 def _page(request, provider, identity, **options):
     rows = services.list_cases(
         subject_id=identity.subject_id, provider=provider, synthetic_fixtures_only=True,
+        search=bool(options.get("query", "").strip()),
     )
     if apps.is_installed("apps.case_lifecycle") and getattr(settings, "FATWA_CASE_LIFECYCLE_ENABLED", False) is True:
         from apps.case_lifecycle.services import queue_projection

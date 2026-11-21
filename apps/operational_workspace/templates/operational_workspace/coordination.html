@@ -1,0 +1,29 @@
+{% extends "operational_workspace/base.html" %}
+{% block content %}
+<p id="ops-actor">المستخدم الحالي: <bdi>{{ coordination.subject }}</bdi> — <bdi>{{ coordination.role }}</bdi></p>
+<h2>الأولوية والتعيين — <bdi>{{ coordination.public_ref }}</bdi></h2>
+<p>تسجل الإجراءات باسمك الحقيقي مع سببها. تعيين المفتي يتطلب صلاحية سابقة له على القضية.</p>
+{% if coordination.saved %}<p role="status" id="ops-coordination-saved">حُفظ الإجراء وسجله.</p>{% endif %}
+<section id="ops-current-coordination"><h3>الحالة الحالية</h3>
+<p id="ops-primary">المفتي المسؤول: <bdi>{{ coordination.assignment.primary_subject|default:"طابور مشترك" }}</bdi></p>
+<p id="ops-priority">الأولوية: {{ coordination.priority.label }}</p></section>
+{% if coordination.priority_options %}<form id="ops-priority-form" method="post" action="/casework/operations/">
+{% include "operational_workspace/coordination_pins.html" %}
+<input type="hidden" name="action" value="coordination_priority"><input type="hidden" name="version" value="{{ coordination.priority.version }}"><input type="hidden" name="policy_sha256" value="{{ coordination.policy_sha256 }}">
+<label>الأولوية<select name="priority" required>{% for option in coordination.priority_options %}<option value="{{ option.value }}"{% if option.value == coordination.priority.value %} selected{% endif %}>{{ option.label }}</option>{% endfor %}</select></label>
+<label>سبب تحديد الأولوية<textarea name="reason" required maxlength="2000"></textarea></label>
+<label><input type="checkbox" name="confirmed" value="yes" required>أؤكد اختيار الأولوية وسببها</label><button>حفظ الأولوية</button></form>{% endif %}
+<section id="ops-assignment-targets"><h3>تعيين مفتي مخول</h3>
+{% for target in coordination.targets %}<form method="post" action="/casework/operations/" data-target="{{ target.subject }}">
+{% include "operational_workspace/coordination_pins.html" %}
+<input type="hidden" name="action" value="coordination_set"><input type="hidden" name="version" value="{{ coordination.assignment.version }}"><input type="hidden" name="target_subject" value="{{ target.subject }}"><input type="hidden" name="target_epoch" value="{{ target.epoch }}">
+<p>المفتي: <bdi>{{ target.subject }}</bdi></p><label>سبب التعيين<textarea name="reason" required maxlength="2000"></textarea></label><label><input type="checkbox" name="confirmed" value="yes" required>أؤكد هذا التعيين</label><button>تعيين {{ target.subject }}</button></form>
+{% empty %}<p>لا خيارات تعيين مخولة حاليًا.</p>{% endfor %}</section>
+{% if coordination.can_clear %}<form id="ops-clear-assignment" method="post" action="/casework/operations/">
+{% include "operational_workspace/coordination_pins.html" %}
+<input type="hidden" name="action" value="coordination_clear"><input type="hidden" name="version" value="{{ coordination.assignment.version }}"><input type="hidden" name="target_subject" value="{{ coordination.assignment.primary_subject }}"><input type="hidden" name="target_epoch" value="">
+<label>سبب العودة إلى الطابور المشترك<textarea name="reason" required maxlength="2000"></textarea></label><label><input type="checkbox" name="confirmed" value="yes" required>أؤكد إنهاء التعيين الحالي</label><button>إعادة إلى الطابور المشترك</button></form>{% endif %}
+<section id="ops-priority-history"><h3>تاريخ الأولوية</h3>{% for row in coordination.priority.history %}<article><p>{{ row.sequence }} — {{ row.label }} — <bdi>{{ row.actor }}</bdi> (<bdi>{{ row.actor_role }}</bdi>) — {{ row.created_at }}</p><p class="original">{{ row.reason }}</p></article>{% empty %}<p>لا أولوية بشرية مسجلة.</p>{% endfor %}</section>
+<section id="ops-assignment-history"><h3>تاريخ التعيين</h3>{% for row in coordination.assignment.history %}<article><p>{{ row.sequence }} — {{ row.label }} — <bdi>{{ row.actor }}</bdi> (<bdi>{{ row.actor_role }}</bdi>) — <bdi>{{ row.target }}</bdi> — {{ row.created_at }}</p><p class="original">{{ row.reason }}</p></article>{% empty %}<p>لا إجراءات تعيين مسجلة.</p>{% endfor %}</section>
+<form id="ops-coordination-back" method="post" action="/casework/operations/">{% csrf_token %}<button name="action" value="queue">العودة إلى قائمة التشغيل</button></form>
+{% endblock %}

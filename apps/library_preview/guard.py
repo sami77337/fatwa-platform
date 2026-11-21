@@ -39,6 +39,8 @@ def private(response):
         policy = response["Content-Security-Policy"]
         if "script-src" not in policy:
             response["Content-Security-Policy"] = policy + "; script-src 'self'"
+    if getattr(response, "_allow_library_reader_tools", False) is True:
+        response["Content-Security-Policy"] += "; script-src 'self'; connect-src 'self'"
     response["X-Frame-Options"] = "DENY"
     return response
 

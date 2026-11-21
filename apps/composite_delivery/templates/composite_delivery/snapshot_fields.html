@@ -2,3 +2,4 @@
 <input type="hidden" name="revision" value="{{ desk.revision }}">
 <input type="hidden" name="evidence_version" value="{{ desk.evidence_version }}">
 <input type="hidden" name="plan_sha256" value="{{ desk.plan_sha256 }}">
+{% if desk.selection_mode == "TEXT_ONLY" %}<input type="hidden" name="selection_mode" value="TEXT_ONLY">{% endif %}

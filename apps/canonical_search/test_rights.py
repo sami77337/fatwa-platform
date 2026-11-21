@@ -12,7 +12,7 @@ from apps.source_rights import services as rights
 from apps.source_rights.models import RightsRevision
 from apps.source_rights.tests import Authority as RightsAuthority
 
-from . import policy
+from . import matches, policy
 from .test_support import FEATURES, SearchFixture
 
 
@@ -50,6 +50,29 @@ class CanonicalSearchRightsTests(SearchFixture, TransactionTestCase):
             note="Explicit synthetic source review",
         )
         return proposal
+
+    def test_matching_passage_cannot_outlive_independent_source_read_grant(self):
+        proposal = self.allow()
+        self.build()
+        selected = self.search("لاختبار حفظ النص", kind="TRANSCRIPT")["results"][0]
+        arguments = dict(
+            **self.common,
+            generation_id=selected["generation_id"],
+            document_id=selected["document_id"],
+            value="لاختبار حفظ النص",
+            mode="FTS",
+        )
+        opened = matches.open_match(**arguments)
+        self.assertTrue(opened["navigation"]["matches"])
+        rights.review(
+            **{**self.common, "subject_id": "publisher"},
+            revision_id=proposal["id"],
+            action="REVOKE",
+            confirmed=True,
+            note="Independently reviewed source read permission withdrawn",
+        )
+        with self.assertRaises(cases.CaseConflict):
+            matches.open_match(**arguments)
 
     def test_broad_custom_policy_cannot_bypass_current_independently_reviewed_ledger(self):
         self.build()

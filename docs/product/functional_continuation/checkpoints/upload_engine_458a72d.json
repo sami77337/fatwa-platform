@@ -1,0 +1,152 @@
+{
+  "schema": "fatwa.upload-security.engine-checkpoint.v1",
+  "tested_sha": "458a72de5580fee9771b08abd97fb44bd68cde79",
+  "run_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44910874671",
+  "job_url": "https://github.com/sami77337/fatwa-platform/actions/runs/44910874671/job/136866209071",
+  "artifact_id": 14710141301,
+  "archive_sha256": "9f76e7897d6f645e27e21e03546f8ca2ab41fddff993db462c81ba9fcf48f7cb",
+  "exact_engine_result": {
+    "daily_age_limit_days": 2,
+    "databases": [
+      {
+        "created_at": "2025-09-11T12:29:19+00:00",
+        "declared_signatures": 80,
+        "name": "bytecode.cvd",
+        "sha256": "6d4aa01f219e988060fc419f495d07f27e0cdf1a2cccc065971da922c76f7ffb",
+        "size": 281702,
+        "version": 339
+      },
+      {
+        "created_at": "2026-11-21T06:27:04+00:00",
+        "declared_signatures": 355845,
+        "name": "daily.cvd",
+        "sha256": "698abcd56b441205bff91ea9579f7583f7d8b63aa5a367ff553825f6a45a26be",
+        "size": 23446798,
+        "version": 28190
+      },
+      {
+        "created_at": "2025-12-16T23:18:22+00:00",
+        "declared_signatures": 3287027,
+        "name": "main.cvd",
+        "sha256": "0b2182d229f46981ec8f535382222f7c9dfdd656b250ad47988b910a8d302365",
+        "size": 89072577,
+        "version": 63
+      }
+    ],
+    "deployment": "NOT_DEPLOYED",
+    "domain_rows_written": false,
+    "executable_sha256": "e0ac3cbaaa32d26834c0b45e08b08b5cac36c58bc50e30cff2fe39f3c17b3266",
+    "failure_stage": null,
+    "main_merged": false,
+    "observed_at": "2026-11-21T13:52:05.833023+00:00",
+    "production_changed": false,
+    "profile": [
+      "--stdout",
+      "--official-db-only=yes",
+      "--bytecode=yes",
+      "--bytecode-unsigned=no",
+      "--heuristic-alerts=yes",
+      "--alert-broken=yes",
+      "--alert-encrypted=yes",
+      "--alert-exceeds-max=yes",
+      "--scan-archive=yes",
+      "--scan-pdf=yes",
+      "--scan-image=yes",
+      "--scan-image-fuzzy-hash=yes",
+      "--scan-pe=yes",
+      "--scan-elf=yes",
+      "--scan-ole2=yes",
+      "--scan-html=yes",
+      "--scan-swf=yes",
+      "--disable-cache",
+      "--max-scantime=0",
+      "--max-filesize=192000",
+      "--max-scansize=768000",
+      "--pcre-max-filesize=768000",
+      "--max-files=64",
+      "--max-recursion=16",
+      "--follow-dir-symlinks=0",
+      "--follow-file-symlinks=0"
+    ],
+    "real_engine_verified": true,
+    "reports": [
+      {
+        "report": "/tmp/fatwa-scan-ut_vjodm/upload.original: OK\n\n----------- SCAN SUMMARY -----------\nKnown viruses: 3628232\nEngine version: 1.5.4\nScanned directories: 0\nScanned files: 1\nInfected files: 0\nData scanned: 151 B\nData read: 76 B (ratio 1.99:1)\nTime: 7.219 sec (0 m 7 s)\nStart Date: 2026:11:21 13:52:06\nEnd Date:   2026:11:21 13:52:13\n",
+        "report_sha256": "1df5e0dae7f25ba565bd3a4bed20d694192008287c3d6207801ed5b38a843b08",
+        "return_code": 0
+      },
+      {
+        "report": "/tmp/fatwa-scan-s9hl2pfd/upload.original: Eicar-Test-Signature FOUND\n\n----------- SCAN SUMMARY -----------\nKnown viruses: 3628232\nEngine version: 1.5.4\nScanned directories: 0\nScanned files: 1\nInfected files: 1\nData scanned: 68 B\nData read: 68 B (ratio 1.00:1)\nTime: 7.231 sec (0 m 7 s)\nStart Date: 2026:11:21 13:52:13\nEnd Date:   2026:11:21 13:52:20\n",
+        "report_sha256": "17637f4c4ed2806f15eb07e1f1a7b12cffcf994f44cda9fb25957a0f766cb04f",
+        "return_code": 1
+      }
+    ],
+    "samples": [
+      {
+        "complete": true,
+        "expected": "CLEAN",
+        "loaded_signatures": 3628232,
+        "name": "BENIGN_SYNTHETIC",
+        "scanned_files": 1,
+        "sha256": "cf2e86099c066d7f45d06acbfe36c6060d046e5e193be708e713b472e424e16c",
+        "size": 76,
+        "spec": {
+          "configuration_digest": "ef4ffdb8bc066224193aace27fb34c3366b2d8adee0cf1d207cd9157035ee9b5",
+          "engine_version": "1.5.4",
+          "key": "local-clamav-acceptance",
+          "mode": "CONFIGURED",
+          "signature_digest": "60f0d8b1b575011012d9ae76a9f389956a5c9f8f643d86681340142cda95b2b3",
+          "signature_version": "cvd.bytecode.339.daily.28190.main.63"
+        },
+        "status": "CLEAN"
+      },
+      {
+        "complete": true,
+        "expected": "BLOCKED",
+        "loaded_signatures": 3628232,
+        "name": "EICAR_STANDARD_68_BYTES",
+        "scanned_files": 1,
+        "sha256": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f",
+        "size": 68,
+        "spec": {
+          "configuration_digest": "ef4ffdb8bc066224193aace27fb34c3366b2d8adee0cf1d207cd9157035ee9b5",
+          "engine_version": "1.5.4",
+          "key": "local-clamav-acceptance",
+          "mode": "CONFIGURED",
+          "signature_digest": "60f0d8b1b575011012d9ae76a9f389956a5c9f8f643d86681340142cda95b2b3",
+          "signature_version": "cvd.bytecode.339.daily.28190.main.63"
+        },
+        "status": "BLOCKED"
+      }
+    ],
+    "samples_are_synthetic": true,
+    "scanner": {
+      "configuration_digest": "ef4ffdb8bc066224193aace27fb34c3366b2d8adee0cf1d207cd9157035ee9b5",
+      "engine_version": "1.5.4",
+      "key": "local-clamav-acceptance",
+      "mode": "CONFIGURED",
+      "signature_digest": "60f0d8b1b575011012d9ae76a9f389956a5c9f8f643d86681340142cda95b2b3",
+      "signature_version": "cvd.bytecode.339.daily.28190.main.63"
+    },
+    "schema": "fatwa.upload-security.clamav-acceptance.v1",
+    "signature_authentication": "ClamAV official CVD verification; no unsigned override",
+    "signature_source_reported_by_operator": "https://database.clamav.net",
+    "status": "PASSED",
+    "tested_sha": "458a72de5580fee9771b08abd97fb44bd68cde79",
+    "timeout_seconds_per_sample": 30.0,
+    "version_observation": "ClamAV 1.5.4/28190/Sat Nov 21 06:27:04 2026",
+    "workflow_run_attempt": "1",
+    "workflow_run_id": "44910874671"
+  },
+  "freshclam_log": "ClamAV update process started at Sat Nov 21 13:51:58 2026\ndaily database available for download (remote version: 28190)\nTesting database: '/var/lib/clamav/tmp.40b934e935/daily.cvd' ...\nDatabase test passed.\ndaily.cvd updated (version: 28190, sigs: 355845, f-level: 90, builder: svc.clamav-publisher)\nmain database available for download (remote version: 63)\nTesting database: '/var/lib/clamav/tmp.40b934e935/main.cvd' ...\nDatabase test passed.\nmain.cvd updated (version: 63, sigs: 3287027, f-level: 90, builder: tomjudge)\nbytecode database available for download (remote version: 339)\nTesting database: '/var/lib/clamav/tmp.40b934e935/bytecode.cvd' ...\nDatabase test passed.\nbytecode.cvd updated (version: 339, sigs: 80, f-level: 90, builder: nrandolp)\n",
+  "scope": "Actual local ClamAV scanner, official signed databases, benign admission and EICAR rejection. Entire continuation remains pending the matching service/browser/recovery receipt.",
+  "profile_regression": {
+    "observed_failure": "CampaignProfileTests expected middleware omitted new UploadSecurityResponses. Same failure in transcript, team updates, team workspace, V11 and isolated container workflows.",
+    "fix": "Require the added response boundary at the exact ordered position and assert closed upload and permission defaults.",
+    "focused_result": "1/1 PASS in 0.013s under PG17 owned-cluster runner; SimpleTestCase does not use database.",
+    "log_sha256": "60fca5c7b8a169276e841f7bff4d12a4f29f884afdab2d2ca8282bcdb33ade28"
+  },
+  "main_merged": false,
+  "production_changed": false,
+  "deployment": "NOT_DEPLOYED"
+}
