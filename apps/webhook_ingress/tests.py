@@ -158,7 +158,8 @@ class SignedWebhookTests(TransactionTestCase):
 
     def test_signed_messenger_raw_replay_and_separate_case_creation(self):
         raw = encoded(meta("messenger"))
-        self.assertEqual(self.post("messenger", raw).status_code, 200)
+        first = self.post("messenger", raw)
+        self.assertEqual(first.status_code, 200, first.content)
         self.assertEqual(self.post("messenger", raw).status_code, 200)
         self.assertEqual(SourceReceipt.objects.count(), 1)
         receipt = SourceReceipt.objects.get()
@@ -207,7 +208,8 @@ class SignedWebhookTests(TransactionTestCase):
         packet = meta("instagram")
         packet["entry"].append(deepcopy(packet["entry"][0]))
         data = encoded(packet)
-        self.assertEqual(self.post("instagram", data).status_code, 200)
+        result = self.post("instagram", data)
+        self.assertEqual(result.status_code, 200, result.content)
         receipt = SourceReceipt.objects.get()
         self.assertEqual(bytes(receipt.raw), data)
         self.assertEqual(receipt.problem, "meta_batch_requires_review")
@@ -219,7 +221,8 @@ class SignedWebhookTests(TransactionTestCase):
     def test_telegram_secret_header_is_checked_not_hmac(self):
         data = telegram()
         self.assertEqual(self.post("telegram", data, signature="bad").status_code, 403)
-        self.assertEqual(self.post("telegram", data).status_code, 200)
+        result = self.post("telegram", data)
+        self.assertEqual(result.status_code, 200, result.content)
         receipt = SourceReceipt.objects.get()
         self.assertEqual(receipt.source, "telegram")
         self.assertEqual(bytes(receipt.raw), data)
@@ -228,7 +231,8 @@ class SignedWebhookTests(TransactionTestCase):
     def test_facebook_and_whatsapp_capture_only(self):
         for source in ("facebook", "whatsapp"):
             with self.subTest(source=source):
-                self.assertEqual(self.post(source).status_code, 200)
+                result = self.post(source)
+                self.assertEqual(result.status_code, 200, result.content)
         self.assertEqual(
             set(SourceReceipt.objects.values_list("source", flat=True)),
             {"facebook", "whatsapp"},
