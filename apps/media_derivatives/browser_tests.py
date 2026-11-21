@@ -110,12 +110,21 @@ class MediaDerivativeBrowserTests(DerivativeFixture, LiveServerTestCase):
     def capture(self, page, name, *, html=True):
         for width in (320, 1280):
             page.set_viewport_size({"width": width, "height": 900})
-            if html:
-                self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
-                self.assertLessEqual(page.evaluate("document.documentElement.scrollWidth"), width)
             filename = f"{name}-{width}.png"
             page.screenshot(path=str(OUT / filename), full_page=True)
             self.proof["screenshots"].append(filename)
+            if html:
+                self.assertEqual(page.locator("html").get_attribute("dir"), "rtl")
+                actual_width = page.evaluate("document.documentElement.scrollWidth")
+                if actual_width > width:
+                    overflow = page.evaluate("""() => Array.from(document.querySelectorAll('body *'))
+                        .map(el => ({tag: el.tagName, left: el.getBoundingClientRect().left,
+                            right: el.getBoundingClientRect().right,
+                            clientWidth: el.clientWidth, scrollWidth: el.scrollWidth}))
+                        .filter(el => el.left < 0 || el.right > innerWidth
+                            || el.scrollWidth > el.clientWidth + 1).slice(0, 30)""")
+                    (OUT / f"{name}-{width}-overflow.json").write_text(json.dumps(overflow))
+                self.assertLessEqual(actual_width, width)
 
     def enqueue(self, page, identifier, task):
         form = page.locator(

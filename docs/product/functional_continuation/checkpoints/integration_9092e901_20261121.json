@@ -1,0 +1,154 @@
+{
+  "schema": "fatwa.hosted-integration-diagnostic.v1",
+  "source_commit": "9092e901702a7b9fa8a80da26deffa348b21232a",
+  "source_tree": "f41687dd85cd7fef15bd51141b15d4d599f2a503",
+  "all_plan_accepted": false,
+  "workflows": [
+    {
+      "id": 44914931553,
+      "name": "Team updates inbox synthetic",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931680,
+      "name": "FAST9 integrated local development journey",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931538,
+      "name": "B6 committed integration QA",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931515,
+      "name": "D6 Wave4 functional acceptance",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931532,
+      "name": "V6 durable casework journey (synthetic)",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931582,
+      "name": "Transcript binding campaign integration",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931613,
+      "name": "Isolated development containers",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931574,
+      "name": "V9 origin knowledge and connected workflows",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931591,
+      "name": "V13 connected audio citations research and recovery",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931540,
+      "name": "V12 strict P0 and connected P1 integration",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931663,
+      "name": "Team updates campaign compatibility",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931488,
+      "name": "Team workspace synthetic cases",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931902,
+      "name": "V7 connected synthetic campaign",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931556,
+      "name": "C6 integrated pure and full importer QA",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931876,
+      "name": "V10 connected product and recovery",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931463,
+      "name": "V8 connected synthetic multimedia campaign",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931486,
+      "name": "V11 functional completion and encrypted recovery",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914931892,
+      "name": "V14 connected research media publication and recovery",
+      "conclusion": "success"
+    },
+    {
+      "id": 44914932027,
+      "name": "Functional case research and requester completion",
+      "conclusion": "failure"
+    }
+  ],
+  "functional_run": 44914932027,
+  "browser_results": [
+    {
+      "postgres_major": 17,
+      "passed": 53,
+      "total": 54,
+      "seconds": 537.419,
+      "actual_scroll_width": 336,
+      "expected_max_width": 320
+    },
+    {
+      "postgres_major": 18,
+      "passed": 53,
+      "total": 54,
+      "seconds": 567.778,
+      "actual_scroll_width": 343,
+      "expected_max_width": 320
+    }
+  ],
+  "failure": {
+    "test": "apps.media_derivatives.browser_tests.MediaDerivativeBrowserTests.test_native_queue_retry_original_playback_download_cancel_and_revocation",
+    "stage": "queued screenshot at 320px",
+    "observed": "Long FT reference in the heading lacks text isolation/wrapping and extends past the viewport. The protected trace screenshot and captured response retain the actual reproduction.",
+    "correction_local_commit": "7d8bc17",
+    "change": "Wrap case references and original filenames in semantic bdi elements using existing bounded wrapping CSS. Preserve screenshots and geometry diagnostics before the existing strict width assertion.",
+    "acceptance": "PENDING_PROTECTED_BROWSER"
+  },
+  "affected_services_stage": "NOT_REACHED_IN_THIS_HOSTED_RUN",
+  "hosted_restoration_stage": "NOT_REACHED_IN_THIS_HOSTED_RUN",
+  "separate_exact_source_restoration_receipt": "media106_restoration_20261121.json",
+  "artifact_archives": [
+    {
+      "id": 14711882099,
+      "name": "functional-completion-pg18",
+      "sha256": "41ebc58b7c27c2e2596614b9b2ac7abf6a9acc645ec233f723f209b1a7dc25fd",
+      "size": 151968821,
+      "sha256_verified_locally": true
+    },
+    {
+      "id": 14711852168,
+      "name": "functional-completion-pg17",
+      "sha256": "56fb833252488bfa0d567f5b5a55b53e011706cbdab93b06c0f95fb1af4e6936",
+      "size": 154286987,
+      "sha256_verified_locally": true
+    }
+  ],
+  "constraints": {
+    "main_merged": false,
+    "production_deployed": false,
+    "visual_design_excluded": true
+  }
+}

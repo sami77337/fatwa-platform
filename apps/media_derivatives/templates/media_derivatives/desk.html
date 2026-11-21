@@ -1,17 +1,17 @@
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>مهام الوسائط</title><link rel="stylesheet" href="/casework/casework.css"></head><body><main>
-<h1>مهام الوسائط: {{ case_ref }}</h1><p><a href="/casework/staff/">مساحة العمل</a> · <a href="{{ base }}">قضايا الوسائط</a></p>
+<h1>مهام الوسائط: <bdi>{{ case_ref }}</bdi></h1><p><a href="/casework/staff/">مساحة العمل</a> · <a href="{{ base }}">قضايا الوسائط</a></p>
 {% if message %}<p role="status">{{ message }}</p>{% endif %}
 <p>هذه نسخ تقنية خاصة. لا تستبدل الأصل ولا تصبح نسخة عامة أو جوابًا معتمدًا.</p>
 <p data-transcription-state="UNAVAILABLE_NO_PROVIDER">التفريغ الآلي غير متاح: لم يُربط مزود مخول. يبقى الأصل والتفريغ الذي راجعه الإنسان محفوظين في مسارهما الحالي.</p>
 <h2>طلب مشتقة</h2>
 {% for choice in choices %}<form method="post" action="{{ base }}" data-derivative-source="{{ choice.source }}" data-derivative-task="{{ choice.task }}">{% csrf_token %}
 <input type="hidden" name="action" value="media_jobs_prepare"><input type="hidden" name="case_ref" value="{{ case_ref }}"><input type="hidden" name="source" value="{{ choice.source }}"><input type="hidden" name="task" value="{{ choice.task }}"><input type="hidden" name="request_key" value="{{ choice.request_key }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="evidence_version" value="{{ evidence_version }}">
-<p>{{ choice.label }}</p>
+<p><bdi>{{ choice.label }}</bdi></p>
 <button type="submit">{% if choice.task == 'THUMBNAIL' %}طلب صورة مصغرة{% else %}طلب نسخة صوت للتشغيل{% endif %}</button></form>{% empty %}<p>لا توجد وسائط متاحة لهذه المعالجة بصلاحياتك الحالية.</p>{% endfor %}
 <h2>المهام المحفوظة</h2>
 <form method="post" action="{{ base }}">{% csrf_token %}<input type="hidden" name="action" value="media_jobs_open"><input type="hidden" name="case_ref" value="{{ case_ref }}"><button type="submit">تحديث حالة المهام</button></form>
 {% for job in jobs %}<section data-job-id="{{ job.id }}" data-job-state="{{ job.state }}"><h3>{% if job.task == 'THUMBNAIL' %}صورة مصغرة{% else %}نسخة صوت للتشغيل{% endif %}</h3>
-<p>{{ job.label }} · الحالة: <strong>{{ job.state_label }}</strong> · المحاولة {{ job.attempt }}</p>
+<p><bdi>{{ job.label }}</bdi> · الحالة: <strong>{{ job.state_label }}</strong> · المحاولة {{ job.attempt }}</p>
 <p><a href="{{ job.original_url }}" target="_blank" rel="noopener noreferrer">فتح الأصل المحفوظ</a></p>
 {% if job.state == 'READY' %}
 {% if job.task == 'THUMBNAIL' %}<img src="{{ job.output_url }}" alt="صورة مصغرة مشتقة من كامل الإطار الأول، والأصل مستقل" width="320">{% else %}<audio controls preload="none" src="{{ job.output_url }}" aria-label="نسخة صوت مشتقة للتشغيل"></audio>{% endif %}
