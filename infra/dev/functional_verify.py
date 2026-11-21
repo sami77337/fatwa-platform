@@ -151,6 +151,31 @@ LABELS = [
     "apps.staff_sessions.tests",
     "apps.staff_sessions.test_recovery",
     "apps.staff_sessions.test_campaign",
+    "apps.data_privacy.test_campaign",
+    "apps.data_privacy.test_catalog",
+    "apps.data_privacy.test_citation_hooks",
+    "apps.data_privacy.test_delivery_hooks",
+    "apps.data_privacy.test_ledger",
+    "apps.data_privacy.test_management",
+    "apps.data_privacy.test_material_hooks",
+    "apps.data_privacy.test_operational_hooks",
+    "apps.data_privacy.test_private_hooks",
+    "apps.data_privacy.test_public_derivatives",
+    "apps.data_privacy.test_reader_exports",
+    "apps.data_privacy.test_recovery",
+    "apps.data_privacy.test_scholarly_hooks",
+    "apps.data_privacy.test_source_hooks",
+    "apps.data_privacy.test_source_purpose",
+    "apps.ai_gateway.privacy_tests",
+    "apps.ai_gateway.privacy_http_tests",
+    "apps.data_quality.privacy_tests",
+    "apps.team_updates.privacy_tests",
+    "apps.identity_registry.privacy_tests",
+    "tests.casework.test_v11_rights_boundaries",
+    "apps.data_privacy.test_publication_plans",
+    "apps.data_privacy.test_private_work",
+    "apps.data_privacy.test_public_discovery",
+    "apps.data_privacy.test_workspace_search",
 ]
 
 BROWSER_LABELS = [
@@ -197,6 +222,8 @@ BROWSER_LABELS = [
     "apps.operational_workspace.browser_transcripts",
     "apps.operational_workspace.browser_publication",
     "apps.staff_sessions.browser_tests",
+    "apps.data_privacy.browser_tests",
+    "apps.data_privacy.browser_work",
 ]
 
 

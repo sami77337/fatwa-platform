@@ -107,6 +107,7 @@ class Guard:
         self.provider_pins = {}
         self.read_pins = []
         self.public = False
+        self.search = False
 
     def actor(self, provider, subject, case_id, *, expected_epoch=None, expected_provider=None):
         if id(provider) not in self.provider_pins:
@@ -386,6 +387,8 @@ def _privacy_sources(guard, row, release):
             *(("PUBLIC_TEACHING", member["id"]) for member in row.members),
         ]
     for kind, identifier in targets:
+        if guard.search and kind in {"PUBLIC_KNOWLEDGE", "LIBRARY_VERSION", "PUBLIC_TEACHING"}:
+            privacy.public(kind, identifier, action="SEARCH")
         privacy.staff(kind, identifier, provider=guard.directory, actor=actor, action="PUBLISH")
 
 
@@ -406,6 +409,8 @@ def _released(guard, row, *, visiting=()):
         raise cases.CaseConflict("teaching_release_expired")
     if guard.public:
         privacy.public("PUBLIC_TEACHING", row.pk)
+        if guard.search:
+            privacy.public("PUBLIC_TEACHING", row.pk, action="SEARCH")
         _privacy_sources(guard, row, events["RELEASE"])
     guard.deadlines.append(events["RELEASE"].valid_until)
     source = None
@@ -1135,11 +1140,14 @@ class PublicSnapshot:
 @mutation_context
 @privacy.public_contextual
 @contextmanager
-def public_projection():
+def public_projection(*, search=False):
     try:
+        if type(search) is not bool:
+            raise preview.PreviewUnavailable()
         enabled(public=True)
         with scope() as guard:
             guard.public = True
+            guard.search = search
             before = history()
             guard.read_pins.append(before)
             result = PublicSnapshot(guard)

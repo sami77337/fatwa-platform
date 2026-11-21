@@ -179,7 +179,7 @@ def _public_page(request, template, context, *, media=False):
 @safe_read
 def catalog(request):
     _query(request)
-    with services.public_projection() as current:
+    with services.public_projection(search=True) as current:
         return _public_page(request, "public_teaching/catalog.html", current.catalog())
 
 

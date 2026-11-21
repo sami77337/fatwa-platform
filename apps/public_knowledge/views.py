@@ -92,7 +92,7 @@ def _query(request):
 @safe_read
 def index(request):
     _query(request)
-    with public.projection() as snapshot:
+    with public.projection(search=True) as snapshot:
         _decorate(snapshot)
         return _page(
             request,
@@ -270,7 +270,7 @@ def sitemap(request):
     origin = _origin()
     if not origin:
         raise preview.PreviewUnavailable()
-    with public.projection() as snapshot:
+    with public.projection(search=True) as snapshot:
         _decorate(snapshot)
         urls = {_url("index"): None}
         for row in snapshot.scholars.values():

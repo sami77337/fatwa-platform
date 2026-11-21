@@ -8,6 +8,8 @@ from datetime import timedelta
 from django.utils import timezone
 
 from apps.casework import services as cases
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.delivery_queue.services import _canonical
 from apps.experimental_publication import services as publication
 from apps.experimental_publication.models import PublicationEdition
@@ -68,22 +70,38 @@ def source_pin(row):
 def source_current(guard, row):
     if row.case_id != guard.case_id:
         raise cases.CaseConflict("destination_source_case_mismatch")
+    privacy.current("PUBLICATION", row.pk)
     publication._verify(row)
-    answer, decision = publication._approved(guard.case, row)
-    if (
-        not _independent(row)
-        or row.actions.filter(action="WITHDRAW").exists()
-        or row.citations != publication._citation_snapshot(answer)
-    ):
+    if not _independent(row) or row.actions.filter(action="WITHDRAW").exists():
         raise cases.CaseConflict("destination_source_unavailable")
     # Each destination selects its exact independently approved edition. A later
     # edition for another destination does not replace this one implicitly.
     actions = {a.action: a for a in row.actions.all()}
-    for recorded in (answer, decision, row, actions["REVIEW"], actions["APPROVE"]):
-        actor = guard.actor(guard.directory, recorded.subject_id, recorded)
-        if recorded is actions["APPROVE"]:
-            publication._authority(actor, guard.directory, guard.case, "APPROVE")
-    deadline = publication._require_publication_sources(guard.case, row.citations)
+    publisher = guard.actor(
+        guard.directory, actions["APPROVE"].subject_id, actions["APPROVE"], editorial=True
+    )
+    from apps.data_privacy.services import applicable, staff_principal
+
+    principal = (
+        staff_principal(guard.directory, publisher)
+        if applicable("PUBLICATION", str(row.pk))
+        else None
+    )
+    with privacy.published_sources(principal):
+        privacy.source("ANSWER", row.answer_id)
+        answer, decision = publication._approved(guard.case, row)
+        if row.citations != publication._citation_snapshot(answer):
+            raise cases.CaseConflict("destination_source_unavailable")
+        for recorded in (answer, decision, row, actions["REVIEW"], actions["APPROVE"]):
+            actor = guard.actor(
+                guard.directory,
+                recorded.subject_id,
+                recorded,
+                editorial=recorded in (row, actions["REVIEW"], actions["APPROVE"]),
+            )
+            if recorded is actions["APPROVE"]:
+                publication._authority(actor, guard.directory, guard.case, "APPROVE")
+        deadline = publication._require_publication_sources(guard.case, row.citations)
     if deadline is not None:
         guard.deadlines.append(deadline)
     guard.sources[str(row.pk)] = row
@@ -271,8 +289,8 @@ def select_locked(guard, actor, *, destination, source_selection, expected_versi
     )
     if source is None or source.content_sha256 != digest:
         raise cases.CaseConflict("destination_exact_source_required")
-    profile = _profile(destination, source)
     pins = source_current(guard, source)
+    profile = _profile(destination, source)
     guard.permit(guard.provider, actor, destination, "SELECT", source.pk, source.content_sha256)
     request_sha = _request(
         audit,
@@ -378,7 +396,7 @@ def decide(
     **base,
 ):
     with scope(**base) as (guard, actor):
-        return decide_locked(
+        row = decide_locked(
             guard,
             actor,
             version_id=version_id,
@@ -390,6 +408,9 @@ def decide(
             expected_revision=expected_revision,
             expected_evidence_version=expected_evidence_version,
         )
+        if command == "WITHDRAW" and not privacy.allowed("PUBLICATION", row.source_id):
+            return {"id": str(row.pk), "state": "WITHDRAW"}
+        return row
 
 
 def decide_locked(guard, actor, *, version_id, command, expected_events, **audit_values):
@@ -525,6 +546,7 @@ def observe_locked(guard, actor, *, version_id, envelope, expected_events, **aud
 
 
 def row_dto(guard, actor, row):
+    privacy.current("PUBLICATION", row.source_id)
     events = _verified(row)
     state = events[-1].action if events else "SELECTED"
     available = state != "WITHDRAW"
@@ -532,6 +554,8 @@ def row_dto(guard, actor, row):
         try:
             _current(guard, row, events)
             guard.permit(guard.provider, actor, row.record.destination, "READ", row.pk, row.digest)
+        except PrivacyDenied:
+            raise
         except cases.CaseConflict:
             available = False
     options = []
@@ -628,7 +652,13 @@ def desk_locked(guard, actor):
             if record
             else []
         )
-        rows = [row_dto(guard, actor, row) for row in versions]
+        rows = []
+        for row in versions:
+            try:
+                rows.append(row_dto(guard, actor, row))
+            except PrivacyDenied:
+                continue
+        visible_ids = {row["id"] for row in rows}
         published = next(
             (row for row in versions if row.events.filter(action="SIMULATED_PUBLISHED").exists()),
             None,
@@ -649,8 +679,10 @@ def desk_locked(guard, actor):
             {
                 "destination": destination,
                 "label": profiles.LABELS[destination],
-                "id": str(record.pk) if record else "",
-                "expected_version": versions[0].number if versions else 0,
+                "id": str(record.pk) if record and rows else "",
+                "expected_version": versions[0].number
+                if versions and str(versions[0].pk) in visible_ids
+                else 0,
                 "versions": rows,
                 "choices": choices,
                 "current_published": current,

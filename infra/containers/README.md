@@ -50,3 +50,17 @@ Primary format and runtime references:
 - [Docker runtime boundaries](https://docs.docker.com/reference/cli/docker/container/run/)
 - [Official Python image](https://hub.docker.com/_/python)
 - [Official PostgreSQL Debian packages](https://www.postgresql.org/download/linux/debian/)
+
+## First inspected hosted proof
+
+[Run44904565936](https://github.com/sami77337/fatwa-platform/actions/runs/44904565936)
+passed on both PostgreSQL majors at `ad92317507375aaabfb7b22aabb958495ab8614b`.
+Both ZIP artifacts were downloaded; archive, build-log and runtime-log hashes
+were verified. The actual runtimes used PostgreSQL17.12 and18.7, UID10001,
+network=none and read-only committed source, and each passed four native campaign
+tests with the ownership-aware configured runner. The source write probe failed
+as required. No image was published and no service was deployed. This validates
+owner453 for this development-source checkpoint only; final-source execution is
+still required. Exact IDs, hashes, runtime records and the earlier rejected
+unwitnessed-database attempt are preserved in
+`docs/product/functional_continuation/checkpoints/containers_ad923175.json`.

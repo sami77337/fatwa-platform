@@ -146,6 +146,35 @@ def verify_restored(pins):
                 raise AssertionError("Restoration inferred privacy authority: " + name)
 
         positive()
+        # Missing classification does not itself block a separately authorized
+        # private human workflow. The restore supplies neither this policy nor
+        # its exact grant; construct it afresh and leave the ledger empty.
+        from .private_work_test_support import WorkAuthority
+
+        work = WorkAuthority()
+        pending = locate("CASE", pins["unclassified"]["case_id"])
+        actor = directory.current
+        work.work.add(
+            (
+                pending.kind,
+                pending.identifier,
+                pending.source_digest,
+                directory.provider_id,
+                actor.subject_id,
+                actor.auth_epoch,
+                actor.role,
+                pending.case_ref,
+            )
+        )
+        with override_settings(FATWA_DATA_PRIVACY_AUTHORITY=work):
+            pending_read = cases.read_case(
+                case_id=pending.identifier,
+                subject_id=actor.subject_id,
+                provider=directory,
+                synthetic_fixtures_only=True,
+            )
+            if pending_read["public_ref"] != pending.case_ref or services.history(pending):
+                raise AssertionError("Private work invented a restored human classification")
         for name, setting, value in (
             ("privacy_disabled", "FATWA_DATA_PRIVACY_ENABLED", False),
             ("missing_authority", "FATWA_DATA_PRIVACY_AUTHORITY", None),
@@ -214,4 +243,5 @@ def verify_restored(pins):
         "original_bytes_preserved": True,
         "classification_history_immutable": True,
         "restored_labels_grant_no_access": True,
+        "unclassified_work_requires_fresh_explicit_grant": True,
     }

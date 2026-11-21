@@ -472,10 +472,13 @@ def _public(case):
     }
 
 
-def _staff(case):
+def _staff(case, *, search=False):
     from apps.data_privacy.integration import allowed, evidence_allowed
 
-    visible_answers = [a for a in case.answers.order_by("revision") if allowed("ANSWER", a.pk)]
+    visible_answers = [
+        a for a in case.answers.order_by("revision")
+        if allowed("ANSWER", a.pk) and (not search or allowed("ANSWER", a.pk, action="SEARCH"))
+    ]
     result = _public(case)
     result.update(
         {
@@ -485,7 +488,7 @@ def _staff(case):
             "followups": [
                 {"version": e.version, "text": e.text}
                 for e in case.evidence.filter(version__gt=1).order_by("version")
-                if evidence_allowed(e)
+                if evidence_allowed(e) and (not search or evidence_allowed(e, action="SEARCH"))
             ],
             "answers": [
                 {
@@ -605,13 +608,20 @@ def _staff_case(
 
 
 @mutation_service
-def read_case(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
+def read_case(*, case_id, subject_id, provider, synthetic_fixtures_only=False, search=False):
     with _staff_case(case_id, subject_id, provider, synthetic_fixtures_only) as (case, _):
-        return _staff(case)
+        if search:
+            from apps.data_privacy.integration import current, evidence_allowed
+            from apps.data_privacy.services import PrivacyDenied
+
+            current("CASE", case.pk, action="SEARCH")
+            if not evidence_allowed(case.evidence.get(version=1), action="SEARCH"):
+                raise PrivacyDenied("privacy_original_search_required")
+        return _staff(case, search=search)
 
 
 @mutation_service
-def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
+def list_cases(*, subject_id, provider, synthetic_fixtures_only=False, search=False):
     _guard(synthetic_fixtures_only)
     try:
         identity = resolve_identity(provider, subject_id)
@@ -632,7 +642,7 @@ def list_cases(*, subject_id, provider, synthetic_fixtures_only=False):
             try:
                 row = read_case(
                     case_id=pk, subject_id=subject_id, provider=provider,
-                    synthetic_fixtures_only=True,
+                    synthetic_fixtures_only=True, search=search,
                 )
             except PrivacyDenied:
                 continue
@@ -737,6 +747,9 @@ def record_decision(
         ).first()
         if answer is None or case.stage == "NEEDS_CLARIFICATION":
             raise CaseConflict("current_answer_required")
+        from apps.data_privacy.integration import source as private_source
+
+        private_source("ANSWER", answer.pk)
         if CaseDecision.objects.filter(answer=answer).exists():
             raise CaseConflict("answer_already_decided")
         # The human decision covers every immutable part of this exact revision,

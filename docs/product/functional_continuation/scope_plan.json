@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 95,
-  "implemented_scope_candidates": 95,
+  "candidate_count": 100,
+  "implemented_scope_candidates": 100,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 17.09,
+  "candidate_percentage": 17.99,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -3619,6 +3619,227 @@
         "status": "FOCUSED_PG17_PG18_PASS_REPORTED_WITH_APP_CONTRACT",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "current_data_privacy",
+      "title_ar": "تصنيف الخصوصية بأربعة مستويات ومنح مستقلة لكل استخدام",
+      "implementation_state": "IMPLEMENTED_INTEGRATED_SERVICE_BROWSER_RESTORE_PROOFS_PENDING",
+      "contract": "apps/data_privacy/CONTRACT.md",
+      "baseline_gap": "Private domain guards existed, but no immutable human classification ledger or uniform cross-consumer read/search/export/publish/AI veto existed.",
+      "service_test_labels": [
+        "apps.data_privacy.test_campaign",
+        "apps.data_privacy.test_catalog",
+        "apps.data_privacy.test_citation_hooks",
+        "apps.data_privacy.test_delivery_hooks",
+        "apps.data_privacy.test_ledger",
+        "apps.data_privacy.test_management",
+        "apps.data_privacy.test_material_hooks",
+        "apps.data_privacy.test_operational_hooks",
+        "apps.data_privacy.test_private_hooks",
+        "apps.data_privacy.test_public_derivatives",
+        "apps.data_privacy.test_reader_exports",
+        "apps.data_privacy.test_recovery",
+        "apps.data_privacy.test_scholarly_hooks",
+        "apps.data_privacy.test_source_hooks",
+        "apps.data_privacy.test_source_purpose",
+        "apps.ai_gateway.privacy_tests",
+        "apps.ai_gateway.privacy_http_tests",
+        "apps.data_quality.privacy_tests",
+        "apps.team_updates.privacy_tests",
+        "apps.identity_registry.privacy_tests",
+        "apps.data_privacy.test_publication_plans",
+        "apps.data_privacy.test_private_work",
+        "apps.data_privacy.test_public_discovery",
+        "apps.data_privacy.test_workspace_search"
+      ],
+      "service_test_classes": [
+        "apps.data_privacy.test_campaign.CampaignPrivacyTests",
+        "apps.data_privacy.test_catalog.ScholarlyCatalogTests",
+        "apps.data_privacy.test_catalog.KnowledgeCatalogTests",
+        "apps.data_privacy.test_citation_hooks.PrecisePrivacyTests",
+        "apps.data_privacy.test_citation_hooks.PublicPrecisePrivacyTests",
+        "apps.data_privacy.test_citation_hooks.TimedPrivacyTests",
+        "apps.data_privacy.test_citation_hooks.PdfPrivacyTests",
+        "apps.data_privacy.test_delivery_hooks.DeliveryClassificationTests",
+        "apps.data_privacy.test_delivery_hooks.CompositeDeliveryClassificationTests",
+        "apps.data_privacy.test_ledger.ClassificationLedgerTests",
+        "apps.data_privacy.test_management.ClassificationManagementTests",
+        "apps.data_privacy.test_material_hooks.LibraryPrivacyTests",
+        "apps.data_privacy.test_material_hooks.SearchPrivacyTests",
+        "apps.data_privacy.test_material_hooks.ExportPrivacyTests",
+        "apps.data_privacy.test_operational_hooks.OperationalPrivacyTests",
+        "apps.data_privacy.test_private_hooks.PrivateClassificationTests",
+        "apps.data_privacy.test_public_derivatives.PublicKnowledgePrivacyTests",
+        "apps.data_privacy.test_public_derivatives.PublicRelationPrivacyTests",
+        "apps.data_privacy.test_public_derivatives.PublicCollectionPrivacyTests",
+        "apps.data_privacy.test_public_derivatives.PublicTeachingPrivacyTests",
+        "apps.data_privacy.test_public_derivatives.PublicMediaPrivacyTests",
+        "apps.data_privacy.test_reader_exports.PublicReaderExportPrivacyTests",
+        "apps.data_privacy.test_recovery.ClassificationRecoveryTests",
+        "apps.data_privacy.test_scholarly_hooks.ScholarlyPrivacyTests",
+        "apps.data_privacy.test_scholarly_hooks.ScholarlySourceQuestionPrivacyTests",
+        "apps.data_privacy.test_source_hooks.PublicSourcePrivacyTests",
+        "apps.data_privacy.test_source_hooks.SourceIntakePrivacyTests",
+        "apps.data_privacy.test_source_purpose.OriginalPurposePrivacyTests",
+        "apps.ai_gateway.privacy_tests.CitationPrivacyTests",
+        "apps.ai_gateway.privacy_tests.AnswerSourcePrivacyTests",
+        "apps.ai_gateway.privacy_http_tests.CitationPrivacyHTTPTests",
+        "apps.ai_gateway.privacy_http_tests.PrivacyFreshAuthHTTPTests",
+        "apps.data_quality.privacy_tests.QualityPrivacyTests",
+        "apps.data_quality.privacy_tests.QualityAnswerPrivacyTests",
+        "apps.team_updates.privacy_tests.TeamUpdatePrivacyTests",
+        "apps.team_updates.privacy_tests.TeamAttachmentPrivacyTests",
+        "apps.identity_registry.privacy_tests.IdentityRegistryPrivacyTests",
+        "apps.data_privacy.test_publication_plans.DestinationPrivacyTests",
+        "apps.data_privacy.test_publication_plans.SchedulePrivacyTests",
+        "apps.data_privacy.test_private_work.UnclassifiedWorkTests",
+        "apps.data_privacy.test_public_discovery.KnowledgeDiscoveryTests",
+        "apps.data_privacy.test_public_discovery.CollectionDiscoveryTests",
+        "apps.data_privacy.test_public_discovery.TeachingDiscoveryTests",
+        "apps.data_privacy.test_workspace_search.WorkspaceSearchPrivacyTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.data_privacy.browser_tests.DataPrivacyBrowserTests",
+        "result_path": ".local/qa/functional-continuation/data-privacy-browser/result.json",
+        "status": "PROTECTED_NATIVE_PG17_PG18_PASSED_ON_AD923175_EXACT_HEAD_AGGREGATE_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        },
+        "additional_journeys": [
+          {
+            "test_class": "apps.data_privacy.browser_work.PrivateUnclassifiedWorkBrowserTests",
+            "result_path": ".local/qa/functional-continuation/private-unclassified-work-browser/result.json",
+            "status": "IMPLEMENTED_HOSTED_EXECUTION_PENDING",
+            "required": {
+              "status": "PASS",
+              "sandbox": true,
+              "widths": [
+                320,
+                1280
+              ],
+              "traces_and_screenshots": true,
+              "unexpected_external_requests": 0,
+              "page_errors": 0,
+              "actual_native_actions": true
+            }
+          }
+        ]
+      },
+      "recovery": {
+        "helper": "apps.data_privacy.recovery_support",
+        "status": "RESTORE_READER_SHADOWED_CALLABLE_FIXED_RERUN_REQUIRED",
+        "nonempty_model_count": 1,
+        "tables": [
+          "data_privacy_classificationrevision"
+        ],
+        "notes": "One immutable dated classification history, four levels, unchanged originals, thirteen exact current-use denials, positive reads after restoration of explicit authority; restored labels grant no runtime access. A separately typed fresh finite private-work grant can reopen an unclassified case without adding a human classification; no SEARCH, EXPORT, PUBLISH or AI use is inherited."
+      },
+      "points": [
+        {
+          "original_id": "391",
+          "original_text": "يمكن تصنيف البيانات إلى Public.",
+          "direct_spec_ids": [
+            "SPEC-U14-016",
+            "SPEC-U14-017"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 393
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory."
+        },
+        {
+          "original_id": "392",
+          "original_text": "Internal.",
+          "direct_spec_ids": [
+            "SPEC-U14-016",
+            "SPEC-U14-017"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 394
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory."
+        },
+        {
+          "original_id": "393",
+          "original_text": "Confidential.",
+          "direct_spec_ids": [
+            "SPEC-U14-016",
+            "SPEC-U14-017"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 395
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory."
+        },
+        {
+          "original_id": "394",
+          "original_text": "Restricted.",
+          "direct_spec_ids": [
+            "SPEC-U14-016",
+            "SPEC-U14-017"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 396
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory."
+        },
+        {
+          "original_id": "395",
+          "original_text": "الصلاحيات والتصدير والبحث تتأثر بهذا التصنيف.",
+          "direct_spec_ids": [
+            "SPEC-U14-016",
+            "SPEC-U14-017"
+          ],
+          "decision_ids": [
+            "D-043"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 397
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PROOFS_RECORDED_WITHOUT_WHOLE_HEAD_CREDIT",
+        "counted_as_integrated_completion": false
+      },
+      "private_unclassified_work": {
+        "source": "SPEC-U14-001",
+        "behavior": "Pending classification/transcription does not prevent an explicitly authorized human draft and approval. STAFF READ only, exact identity/source/current policy pins, no default grant and no public or automated purpose.",
+        "native_browser": "apps.data_privacy.browser_work.PrivateUnclassifiedWorkBrowserTests.test_native_draft_approval_without_classification_and_current_work_revocation"
+      }
     }
   ],
   "conditional_scope": [],
@@ -3728,56 +3949,6 @@
       "direct_spec_ids": [
         "SPEC-U14-022",
         "SPEC-U14-019"
-      ],
-      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
-    },
-    {
-      "original_id": "391",
-      "original_text": "يمكن تصنيف البيانات إلى Public.",
-      "direct_spec_ids": [
-        "SPEC-U14-016",
-        "SPEC-U14-017"
-      ],
-      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
-    },
-    {
-      "original_id": "392",
-      "original_text": "Internal.",
-      "direct_spec_ids": [
-        "SPEC-U14-016",
-        "SPEC-U14-017"
-      ],
-      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
-    },
-    {
-      "original_id": "393",
-      "original_text": "Confidential.",
-      "direct_spec_ids": [
-        "SPEC-U14-016",
-        "SPEC-U14-017"
-      ],
-      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
-    },
-    {
-      "original_id": "394",
-      "original_text": "Restricted.",
-      "direct_spec_ids": [
-        "SPEC-U14-016",
-        "SPEC-U14-017"
-      ],
-      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
-    },
-    {
-      "original_id": "395",
-      "original_text": "الصلاحيات والتصدير والبحث تتأثر بهذا التصنيف.",
-      "direct_spec_ids": [
-        "SPEC-U14-016",
-        "SPEC-U14-017"
       ],
       "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
       "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
@@ -4275,6 +4446,86 @@
       "from": "SERVER_REVOCATION_AND_ACTIVE_FRESH_VERIFICATION_ABSENT",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "An explicit current policy can require active fresh credential verification for REVOKE_SESSION. Its immutable single-use proof binds the real actor, session, exact target, operation, challenge, verifier version, policy and finite deadline; a separate native confirmation performs the revocation. This is not MFA, does not select a production identity provider, and does not assert that every other operation has been assigned a fresh-verification policy."
+    },
+    {
+      "original_id": "391",
+      "from": "NO_UNIFORM_CURRENT_CLASSIFICATION_ENFORCEMENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory.",
+      "prior_bounded_scope_exclusion": {
+        "original_id": "391",
+        "original_text": "يمكن تصنيف البيانات إلى Public.",
+        "direct_spec_ids": [
+          "SPEC-U14-016",
+          "SPEC-U14-017"
+        ],
+        "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+        "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      }
+    },
+    {
+      "original_id": "392",
+      "from": "NO_UNIFORM_CURRENT_CLASSIFICATION_ENFORCEMENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory.",
+      "prior_bounded_scope_exclusion": {
+        "original_id": "392",
+        "original_text": "Internal.",
+        "direct_spec_ids": [
+          "SPEC-U14-016",
+          "SPEC-U14-017"
+        ],
+        "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+        "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      }
+    },
+    {
+      "original_id": "393",
+      "from": "NO_UNIFORM_CURRENT_CLASSIFICATION_ENFORCEMENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory.",
+      "prior_bounded_scope_exclusion": {
+        "original_id": "393",
+        "original_text": "Confidential.",
+        "direct_spec_ids": [
+          "SPEC-U14-016",
+          "SPEC-U14-017"
+        ],
+        "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+        "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      }
+    },
+    {
+      "original_id": "394",
+      "from": "NO_UNIFORM_CURRENT_CLASSIFICATION_ENFORCEMENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory.",
+      "prior_bounded_scope_exclusion": {
+        "original_id": "394",
+        "original_text": "Restricted.",
+        "direct_spec_ids": [
+          "SPEC-U14-016",
+          "SPEC-U14-017"
+        ],
+        "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+        "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      }
+    },
+    {
+      "original_id": "395",
+      "from": "NO_UNIFORM_CURRENT_CLASSIFICATION_ENFORCEMENT",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Human append-only PUBLIC/INTERNAL/CONFIDENTIAL/RESTRICTED labels bind exact original/version identities; native Mufti and organizer classification uses independently granted management actions without content READ. Current READ, SEARCH, EXPORT, PUBLISH and AI grants are independent, retain the actual identity and are checked before body/filename/metadata/count/link/byte composition and after final callbacks. Public copies require PUBLIC plus explicit release and source-publisher PUBLISH; parent labels grant no child access. Restore retains immutable dated labels and unchanged originals while requiring fresh authorities and denying thirteen explicit missing/revoked/cross-purpose uses. Final native and aggregate proof is mandatory.",
+      "prior_bounded_scope_exclusion": {
+        "original_id": "395",
+        "original_text": "الصلاحيات والتصدير والبحث تتأثر بهذا التصنيف.",
+        "direct_spec_ids": [
+          "SPEC-U14-016",
+          "SPEC-U14-017"
+        ],
+        "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+        "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      }
     }
   ],
   "verified_checkpoints": [

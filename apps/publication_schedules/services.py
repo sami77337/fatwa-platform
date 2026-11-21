@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.casework.models import Case
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.experimental_publication import services as publication
 from apps.experimental_publication.authority import PublicationAuthority
@@ -125,14 +126,27 @@ def _permit(actor, provider, case, action, edition, at):
         raise cases.CaseConflict("schedule_authority_unavailable") from None
     if allowed is not True:
         raise cases.CaseConflict("schedule_action_denied")
+    if action != "CANCEL":
+        privacy.staff("PUBLICATION", edition.pk, provider=provider, actor=actor)
+    if action in {"SCHEDULE", "EXECUTE"}:
+        privacy.staff("PUBLICATION", edition.pk, provider=provider, actor=actor, action="PUBLISH")
 
 
-def _source(case, edition, *, published=False):
+def _source(case, edition, *, provider, actor, published=False):
+    privacy.staff("PUBLICATION", edition.pk, provider=provider, actor=actor)
+    privacy.staff("PUBLICATION", edition.pk, provider=provider, actor=actor, action="PUBLISH")
     publication._verify(edition)
-    answer, decision = publication._approved(case, edition)
-    publication._require_publication_sources(case, edition.citations)
-    if edition.citations != publication._citation_snapshot(answer):
-        raise cases.CaseConflict("schedule_citations_changed")
+    from apps.data_privacy.services import applicable, staff_principal
+
+    principal = (
+        staff_principal(provider, actor) if applicable("PUBLICATION", str(edition.pk)) else None
+    )
+    with privacy.published_sources(principal):
+        privacy.source("ANSWER", edition.answer_id)
+        answer, decision = publication._approved(case, edition)
+        publication._require_publication_sources(case, edition.citations)
+        if edition.citations != publication._citation_snapshot(answer):
+            raise cases.CaseConflict("schedule_citations_changed")
     actions = list(edition.actions.order_by("pk"))
     expected = {"REVIEW", "APPROVE"} if published else {"REVIEW"}
     if {
@@ -167,6 +181,7 @@ def _independent(actor, provider, edition, decision, review):
 
 
 def _dto(row):
+    privacy.current("PUBLICATION", row.edition_id)
     verify(row)
     outcome = ScheduleOutcome.objects.filter(schedule=row).first()
     if outcome:
@@ -198,6 +213,19 @@ def _dto(row):
         "subject_id": row.subject_id,
         "created_at": row.created_at,
         "finished_at": outcome.created_at if outcome else None,
+    }
+
+
+def _receipt(row):
+    """Workers and read-revoked cancellation return no edition title or private note."""
+    verify(row)
+    outcome = ScheduleOutcome.objects.filter(schedule=row).first()
+    if outcome:
+        verify(outcome)
+    return {
+        "id": str(row.pk),
+        "edition_id": str(row.edition_id),
+        "state": outcome.action if outcome else "SCHEDULED",
     }
 
 
@@ -249,7 +277,7 @@ def prepare(
         edition = PublicationEdition.objects.filter(pk=cases._uuid(edition_id), case=case).first()
         if edition is None:
             raise cases.CaseConflict("schedule_edition_unavailable")
-        source, decision, review = _source(case, edition)
+        source, decision, review = _source(case, edition, provider=common["provider"], actor=actor)
         _independent(actor, common["provider"], edition, decision, review)
         publication._authority(actor, common["provider"], case, "APPROVE")
         _permit(actor, common["provider"], case, "SCHEDULE", edition, scheduled_at)
@@ -277,7 +305,7 @@ def prepare(
         if PublicationSchedule.objects.filter(edition__case=case).count() >= 64:
             raise cases.CaseConflict("schedule_capacity")
         row = _seal(PublicationSchedule(**values))
-        if _source(case, edition)[0] != source:
+        if _source(case, edition, provider=common["provider"], actor=actor)[0] != source:
             raise cases.CaseConflict("schedule_source_changed")
         return _dto(row)
 
@@ -323,7 +351,7 @@ def cancel(*, schedule_id, confirmed, **common):
                 actor=actor,
                 provider=common["provider"],
             )
-        return _dto(row)
+        return _dto(row) if privacy.allowed("PUBLICATION", row.edition_id) else _receipt(row)
 
 
 @mutation_service
@@ -356,7 +384,7 @@ def execute_due(*, schedule_id, provider, synthetic_fixtures_only=False):
             ScheduleOutcome.objects.filter(schedule=row).exists()
             or row.scheduled_at > timezone.now()
         ):
-            return _dto(row)
+            return _receipt(row)
         try:
             with transaction.atomic():
                 with boundary(
@@ -371,7 +399,9 @@ def execute_due(*, schedule_id, provider, synthetic_fixtures_only=False):
                         or actor.auth_epoch != row.auth_epoch
                     ):
                         raise cases.CaseConflict("schedule_identity_changed")
-                    source, decision, review = _source(case, row.edition)
+                    source, decision, review = _source(
+                        case, row.edition, provider=provider, actor=actor
+                    )
                     if (
                         source != row.source_sha256
                         or row.edition.content_sha256 != row.edition_sha256
@@ -390,7 +420,10 @@ def execute_due(*, schedule_id, provider, synthetic_fixtures_only=False):
                     )
                     action = PublicationAction.objects.get(edition=row.edition, action="APPROVE")
                     if (
-                        _source(case, row.edition, published=True)[0] != row.source_sha256
+                        _source(case, row.edition, provider=provider, actor=actor, published=True)[
+                            0
+                        ]
+                        != row.source_sha256
                         or snapshot(provider) != before
                     ):
                         raise cases.CaseConflict("schedule_final_source_changed")
@@ -406,7 +439,7 @@ def execute_due(*, schedule_id, provider, synthetic_fixtures_only=False):
             # A failed current grant never becomes an approval. Keep the exact
             # schedule as a terminal HOLD; a human must prepare a new one.
             _finish(row, "HOLD", "source_or_current_authority_changed")
-        return _dto(row)
+        return _receipt(row)
 
 
 @mutation_service
@@ -438,7 +471,12 @@ def desk(**common):
             .select_related("edition")
             .order_by("-created_at")
         )
-        editions = list(PublicationEdition.objects.filter(case=case).order_by("-number"))
+        editions = [
+            row
+            for row in PublicationEdition.objects.filter(case=case).order_by("-number")
+            if privacy.allowed("PUBLICATION", row.pk)
+        ]
+        rows = [row for row in rows if privacy.allowed("PUBLICATION", row.edition_id)]
         for edition in editions:
             _permit(
                 actor,

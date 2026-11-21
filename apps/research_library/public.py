@@ -28,6 +28,17 @@ class Snapshot:
             raise preview.PreviewUnavailable()
         return result
 
+    def search_records(self):
+        """Admit exact SEARCH before a catalog computes filters, facets or counts."""
+        from apps.data_privacy.services import PrivacyDenied
+
+        for row in self.records.values():
+            try:
+                privacy.public("LIBRARY_VERSION", row["version_id"], action="SEARCH")
+            except PrivacyDenied:
+                continue
+            yield row
+
     def locate(self, public_id, number):
         result = next(
             (

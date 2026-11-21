@@ -150,6 +150,7 @@ NEW_WORKFLOWS = {
         "staff_sessions_freshproof",
         "staff_sessions_proofuse",
     ),
+    "apps.data_privacy.recovery_support": ("data_privacy_classificationrevision",),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -392,6 +393,21 @@ RESTORED_DENIAL_CHECKS = {
         "cross_actor_audit": 1,
         "inactive_actor": 1,
         "restored_session_runtime": 1,
+    },
+    "apps.data_privacy.recovery_support": {
+        "privacy_disabled": 1,
+        "missing_authority": 1,
+        "missing_directory": 1,
+        "revoked_read": 1,
+        "wrong_classification_level": 1,
+        "revoked_case_scope": 1,
+        "public_restricted_source": 1,
+        "search_not_inherited": 1,
+        "export_not_inherited": 1,
+        "publication_not_inherited": 1,
+        "ai_not_inherited": 1,
+        "classification_management_not_inherited": 1,
+        "unclassified_source": 1,
     },
 }
 
@@ -645,6 +661,16 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-continuation/staff-sessions-browser/result.json",
         "modern",
     ),
+    (
+        "apps.data_privacy.browser_tests.DataPrivacyBrowserTests.test_native_four_levels_two_roles_independent_read_and_current_revocation",
+        ".local/qa/functional-continuation/data-privacy-browser/result.json",
+        "modern",
+    ),
+    (
+        "apps.data_privacy.browser_work.PrivateUnclassifiedWorkBrowserTests.test_native_draft_approval_without_classification_and_current_work_revocation",
+        ".local/qa/functional-continuation/private-unclassified-work-browser/result.json",
+        "modern",
+    ),
 )
 
 
@@ -694,8 +720,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["47"],
-        "Exactly 47 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["49"],
+        "Exactly 49 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -703,7 +729,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 47 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 49 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -901,10 +927,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 66
-        and len(expected_tables) == 88
+        and len(new_tables) == 67
+        and len(expected_tables) == 89
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 88 prior and new recovery tables are required",
+        "Exactly the 89 prior and new recovery tables are required",
     )
     require(
         all(
@@ -918,7 +944,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All thirty-five fresh-process workflow result records are required",
+        "All thirty-six fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

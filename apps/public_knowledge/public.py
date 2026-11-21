@@ -232,9 +232,11 @@ class Snapshot:
 @mutation_context
 @privacy.public_contextual
 @contextmanager
-def projection():
+def projection(*, search=False):
     """Hold through the caller's final HTML/XML render, not just its data reads."""
     try:
+        if type(search) is not bool:
+            raise preview.PreviewUnavailable()
         services.enabled()
         selected = preview._start()
         authority = services._epoch()
@@ -270,6 +272,8 @@ def projection():
             for grant in selected.publications:
                 try:
                     with preview._current(selected, grant.publication_id) as edition:
+                        if search:
+                            privacy.public("PUBLICATION", edition.pk, action="SEARCH")
                         values = preview._projection(selected, edition)
                     sources[str(edition.pk)] = edition, values
                 except preview.PreviewUnavailable:
@@ -302,6 +306,8 @@ def projection():
                     continue
                 try:
                     privacy.public("PUBLIC_KNOWLEDGE", record.pk)
+                    if search:
+                        privacy.public("PUBLIC_KNOWLEDGE", record.pk, action="SEARCH")
                     releaser = _grant_actor(lease, record, directory)
                     _privacy_sources(record, releaser, directory)
                 except PrivacyDenied:

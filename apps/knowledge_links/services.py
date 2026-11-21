@@ -85,7 +85,18 @@ def _edition(publication_id, subject_id, provider, synthetic_fixtures_only):
             or edition.citations != publications._citation_snapshot(edition.answer)
         ):
             raise cases.CaseConflict("knowledge_publication_unavailable")
-        public = publications._projection(edition)
+        # The exact read replaces the old whole-library selector, while retaining
+        # its uniform unavailable result when the publication's current source
+        # rights have lapsed. Do not expose an internal source denial as a new
+        # contract or silently grant the publication through metadata rights.
+        from apps.data_privacy.services import PrivacyDenied
+
+        try:
+            public = publications._projection(edition)
+        except PrivacyDenied:
+            raise
+        except cases.CaseConflict as exc:
+            raise cases.CaseConflict("knowledge_publication_unavailable") from exc
         yield edition, public, case, actor
         _recheck(case, actor, provider)
 

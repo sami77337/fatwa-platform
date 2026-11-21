@@ -284,7 +284,7 @@ def _record_permission(guard, provider, actor, record, action):
     guard.permit(provider, fresh, case, action, record.series.kind, record.pk, record.sha256)
 
 
-def available(guard, *, public=False):
+def available(guard, *, public=False, search=False):
     """Only complete current collections. No omitted-member count or title leaks."""
     rows = list(
         CollectionRevision.objects.select_related("series__case", "parent__series").order_by(
@@ -305,6 +305,8 @@ def available(guard, *, public=False):
         try:
             if public:
                 privacy.public("PUBLIC_COLLECTION", row.pk)
+                if search:
+                    privacy.public("PUBLIC_COLLECTION", row.pk, action="SEARCH")
                 actor, _ = guard.actor(guard.directory, lease.subject_id, row.series.case_id)
                 if (
                     guard.directory.provider_id != lease.provider_id
@@ -325,6 +327,8 @@ def available(guard, *, public=False):
                 if row.parent_id:
                     targets.append(("PUBLIC_COLLECTION", row.parent_id))
                 for kind, identifier in targets:
+                    if search:
+                        privacy.public(kind, identifier, action="SEARCH")
                     privacy.staff(
                         kind, identifier, provider=guard.directory, actor=actor, action="PUBLISH"
                     )
@@ -783,10 +787,12 @@ def reorder(
 @mutation_context
 @privacy.public_contextual
 @contextmanager
-def public_projection():
+def public_projection(*, search=False):
     try:
+        if type(search) is not bool:
+            raise preview.PreviewUnavailable()
         with scope(freeze_history=True) as guard:
-            rows = available(guard, public=True)
+            rows = available(guard, public=True, search=search)
             result = {}
             for identifier, item in rows.items():
                 row = item["record"]

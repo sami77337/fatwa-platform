@@ -49,6 +49,7 @@ ADDITIONAL_WORKFLOWS = (
     "apps.operational_workspace.transcript_recovery_support",
     "apps.operational_workspace.publication_recovery_support",
     "apps.staff_sessions.recovery_support",
+    "apps.data_privacy.recovery_support",
 )
 
 

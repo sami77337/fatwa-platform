@@ -14,6 +14,7 @@ from apps.case_citations.services import _projection_expiry_guard
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision, Case, CaseDecision, CaseEvidence, CaseSource
 from apps.casework_web.access import RequestDirectory
+from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 from apps.experimental_publication.authority import PublicationAuthority
 from apps.platform_recovery.integration import mutation_context
@@ -129,19 +130,26 @@ class Guard:
         self.rows = history(case_id)
         self.permissions, self.identities, self.deadlines, self.sources = [], {}, [], {}
 
-    def actor(self, provider, subject, recorded=None):
-        actor = cases._identity(provider, subject, self.case)
+    def actor(self, provider, subject, recorded=None, *, editorial=False):
+        actor = self.resolve(provider, subject, editorial=editorial)
         if recorded is not None and (
             provider.provider_id != recorded.provider_id or actor.auth_epoch != recorded.auth_epoch
         ):
             raise cases.CaseConflict("destination_recorded_actor_changed")
-        key = id(provider), subject
+        key = id(provider), subject, editorial
         old = self.identities.get(key)
         if old is not None and library._actor(old[1]) != library._actor(actor):
             raise cases.CaseConflict("destination_identity_changed")
-        self.identities[key] = provider, actor
+        self.identities[key] = provider, actor, editorial
         self.deadlines.append(actor.valid_until)
         return actor
+
+    def resolve(self, provider, subject, *, editorial=False):
+        if editorial:
+            from apps.operational_workspace.identity import resolve
+
+            return resolve(provider, subject, case_ref=self.case.public_ref)
+        return cases._identity(provider, subject, self.case)
 
     def _permission(self, values, *, required=True):
         try:
@@ -179,6 +187,34 @@ class Guard:
         deadline = self._permission(values, required=required)
         if deadline is not None and values not in self.permissions:
             self.permissions.append(values)
+        if deadline is not None and identifier and action != "WITHDRAW":
+            from apps.data_privacy.services import PrivacyDenied
+
+            source_id = (
+                identifier
+                if action == "SELECT"
+                else DestinationVersion.objects.filter(
+                    pk=cases._uuid(identifier), record__case=self.case
+                )
+                .values_list("source_id", flat=True)
+                .first()
+            )
+            if source_id is None:
+                raise cases.CaseConflict("destination_version_unavailable")
+            try:
+                privacy.staff(
+                    "PUBLICATION",
+                    source_id,
+                    provider=provider,
+                    actor=actor,
+                    action="PUBLISH"
+                    if action in {"SELECT", "APPROVE", "PREPARE", "OBSERVE"}
+                    else "READ",
+                )
+            except PrivacyDenied:
+                if required:
+                    raise
+                return None
         return deadline
 
     def callbacks(self):
@@ -188,8 +224,8 @@ class Guard:
             source_current(self, source)
         for values in tuple(self.permissions):
             self._permission(values)
-        for provider, actor in tuple(self.identities.values()):
-            current = cases._identity(provider, actor.subject_id, self.case)
+        for provider, actor, editorial in tuple(self.identities.values()):
+            current = self.resolve(provider, actor.subject_id, editorial=editorial)
             if library._actor(current) != library._actor(actor):
                 raise cases.CaseConflict("destination_identity_changed")
             self.deadlines.append(current.valid_until)
@@ -217,6 +253,7 @@ class Guard:
 
 
 @mutation_context
+@privacy.contextual
 @contextmanager
 def scope(*, case_id, subject_id, provider, synthetic_fixtures_only=False, **unused):
     enabled()
@@ -227,7 +264,8 @@ def scope(*, case_id, subject_id, provider, synthetic_fixtures_only=False, **unu
         if identifier != existing.case_id or provider is not existing.provider:
             raise cases.CaseConflict("destination_nested_scope_changed")
         actor = existing.actor(provider, subject_id)
-        yield existing, actor
+        with privacy.staff_case(existing.case, actor, provider):
+            yield existing, actor
         return
     with synthetic_queue_atomic():
         with connection.cursor() as cursor:
@@ -240,8 +278,12 @@ def scope(*, case_id, subject_id, provider, synthetic_fixtures_only=False, **unu
         if identifier not in locked:
             raise cases.CaseConflict("destination_case_unavailable")
         guard = Guard(identifier, locked, provider)
-        with cases._answer_use_boundary(), _projection_expiry_guard():
-            actor = guard.actor(provider, subject_id)
+        actor = guard.actor(provider, subject_id)
+        with (
+            privacy.staff_case(guard.case, actor, provider),
+            cases._answer_use_boundary(),
+            _projection_expiry_guard(),
+        ):
             cases._verify(guard.case)
             guard.permit(provider, actor, "", "READ")
             guard.pure()

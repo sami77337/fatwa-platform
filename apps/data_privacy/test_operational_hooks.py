@@ -1,10 +1,15 @@
 """Real organizer roles keep privacy through queues and existing publication decisions."""
 
+from datetime import timedelta
+
 from django.test import TransactionTestCase, override_settings
+from django.utils import timezone
 
 from apps.casework import services as cases
 from apps.experimental_publication import services as editorial
 from apps.experimental_publication.models import PublicationAction
+from apps.library_preview import services as preview
+from apps.library_preview.policy import PreviewPolicy, PublicationGrant
 from apps.operational_workspace import publication
 from apps.operational_workspace import services as operational
 from apps.operational_workspace.publication_test_support import (
@@ -119,3 +124,40 @@ class OperationalPrivacyTests(ExactGrants, PublicationFixture, TransactionTestCa
         self.assertTrue(
             PublicationAction.objects.filter(edition=self.edition, action="WITHDRAW").exists()
         )
+
+    def test_public_reader_uses_actual_organizer_admin_publisher_without_mufti_substitution(self):
+        self.admit_case("operator")
+        self.admit_publication("operator", "READ")
+        self.admit("ANSWER", self.edition.answer_id, "PUBLISH", actor="operator")
+        self.publication_decide()
+        self.admit_case("admin")
+        self.admit_publication("admin", "READ", "PUBLISH")
+        key = self.admit("ANSWER", self.edition.answer_id, "PUBLISH", actor="admin")[0]
+        self.publication_decide(subject="admin", action="APPROVE")
+        self.admit("PUBLICATION", self.edition.pk, "READ", actor=None, level="PUBLIC")
+        policy = PreviewPolicy(
+            (PublicationGrant(str(self.edition.pk), self.edition.content_sha256),),
+            (),
+            timezone.now() + timedelta(minutes=10),
+            True,
+        )
+        with override_settings(
+            FATWA_LIBRARY_PREVIEW_ENABLED=True,
+            FATWA_LIBRARY_PREVIEW_POLICY=policy,
+            FATWA_CASE_CITATIONS_ENABLED=True,
+            FATWA_KNOWLEDGE_LINKS_ENABLED=True,
+        ):
+            self.assertEqual(preview.read(str(self.edition.pk))["body"], self.edition.body)
+            self.assertEqual(self.directory.resolve("admin").role, "ORGANIZER_ADMIN")
+            self.assertTrue(
+                any(
+                    row["subject_id"] == "admin"
+                    and row["role"] == "ORGANIZER_ADMIN"
+                    and row["target_kind"] == "ANSWER"
+                    and row["action"] == "PUBLISH"
+                    for row in self.privacy.calls
+                )
+            )
+            del self.privacy.grants[key]
+            with self.assertRaises(preview.PreviewUnavailable):
+                preview.read(str(self.edition.pk))

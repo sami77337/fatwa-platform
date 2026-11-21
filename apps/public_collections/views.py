@@ -36,7 +36,7 @@ def _query(request):
 @safe_read
 def index(request):
     filters = _query(request)
-    with services.public_projection() as rows:
+    with services.public_projection(search=True) as rows:
         topics = [row for row in rows if row["kind"] == "TOPIC"]
         filtered = rows
         if filters["kind"]:

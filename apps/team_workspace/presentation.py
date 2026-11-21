@@ -129,7 +129,9 @@ def _inbox_matches(row, inbox):
 
 def queue(rows, selected_filter, query, sort="newest", inbox="all", assignments_enabled=False):
     # list_cases has already revalidated every case against the current scoped
-    # identity. Search only that projection, and keep result cards free of snippets.
+    # identity. For a nonempty query it also requires separate CASE/source SEARCH
+    # and omits answers/evidence without exact SEARCH grants before this haystack.
+    # Keep result cards free of snippets.
     described = [describe(row) for row in reversed(rows)]
     needle = query.strip().casefold()
     matched = [

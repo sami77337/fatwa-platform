@@ -4,7 +4,7 @@ import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
-from django.test import TransactionTestCase, override_settings
+from django.test import Client, TransactionTestCase, override_settings
 from django.utils import timezone
 
 from apps.canonical_search import services as search
@@ -13,6 +13,7 @@ from apps.canonical_search.test_support import SearchFixture
 from apps.casework import services as cases
 from apps.casework.models import AnswerRevision
 from apps.library_preview.services import PreviewUnavailable
+from apps.material_api import services as material_api
 from apps.research_library import public
 from apps.research_library import services as library
 from apps.research_library.test_support import FEATURES as LIBRARY_FEATURES
@@ -149,6 +150,31 @@ class LibraryPrivacyTests(ExactGrants, LibraryFixture, TransactionTestCase):
         self.permit(target, "PUBLIC", "READ", actor=None)
         with public.public_projection() as snapshot:
             self.assertEqual(snapshot.content(self.record["version_id"])["raw"], self.raw)
+
+    def test_public_search_has_its_own_current_grant_before_catalog_and_api_counts(self):
+        target = self.label("LIBRARY_VERSION", self.record["version_id"], level="PUBLIC")
+        self.permit(target, "PUBLIC", "READ", actor=None)
+        self.permit(target, "PUBLIC", "PUBLISH", actor="publisher")
+        params = {"q": "", "kind": "", "page": 1, "limit": 10}
+        client = Client(REMOTE_ADDR="127.0.0.1", HTTP_HOST="127.0.0.1")
+        with override_settings(FATWA_MATERIAL_API_ENABLED=True):
+            with public.public_projection() as snapshot:
+                row = snapshot.read(self.record["version_id"])
+                url, title = row["url"], row["title"]
+                self.assertEqual(material_api.catalogue(snapshot, params)["pagination"]["total"], 0)
+            self.assertEqual(client.get(url).status_code, 200)
+            self.assertNotContains(client.get("/library-preview/materials/"), title)
+            key = self.permit(target, "PUBLIC", "SEARCH", actor=None)
+            self.assertContains(client.get("/library-preview/materials/"), title)
+            with public.public_projection() as snapshot:
+                self.assertEqual(material_api.catalogue(snapshot, params)["pagination"]["total"], 1)
+            with self.assertRaises(PreviewUnavailable), public.public_projection() as snapshot:
+                self.assertEqual(material_api.catalogue(snapshot, params)["pagination"]["total"], 1)
+                self.authority.hook = lambda values: self.privacy.grants.pop(key, None)
+            self.authority.hook = None
+            self.assertEqual(client.get(url).status_code, 200)
+            with public.public_projection() as snapshot:
+                self.assertEqual(material_api.catalogue(snapshot, params)["pagination"]["total"], 0)
 
 
 @override_settings(**SEARCH_FEATURES)

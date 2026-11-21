@@ -111,7 +111,7 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
         faulthandler.dump_traceback_later(60, repeat=True, file=diagnostics)
         self.addCleanup(faulthandler.cancel_dump_traceback_later)
         self.step("started")
-        errors, external, payloads = [], [], []
+        errors, external, payloads, human_saves = [], [], [], []
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(
                 executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER", "/usr/bin/chromium"),
@@ -134,6 +134,12 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
                         and request.request.method == "POST"
                     ):
                         payloads.append(parse_qs(request.request.post_data or ""))
+                    if address.path == "/casework/staff/" and request.request.method == "POST":
+                        submitted = parse_qs(request.request.post_data or "")
+                        if submitted.get("action") == ["precise_compose"] and submitted.get(
+                            "command"
+                        ) == ["save"]:
+                            human_saves.append(submitted)
                     request.continue_()
 
             context.route("**/*", route)
@@ -245,7 +251,15 @@ class CitationGatewayBrowserTests(GatewayFixture, LiveServerTestCase):
                 self.assertEqual(page.locator("#precise-text").input_value(), draft)
                 page.locator('#precise-compose [name="confirmed"]').check()
                 self.submit(page, page.locator('button[name="command"][value="save"]'))
-                self.assertEqual(self.sync(lambda: AnswerRevision.objects.get().text), draft)
+                self.assertEqual(len(human_saves), 1)
+                # Native form submission encodes textarea newlines as CRLF.
+                # Preserve precisely what the human submitted, with no server
+                # rewriting, and independently retain the displayed LF checks.
+                submitted_text = human_saves[0]["text"][0]
+                self.assertEqual(submitted_text, draft.replace("\n", "\r\n"))
+                self.assertEqual(
+                    self.sync(lambda: AnswerRevision.objects.get().text), submitted_text
+                )
                 self.assertEqual(self.sync(lambda: CitationSet.objects.count()), 1)
                 self.assertTrue(payloads)
                 self.assertTrue(

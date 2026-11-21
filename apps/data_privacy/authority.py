@@ -10,7 +10,25 @@ class Grant:
     valid_until: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class UnclassifiedWorkGrant:
+    """A separate exact private-read grant; never a recorded classification."""
+
+    valid_until: datetime
+    binding_sha256: str
+
+
 class PrivacyAuthority(ABC):
+    def authorize_unclassified_work(self, **values):
+        """Optionally authorize exact STAFF/READ work before human classification.
+
+        The default denies. A provider opting in returns UnclassifiedWorkGrant
+        bound to the canonical digest of all supplied identity/source/action
+        values. Its projection_epoch must include this policy and its grants.
+        It cannot grant PUBLIC, SEARCH, EXPORT, PUBLISH, AI or classification.
+        """
+        return None
+
     @abstractmethod
     def authorize(
         self,

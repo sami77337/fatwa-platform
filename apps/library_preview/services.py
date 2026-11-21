@@ -117,6 +117,7 @@ def _grant(selected: PreviewPolicy, publication_id: str):
 
 def _privacy_publisher(edition):
     from apps.data_privacy import services as classification
+    from apps.operational_workspace.identity import resolve as resolve_publisher
 
     if not classification.applicable("PUBLICATION", str(edition.pk)):
         return None
@@ -124,7 +125,7 @@ def _privacy_publisher(edition):
     directory = getattr(settings, "FATWA_CASEWORK_IDENTITY_PROVIDER", None)
     if event is None or directory is None or directory.provider_id != event.provider_id:
         raise classification.PrivacyDenied("privacy_publication_actor_required")
-    actor = cases._identity(directory, event.subject_id, edition.case)
+    actor = resolve_publisher(directory, event.subject_id, case_ref=edition.case.public_ref)
     if actor.auth_epoch != event.auth_epoch:
         raise classification.PrivacyDenied("privacy_publication_actor_changed")
     return classification.staff_principal(directory, actor)

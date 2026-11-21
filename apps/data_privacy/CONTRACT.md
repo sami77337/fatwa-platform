@@ -18,9 +18,10 @@ for a later owner policy.
 ## Explicit contract
 
 - `FATWA_DATA_PRIVACY_ENABLED=False` and `FATWA_DATA_PRIVACY_AUTHORITY=None`.
-- Enabled reads require a recorded exact-target classification and a separate
-  current `PrivacyAuthority` grant. Unknown, missing, malformed or expired policy
-  data deny access before constructing content or counts.
+- Classified reads require a recorded exact-target classification and a separate
+  current `PrivacyAuthority` grant. Missing classification may permit only the
+  separately authorized private human work described below. Unknown, missing,
+  malformed or expired policy data deny access before constructing content or counts.
 - READ, SEARCH, EXPORT, PUBLISH and AI are independent actions. A READ grant does
   not satisfy another use. CLASSIFY and VIEW_CLASSIFICATION are management actions,
   independent of reading the classified contents.
@@ -134,3 +135,75 @@ This implementation does not invent them. It also does not claim SOFT_DELETE,
 anonymization, PURGE or removal of already downloaded external copies.
 
 **NOT_DEPLOYED; GATES_HOLD.**
+
+## Current integration checkpoint (2026-11-21)
+
+The campaign now installs the ledger and the response projection middleware, while
+leaving the feature off and its authority unset by default. The finite target
+catalog additionally includes KNOWLEDGE_REVISION and SERIES_VERSION. Native
+classification exists at `/casework/staff/privacy/` and
+`/casework/operations/privacy/`, using the real current session/role and separate
+VIEW_CLASSIFICATION/CLASSIFY grants. Classification history is available without
+permission to read original contents; each native form binds its target, source,
+previous revision, operation and CSRF token.
+
+Private original readers, source intake, library/search/export, operational
+queues, precise/timed/PDF sources, public derivatives and scholarly relations now
+consume exact current labels. Public source readers retain the actual publisher
+separately from the scholarly actor a nested source service uses. PUBLISH for a
+public-copy dependency cannot be borrowed by a private READ. Public print/text
+copy endpoints require an independent public EXPORT grant. Reader reference and
+link metadata still require their own current native grants. Both legacy and
+composite signed-return adapters recheck the exact ANSWER before composing a
+plan or resolving a reserved part; a case envelope alone cannot authorize it.
+Late revocation withholds the result and rolls back a newly staged plan.
+
+AI candidate retrieval, quality reports, team inbox rows and identity joins also
+apply the current classification boundary before restricted data or counts are
+returned. The enabled feature never invents a classification for a newly created
+answer or derivative. Human classification remains independent of authoring.
+
+The real protected two-role, four-level native journey passed on PostgreSQL 17
+and 18 at source `ad92317507375aaabfb7b22aabb958495ab8614b` in run
+`44904565838`. That run's AI journey failed at its final textarea comparison and
+is not a whole-suite PASS. The diagnostic timeout disappeared; the browser's
+native CRLF submission is now checked against the exact submitted text instead
+of an LF-only Python fixture. No original text is normalized by the product.
+
+The aggregate registry requires this native journey plus every privacy service
+family, and a fresh encrypted restore of the one nonempty classification table.
+The restore helper keeps four dated labels and exact original/source/event bytes,
+proves SQL update/delete rejection, runs thirteen named current-use denial checks,
+and repeats positive reads after restoring fresh explicit grants. Restored labels
+provide neither current identity nor runtime permission. Focused and historical
+native results are recorded separately; final exact-head certification remains
+pending. Publication-destination and schedule consumption now require independent
+exact-source PUBLISH, and public library/knowledge/collection/teaching discovery
+requires SEARCH before filtering, facets, counts and sitemap links. Direct detail
+READ remains independent. The next aggregate must prove these additions together.
+
+## Explicit private work while classification is pending
+
+SPEC-U14-001 prohibits making completed classification or transcription a
+prerequisite for a human answer. An unclassified private CASE or exact child can
+therefore use a separately typed `UnclassifiedWorkGrant`, issued by the current
+configured authority for STAFF READ only. The grant binds the exact source digest,
+case, actual principal/role/auth epoch, independent purpose and a finite deadline.
+The default authority denies it. Missing production policies remain unset.
+
+This is an absence-of-classification pin, not a fifth human sensitivity level.
+It creates no `ClassificationRevision`; any existing classification, malformed
+history or stale source prevents fallback. Changes to the source, classification,
+identity, policy or deadline after rendering withhold the response. SEARCH,
+EXPORT, PUBLISH, AI, public/requester access and classification management never
+inherit this grant. The native staff inbox can list explicit private work, while
+every nonempty queue search first requires separate CASE/original SEARCH and
+excludes readable answers or copied evidence lacking exact child SEARCH grants.
+
+The native browser journey drafts and approves through the real MUFTI forms,
+compares the persisted answer to the actual native POST bytes, leaves the original
+question/evidence and classification ledger unchanged, and reuses the rendered
+form after current work permission is revoked. Its protected hosted execution is
+required alongside the existing two-role classification journey. The encrypted
+restore creates only a fresh synthetic work authority for a positive check; it
+preserves all thirteen independent denial checks and never restores a runtime grant.

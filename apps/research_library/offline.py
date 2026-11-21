@@ -149,7 +149,7 @@ def catalog(request):
     _clean(request)
     with public.public_projection() as snapshot:
         rows = []
-        for row in snapshot.records.values():
+        for row in snapshot.search_records():
             if "OFFLINE" in row["uses"]:
                 # Current runtime grants are independent from approval history.
                 try:

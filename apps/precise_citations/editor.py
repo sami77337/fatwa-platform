@@ -133,7 +133,14 @@ def page(
             row = CitationSet.objects.filter(pk=cases._uuid(selected_id), answer__case=case).first()
             if row is None:
                 raise cases.CaseConflict("precise_citation_set_unavailable")
-        record = services.read_locked(guard, case_id=case.pk, set_id=row.pk) if row else None
+        from apps.data_privacy.services import PrivacyDenied
+
+        try:
+            record = services.read_locked(guard, case_id=case.pk, set_id=row.pk) if row else None
+        except PrivacyDenied:
+            if selected_id:
+                raise
+            record = None
         if state is None:
             state = {
                 "revision": selected["revision"],
@@ -152,11 +159,20 @@ def page(
             pending.append({**entry, "reference": live["reference"]})
         if preview is not None:
             preview = sources.read(guard, preview, owner_case_id=case.pk)
-        history = list(
-            CitationSet.objects.filter(answer__case=case)
-            .order_by("answer__revision")
-            .values("id", "answer__revision", "subject_id", "created_at")
-        )
+        history = []
+        for item in CitationSet.objects.filter(answer__case=case).order_by("answer__revision"):
+            try:
+                guard.original(case.pk, "ANSWER", item.answer_id)
+            except PrivacyDenied:
+                continue
+            history.append(
+                {
+                    "id": item.pk,
+                    "answer__revision": item.answer.revision,
+                    "subject_id": item.subject_id,
+                    "created_at": item.created_at,
+                }
+            )
         return private(
             render_editor(
                 request,
@@ -306,8 +322,12 @@ def workspace(request):
                         base,
                         actor,
                         provider,
-                        selected_id=row["id"],
-                        message="حُفظ إصدار جواب جديد؛ الإحالات بحاجة إلى مراجعة مستقلة.",
+                        selected_id=None if row.get("classification_required") else row["id"],
+                        message=(
+                            "حُفظ إصدار جواب جديد؛ يلزم تصنيفه ومنح قراءة حالية قبل إظهار محتواه."
+                            if row.get("classification_required")
+                            else "حُفظ إصدار جواب جديد؛ الإحالات بحاجة إلى مراجعة مستقلة."
+                        ),
                     )
                 elif command != "find":
                     raise cases.CaseConflict("precise_citation_command_invalid")

@@ -2,8 +2,8 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 79,
-  "note": "Exact source objects copied from the pinned specification and decision inventories for 70 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
+  "specification_count": 81,
+  "note": "Exact source objects copied from the pinned specification and decision inventories for 100 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
       "original_id": "SPEC-U01-004",
@@ -872,6 +872,28 @@
       "owner_points_source": "406",
       "source_spec_lines_unverified": "1937–1938",
       "parsed_index": 411,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U14-016",
+      "unit": "14",
+      "title": "حساسية البيانات مختلفة عن حالة النشر",
+      "original_text": "14.16. حساسية البيانات مختلفة عن حالة النشر\nتدعم المنصة التصنيفات PUBLIC وINTERNAL وCONFIDENTIAL وRESTRICTED، وتحدد قواعد الوصول المناسبة لكل نوع بيانات في المصفوفة. لا يجعل وصف سجل بأنه عام جميع مشتقاته ومرفقاته عامة، ولا يحول اختيار هذا الوصف مسودة إلى مادة منشورة. الاعتماد العلمي والإتاحة والنشر والإذن بالتصدير أبعاد منفصلة. لا ينشئ النموذج وحده تغييرًا يوسع إتاحة مادة خاصة.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "391، 392، 393، 394، 395",
+      "source_spec_lines_unverified": "1948–1949",
+      "parsed_index": 413,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U14-017",
+      "unit": "14",
+      "title": "الخصوصية تسري على جميع طرق العرض",
+      "original_text": "14.17. الخصوصية تسري على جميع طرق العرض\nتشمل الحدود النص والصوت والصورة واسم الملف والتفريغ والمقتطفات وأعداد النتائج والروابط وشبكة المعرفة والتقارير والتنبيهات والمعاينات. تستخدم الخدمات العامة النسخ العامة المصرح بها فقط، لا الأصل الداخلي لفتوى منشورة. اختيار نشر جزء لا يفتح جميع التعقيبات ولا رابط السائل الخاص. لا تجمع شاشة أو حزمة أو نتيجة بحث بيانات خارج صلاحية المستلم ثم تعتمد على إخفائها بصريًا لاحقًا.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "143، 391، 392، 393، 394، 395",
+      "source_spec_lines_unverified": "1952–1953",
+      "parsed_index": 414,
       "acceptance": "HOLD"
     }
   ],

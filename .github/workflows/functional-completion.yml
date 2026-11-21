@@ -72,7 +72,7 @@ jobs:
           python infra/dev/with_casework_postgres.py \
             --pg-bin "/usr/lib/postgresql/$PG_EXPECTED_MAJOR/bin" \
             --major "$PG_EXPECTED_MAJOR" --settings config.settings.campaign_review -- \
-            python manage.py test apps.ai_gateway.browser_tests apps.data_privacy.browser_tests --noinput --verbosity 2
+            python manage.py test apps.ai_gateway.browser_tests apps.data_privacy.browser_tests apps.data_privacy.browser_work --noinput --verbosity 2
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -80,12 +80,13 @@ jobs:
           path: |
             .local/qa/functional-continuation/ai-citation-browser
             .local/qa/functional-continuation/data-privacy-browser
+            .local/qa/functional-continuation/private-unclassified-work-browser
           include-hidden-files: true
           if-no-files-found: error
   workspace:
     needs: citation-browser
     runs-on: ubuntu-latest
-    # 47 protected journeys, expanded service families and the encrypted drill
+    # 49 protected journeys, expanded service families and the encrypted drill
     # share this bounded job; local affected tests alone already exceed 25 minutes.
     timeout-minutes: 45
     strategy:

@@ -33,7 +33,7 @@ def index(request):
         raise preview.InvalidFilter()
     with public.public_projection() as snapshot:
         latest = {}
-        for row in snapshot.records.values():
+        for row in snapshot.search_records():
             if row["id"] not in latest or row["number"] > latest[row["id"]]["number"]:
                 latest[row["id"]] = row
         rows = sorted(

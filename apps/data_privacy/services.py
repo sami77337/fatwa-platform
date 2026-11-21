@@ -25,7 +25,7 @@ from apps.mufti_review.identity import MuftiIdentityProvider
 from apps.operational_workspace import identity as operational_identity
 from apps.platform_recovery.integration import mutation_service
 
-from .authority import Grant, PrivacyAuthority
+from .authority import Grant, PrivacyAuthority, UnclassifiedWorkGrant
 from .catalog import ACTIONS, LEVELS, Target, digest, locate
 
 ZERO = "0" * 64
@@ -290,6 +290,56 @@ def _permission(selected, principal, target, level, action, previous_level=""):
     return min(value for value in (grant.valid_until, principal.valid_until) if value is not None)
 
 
+@dataclass(frozen=True, slots=True)
+class UnclassifiedWork:
+    """A pinned absence of human classification, never a fifth ledger level."""
+
+    digest: str
+    level: str = "UNCLASSIFIED_WORK"
+    number: int = 0
+
+
+def _work_permission(selected, principal, target, action):
+    # A core human answer must not depend on completing classification. This
+    # narrow opt-in remains a separate exact private-read permission; no label,
+    # broad role default or implicit source/recipient permission is manufactured.
+    if (
+        principal.audience != "STAFF"
+        or action != "READ"
+        or target.kind.startswith("PUBLIC")
+        or not target.case_ref
+        or target.case_ref not in principal.actor.case_keys
+    ):
+        raise PrivacyDenied("privacy_classification_required")
+    values = dict(
+        audience=principal.audience,
+        provider_id=principal.provider_id,
+        subject_id=principal.subject_id,
+        auth_epoch=principal.auth_epoch,
+        role=principal.role,
+        case_ref=target.case_ref,
+        target_kind=target.kind,
+        target_id=target.identifier,
+        source_digest=target.source_digest,
+        provenance="UNCLASSIFIED_WORK",
+        action=action,
+    )
+    try:
+        grant = selected[0].authorize_unclassified_work(**values)
+    except Exception as exc:
+        raise PrivacyDenied("privacy_authority_unavailable") from exc
+    if (
+        type(grant) is not UnclassifiedWorkGrant
+        or grant.binding_sha256 != digest(values)
+        or not isinstance(grant.valid_until, datetime)
+        or not timezone.is_aware(grant.valid_until)
+        or grant.valid_until.utcoffset() != timedelta(0)
+        or not timezone.now() < grant.valid_until <= timezone.now() + timedelta(hours=1)
+    ):
+        raise PrivacyDenied("privacy_classification_required")
+    return min(grant.valid_until, principal.valid_until)
+
+
 @dataclass(slots=True)
 class Use:
     target: Target
@@ -300,8 +350,12 @@ class Use:
     deadline: datetime
 
     def callbacks(self):
-        deadline = _permission(
-            self.selected, self.principal, self.target, self.classification.level, self.action
+        deadline = (
+            _work_permission(self.selected, self.principal, self.target, self.action)
+            if type(self.classification) is UnclassifiedWork
+            else _permission(
+                self.selected, self.principal, self.target, self.classification.level, self.action
+            )
         )
         identity_deadline = _identity_callbacks(self.principal)
         self.deadline = min(
@@ -313,7 +367,10 @@ class Use:
         _identity_pins(self.principal)
         if locate(self.target.kind, self.target.identifier) != self.target:
             raise PrivacyDenied("privacy_source_changed")
-        if current(self.target).digest != self.classification.digest:
+        if type(self.classification) is UnclassifiedWork:
+            if history(self.target):
+                raise PrivacyDenied("privacy_classification_changed")
+        elif current(self.target).digest != self.classification.digest:
             raise PrivacyDenied("privacy_classification_changed")
         if timezone.now() >= self.deadline:
             raise PrivacyDenied("privacy_permission_expired")
@@ -370,8 +427,13 @@ def require(kind, identifier, *, principal, action="READ"):
     target = locate(kind, identifier)
     _lock(target)
     target = locate(kind, identifier)
-    row = current(target)
-    deadline = _permission(selected, principal, target, row.level, action)
+    if history(target):
+        # A recorded stale/corrupt label must never fall back to unclassified use.
+        row = current(target)
+        deadline = _permission(selected, principal, target, row.level, action)
+    else:
+        deadline = _work_permission(selected, principal, target, action)
+        row = UnclassifiedWork(digest(["unclassified-work.v1", target.source_digest, ZERO]))
     use = Use(target, row, principal, action, selected, deadline)
     use.final_pins()
     for scope in SCOPES.get():

@@ -10,6 +10,8 @@ from apps.answer_media.models import AnswerPart
 from apps.case_attachments import services as attachments
 from apps.case_attachments.models import CaseAttachment
 from apps.casework import services as cases
+from apps.data_privacy import integration as privacy
+from apps.data_privacy.services import PrivacyDenied
 from apps.platform_recovery.integration import mutation_service
 from apps.private_media.validation import MediaValidationError, validate
 from apps.source_rights.services import projection_expiry_guard
@@ -30,6 +32,7 @@ def _enabled():
 
 
 def _source(case, actor, provider, kind, identifier):
+    privacy.original("CASE", case.pk, provider=provider, actor=actor)
     identifier = cases._uuid(identifier)
     if kind == "ATTACHMENT":
         attachments._enabled()
@@ -57,10 +60,17 @@ def _source(case, actor, provider, kind, identifier):
         )
         if owner is None:
             raise cases.CaseConflict("pdf_source_unavailable")
+        privacy.original("ANSWER", owner.manifest.answer_id, provider=provider, actor=actor)
         version, recorded = owner.manifest.answer.revision, owner.metadata
     else:
         raise cases.CaseConflict("pdf_source_kind_invalid")
     pin = {"kind": kind, "id": str(owner.pk), "sha256": owner.sha256}
+    privacy.original(
+        "ATTACHMENT" if kind == "ATTACHMENT" else "ANSWER_PART",
+        owner.pk,
+        provider=provider,
+        actor=actor,
+    )
     _rights(case, actor, provider, pin)
     if kind == "ATTACHMENT":
         raw = attachments._check(owner)
@@ -101,6 +111,7 @@ def _latest(row):
 
 
 def _validate(row, case, actor, provider):
+    privacy.original("ANSWER", row.answer_id, provider=provider, actor=actor)
     if row.snapshot_sha256 != _digest(row.snapshot) or row.page_count != row.snapshot.get(
         "page_count"
     ):
@@ -294,9 +305,7 @@ def open_pdf(
             from .page_preview import PdfPageUnavailable, selected_page
 
             try:
-                raw = selected_page(
-                    raw, page_number=row.page_number, page_count=row.page_count
-                )
+                raw = selected_page(raw, page_number=row.page_number, page_count=row.page_count)
             except PdfPageUnavailable as exc:
                 raise cases.CaseConflict("pdf_selected_page_unavailable") from exc
         _rights(case, actor, provider, row.snapshot)
@@ -305,9 +314,7 @@ def open_pdf(
             "raw": raw,
             "media_type": row.snapshot["media_type"],
             "filename": (
-                f"selected-page-{row.page_number}.pdf"
-                if page_only
-                else row.snapshot["filename"]
+                f"selected-page-{row.page_number}.pdf" if page_only else row.snapshot["filename"]
             ),
             "page_number": row.page_number,
             "printed_label": row.printed_label,
@@ -316,6 +323,7 @@ def open_pdf(
         }
 
 
+@privacy.projected
 @projection_expiry_guard()
 def for_locked_answer(*, answer, actor, provider):
     """Integrator hook before canonical approval/use; no automatic relation cloning.
@@ -411,6 +419,8 @@ def desk(*, case_id, subject_id, provider, synthetic_fixtures_only=False):
                 if row.previous_id:
                     _validate(row.previous, case, actor, provider)
                 entry["reason"] = row.reason
+            except PrivacyDenied:
+                continue
             except cases.CaseConflict:
                 pass
             history.append(entry)

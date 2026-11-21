@@ -83,7 +83,7 @@ def record(snapshot, row):
 
 def catalogue(snapshot, params):
     latest = {}
-    for row in snapshot.records.values():
+    for row in snapshot.search_records():
         if row["id"] not in latest or row["number"] > latest[row["id"]]["number"]:
             latest[row["id"]] = row
     normalized = normalize_editorial_search(params["q"])
