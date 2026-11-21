@@ -124,7 +124,13 @@ class CollectionTests(CollectionFixture, TransactionTestCase):
                 item_ids=[item["id"]],
             )
         self.rights.denied.clear()
-        cases.save_answer(**self.common, **self.pins(), text="NEW UNSAVED APPROVAL DRAFT")
+        pins = self.pins()
+        cases.save_answer(
+            **self.common,
+            expected_revision=pins["expected_case_revision"],
+            expected_evidence_version=pins["expected_evidence_version"],
+            text="NEW UNSAVED APPROVAL DRAFT",
+        )
         self.assertFalse(self.read(collection)["items"][0]["available"])
         with self.assertRaises(cases.CaseConflict):
             collections.current_approved_resource(**self.common)
