@@ -174,6 +174,10 @@ NEW_WORKFLOWS = {
         "media_derivatives_derivativeevent",
         "media_derivatives_derivedoutput",
     ),
+    "apps.derived_maintenance.recovery_support": (
+        "derived_maintenance_derivativeclear",
+        "derived_maintenance_derivativerebuild",
+    ),
 }
 RESTORED_DENIAL_CHECKS = {
     "apps.research_library.recovery_support": {
@@ -506,6 +510,23 @@ RESTORED_DENIAL_CHECKS = {
         "cancelled_not_ready": 1,
         "unavailable_not_ready": 1,
     },
+    "apps.derived_maintenance.recovery_support": {
+        "feature_disabled": 1,
+        "journal_absent": 1,
+        "floor_stale": 1,
+        "floor_missing": 1,
+        "directory_absent": 1,
+        "management_mandate_revoked": 1,
+        "cleared_search_identifier": 1,
+        "cleared_ai_identifier": 1,
+        "search_permission_revoked": 1,
+        "source_read_revoked": 1,
+        "source_processing_revoked": 1,
+        "provider_absent": 1,
+        "late_projection_floor_change": 1,
+        "newer_floor_blocks_old_sql": 1,
+        "reconciled_identifier_remains_cleared": 1,
+    },
 }
 
 # Keep the exact executed identities, including the assignment class's inherited
@@ -793,6 +814,11 @@ NEW_BROWSER_JOURNEYS = (
         ".local/qa/functional-continuation/media-derivatives-browser/result.json",
         "modern",
     ),
+    (
+        "apps.derived_maintenance.browser_tests.DerivedMaintenanceBrowserTests.test_native_clear_regenerate_current_sources_and_preserved_human_approval",
+        ".local/qa/functional-continuation/derived-maintenance-browser/result.json",
+        "modern",
+    ),
 )
 
 
@@ -929,8 +955,8 @@ def require_browser_journeys(log):
         "Protected browser journeys were skipped or failed",
     )
     require(
-        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["54"],
-        "Exactly 54 protected browser journeys must complete",
+        re.findall(r"^Ran (\d+) tests? in [^\n]+$", log, re.MULTILINE) == ["55"],
+        "Exactly 55 protected browser journeys must complete",
     )
     # Output from HTTP handlers or Django startup may appear between a verbose
     # test header and its status. The one complete OK summary establishes success;
@@ -938,7 +964,7 @@ def require_browser_journeys(log):
     observed = re.findall(r"^test_\w+ \(([\w.]+)\)", log, re.MULTILINE)
     expected = {row[0] for row in (*PRIOR_BROWSER_JOURNEYS, *NEW_BROWSER_JOURNEYS)}
     require(
-        len(observed) == len(set(observed)) == len(expected) == 54 and set(observed) == expected,
+        len(observed) == len(set(observed)) == len(expected) == 55 and set(observed) == expected,
         "A required protected browser journey was omitted or replaced",
     )
     return sorted(observed)
@@ -1136,10 +1162,10 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
     expected_tables = {*PRIOR_TABLES, *new_tables}
     require(
         len(PRIOR_TABLES) == 22
-        and len(new_tables) == 84
-        and len(expected_tables) == 106
+        and len(new_tables) == 86
+        and len(expected_tables) == 108
         and set(recovery["tables"]) == expected_tables,
-        "Exactly the 106 prior and new recovery tables are required",
+        "Exactly the 108 prior and new recovery tables are required",
     )
     require(
         all(
@@ -1153,7 +1179,7 @@ def write_continuation_receipt(execution, log_root, *, labels, browser_labels):
         isinstance(restored_results, dict)
         and set(restored_results) == expected_workflows
         and all(isinstance(value, dict) and value for value in restored_results.values()),
-        "All forty-one fresh-process workflow result records are required",
+        "All forty-two fresh-process workflow result records are required",
     )
     for helper, expected in RESTORED_DENIAL_CHECKS.items():
         result = restored_results[helper]

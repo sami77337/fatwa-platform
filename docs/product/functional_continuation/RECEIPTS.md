@@ -1,6 +1,6 @@
 # Continuation evidence and receipt contract
 
-This document specifies how a later coordinator-owned verifier may certify the bounded continuation. It is **not an execution receipt**. The current106-candidate plan alone certifies zero additional points. Historical checkpoints are exact-source observations and cannot certify a later tree; the ac8f517 checkpoint also records the post-run native audio visibility finding. No historical matrix, acceptance result or previous scope plan is rewritten.
+This document specifies how a later coordinator-owned verifier may certify the bounded continuation. It is **not an execution receipt**. The current107-candidate plan alone certifies zero additional points. Historical checkpoints are exact-source observations and cannot certify a later tree; the ac8f517 checkpoint also records the post-run native audio visibility finding. No historical matrix, acceptance result or previous scope plan is rewritten.
 
 ## Source and scope integrity
 
@@ -9,7 +9,7 @@ Before recording any point as completed, the verifier must:
 1. Read the 556-row original inventory at the exact path and SHA-256 in `scope_plan.json.source_inventory`; verify 556 unique original IDs.
 2. Compare every included point's exact original text and direct specification IDs with that inventory. Verify the separately pinned specification/decision source digests.
 3. Read the unchanged prior 57-point scope plan and compare its digest and exact IDs with `previous_batch`. Reject duplicate current IDs and any overlap with those prior credited IDs or the current exclusions.
-4. Require actual implementation and final evidence for all106 candidates. A plan, enum, UI placeholder or reported local pass cannot mark a candidate complete. The scope revision adding point361 records the actual video export/reimport proof that justified its promotion; the final run must execute that scenario too.
+4. Require actual implementation and final evidence for all107 candidates. A plan, enum, UI placeholder or reported local pass cannot mark a candidate complete. The scope revision adding point361 records the actual video export/reimport proof that justified its promotion; the final run must execute that scenario too.
 5. Compute the percentage from the actual newly completed IDs divided by 556. Do not use the 479 detailed clauses, tests, commits, files, messages or elapsed work as that denominator.
 
 The historical intermediate target is56–66 original points for an additional10–12%; the current user goal is the remaining documented functionality except final visual design. Neither target is an achieved result by itself. A receipt must report only its actually verified whole-point count and exact percentage. An intermediate milestone does not establish overall product completion.
@@ -30,7 +30,7 @@ The coordinator may write fresh aggregate receipts under `.local/qa/functional-c
 
 ## Protected browser requirements
 
-The current registry requires54 exact executed browser identities (8 inherited plus46 continuation),53 native JSON proofs and1 original audio execution-log proof. An unrelated replacement identity cannot satisfy the aggregate. For every claimed functional group, execute the test class and read the exact result path listed in the scope plan. Where a class/module is marked planned, first require its actual implementation and registration. A name in this document is not proof that the test exists.
+The current registry requires55 exact executed browser identities (8 inherited plus47 continuation),54 native JSON proofs and1 original audio execution-log proof. An unrelated replacement identity cannot satisfy the aggregate. For every claimed functional group, execute the test class and read the exact result path listed in the scope plan. Where a class/module is marked planned, first require its actual implementation and registration. A name in this document is not proof that the test exists.
 
 Each successful result must attest `status=PASS`, sandbox enabled and widths 320 and 1280, with fresh screenshots and trace files. The aggregate verifier should retain their byte hashes and the test invocation/log that produced them. It must check actual freshness within this run, not merely the existence of a JSON file carrying PASS.
 
@@ -42,7 +42,7 @@ A local environment that cannot launch protected Chromium records `PENDING_PROTE
 
 ## Recovery requirements
 
-The integrated encrypted recovery drill must populate and restore every persistent table used by the included groups' explicit inventory. That inventory covers106 nonempty tables:22 inherited and84 continuation-covered tables. The continuation inventory consists of4 library,7 import,3 collection,1 lifecycle,2 canonical search,4 public recording/transcript,3 precise citation,1 existing original-attachment,3 existing answer-media,6 identity,2 scheduling,3 destination-publication,7 development-taxonomy,4 synonym/shadow-governance,3 public-teaching,1 retry 4 evaluation/benchmark,1 priority-history 3 AI audit/derivative tables and4 session/proof journals plus1 classification journal,1 permission journal and3 upload quarantine/scan journals,9 MFA assurance journals and1 reversible deletion journal plus3 separate technical-media job/event/output tables. Existing tables are additionally covered, not counted as newly created schema. Recording search reuses search/media owners. Offline reading, staff PWA, dark mode, the separate composer panel, public reader actions, the material API, text-only selection, FT lookup and the operational queue add no server tables. The41 exact fresh-process helper records and304 actual current-access denial reads must match their explicit registries, with positive reads after authority restoration.
+The integrated encrypted recovery drill must populate and restore every persistent table used by the included groups' explicit inventory. That inventory covers108 nonempty tables:22 inherited and86 continuation-covered tables. The continuation inventory consists of4 library,7 import,3 collection,1 lifecycle,2 canonical search,4 public recording/transcript,3 precise citation,1 existing original-attachment,3 existing answer-media,6 identity,2 scheduling,3 destination-publication,7 development-taxonomy,4 synonym/shadow-governance,3 public-teaching,1 retry 4 evaluation/benchmark,1 priority-history 3 AI audit/derivative tables and4 session/proof journals plus1 classification journal,1 permission journal and3 upload quarantine/scan journals,9 MFA assurance journals and1 reversible deletion journal plus3 separate technical-media job/event/output tables and2 derivative-clearance/rebuild audit tables. Existing tables are additionally covered, not counted as newly created schema. Recording search reuses search/media owners. Offline reading, staff PWA, dark mode, the separate composer panel, public reader actions, the material API, text-only selection, FT lookup and the operational queue add no server tables. The42 exact fresh-process helper records and319 actual current-access denial reads must match their explicit registries, with positive reads after authority restoration.
 
 The drill must verify:
 
@@ -68,7 +68,7 @@ The exact serializer is coordinator-owned, but its semantics should remain expli
   "source_inventory_sha256": "0b968605508676f5b3ecb5e84d1f8ab973d1c4e3e448b013765998de3e0fc487",
   "denominator": 556,
   "previous_credited_count": 57,
-  "candidate_count": 106,
+  "candidate_count": 107,
   "completed_additional_original_ids": [],
   "completed_additional_original_owner_points": 0,
   "completed_additional_percentage": 0,

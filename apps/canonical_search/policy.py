@@ -220,7 +220,7 @@ class Scope:
         self.expected_generations.add((str(generation.pk), generation.digest))
         self.expected_documents.update((str(row.pk), row.digest) for row in documents)
 
-    def finish(self):
+    def callbacks(self):
         # All callbacks finish before any final pure comparison. Rechecking the
         # first result after the last one alone is insufficient for mixed grants.
         for case in self.cases.values():
@@ -234,7 +234,14 @@ class Scope:
         fresh = resolve_identity(self.provider, self.actor.subject_id)
         if _actor(fresh) != _actor(self.actor) or timezone.now() >= self.actor.valid_until:
             raise cases.CaseConflict("search_identity_changed")
-        self.recordings.finish()
+
+    def verify_bytes(self):
+        self.recordings.verify_bytes()
+
+    def final_pins(self):
+        self.recordings.final_pins()
+        if timezone.now() >= self.actor.valid_until:
+            raise cases.CaseConflict("search_identity_changed")
         assert_snapshot(self.initial)
         if identity_snapshot(self.provider) != self.identity:
             raise cases.CaseConflict("search_identity_changed")
@@ -250,6 +257,11 @@ class Scope:
         if (tuple(sorted(actual[0])), tuple(sorted(actual[1]))) != expected:
             raise cases.CaseConflict("search_index_changed")
         self.governance.finish()
+
+    def finish(self):
+        self.callbacks()
+        self.verify_bytes()
+        self.final_pins()
 
 
 @mutation_context
@@ -275,7 +287,7 @@ def boundary(
     from apps.data_privacy.integration import staff as privacy
     from apps.data_privacy.services import PrivacyDenied
 
-    with projection(), synthetic_queue_atomic(), ExitStack() as stack:
+    with projection() as privacy_projection, synthetic_queue_atomic(), ExitStack() as stack:
         identity = identity_snapshot(provider)
         initial = snapshot()
         actor = resolve_identity(provider, subject_id)
@@ -324,5 +336,9 @@ def boundary(
         context.cases = locked
         for case in locked.values():
             context.permit(case)
+        from apps.derived_maintenance.rebuild import retain_owner
+
+        retain_owner(verify_bytes=context.verify_bytes, final_pins=context.final_pins)
+        retain_owner(final_pins=privacy_projection.final_pins)
         yield context
         context.finish()

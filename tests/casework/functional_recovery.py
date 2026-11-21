@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 import uuid
+from contextlib import ExitStack
 from pathlib import Path
 
 import django
@@ -54,16 +55,23 @@ ADDITIONAL_WORKFLOWS = (
     "apps.upload_security.recovery_support",
     "apps.staff_mfa.recovery_support",
     "apps.media_derivatives.recovery_support",
+    "apps.derived_maintenance.recovery_support",
     "apps.record_suppression.recovery_support",
 )
 
 
 def restored(fixture):
-    from apps.record_suppression.recovery_support import current_floor
+    from apps.derived_maintenance.recovery_support import current_floor as derived_floor
+    from apps.record_suppression.recovery_support import current_floor as suppression_floor
 
     # The independent current floor is required before any restored feature may
     # read a source. It supplies no identity, privacy or administrative grant.
-    with current_floor(fixture["additional_workflows"]["apps.record_suppression.recovery_support"]):
+    with (
+        derived_floor(fixture["additional_workflows"]["apps.derived_maintenance.recovery_support"]),
+        suppression_floor(
+            fixture["additional_workflows"]["apps.record_suppression.recovery_support"]
+        ),
+    ):
         _restored_with_current_floor(fixture)
 
 
@@ -280,9 +288,19 @@ def drill(pg_bin):
                             action_note="إجراء بشري موثق",
                             verification_note="تحقق اصطناعي" if action == "RESOLVE" else "",
                         )
-                additional = {
-                    name: importlib.import_module(name).populate() for name in ADDITIONAL_WORKFLOWS
-                }
+                additional = {}
+                with ExitStack() as current_floors:
+                    for name in ADDITIONAL_WORKFLOWS:
+                        helper = importlib.import_module(name)
+                        additional[name] = helper.populate()
+                        if name in {
+                            "apps.derived_maintenance.recovery_support",
+                            "apps.record_suppression.recovery_support",
+                        }:
+                            # Later populations may consume an existing source or
+                            # index. Supply only its independent current floor;
+                            # each helper still creates its own explicit grants.
+                            current_floors.enter_context(helper.current_floor(additional[name]))
                 control = root / "control"
                 control.mkdir(mode=0o700)
                 maintenance.initialize(root=control, storage=storage, synthetic_fixtures_only=True)

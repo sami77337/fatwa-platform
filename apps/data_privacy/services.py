@@ -384,6 +384,7 @@ class Projection:
         self.flag = (type(getattr(settings, "FATWA_DATA_PRIVACY_ENABLED", None)), enabled())
         self.uses = []
         self.retained_suppression = []
+        self.retained_derivatives = []
 
     def callbacks(self):
         for use in self.uses:
@@ -395,6 +396,8 @@ class Projection:
         for use in self.uses:
             use.final_pins()
         for use in self.retained_suppression:
+            use.final_pins()
+        for use in self.retained_derivatives:
             use.final_pins()
 
     def finish(self):

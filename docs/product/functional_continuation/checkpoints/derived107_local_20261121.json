@@ -1,0 +1,68 @@
+{
+  "schema": "fatwa.composed-development-checkpoint.v1",
+  "complete_plan_certified": false,
+  "frozen_service_aggregate": {
+    "tested_sha": "356c2587f8530e60383bde49daeee21a8961d635",
+    "scope_note": "This precedes the final requester refusal, finite-media-deadline cases and derivative-maintenance addition. It is a complete frozen baseline run, not certification of a newer tree.",
+    "runs": [
+      {
+        "postgres_major": 17,
+        "tests": 1526,
+        "seconds": 3118.073,
+        "test_runner_status": "OK",
+        "log_sha256": "baa338bef1137f953466b411e496063c1723feb17e4738affbc2d032775a4478"
+      },
+      {
+        "postgres_major": 18,
+        "tests": 1526,
+        "seconds": 3157.421,
+        "test_runner_status": "OK",
+        "log_sha256": "41a56431e6d890cd6d5a1e841a2920b91e055fdab32081025d4c448494e9dc7e"
+      }
+    ]
+  },
+  "derived_followup": {
+    "tested_sha": "918f156c80f25e0d80b46f1d6cf396de1f69059d",
+    "scope_note": "Recorded source phase, maintenance final callbacks, native final-session retained owners, current-floor recovery and pre-write journal capacity. The former injected storage callback is now armed at verify_bytes; refusal and fired=[True] remain required.",
+    "runs": [
+      {
+        "postgres_major": 17,
+        "tests": 30,
+        "seconds": 92.007,
+        "status": "PASS",
+        "log_sha256": "0f90520a90bbf5df71d18dbe00578525fda4a14e376c9a405e918d4c7a296926"
+      },
+      {
+        "postgres_major": 18,
+        "tests": 30,
+        "seconds": 93.115,
+        "status": "PASS",
+        "log_sha256": "17eeae916adc6ad5128c0ec5b62227f7ad594a5d31e7fb1777d7190963ffedea"
+      }
+    ]
+  },
+  "strict_receipt_contract": {
+    "tested_sha": "ea41bb763b1feb3fd2a3c3107e123ae56f1050da",
+    "tests": 9,
+    "seconds": 97.076,
+    "status": "PASS",
+    "log_sha256": "20a88af73fbdd134d6a572ce023e5881e9f59592f50c47a2c476107e3f4fd1f3",
+    "accepted_product_points": 0
+  },
+  "required_current_acceptance": {
+    "service_tests_registered": 1566,
+    "protected_browser_journeys": 55,
+    "nonempty_restore_tables": 108,
+    "restore_helpers": 42,
+    "restore_denials": 319,
+    "not_execution_totals": true
+  },
+  "scope": {
+    "new_candidate_443": true,
+    "owner_509_partial_not_counted": true,
+    "actual_asr": "UNAVAILABLE_NO_PROVIDER",
+    "vector_embedding": "NOT_IMPLEMENTED",
+    "main_merged": false,
+    "production_deployed": false
+  }
+}

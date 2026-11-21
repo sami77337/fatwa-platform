@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 106,
-  "implemented_scope_candidates": 106,
+  "candidate_count": 107,
+  "implemented_scope_candidates": 107,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 19.06,
+  "candidate_percentage": 19.24,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -4243,6 +4243,96 @@
         "status": "FOCUSED_PROOFS_PENDING_FINAL_COMPOSITION",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "existing_derived_data_maintenance",
+      "title_ar": "صيانة مشتقات البحث والاقتراحات مع حفظ الأصول والعمل البشري",
+      "implementation_state": "IMPLEMENTED_INTEGRATED_SERVICE_BROWSER_RESTORE_PROOFS_PENDING",
+      "contract": "apps/derived_maintenance/README.md",
+      "baseline_gap": "The existing canonical SearchDocument and central-gateway CandidateBatch payload owners can be explicitly cleared and independently rebuilt under fresh source, domain, processing, administrative and session grants. Immutable source/human edits and generation/run/outcome audit remain intact. A separate current clearance floor blocks old SQL and old identifiers; SQL payload deletion is restricted to the exact admitted manifest. Final callbacks, byte reads and pure owner/source checks complete before commit. Native review, confirmation, regenerated candidate display, current-source search and fresh-process encrypted recovery are mandatory. Owner 443 is the sole new whole-point candidate in this group; 509 remains partial because actual alternative-engine transcription under SPEC-U11-020 is not implemented.",
+      "service_test_labels": [
+        "apps.derived_maintenance.test_callback_order",
+        "apps.derived_maintenance.test_http",
+        "apps.derived_maintenance.test_integrity",
+        "apps.derived_maintenance.test_owner_responses",
+        "apps.derived_maintenance.test_recovery",
+        "apps.derived_maintenance.test_sessions",
+        "apps.derived_maintenance.test_sources",
+        "apps.derived_maintenance.tests"
+      ],
+      "service_test_classes": [
+        "apps.derived_maintenance.test_callback_order.LastMaintenanceCallbackTests",
+        "apps.derived_maintenance.test_http.DerivedNativeTests",
+        "apps.derived_maintenance.test_integrity.DerivedIntegrityTests",
+        "apps.derived_maintenance.test_owner_responses.RetainedOwnerResponseTests",
+        "apps.derived_maintenance.test_recovery.DerivedRecoveryTests",
+        "apps.derived_maintenance.test_sessions.DerivedSessionTests",
+        "apps.derived_maintenance.test_sources.CurrentSourceTests",
+        "apps.derived_maintenance.tests.DerivedMaintenanceTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.derived_maintenance.browser_tests.DerivedMaintenanceBrowserTests",
+        "result_path": ".local/qa/functional-continuation/derived-maintenance-browser/result.json",
+        "status": "PROTECTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.derived_maintenance.recovery_support",
+        "status": "LOCAL_HELPER_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 2,
+        "tables": [
+          "derived_maintenance_derivativeclear",
+          "derived_maintenance_derivativerebuild"
+        ],
+        "notes": "The independent derivative clearance floor and suppression floor both wrap every restored reader. Fifteen actual denials followed by positive current-owner reads are required; no identity or grants are reconstructed."
+      },
+      "points": [
+        {
+          "original_id": "443",
+          "original_text": "Search وAI Derived Data قابلة لإعادة البناء.",
+          "direct_spec_ids": [
+            "SPEC-U15-019"
+          ],
+          "decision_ids": [
+            "D-055"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 445
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "The existing canonical SearchDocument and central-gateway CandidateBatch payload owners can be explicitly cleared and independently rebuilt under fresh source, domain, processing, administrative and session grants. Immutable source/human edits and generation/run/outcome audit remain intact. A separate current clearance floor blocks old SQL and old identifiers; SQL payload deletion is restricted to the exact admitted manifest. Final callbacks, byte reads and pure owner/source checks complete before commit. Native review, confirmation, regenerated candidate display, current-source search and fresh-process encrypted recovery are mandatory. Owner 443 is the sole new whole-point candidate in this group; 509 remains partial because actual alternative-engine transcription under SPEC-U11-020 is not implemented."
+        }
+      ],
+      "partial_owner_points": [
+        {
+          "original_id": "509",
+          "original_text": "جميع مشتقات AI قابلة للحذف وإعادة البناء.",
+          "direct_spec_ids": [
+            "SPEC-U15-019",
+            "SPEC-U11-020",
+            "SPEC-U12-027"
+          ],
+          "assessment": "PARTIAL_NOT_COUNTED",
+          "remaining": "Actual automatic transcription from an alternative engine and preservation/comparison of its human-reviewed versions under SPEC-U11-020. The implemented CandidateBatch owner is covered; unimplemented AI task families and future owners are not certified."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PROOFS_PENDING_FINAL_COMPOSITION",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -4373,15 +4463,6 @@
       ],
       "classification": "NOT_SELECTED_EXTERNAL_RELEASE_CONTRACTS",
       "reason": "No public dataset release, developer API or webhook capability is inferred from a local archive or import receipt."
-    },
-    {
-      "original_id": "443",
-      "original_text": "Search وAI Derived Data قابلة لإعادة البناء.",
-      "direct_spec_ids": [
-        "SPEC-U15-019"
-      ],
-      "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
-      "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
     }
   ],
   "deferred_scope": [
@@ -4971,6 +5052,23 @@
       "from": "PARTIAL",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Exact owned originals remain immutable while separately stored THUMBNAIL and AUDIO_PLAYBACK results bind source version/hash, recipe, current identity and independent finite permissions. Real ffmpeg runs outside the authorization transaction under bounded input/CPU/memory/output rules. Durable jobs support explicit retry/cancel; stale leases, current source/scan/privacy revocation and originating session/MFA revocation veto output. Existing reviewed transcripts and public editions remain separate and unchanged. Actual native forms, audio playback, PNG decoding, downloads and fourteen fresh-target denial reads are required. This extends owner 382 only; pre-existing owner 441 is a regression invariant and actual ASR owner 432 remains partial."
+    },
+    {
+      "original_id": "443",
+      "from": "NOT_IMPLEMENTED",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The existing canonical SearchDocument and central-gateway CandidateBatch payload owners can be explicitly cleared and independently rebuilt under fresh source, domain, processing, administrative and session grants. Immutable source/human edits and generation/run/outcome audit remain intact. A separate current clearance floor blocks old SQL and old identifiers; SQL payload deletion is restricted to the exact admitted manifest. Final callbacks, byte reads and pure owner/source checks complete before commit. Native review, confirmation, regenerated candidate display, current-source search and fresh-process encrypted recovery are mandatory. Owner 443 is the sole new whole-point candidate in this group; 509 remains partial because actual alternative-engine transcription under SPEC-U11-020 is not implemented.",
+      "previous_exclusion": [
+        {
+          "original_id": "443",
+          "original_text": "Search وAI Derived Data قابلة لإعادة البناء.",
+          "direct_spec_ids": [
+            "SPEC-U15-019"
+          ],
+          "classification": "NOT_SELECTED_OR_INCOMPLETE_SEARCH",
+          "reason": "The catalogue uses bounded declared field/text search; it does not establish typo-tolerant/FTS quality, a tested shadow search replacement or complete Search/AI rebuild behavior."
+        }
+      ]
     }
   ],
   "verified_checkpoints": [

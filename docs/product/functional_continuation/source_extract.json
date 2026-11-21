@@ -2,8 +2,8 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 85,
-  "note": "Exact source objects copied from the pinned specification and decision inventories for 106 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
+  "specification_count": 88,
+  "note": "Exact source objects copied from the pinned specification and decision inventories for 107 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
       "original_id": "SPEC-U01-004",
@@ -938,6 +938,39 @@
       "owner_points_source": "381، 382",
       "source_spec_lines_unverified": "1511–1512",
       "parsed_index": 324,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U11-020",
+      "unit": "11",
+      "title": "حماية النسخة البشرية من إعادة المعالجة",
+      "original_text": "11.20. حماية النسخة البشرية من إعادة المعالجة\nعند طلب تفريغ جديد من محرك آخر، تحفظ النتيجة كنسخة جديدة قابلة للمقارنة، ولا تطمس النص الذي راجعه الفريق أو النسخة المنشورة. يمنع تعارض المحررين والكتابة فوق تعديل لم يطلع عليه المحرر الآخر. تبقى العودة إلى نسخة سابقة أو اعتماد نسخة بديلة إجراءً مدققًا، لا نتيجة جانبية لمهمة خلفية.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "509",
+      "source_spec_lines_unverified": "1550–1551",
+      "parsed_index": 333,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U12-027",
+      "unit": "12",
+      "title": "العمل البشري ليس فهرسًا قابلًا للمحو",
+      "original_text": "12.27. العمل البشري ليس فهرسًا قابلًا للمحو\nتحفظ المجموعات والملاحظات والإحالات والعلاقات التي راجعها الإنسان مع تاريخ التغيير والنسخ الاحتياطية المناسبة. هذه مختلفة عن ترتيب الرسم أو فهارس البحث أو اقتراحات النموذج القابلة لإعادة البناء. إعادة الفهرسة أو تغيير النموذج لا تمحو الملاحظات أو تنقل المراجع إلى إصدارات أخرى. إصلاح علاقة خاطئة مدقق وفق صلاحياتها، وحذف مصدر يتبع دورة حياته لا عملية إزالة عنصر من مجموعة.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "509",
+      "source_spec_lines_unverified": "1723–1724",
+      "parsed_index": 368,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U15-019",
+      "unit": "15",
+      "title": "النسخ الاحتياطي يشمل قيمة النظام الفعلية",
+      "original_text": "15.19. النسخ الاحتياطي يشمل قيمة النظام الفعلية\nتشمل الخطة بيانات القضايا والأجوبة والتعيينات والهوية والصلاحيات والإصدارات والتدقيق والروابط، وأصول الملفات، والتفريغات والملاحظات والمجموعات والعلاقات التي راجعها الإنسان. تُحفظ إعدادات التشغيل اللازمة بصورة مضبوطة. فهارس البحث والمخرجات الآلية التي يمكن إعادة بنائها تختلف عن الأصول والعمل البشري الذي لا يجوز فقده بحجة أنه مشتق. إدارة مفاتيح الاستعادة والأسرار مسار محمي منفصل، وليست إدراجًا لها في حزمة تصدير المنتج.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "437، 443، 508، 509، 541",
+      "source_spec_lines_unverified": "2102–2103",
+      "parsed_index": 444,
       "acceptance": "HOLD"
     }
   ],
@@ -2427,6 +2460,35 @@
       "evidence_ids": [
         "case-original",
         "identity"
+      ],
+      "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
+      "status": "DECISION",
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "D-016",
+      "occurrence": 1,
+      "source_header": "2026-09-29 — D-016",
+      "text": "2026-09-29 — D-016\r\nالنصوص والوسائط الأصلية immutable منطقيًا؛ التفريغ والتصنيف والفهرسة والـembeddings طبقات مشتقة قابلة لإعادة البناء والتصحيح.\r\n",
+      "text_sha256": "d3b8bec84d89758ed855801065091612ed245f59525038e96f1c92a418335d4d",
+      "source_url": "https://docs.google.com/document/d/1IoGNeCbB8dtMuGZ-BuvlInifmfaHbRos18OF1YUCN2Y/edit",
+      "source_modified": "2026-10-13T07:22:26.752Z",
+      "owner_points": [
+        "36",
+        "78",
+        "79",
+        "441",
+        "508",
+        "509"
+      ],
+      "evidence_ids": [
+        "answer-parts",
+        "case-original",
+        "identity",
+        "p1-browser-restored",
+        "p1-multipart-edit",
+        "private-files",
+        "transcript"
       ],
       "evidence_relation": "INDIRECT_VIA_WORKBOOK_POINTS; not decision-wide completion",
       "status": "DECISION",

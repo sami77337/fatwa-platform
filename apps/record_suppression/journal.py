@@ -16,6 +16,25 @@ from . import catalog
 from .catalog import SuppressionDenied
 
 
+def replace_private_payload(root, raw):
+    """Atomically replace already validated private metadata, with file/directory fsync."""
+    fd, name = tempfile.mkstemp(prefix="decision-", dir=root)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(name, root / "decisions.json")
+        directory = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if os.path.exists(name):
+            os.unlink(name)
+
+
 class LocalJournal:
     def __init__(self, *, root, ledger_id):
         self.root = Path(root)
@@ -78,21 +97,7 @@ class LocalJournal:
         raw = catalog.canonical(
             {"format": "fatwa.suppression.v1", "ledger_id": self.ledger_id, "events": values}
         ).encode()
-        fd, name = tempfile.mkstemp(prefix="decision-", dir=self.root)
-        try:
-            with os.fdopen(fd, "wb") as stream:
-                stream.write(raw)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(name, self.root / "decisions.json")
-            directory = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-            try:
-                os.fsync(directory)
-            finally:
-                os.close(directory)
-        finally:
-            if os.path.exists(name):
-                os.unlink(name)
+        replace_private_payload(self.root, raw)
 
     def initialize(self):
         """Explicit bootstrap of a fresh synthetic journal; never repair/overwrite."""

@@ -60,7 +60,11 @@ INSTALLED_APPS = [
     "apps.staff_mfa",
     "apps.record_suppression",
     "apps.media_derivatives",
+    "apps.derived_maintenance",
 ]
+FATWA_DERIVED_MAINTENANCE_ENABLED = False
+FATWA_DERIVED_MAINTENANCE_AUTHORITY = None
+FATWA_DERIVED_MAINTENANCE_JOURNAL = None
 FATWA_MEDIA_DERIVATIVES_ENABLED = False
 FATWA_MEDIA_DERIVATIVES_AUTHORITY = None
 FATWA_MEDIA_DERIVATIVES_PROCESSOR = None

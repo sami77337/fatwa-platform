@@ -1,0 +1,6 @@
+{% extends "derived_maintenance/base.html" %}{% block content %}
+<h2>مراجعة إجراء المشتق قبل اعتماده</h2><p>الإجراء: <bdi>{{ plan.proposal.action }}</bdi></p><p>{{ plan.proposal.reason }}</p>
+{% for resource in plan.resources %}<p>{{ resource.kind }} · {{ resource.case_ref }} · {{ resource.state }} · {{ resource.payload_count }} سجلًا</p>{% endfor %}
+{% if plan.proposal.action == 'CLEAR' %}<p>سيُزال محتوى المشتق المحدد. يبقى سجل المسح، ويلزم إصدار جديد مستقل عند إعادة البناء.</p>{% elif plan.proposal.action == 'REBUILD' %}<p>سيُنشأ مشتق جديد من المصدر المتاح حاليًا. يظل المشتق الممسوح غير قابل للفتح. لا تُعد النتيجة الجديدة اعتمادًا علميًا.</p>{% else %}<p>ستُطبق قرارات المسح الأحدث من قاعدة البيانات قبل إعادة إتاحة المشتقات.</p>{% endif %}
+<form method="post" id="derived-confirm-form">{% csrf_token %}<input type="hidden" name="action" value="dm_apply"><input type="hidden" name="plan" value="{{ serialized }}"><input type="hidden" name="proof" value="{{ proof }}"><label><input type="checkbox" name="confirmed" value="yes" required>أؤكد الإجراء الموضح أعلاه</label><button>تنفيذ الإجراء المؤكد</button></form>
+{% endblock %}

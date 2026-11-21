@@ -60,6 +60,10 @@ def _generation(case, available):
     if row is None:
         return None, {}, "MISSING"
     _verify(row)
+    from apps.derived_maintenance.integration import cleared
+
+    if cleared("SEARCH_INDEX", row.pk):
+        return row, {}, "CLEARED"
     if row.profile != PROFILE or row.source_fingerprint != digest(sources.fingerprint([case.pk])):
         return row, {}, "STALE"
     documents = list(SearchDocument.objects.filter(generation=row).order_by("ordinal"))
@@ -156,6 +160,10 @@ def rebuild(
         ).first()
         if replay:
             _verify(replay)
+            from apps.derived_maintenance.integration import cleared
+
+            if cleared("SEARCH_INDEX", replay.pk):
+                raise cases.CaseConflict("search_request_cleared")
             if previous is None or previous.pk != replay.pk:
                 raise cases.CaseConflict("search_request_superseded")
             if (
@@ -169,8 +177,11 @@ def rebuild(
             raise cases.CaseConflict("search_rebuild_stale")
         if previous:
             _verify(previous)
+            from apps.derived_maintenance.integration import cleared
+
             if (
-                previous.source_fingerprint == source_fingerprint
+                not cleared("SEARCH_INDEX", previous.pk)
+                and previous.source_fingerprint == source_fingerprint
                 and previous.manifest == manifest
                 and previous.profile == PROFILE
             ):

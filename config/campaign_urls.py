@@ -29,6 +29,7 @@ def privacy_workspace(request):
 
 
 urlpatterns = [
+    path("", include("apps.derived_maintenance.urls")),
     path("", include("apps.media_derivatives.urls")),
     path("", include("apps.record_suppression.urls")),
     path("", include("apps.staff_mfa.urls")),

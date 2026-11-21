@@ -8,7 +8,7 @@ The historical checkpoint `210b1cc5b7b4fad2d3e62f8fd1d8588949e59016` completed 2
 
 The later `ac8f5170b82767d759bd656fe9c2ea33cf48fc9f` checkpoint passed614 affected tests,20 protected browser journeys and47-table encrypted restore on each PostgreSQL major. All18 workflows ultimately passed; one B6 browser-startup attempt first stopped before any journey and its unchanged isolated retry passed. Subsequent screenshot review found invisible native audio controls despite keyboard playback. `checkpoints/ac8f517.json` records both the successful execution and that finding. The current source fixes control height and strengthens actual visible-control assertions; it still requires fresh hosted execution.
 
-The current plan contains **106 implemented candidates in 43 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
+The current plan contains **107 implemented candidates in 44 functional groups**, with **zero current-plan certification** before the complete integrated run. This recovered scope exceeds the historical56–66-point intermediate target; selection does not establish completion. The later user goal is all remaining documented functionality with final visual design excluded. That broader goal remains in progress and cannot be inferred from this intermediate batch.
 
 ## Selected groups
 | المجموعة الوظيفية | البنود الأصلية | عقد التنفيذ | دليل المتصفح المطلوب |
@@ -57,8 +57,9 @@ The current plan contains **106 implemented candidates in 43 functional groups**
 | التحقق الإضافي للشيخ والإدارة الحساسة واستعادة العامل | 405 | `apps/staff_mfa/README.md` | `staff-mfa-browser/result.json` |
 | الحذف المنطقي واستعادة المواد ومنع إحيائها من SQL قديم | 387 | `apps/record_suppression/README.md` | `record-suppression-browser/result.json` |
 | مشتقات تقنية مستقلة للوسائط مع حفظ الأصل والتفريغ البشري | 382 | `apps/media_derivatives/README.md` | `media-derivatives-browser/result.json` |
+| صيانة مشتقات البحث والاقتراحات دون محو العمل البشري | 443؛ 509 جزئي غير محتسب | `apps/derived_maintenance/README.md` | `derived-maintenance-browser/result.json` |
 
-The source extract preserves85 exact specification objects and37 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
+The source extract preserves88 exact specification objects and38 decision occurrences, including contextual constraints and their original acceptance states. A reference to a specification does not close every sentence in that specification.
 
 ## What the continuation adds
 
@@ -78,9 +79,9 @@ Stable classification IDs and development fixtures do not establish the owner's 
 
 ## Required integrated evidence
 
-The explicit registries require **54 exact protected browser identities**: eight inherited and46 continuation journeys. Fifty-three emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
+The explicit registries require **55 exact protected browser identities**: eight inherited and47 continuation journeys. Fifty-four emit their actual JSON/screenshot/trace formats; the inherited audio journey retains its execution-log evidence. Missing, replaced, skipped or stale journeys fail even if a total count is unchanged. Actual page errors and external requests must be empty; unrelated console metadata cannot substitute for the page-error field.
 
-The encrypted drill must restore **106 nonempty tables**:22 inherited and84 additionally covered tables, with **41 explicit fresh-process helper results and304 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The new session feature adds four immutable session/proof journals, alongside the earlier priority and three AI audit/derivative tables. Organizer metadata and lesson links reuse existing immutable journals; destination histories retain their three independently covered tables. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
+The encrypted drill must restore **108 nonempty tables**:22 inherited and86 additionally covered tables, with **42 explicit fresh-process helper results and319 current-access denials**. The latter are followed by actual positive reads after restoring explicit test authorities. The new session feature adds four immutable session/proof journals, alongside the earlier priority and three AI audit/derivative tables. Organizer metadata and lesson links reuse existing immutable journals; destination histories retain their three independently covered tables. Shared tables are counted once. Reader actions, the API, text-only selection, FT lookup and the operational queue add no tables.
 
 Native workflows execute through `config.campaign_urls`. Actual media bytes, play/seek, readable print/export output, offline network failure, current revocation and independently reviewed state transitions are required where applicable. Local tests do not certify a protected browser pass. Browser protection may not be disabled to satisfy evidence.
 
@@ -97,3 +98,5 @@ Gate B remains NOT_PASSED; Gates C/D/E HOLD; Phase01 BLOCKED; NOT_DEPLOYED. A pa
 The classification ledger adds one immutable table and thirteen named restored-use denials. Every privacy test family, including native management, scholarly/public derivatives, precise sources, delivery adapters and AI/report/inbox consumers, is registered. The protected two-role classification journey passed on both majors at `ad923175`; the required exact-head aggregate must run it again.
 
 The upload candidate additionally requires the actual ClamAV prerequisite artifact from the same workflow run and exact commit, with official signed databases, complete benign CLEAN and EICAR BLOCKED observations, and retained process reports. Synthetic scan-control tests cannot satisfy this requirement. A failed prerequisite still allows collection of the other diagnostic stages, but the final receipt rejects absent or failed real-engine proof. No production scanner or role policy is enabled.
+
+Owner509 remains partial and uncounted: disposal/regeneration covers the existing central-gateway CandidateBatch, while alternative-engine transcription under SPEC-U11-020 is unavailable. The independent current derivative-clearance floor now composes with the suppression floor before every restored reader.

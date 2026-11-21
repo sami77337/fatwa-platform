@@ -302,7 +302,10 @@ class RecordingSearchStorageTests(RecordingFixture, TransactionTestCase):
     def test_final_original_read_cannot_revoke_search_after_its_last_permission_callback(self):
         self.reviewed()
         self.build()
-        original = RecordingSources.finish
+        # The final physical reads now have their own phase, followed by pure
+        # checks. Arm at that phase; patching the former combined wrapper would
+        # no longer exercise an actual storage callback.
+        original = RecordingSources.verify_bytes
         fired = []
 
         def arm_final_read(context):
@@ -313,7 +316,7 @@ class RecordingSearchStorageTests(RecordingFixture, TransactionTestCase):
             self.storage.hook = revoke
             return original(context)
 
-        with patch.object(RecordingSources, "finish", arm_final_read):
+        with patch.object(RecordingSources, "verify_bytes", arm_final_read):
             with self.assertRaises(cases.CaseConflict):
                 self.search("تفريغ")
         self.assertEqual(fired, [True])

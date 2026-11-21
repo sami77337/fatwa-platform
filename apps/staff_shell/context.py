@@ -9,6 +9,12 @@ def installable_staff(request):
     permissions_url = ""
     mfa_url = ""
     lifecycle_url = ""
+    derived_url = ""
+    if getattr(settings, "FATWA_DERIVED_MAINTENANCE_ENABLED", False) is True:
+        if request.path.startswith("/casework/operations/"):
+            derived_url = "/casework/operations/derived-data/"
+        elif request.path.startswith("/casework/staff/"):
+            derived_url = "/casework/staff/derived-data/"
     if getattr(settings, "FATWA_RECORD_SUPPRESSION_ENABLED", False) is True:
         if request.path.startswith("/casework/operations/"):
             lifecycle_url = "/casework/operations/record-lifecycle/"
@@ -35,6 +41,7 @@ def installable_staff(request):
         elif request.path.startswith("/casework/staff/"):
             sessions_url = "/casework/sessions/"
     return {
+        "derived_maintenance_url": derived_url,
         "media_derivatives_url": "/casework/staff/media-jobs/"
         if request.path.startswith("/casework/staff/")
         and getattr(settings, "FATWA_MEDIA_DERIVATIVES_ENABLED", False) is True

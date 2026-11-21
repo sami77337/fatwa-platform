@@ -181,105 +181,134 @@ def privacy_context(guard, case, actor, kind, identifier):
 @privacy.contextual
 @contextmanager
 def authorized(
-    base, *, revision, evidence, query_digest, selection=None, start=None, end=None, run=None
+    base,
+    *,
+    revision,
+    evidence,
+    query_digest,
+    selection=None,
+    start=None,
+    end=None,
+    run=None,
+    rebuild_intent=None,
 ):
-    # The outer transaction remains open until AI's pure final check AFTER the
-    # citation/library boundary's final callbacks. Late callbacks cannot commit
-    # candidates and then revoke processing before the response is returned.
-    with synthetic_queue_atomic():
-        with scope(**base) as guard:
-            grants = Grants(guard, base["case_id"])
-            case, actor = grants.case, grants.actor
-            cases._versions(case, revision, evidence)
-            grants.permit("USE", "CASE", str(case.pk), "")
-            if run is not None:
-                verify(run)
+    from apps.derived_maintenance.rebuild import gateway_stage, retain_owner
+
+    privacy_projection = privacy_policy.SCOPES.get()[-1]
+    with gateway_stage(rebuild_intent) as maintenance:
+        # The outer transaction remains open until AI's pure final check AFTER the
+        # citation/library boundary's final callbacks. Late callbacks cannot commit
+        # candidates and then revoke processing before the response is returned.
+        with synthetic_queue_atomic():
+            with scope(**base) as guard:
+                grants = Grants(guard, base["case_id"])
+                case, actor = grants.case, grants.actor
+                cases._versions(case, revision, evidence)
+                grants.permit("USE", "CASE", str(case.pk), "")
+                if run is not None:
+                    verify(run)
+                    if (
+                        run.case_id != case.pk
+                        or run.identity_provider != guard.provider.provider_id
+                        or run.subject_id != actor.subject_id
+                        or run.auth_epoch != actor.auth_epoch
+                        or any(
+                            getattr(run, key) != value
+                            for key, value in provider_fields(grants.config[3]).items()
+                        )
+                    ):
+                        raise cases.CaseConflict("ai_gateway_run_audience_changed")
+                    pin = run.source
+                    privacy_snapshot = privacy_context(guard, case, actor, pin["kind"], pin["id"])
+                    live = sources.read(guard, pin, owner_case_id=case.pk)
+                else:
+                    if (
+                        type(selection) is not str
+                        or selection.count(":") != 1
+                        or not selection.startswith(("LIBRARY:", "ANSWER:"))
+                    ):
+                        raise cases.CaseConflict("ai_gateway_source_unsupported")
+                    if (
+                        type(start) is not int
+                        or type(end) is not int
+                        or not 0 <= start < end
+                        or end - start > MAX_WINDOW
+                    ):
+                        raise cases.CaseConflict("ai_gateway_window_invalid")
+                    source_kind, source_id = selection.split(":")
+                    privacy_snapshot = privacy_context(guard, case, actor, source_kind, source_id)
+                    pin, live = sources.select(
+                        guard,
+                        selection,
+                        owner_case_id=case.pk,
+                        location=sources.locator("TEXT", start, end),
+                    )
                 if (
-                    run.case_id != case.pk
-                    or run.identity_provider != guard.provider.provider_id
-                    or run.subject_id != actor.subject_id
-                    or run.auth_epoch != actor.auth_epoch
-                    or any(
-                        getattr(run, key) != value
-                        for key, value in provider_fields(grants.config[3]).items()
+                    pin["kind"] not in {"LIBRARY", "ANSWER"}
+                    or pin["part_id"]
+                    or pin["locator"]["mode"] != "TEXT"
+                    or not 1 <= len(live["text"]) <= MAX_SOURCE
+                    or (
+                        live["file"] is not None
+                        and live["file"]["media_type"]
+                        not in {"text/plain", "text/plain; charset=utf-8"}
                     )
                 ):
-                    raise cases.CaseConflict("ai_gateway_run_audience_changed")
-                pin = run.source
-                privacy_snapshot = privacy_context(guard, case, actor, pin["kind"], pin["id"])
-                live = sources.read(guard, pin, owner_case_id=case.pk)
-            else:
-                if (
-                    type(selection) is not str
-                    or selection.count(":") != 1
-                    or not selection.startswith(("LIBRARY:", "ANSWER:"))
-                ):
-                    raise cases.CaseConflict("ai_gateway_source_unsupported")
-                if (
-                    type(start) is not int
-                    or type(end) is not int
-                    or not 0 <= start < end
-                    or end - start > MAX_WINDOW
-                ):
-                    raise cases.CaseConflict("ai_gateway_window_invalid")
-                source_kind, source_id = selection.split(":")
-                privacy_snapshot = privacy_context(guard, case, actor, source_kind, source_id)
-                pin, live = sources.select(
-                    guard,
-                    selection,
-                    owner_case_id=case.pk,
-                    location=sources.locator("TEXT", start, end),
+                    raise cases.CaseConflict("ai_gateway_exact_text_required")
+                if grants.config[3] is not None:
+                    grants.permit("PROCESS_CONTEXT", "DRAFT_FRAGMENT", query_digest, query_digest)
+                    grants.permit("PROCESS_CONTEXT", pin["kind"], pin["id"], pin["digest"])
+                context_digest = digest(
+                    [
+                        TASK_VERSION,
+                        PROMPT_VERSION,
+                        SCHEMA_VERSION,
+                        provider_fields(grants.config[3]),
+                        query_digest,
+                        pin,
+                        sha256(live["selected"].encode()).hexdigest(),
+                    ]
                 )
-            if (
-                pin["kind"] not in {"LIBRARY", "ANSWER"}
-                or pin["part_id"]
-                or pin["locator"]["mode"] != "TEXT"
-                or not 1 <= len(live["text"]) <= MAX_SOURCE
-                or (
-                    live["file"] is not None
-                    and live["file"]["media_type"]
-                    not in {"text/plain", "text/plain; charset=utf-8"}
+                if run is not None and context_digest != run.context_digest:
+                    raise cases.CaseConflict("ai_gateway_source_changed")
+                snapshot = (
+                    grants.config,
+                    guard.authority,
+                    guard.epoch,
+                    library.identity_snapshot(guard.provider),
+                    library.identity_snapshot(guard.directory),
+                    library.policy_snapshot() if pin["kind"] == "LIBRARY" else None,
+                    privacy_snapshot,
                 )
-            ):
-                raise cases.CaseConflict("ai_gateway_exact_text_required")
-            if grants.config[3] is not None:
-                grants.permit("PROCESS_CONTEXT", "DRAFT_FRAGMENT", query_digest, query_digest)
-                grants.permit("PROCESS_CONTEXT", pin["kind"], pin["id"], pin["digest"])
-            context_digest = digest(
-                [
-                    TASK_VERSION,
-                    PROMPT_VERSION,
-                    SCHEMA_VERSION,
-                    provider_fields(grants.config[3]),
-                    query_digest,
-                    pin,
-                    sha256(live["selected"].encode()).hexdigest(),
-                ]
-            )
-            if run is not None and context_digest != run.context_digest:
-                raise cases.CaseConflict("ai_gateway_source_changed")
-            snapshot = (
-                grants.config,
-                guard.authority,
-                guard.epoch,
-                library.identity_snapshot(guard.provider),
-                library.identity_snapshot(guard.directory),
-                library.policy_snapshot() if pin["kind"] == "LIBRARY" else None,
-                privacy_snapshot,
-            )
+                if maintenance is not None:
+                    snapshot = (
+                        *snapshot,
+                        (
+                            maintenance.selected,
+                            maintenance.saved.config,
+                            maintenance.saved.watermark,
+                        ),
+                    )
+                grants.pure_check()
+                retain_owner(
+                    verify_bytes=guard.verify_bytes,
+                    final_pins=lambda: guard.final_pins(verify_files=False),
+                )
+                retain_owner(final_pins=grants.pure_check)
+                retain_owner(final_pins=privacy_projection.final_pins)
+                yield dict(
+                    guard=guard,
+                    maintenance=maintenance,
+                    grants=grants,
+                    actor=actor,
+                    case=case,
+                    pin=pin,
+                    live=live,
+                    context_digest=context_digest,
+                    snapshot=snapshot,
+                )
+                grants.callbacks()
             grants.pure_check()
-            yield dict(
-                guard=guard,
-                grants=grants,
-                actor=actor,
-                case=case,
-                pin=pin,
-                live=live,
-                context_digest=context_digest,
-                snapshot=snapshot,
-            )
-            grants.callbacks()
-        grants.pure_check()
 
 
 def strict_object(pairs):
@@ -346,6 +375,7 @@ def request_candidates(
     expected_evidence_version,
     request_key,
     task=TASK,
+    rebuild_intent=None,
 ):
     if connection.in_atomic_block:
         raise cases.CaseConflict("ai_gateway_outer_boundary_required")
@@ -389,8 +419,11 @@ def request_candidates(
         selection=selection,
         start=start,
         end=end,
+        rebuild_intent=rebuild_intent,
     ) as context:
         request_digest = digest([request_digest, provider_fields(context["grants"].config[3])])
+        if rebuild_intent is not None:
+            request_digest = digest([request_digest, rebuild_intent.binding()])
         prior = GatewayRun.objects.filter(request_key=key).first()
         if prior is not None:
             verify(prior)
@@ -420,6 +453,8 @@ def request_candidates(
             )
             if spec is None:
                 unavailable = terminal(run, "PROVIDER_UNAVAILABLE")
+                if rebuild_intent is not None:
+                    rebuild_intent.record(context["maintenance"], run, "PROVIDER_UNAVAILABLE")
             else:
                 snapshot = context["snapshot"]
                 source = SourceWindow(
@@ -432,6 +467,8 @@ def request_candidates(
                 )
                 configured_provider = context["grants"].config[2]
     if prior is not None:
+        if rebuild_intent is not None:
+            rebuild_intent.replay(prior)
         with read_boundary(**base, run_id=prior.pk) as result:
             return {"id": result["id"], "status": result["status"]}
     if spec is None:
@@ -459,10 +496,13 @@ def request_candidates(
             evidence=expected_evidence_version,
             query_digest=query_digest,
             run=run,
+            rebuild_intent=rebuild_intent,
         ) as context:
             if context["snapshot"] != snapshot:
                 raise cases.CaseConflict("ai_gateway_trust_changed_during_provider")
             result = terminal(run, status, entries if status == "SUCCEEDED" else None)
+            if rebuild_intent is not None:
+                rebuild_intent.record(context["maintenance"], run, status)
         return result
     except (cases.CaseConflict, IdentityUnavailable) as exc:
         # Finalize only the already-admitted attempt, with no output/context body.
@@ -507,6 +547,10 @@ def read_boundary(
             candidates=[],
         )
         if outcome.status == "SUCCEEDED":
+            from apps.derived_maintenance.integration import cleared
+
+            if cleared("AI_CANDIDATES", run.pk):
+                raise cases.CaseConflict("ai_gateway_derivative_cleared")
             batch = CandidateBatch.objects.filter(run=run).first()
             if batch is None:
                 raise cases.CaseConflict("ai_gateway_derivative_unavailable")
