@@ -35,6 +35,10 @@ def installable_staff(request):
         elif request.path.startswith("/casework/staff/"):
             sessions_url = "/casework/sessions/"
     return {
+        "media_derivatives_url": "/casework/staff/media-jobs/"
+        if request.path.startswith("/casework/staff/")
+        and getattr(settings, "FATWA_MEDIA_DERIVATIVES_ENABLED", False) is True
+        else "",
         "record_lifecycle_url": lifecycle_url,
         "staff_mfa_url": mfa_url,
         "permissions_management_url": permissions_url,

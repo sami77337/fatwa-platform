@@ -132,6 +132,8 @@ def _proof(request, token, result, purpose, revision, submitted):
 @sensitive_variables("token", "fields")
 @csrf_protect
 def portal(request):
+    from apps.data_privacy.services import PrivacyDenied
+
     try:
         services.enabled()
         if request.GET:
@@ -140,6 +142,12 @@ def portal(request):
             try:
                 token = workspace._capability(request)
                 cases.requester_status(token, synthetic_fixtures_only=True)
+            except PrivacyDenied:
+                # A current material veto is not an absent/expired login. Keep
+                # the source refusal visible while forgetting the capability.
+                response = _locked(request, status=404)
+                response["Referrer-Policy"] = "no-referrer"
+                return response
             except cases.CaseConflict:
                 return _locked(request)
             return _page(request, token=token, result=_read(token))

@@ -225,3 +225,37 @@ PostgreSQL 18.7 (6.047 s)**. This checks the no-history compatibility path throu
 real core and HTTP consumers. Logs: `suppression-legacy-profile-pg17.log` and
 `suppression-legacy-profile-pg18.log`. Hosted browser and full aggregate recovery
 remain separate integration gates; these local results do not assert either one.
+
+### Requester reload refusal and failed browser artifacts
+
+The protected browser run for source `066e381` reached the correct private status
+route after the administrative deletion, but its requester reload returned 200.
+The portal's initial GET caught `SuppressionDenied` through its generic
+`CaseConflict` handler and rendered the empty unlock page. No original question
+or case reference was present in that response, but the current-source refusal
+was incorrectly reported as an ordinary successful login page.
+
+A new native HTTP regression failed on that source on PostgreSQL 17.11 in
+1.273 seconds: `200 != 404`, path `/casework/status/`, no redirect chain, private
+content absent. Log: `suppression-browser-red-pg17.log`. The correction preserves
+404 for current material/privacy refusal and clears the browser capability;
+missing, invalid or expired browser credentials retain their ordinary unlock
+behavior. The test follows the actual 303 unlock redirect, checks both ordinary
+and redirect-following GET plus HEAD after deletion, then verifies a positive
+read after a separately authorized restore.
+
+The browser keeps its existing 404 assertion. Every started trace is now stopped
+inside `finally`, including failed journeys. Cleanup failures do not mask the
+original assertion, and no PASS receipt is written until the journey and cleanup
+both succeed. `navigation.json` records only principal labels, methods, URL paths
+and statuses, without tokens, queries, request bodies or source text. Old trace
+and navigation artifacts are removed before a fresh run. Actual protected
+browser acceptance remains a hosted CI check.
+
+After the correction, `apps.record_suppression.test_http` together with
+`apps.requester_portal.tests` passed **21/21 on PostgreSQL 17.11 (37.111 s)** and
+**21/21 on PostgreSQL 18.7 (36.624 s)**. These runs include the actual composed
+middleware/route regression, late render refusal, administrative reconciliation,
+and the existing requester forms, attachments, delivery and source projections.
+Logs: `suppression-browser-green-pg17.log` and
+`suppression-browser-green-pg18.log`. Ruff and `git diff --check` also passed.

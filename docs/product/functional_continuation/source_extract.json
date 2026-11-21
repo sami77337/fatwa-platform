@@ -2,8 +2,8 @@
   "schema": "fatwa.functional-continuation-source-extract.v1",
   "source_specification_sha256": "050f51275fc2f32bb9caf93380e3695aecf9633f8c6e2bed9605adc8cb46744b",
   "source_decision_sha256": "08a84a2e83590d346b2316b862d51209f61776f14d18b07cabad7ea812fe3931",
-  "specification_count": 84,
-  "note": "Exact source objects copied from the pinned specification and decision inventories for 105 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
+  "specification_count": 85,
+  "note": "Exact source objects copied from the pinned specification and decision inventories for 106 current whole-point candidates. Original acceptance states and contextual constraints remain unchanged; this file grants no runtime or owner acceptance.",
   "specifications": [
     {
       "original_id": "SPEC-U01-004",
@@ -927,6 +927,17 @@
       "owner_points_source": "403، 404",
       "source_spec_lines_unverified": "1941–1942",
       "parsed_index": 412,
+      "acceptance": "HOLD"
+    },
+    {
+      "original_id": "SPEC-U11-011",
+      "unit": "11",
+      "title": "النسخ التقنية والعامة",
+      "original_text": "11.11. النسخ التقنية والعامة\nيمكن إعداد نسخ مناسبة للتشغيل أو صور مصغرة أو نسخة عامة منقحة عند الحاجة. توضح علاقة كل نسخة بالأصل وغرضها. لا يحذف القص أو التنقيح قيدًا يغير معنى المادة دون المراجعة العلمية المناسبة، ولا تعني إتاحة مشتقة عامة إتاحة التسجيل الخام أو الصورة الأصلية الخاصة.",
+      "source_scope_treatment": "موثّق على مستوى الوحدة",
+      "owner_points_source": "381، 382",
+      "source_spec_lines_unverified": "1511–1512",
+      "parsed_index": 324,
       "acceptance": "HOLD"
     }
   ],

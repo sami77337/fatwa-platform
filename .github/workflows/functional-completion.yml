@@ -92,7 +92,7 @@ jobs:
     # unavailable. The receipt still rejects a missing or failed engine proof.
     if: ${{ always() && needs.citation-browser.result == 'success' }}
     runs-on: ubuntu-latest
-    # 53 protected journeys, expanded service families and the encrypted drill
+    # 54 protected journeys, expanded service families and the encrypted drill
     # share this bounded job; local affected tests alone already exceed 25 minutes.
     timeout-minutes: 45
     strategy:

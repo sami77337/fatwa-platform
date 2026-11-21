@@ -59,7 +59,12 @@ INSTALLED_APPS = [
     "apps.upload_security",
     "apps.staff_mfa",
     "apps.record_suppression",
+    "apps.media_derivatives",
 ]
+FATWA_MEDIA_DERIVATIVES_ENABLED = False
+FATWA_MEDIA_DERIVATIVES_AUTHORITY = None
+FATWA_MEDIA_DERIVATIVES_PROCESSOR = None
+FATWA_MEDIA_DERIVATIVES_WORKER_DIRECTORY = None
 FATWA_RECORD_SUPPRESSION_ENABLED = False
 FATWA_RECORD_SUPPRESSION_AUTHORITY = None
 FATWA_RECORD_SUPPRESSION_JOURNAL = None
@@ -216,6 +221,7 @@ TEMPLATES[0]["DIRS"] = [
 MIDDLEWARE = [
     "apps.platform_recovery.middleware.MaintenanceGuard",
     "apps.staff_sessions.middleware.SessionContext",
+    "apps.media_derivatives.policy.DerivativeResponses",
     "apps.data_privacy.integration.PrivacyResponses",
     "apps.upload_security.middleware.UploadSecurityResponses",
     "apps.material_api.middleware.MaterialAPIResponses",

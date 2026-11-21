@@ -71,5 +71,24 @@
   "registered_denials": 290,
   "integrated_status": "PENDING",
   "main_merged": false,
-  "production_changed": false
+  "production_changed": false,
+  "scope_contract_failure": {
+    "tested_sha": "8e6ca3cc6f3bfc601f43d5111f3c3ae69d12a544",
+    "log_sha256": "e49e5a15d48742d853cf76570f2d8db71d57c9b2779b7be573b90e501696b2ef",
+    "cause": "New owner387 remained in explicit_exclusions from the older close/archive-only lane, so the strict verifier correctly rejected the candidate plan.",
+    "fix": "Retain the prior exclusion in scope_changes and explicitly promote only the independently implemented soft-delete point. The rejection condition itself is unchanged."
+  },
+  "scope_contract_retest": {
+    "source_commit": "358e9ce",
+    "tests": 9,
+    "duration_seconds": 85.864,
+    "status": "PASS",
+    "log_sha256": "258c020935fda4883385375b2a573827baca299c7b789d538c81a1a003ed69cf",
+    "rejection_conditions_weakened": false
+  },
+  "interrupted_local_aggregate": {
+    "source_commit": "8e6ca3cc6f3bfc601f43d5111f3c3ae69d12a544",
+    "status": "INCOMPLETE_NO_CREDIT",
+    "observation": "Four local executor handles were unavailable after owned-cluster startup. Logs contain no completed test or restore result. Cause not established; no pass is inferred. The next focused rerun keeps each executor handle actively observed."
+  }
 }

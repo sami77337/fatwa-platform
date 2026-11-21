@@ -23,6 +23,7 @@ class CampaignProfileTests(SimpleTestCase):
         expected_middleware = [
             "apps.platform_recovery.middleware.MaintenanceGuard",
             "apps.staff_sessions.middleware.SessionContext",
+            "apps.media_derivatives.policy.DerivativeResponses",
             "apps.data_privacy.integration.PrivacyResponses",
             "apps.upload_security.middleware.UploadSecurityResponses",
             "apps.material_api.middleware.MaterialAPIResponses",
@@ -52,6 +53,10 @@ class CampaignProfileTests(SimpleTestCase):
         self.assertFalse(campaign_review.FATWA_RECORD_SUPPRESSION_ENABLED)
         self.assertIsNone(campaign_review.FATWA_RECORD_SUPPRESSION_AUTHORITY)
         self.assertIsNone(campaign_review.FATWA_RECORD_SUPPRESSION_JOURNAL)
+        self.assertFalse(campaign_review.FATWA_MEDIA_DERIVATIVES_ENABLED)
+        self.assertIsNone(campaign_review.FATWA_MEDIA_DERIVATIVES_AUTHORITY)
+        self.assertIsNone(campaign_review.FATWA_MEDIA_DERIVATIVES_PROCESSOR)
+        self.assertIsNone(campaign_review.FATWA_MEDIA_DERIVATIVES_WORKER_DIRECTORY)
         self.assertFalse(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_ENABLED)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_KEY)
         self.assertIsNone(campaign_review.FATWA_PRIVATE_MEDIA_LINKS_EPOCH)

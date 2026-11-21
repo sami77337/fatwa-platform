@@ -39,10 +39,25 @@ def require(kind, identifier):
         current = saved.heads.get((kind, target.identifier))
         if current and current["source_digest"] != target.source_digest:
             raise SuppressionDenied("suppression_source_changed")
-    use = Use(store.configuration(), saved, target)
-    use.final_pins()
     from apps.data_privacy.services import SCOPES
 
+    use = Use(store.configuration(), saved, target)
+    # snapshot() has just verified the empty, unconfigured store. There is no
+    # authority callback or source access between that check and retaining it.
+    # Its enclosing projection checks the absence again after the actual use;
+    # avoid a second immediate identical SQL read, not a current-use check.
+    if saved is not None or not SCOPES.get():
+        use.final_pins()
+
     for guard in SCOPES.get():
+        # In an unconfigured, empty store there is no target-specific state to
+        # pin. Retain one identical absence check per enclosing projection. Each
+        # source admission still reads the current store, and that retained
+        # check still rejects newly recorded policy after the final callbacks.
+        if saved is None and any(
+            previous.saved is None and previous.config == use.config
+            for previous in guard.retained_suppression
+        ):
+            continue
         guard.retained_suppression.append(use)
     return use

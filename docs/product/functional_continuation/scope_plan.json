@@ -80,12 +80,12 @@
     "historical_plan_modified": false
   },
   "claim_boundary": "New whole original owner-point behavior in the explicitly synthetic development composition only. No whole detailed-spec closure, production acceptance, final taxonomy, corpus completeness, effort percentage or overall-product completion claim.",
-  "candidate_count": 105,
-  "implemented_scope_candidates": 105,
+  "candidate_count": 106,
+  "implemented_scope_candidates": 106,
   "planned_scope_candidates": 0,
   "verified_additional_point_count": 0,
   "verified_status": "PENDING_EXACT_HEAD_SERVICE_BROWSER_RECOVERY_RECEIPT",
-  "candidate_percentage": 18.88,
+  "candidate_percentage": 19.06,
   "requested_target": {
     "percent_min": 10,
     "percent_max": 12,
@@ -4162,6 +4162,87 @@
         "status": "FOCUSED_PROOFS_PENDING_FINAL_COMPOSITION",
         "counted_as_integrated_completion": false
       }
+    },
+    {
+      "id": "separate_technical_media_derivatives",
+      "title_ar": "مشتقات تقنية مستقلة للوسائط مع حفظ الأصل والتفريغ البشري",
+      "implementation_state": "IMPLEMENTED_INTEGRATED_SERVICE_BROWSER_RESTORE_PROOFS_PENDING",
+      "contract": "apps/media_derivatives/README.md",
+      "baseline_gap": "Exact owned originals remain immutable while separately stored THUMBNAIL and AUDIO_PLAYBACK results bind source version/hash, recipe, current identity and independent finite permissions. Real ffmpeg runs outside the authorization transaction under bounded input/CPU/memory/output rules. Durable jobs support explicit retry/cancel; stale leases, current source/scan/privacy revocation and originating session/MFA revocation veto output. Existing reviewed transcripts and public editions remain separate and unchanged. Actual native forms, audio playback, PNG decoding, downloads and fourteen fresh-target denial reads are required. This extends owner 382 only; pre-existing owner 441 is a regression invariant and actual ASR owner 432 remains partial.",
+      "service_test_labels": [
+        "apps.media_derivatives.test_deadlines",
+        "apps.media_derivatives.test_execution",
+        "apps.media_derivatives.test_existing_sources",
+        "apps.media_derivatives.test_http",
+        "apps.media_derivatives.test_jobs",
+        "apps.media_derivatives.test_mfa",
+        "apps.media_derivatives.test_privacy",
+        "apps.media_derivatives.test_recovery"
+      ],
+      "service_test_classes": [
+        "apps.media_derivatives.test_execution.RealFFmpegExecutionTests",
+        "apps.media_derivatives.test_execution.BoundedDecoderProcessTests",
+        "apps.media_derivatives.test_existing_sources.LibraryDerivativeTests",
+        "apps.media_derivatives.test_existing_sources.HumanTranscriptPreservationTests",
+        "apps.media_derivatives.test_http.NativeDerivativeTests",
+        "apps.media_derivatives.test_jobs.DerivativeJobTests",
+        "apps.media_derivatives.test_mfa.DerivativeMfaTests",
+        "apps.media_derivatives.test_privacy.DerivativePrivacyTests",
+        "apps.media_derivatives.test_recovery.DerivativeRecoveryTests",
+        "apps.media_derivatives.test_deadlines.DerivativeGrantDeadlineTests"
+      ],
+      "pending_service_test_labels": [],
+      "browser": {
+        "test_class": "apps.media_derivatives.browser_tests.MediaDerivativeBrowserTests",
+        "result_path": ".local/qa/functional-continuation/media-derivatives-browser/result.json",
+        "status": "PROTECTED_HOSTED_EXECUTION_PENDING",
+        "required": {
+          "status": "PASS",
+          "sandbox": true,
+          "widths": [
+            320,
+            1280
+          ],
+          "traces_and_screenshots": true,
+          "unexpected_external_requests": 0,
+          "page_errors": 0,
+          "actual_native_actions": true
+        }
+      },
+      "recovery": {
+        "helper": "apps.media_derivatives.recovery_support",
+        "status": "LOCAL_HELPER_PASSED_ENCRYPTED_DRILL_PENDING",
+        "nonempty_model_count": 3,
+        "tables": [
+          "media_derivatives_derivativejob",
+          "media_derivatives_derivativeevent",
+          "media_derivatives_derivedoutput"
+        ],
+        "notes": "Restored exact output/provenance must be read with fresh trust and fourteen explicit current denials; restoration invokes neither ffmpeg nor scanner and grants no identity."
+      },
+      "points": [
+        {
+          "original_id": "382",
+          "original_text": "مشتقات مثل Thumbnail أو Transcript أو Public Derivative تحفظ منفصلة.",
+          "direct_spec_ids": [
+            "SPEC-U11-009",
+            "SPEC-U11-011"
+          ],
+          "decision_ids": [
+            "D-031"
+          ],
+          "source_locator": {
+            "sheet": "نقاط المالك",
+            "parsed_index": 384
+          },
+          "assessment": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+          "required_behavior_and_evidence": "Exact owned originals remain immutable while separately stored THUMBNAIL and AUDIO_PLAYBACK results bind source version/hash, recipe, current identity and independent finite permissions. Real ffmpeg runs outside the authorization transaction under bounded input/CPU/memory/output rules. Durable jobs support explicit retry/cancel; stale leases, current source/scan/privacy revocation and originating session/MFA revocation veto output. Existing reviewed transcripts and public editions remain separate and unchanged. Actual native forms, audio playback, PNG decoding, downloads and fourteen fresh-target denial reads are required. This extends owner 382 only; pre-existing owner 441 is a regression invariant and actual ASR owner 432 remains partial. Every exact derivative grant has an explicit current aware deadline at most one hour ahead; the shortest used permission remains binding after final Session USE callbacks."
+        }
+      ],
+      "local_observation": {
+        "status": "FOCUSED_PROOFS_PENDING_FINAL_COMPOSITION",
+        "counted_as_integrated_completion": false
+      }
     }
   ],
   "conditional_scope": [],
@@ -4239,15 +4320,6 @@
       "reason": "The new catalogue/collection does not supply every general material on scholar pages or an absent specialized hadith corpus. No whole-point claim."
     },
     {
-      "original_id": "387",
-      "original_text": "SOFT DELETE لا تعني PURGE.",
-      "direct_spec_ids": [
-        "SPEC-U14-020"
-      ],
-      "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
-    },
-    {
       "original_id": "388",
       "original_text": "UNPUBLISH لا تعني حذف الأصل.",
       "direct_spec_ids": [
@@ -4263,7 +4335,7 @@
         "SPEC-U14-020"
       ],
       "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      "reason": "Reversible record suppression is now separately implemented under 387. Irreversible anonymization and physical purge remain separate unimplemented contracts with unresolved identity-data/retention/impact policies; they receive no whole-point credit."
     },
     {
       "original_id": "390",
@@ -4273,7 +4345,7 @@
         "SPEC-U14-019"
       ],
       "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
-      "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      "reason": "Reversible record suppression is now separately implemented under 387. Irreversible anonymization and physical purge remain separate unimplemented contracts with unresolved identity-data/retention/impact policies; they receive no whole-point credit."
     },
     {
       "original_id": "369",
@@ -4878,6 +4950,27 @@
       "from": "NOT_IMPLEMENTED",
       "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
       "basis": "Exact administrative identity and independent finite mandates authorize reviewed SOFT_DELETE and RESTORE decisions. Original bytes and all existing scholarly/audit rows remain unchanged. Immutable SQL decisions and a separate current metadata journal veto ordinary case/source readers, private bytes, FTS, exports and source-bound derivatives. An older restored SQL prefix stays unavailable until bounded authorized reconciliation reapplies current external decisions; ten explicit restored-use denials and native admin/requester forms prove separation from purge. No anonymization, physical purge or retention period is invented."
+    },
+    {
+      "original_id": "387",
+      "from": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "The original lifecycle lane covered close/archive/reopen only. The later user mandate includes remaining functionality, and the separate record_suppression app now implements soft deletion, independent audited restoration and a current external anti-resurrection floor. Original exclusion preserved below; certification still requires actual same-head native and encrypted-restore proof.",
+      "previous_exclusion": {
+        "original_id": "387",
+        "original_text": "SOFT DELETE لا تعني PURGE.",
+        "direct_spec_ids": [
+          "SPEC-U14-020"
+        ],
+        "classification": "LIFECYCLE_OUTSIDE_BOUNDED_SCOPE",
+        "reason": "This lane implements reversible close/archive/restore/reopen only. Soft delete, purge, anonymization, sensitivity taxonomy, retention and derived-index erasure are separate contracts/units."
+      }
+    },
+    {
+      "original_id": "382",
+      "from": "PARTIAL",
+      "to": "WHOLE_CANDIDATE_PENDING_EXACT_INTEGRATED_EXECUTION",
+      "basis": "Exact owned originals remain immutable while separately stored THUMBNAIL and AUDIO_PLAYBACK results bind source version/hash, recipe, current identity and independent finite permissions. Real ffmpeg runs outside the authorization transaction under bounded input/CPU/memory/output rules. Durable jobs support explicit retry/cancel; stale leases, current source/scan/privacy revocation and originating session/MFA revocation veto output. Existing reviewed transcripts and public editions remain separate and unchanged. Actual native forms, audio playback, PNG decoding, downloads and fourteen fresh-target denial reads are required. This extends owner 382 only; pre-existing owner 441 is a regression invariant and actual ASR owner 432 remains partial."
     }
   ],
   "verified_checkpoints": [

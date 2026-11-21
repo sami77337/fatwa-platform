@@ -78,6 +78,66 @@ class HTTPFixture(Fixture):
 
 @override_settings(**FEATURES)
 class SuppressionHTTPTests(HTTPFixture, TransactionTestCase):
+    def test_already_suppressed_requester_reload_denies_the_actual_status_route(self):
+        from apps.casework_web.requester_workspace import COOKIE
+
+        path = "/casework/status/"
+        locked = self.client.get(path)
+        self.assertEqual(locked.status_code, 200)
+        unlocked = send(
+            self.client,
+            path,
+            {"action": "unlock", "token": self.receipt["token"]},
+            locked,
+        )
+        self.assertEqual(unlocked.status_code, 303)
+        self.assertEqual(unlocked["Location"], path)
+        current = self.client.get(unlocked["Location"], follow=True)
+        self.assertEqual(current.redirect_chain, [])
+        self.assertEqual(current.wsgi_request.path, path)
+        self.assertContains(current, self.receipt["public_ref"])
+        self.assertContains(current, self.intake["original_question"])
+        saved_cookie = self.client.cookies[COOKIE].value
+
+        self.change()
+        for follow in (False, True):
+            self.client.cookies[COOKIE] = saved_cookie
+            response = self.client.get(path, follow=follow)
+            self.assertNotIn(self.receipt["public_ref"].encode(), response.content)
+            self.assertNotIn(self.intake["original_question"].encode(), response.content)
+            self.assertEqual(
+                response.status_code,
+                404,
+                {
+                    "path": response.wsgi_request.path,
+                    "follow": follow,
+                    "redirect_chain": getattr(response, "redirect_chain", []),
+                    "private_content_absent": True,
+                    "status": response.status_code,
+                },
+            )
+            self.assertEqual(response.wsgi_request.path, path)
+            self.assertNotIn("Location", response)
+            self.assertEqual(getattr(response, "redirect_chain", []), [])
+            self.assertIn("no-store", response["Cache-Control"])
+            self.assertEqual(response.cookies[COOKIE]["max-age"], 0)
+
+        self.client.cookies[COOKIE] = saved_cookie
+        self.assertEqual(self.client.head(path).status_code, 404)
+        self.assertEqual(self.client.get(path).status_code, 200)
+        self.change("RESTORE")
+        unlocked = send(
+            self.client,
+            path,
+            {"action": "unlock", "token": self.receipt["token"]},
+            self.client.get(path),
+        )
+        self.assertEqual(unlocked.status_code, 303)
+        restored = self.client.get(path, follow=True)
+        self.assertEqual(restored.redirect_chain, [])
+        self.assertContains(restored, self.receipt["public_ref"])
+        self.assertContains(restored, self.intake["original_question"])
+
     def test_native_preview_delete_audit_and_restore_preserve_original(self):
         page = self.item(self.login())
         self.assertNotContains(page, self.intake["original_question"])

@@ -63,6 +63,10 @@ MEDIA_DERIVATIVE_ROUTE = re.compile(
     r"/casework/staff/media-jobs/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/output/"
 )
+WEBHOOK_ROUTE = re.compile(
+    r"/casework/webhooks/"
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
+)
 PRECISE_CITATION_ROUTE = re.compile(
     r"/casework/precise-citations/(?:sources|print|export)/"
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/"
@@ -232,6 +236,18 @@ class CaseworkGuard:
         if re.fullmatch(r"(?:127\.0\.0\.1|\[::1\])(?::[0-9]{1,5})?", host) is None:
             return denied("casework_host_invalid", 400)
         methods = ROUTES.get(request.path)
+        webhook = (
+            getattr(settings, "FATWA_WEBHOOK_INGRESS_ENABLED", False) is True
+            and WEBHOOK_ROUTE.fullmatch(request.path) is not None
+        )
+        if webhook:
+            methods = ("GET", "POST")
+        if request.path in {BASE + "staff/webhooks/", BASE + "operations/webhooks/"}:
+            methods = (
+                ("GET", "HEAD", "POST")
+                if getattr(settings, "FATWA_WEBHOOK_INGRESS_ENABLED", False) is True
+                else None
+            )
         if request.path in {BASE + "staff/privacy/", BASE + "operations/privacy/"}:
             methods = (
                 ("GET", "POST")
@@ -264,6 +280,12 @@ class CaseworkGuard:
                 methods = ("GET", "HEAD", "POST")
             elif MEDIA_DERIVATIVE_ROUTE.fullmatch(request.path):
                 methods = ("GET", "HEAD")
+        if request.path in {BASE + "staff/derived-data/", BASE + "operations/derived-data/"}:
+            methods = (
+                ("GET", "POST")
+                if getattr(settings, "FATWA_DERIVED_MAINTENANCE_ENABLED", False) is True
+                else None
+            )
         if methods is None and (
             PRIVATE_MEDIA_ROUTE.fullmatch(request.path)
             or LIBRARY_MEDIA_ROUTE.fullmatch(request.path)
@@ -281,7 +303,15 @@ class CaseworkGuard:
             response = denied("casework_method_not_supported", 405)
             response["Allow"] = ", ".join(methods)
             return response
-        if request.META.get("QUERY_STRING"):
+        if webhook:
+            from apps.webhook_ingress.transport import admit_request
+
+            error = admit_request(request)
+            if error:
+                response = denied(*error)
+                response["Referrer-Policy"] = "no-referrer"
+                return response
+        if request.META.get("QUERY_STRING") and not webhook:
             from apps.private_media.links import admits_query
 
             if not admits_query(request):
@@ -299,4 +329,7 @@ class CaseworkGuard:
                 return response
         except (DatabaseError, SyntheticWriteDenied, MaintenanceUnavailable):
             return denied("casework_store_unavailable", 503)
-        return private(self.get_response(request), head=request.method == "HEAD")
+        response = private(self.get_response(request), head=request.method == "HEAD")
+        if webhook:
+            response["Referrer-Policy"] = "no-referrer"
+        return response

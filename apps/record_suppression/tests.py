@@ -14,13 +14,42 @@ from apps.casework.models import Case, CaseSource
 from apps.data_privacy import integration as privacy
 from apps.delivery_queue.services import synthetic_queue_atomic
 
-from . import catalog, services, store
+from . import catalog, integration, services, store
 from .models import SuppressionEvent
 from .test_support import FEATURES, Fixture
 
 
 @override_settings(**FEATURES)
 class SuppressionTests(Fixture, TransactionTestCase):
+    def test_one_empty_store_pin_still_rejects_new_policy_before_projection_returns(self):
+        self.assertFalse(SuppressionEvent.objects.exists())
+        with override_settings(
+            FATWA_RECORD_SUPPRESSION_ENABLED=False, FATWA_RECORD_SUPPRESSION_JOURNAL=None
+        ):
+            with self.assertRaises(catalog.SuppressionDenied):
+                with privacy.projection(atomic=False) as guard:
+                    for kind, identifier in (
+                        ("CASE", self.receipt["case_id"]),
+                        ("ANSWER", self.answer_id),
+                        ("CASE", self.receipt["case_id"]),
+                    ):
+                        integration.require(kind, identifier)
+                    self.assertEqual(len(guard.retained_suppression), 1)
+                    with override_settings(
+                        FATWA_RECORD_SUPPRESSION_ENABLED=True,
+                        FATWA_RECORD_SUPPRESSION_JOURNAL=self.journal,
+                    ):
+                        self.change()
+                    # A second source admission must already see the new policy,
+                    # before the retained final projection check runs.
+                    with self.assertRaises(catalog.SuppressionDenied):
+                        integration.require("CASE", self.receipt["case_id"])
+        self.assertEqual(SuppressionEvent.objects.count(), 1)
+        with self.assertRaises(catalog.SuppressionDenied):
+            self.read()
+        self.change("RESTORE")
+        self.assertIn("أصل سؤال", self.read()["original_question"])
+
     def test_case_suppression_hides_current_reads_queue_followup_and_idempotent_intake(self):
         before = self.read()
         source = list(CaseSource.objects.values())

@@ -53,6 +53,7 @@ ADDITIONAL_WORKFLOWS = (
     "apps.permission_sets.recovery_support",
     "apps.upload_security.recovery_support",
     "apps.staff_mfa.recovery_support",
+    "apps.media_derivatives.recovery_support",
     "apps.record_suppression.recovery_support",
 )
 

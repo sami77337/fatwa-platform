@@ -2,6 +2,7 @@
 
 import json
 import os
+import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -55,7 +56,10 @@ class RecordSuppressionBrowserTests(Fixture, LiveServerTestCase):
 
         OUT.mkdir(parents=True, exist_ok=True)
         (OUT / "result.json").unlink(missing_ok=True)
-        errors, external, contexts = [], [], []
+        (OUT / "navigation.json").unlink(missing_ok=True)
+        for trace in OUT.glob("trace-*.zip"):
+            trace.unlink()
+        errors, external, contexts, traced, navigation = [], [], [], [], []
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(
                 executable_path=os.environ.get("FATWA_FASTBUILD_BROWSER") or None,
@@ -82,8 +86,22 @@ class RecordSuppressionBrowserTests(Fixture, LiveServerTestCase):
 
                     context.route("**/*", route)
                     context.tracing.start(screenshots=True, snapshots=True)
+                    traced.append(context)
                     page = context.new_page()
                     page.on("pageerror", lambda error: errors.append(str(error)))
+
+                    def record_response(response, subject=subject):
+                        if response.request.is_navigation_request():
+                            navigation.append(
+                                {
+                                    "subject": subject,
+                                    "method": response.request.method,
+                                    "path": urlsplit(response.url).path,
+                                    "status": response.status,
+                                }
+                            )
+
+                    page.on("response", record_response)
                     if subject != "requester":
                         self.assertEqual(
                             page.goto(self.live_server_url + "/casework/operations/login/").status,
@@ -116,7 +134,9 @@ class RecordSuppressionBrowserTests(Fixture, LiveServerTestCase):
                 self.submit(admin, admin.locator('[data-action="confirm"] button'))
                 self.assertEqual(admin.locator('[data-result="SOFT_DELETE"]').count(), 1)
                 self.assertEqual(self.sync(lambda: SuppressionEvent.objects.count()), 1)
+                self.assertEqual(urlsplit(requester.url).path, "/casework/status/")
                 self.assertEqual(requester.reload().status, 404)
+                self.assertEqual(urlsplit(requester.url).path, "/casework/status/")
                 self.assertNotIn(self.receipt["public_ref"], requester.locator("body").inner_text())
                 self.assertEqual(operator.reload().status, 200)
                 self.assertEqual(operator.locator("article[data-case-ref]").count(), 0)
@@ -146,29 +166,52 @@ class RecordSuppressionBrowserTests(Fixture, LiveServerTestCase):
                 )
                 self.assertEqual(external, [])
                 self.assertEqual(errors, [])
-                for index, context in enumerate(contexts):
-                    context.tracing.stop(path=str(OUT / f"trace-{index}.zip"))
-                (OUT / "result.json").write_text(
-                    json.dumps(
-                        {
-                            "status": "PASS",
-                            "native_journeys": 1,
-                            "actual_admin_role": "ORGANIZER_ADMIN",
-                            "audit_revisions": 2,
-                            "requester_denied_after_deletion": True,
-                            "organizer_count_filtered": True,
-                            "positive_reads_after_restore": True,
-                            "original_preserved": True,
-                            "no_purge": True,
-                            "page_errors": errors,
-                            "external_requests": external,
-                            "widths": [320, 1280],
-                        },
-                        ensure_ascii=False,
-                        indent=2,
-                    )
-                )
             finally:
-                for context in contexts:
-                    context.close()
-                browser.close()
+                failed = sys.exc_info()[0] is not None
+                cleanup_errors = []
+                for index, context in enumerate(traced):
+                    try:
+                        context.tracing.stop(path=str(OUT / f"trace-{index}.zip"))
+                    except Exception as exc:
+                        cleanup_errors.append(f"trace-{index}: {type(exc).__name__}")
+                for index, context in enumerate(contexts):
+                    try:
+                        context.close()
+                    except Exception as exc:
+                        cleanup_errors.append(f"context-{index}: {type(exc).__name__}")
+                try:
+                    browser.close()
+                except Exception as exc:
+                    cleanup_errors.append(f"browser: {type(exc).__name__}")
+                try:
+                    (OUT / "navigation.json").write_text(
+                        json.dumps(
+                            {"navigation": navigation, "cleanup_errors": cleanup_errors},
+                            ensure_ascii=False,
+                            indent=2,
+                        )
+                    )
+                except Exception as exc:
+                    cleanup_errors.append(f"navigation: {type(exc).__name__}")
+                if not failed:
+                    self.assertEqual(cleanup_errors, [])
+        (OUT / "result.json").write_text(
+            json.dumps(
+                {
+                    "status": "PASS",
+                    "native_journeys": 1,
+                    "actual_admin_role": "ORGANIZER_ADMIN",
+                    "audit_revisions": 2,
+                    "requester_denied_after_deletion": True,
+                    "organizer_count_filtered": True,
+                    "positive_reads_after_restore": True,
+                    "original_preserved": True,
+                    "no_purge": True,
+                    "page_errors": errors,
+                    "external_requests": external,
+                    "widths": [320, 1280],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
