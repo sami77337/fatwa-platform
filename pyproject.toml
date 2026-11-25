@@ -1,0 +1,30 @@
+[project]
+name = "fatwa-reference-development"
+version = "0.1.0"
+description = "Non-production public source-book index; no fatwa operations"
+requires-python = ">=3.13,<3.14"
+dependencies = ["Django==5.2.18", "psycopg[binary]==3.3.6", "django-htmx==1.29.0"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = ["_codex_input", "ui_drafts", "tools", "quality", "contracts", "infra"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"config/settings/*.py" = ["F403", "F405"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["apps/reference/records.py", "apps/reference/normalization.py", "apps/reference/query.py"]
+
+[tool.coverage.run]
+source = ["apps.reference", "config"]
+omit = ["*/migrations/*", "config/asgi.py", "config/wsgi.py"]
+data_file = "tests/reference/.coverage"
+
+[tool.coverage.report]
+show_missing = true

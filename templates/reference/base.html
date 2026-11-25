@@ -1,0 +1,20 @@
+{% load static django_htmx %}
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"selfRequestsOnly":true,"includeIndicatorStyles":false,"historyCacheSize":0}'>
+  <title>فهرس مرجع فقهي</title>
+  <link rel="stylesheet" href="{% static 'reference/style.css' %}">
+  {% htmx_script %}
+  <script src="{% static 'reference/tree.js' %}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#catalog-content">انتقل إلى الفهرس</a>
+  <header><a href="{% url 'catalog' %}">فهرس مرجع فقهي</a></header>
+  <p class="scope-note">عناوين من فهرس مرجع فقهي، وليست فتاوى منشورة أو أحكامًا معتمدة. هذا فهرس مصدر واحد، وليس تصنيفًا عامًا للفتاوى.</p>
+  <p id="request-status" role="status" aria-live="polite"></p>
+  {% block content %}{% endblock %}
+</body>
+</html>
