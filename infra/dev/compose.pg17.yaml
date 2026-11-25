@@ -1,0 +1,91 @@
+{
+  "name": "fatwa-s5-dev-pg17",
+  "services": {
+    "postgres": {
+      "image": "postgres:17.11-bookworm",
+      "restart": "no",
+      "environment": {
+        "POSTGRES_USER": "fatwa_bootstrap",
+        "POSTGRES_DB": "postgres",
+        "POSTGRES_PASSWORD_FILE": "/run/secrets/bootstrap_password",
+        "POSTGRES_HOST_AUTH_METHOD": "scram-sha-256",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --data-checksums"
+      },
+      "ports": [
+        {
+          "target": 5432,
+          "published": "${FATWA_DEV_PORT:-55432}",
+          "host_ip": "127.0.0.1",
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "type": "volume",
+          "source": "pgdata17",
+          "target": "/var/lib/postgresql/data"
+        },
+        {
+          "type": "bind",
+          "source": "./initdb/10-app.sh",
+          "target": "/docker-entrypoint-initdb.d/10-app.sh",
+          "read_only": true
+        },
+        {
+          "type": "bind",
+          "source": "./healthcheck.sh",
+          "target": "/opt/fatwa/healthcheck.sh",
+          "read_only": true
+        },
+        {
+          "type": "bind",
+          "source": "./smoke.sh",
+          "target": "/opt/fatwa/smoke.sh",
+          "read_only": true
+        }
+      ],
+      "secrets": [
+        "bootstrap_password",
+        "app_password"
+      ],
+      "networks": [
+        "local"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "sh",
+          "/opt/fatwa/healthcheck.sh"
+        ],
+        "interval": "3s",
+        "timeout": "5s",
+        "retries": 30,
+        "start_period": "10s"
+      },
+      "shm_size": "128mb",
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "org.fatwa.scope": "development-only",
+        "org.fatwa.data": "synthetic-only"
+      }
+    }
+  },
+  "networks": {
+    "local": {
+      "internal": true
+    }
+  },
+  "volumes": {
+    "pgdata17": {}
+  },
+  "secrets": {
+    "bootstrap_password": {
+      "file": "./.local/bootstrap-password"
+    },
+    "app_password": {
+      "file": "./.local/app-password"
+    }
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "name": "S5 development infrastructure and conditional Django checks",
+  "on": {
+    "pull_request": {
+      "paths": [
+        "infra/dev/**",
+        ".github/workflows/**",
+        "docs/operations/**",
+        "manage.py",
+        "config/**",
+        "apps/reference/**",
+        "tests/reference/**",
+        "requirements*.txt",
+        "requirements/**",
+        "pyproject.toml",
+        "uv.lock",
+        "poetry.lock",
+        "quality/**",
+        "contracts/**",
+        "tests/contracts/**",
+        "tools/fiqh_import/**",
+        "tests/fiqh_import/**",
+        "templates/**"
+      ]
+    },
+    "push": {
+      "branches": [
+        "codex/s5-infra-ci-20261013"
+      ],
+      "paths": [
+        "infra/dev/**",
+        ".github/workflows/**",
+        "docs/operations/**",
+        "manage.py",
+        "config/**",
+        "apps/reference/**",
+        "tests/reference/**",
+        "requirements*.txt",
+        "requirements/**",
+        "pyproject.toml",
+        "uv.lock",
+        "poetry.lock",
+        "quality/**",
+        "contracts/**",
+        "tests/contracts/**",
+        "tools/fiqh_import/**",
+        "tests/fiqh_import/**",
+        "templates/**"
+      ]
+    },
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "s5-ci-${{ github.workflow }}-${{ github.ref }}",
+    "cancel-in-progress": true
+  },
+  "jobs": {
+    "infra": {
+      "name": "Infra-only tests and syntax (does not imply Django passed)",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 15,
+      "outputs": {
+        "application": "${{ steps.detect.outputs.application }}"
+      },
+      "steps": [
+        {
+          "name": "Checkout exact revision",
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Node runtime for dependency-free infra tooling",
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "24.16.0"
+          }
+        },
+        {
+          "name": "Python 3.13 for auditing S5 CI tooling",
+          "uses": "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "with": {
+            "python-version": "3.13"
+          }
+        },
+        {
+          "name": "Install pinned infrastructure audit tools",
+          "run": "python -m pip install --requirement infra/dev/requirements-ci.txt"
+        },
+        {
+          "name": "Audit S5 CI tooling dependencies without an API key",
+          "run": "python -m pip_audit --local --progress-spinner off"
+        },
+        {
+          "name": "Infra boundary checks",
+          "run": "node infra/dev/checks.mjs"
+        },
+        {
+          "name": "Infra regression tests",
+          "run": "node --test infra/dev/tests/*.test.mjs"
+        },
+        {
+          "name": "JavaScript and POSIX shell syntax",
+          "run": "for file in infra/dev/*.mjs infra/dev/tests/*.mjs; do node --check \"$file\"; done\nfor file in infra/dev/initdb/*.sh infra/dev/*.sh; do sh -n \"$file\"; done"
+        },
+        {
+          "name": "Actual Compose syntax for both majors",
+          "run": "for major in 18 17; do docker compose --project-directory infra/dev --env-file infra/dev/.env.example --file \"infra/dev/compose.pg$major.yaml\" config --quiet; done"
+        },
+        {
+          "name": "Actionlint syntax and expression checks",
+          "run": "go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= .github/workflows/s5-ci.yml"
+        },
+        {
+          "name": "Detect committed S0 integration; report NOT_RUN honestly",
+          "id": "detect",
+          "run": "node infra/dev/application.mjs detect"
+        }
+      ]
+    },
+    "postgres-smoke": {
+      "name": "Synthetic PostgreSQL ${{ matrix.major }} readiness/persistence/backup/restore",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 15,
+      "strategy": {
+        "fail-fast": false,
+        "matrix": {
+          "major": [
+            18,
+            17
+          ]
+        }
+      },
+      "steps": [
+        {
+          "name": "Checkout exact revision",
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Node runtime for dependency-free infra tooling",
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "24.16.0"
+          }
+        },
+        {
+          "name": "Isolated synthetic smoke and scoped teardown",
+          "run": "node infra/dev/dev.mjs smoke \"${{ matrix.major }}\""
+        }
+      ]
+    },
+    "application": {
+      "name": "Django Python 3.13 / PostgreSQL ${{ matrix.postgres }} (requires S0)",
+      "needs": [
+        "infra"
+      ],
+      "if": "needs.infra.outputs.application == 'true'",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 25,
+      "strategy": {
+        "fail-fast": false,
+        "matrix": {
+          "postgres": [
+            "18.6-bookworm",
+            "17.11-bookworm"
+          ]
+        }
+      },
+      "services": {
+        "postgres": {
+          "image": "postgres:${{ matrix.postgres }}",
+          "env": {
+            "POSTGRES_USER": "fatwa_bootstrap",
+            "POSTGRES_DB": "postgres",
+            "POSTGRES_PASSWORD": "${{ github.run_id }}-${{ github.run_attempt }}",
+            "POSTGRES_HOST_AUTH_METHOD": "scram-sha-256",
+            "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256"
+          },
+          "ports": [
+            "127.0.0.1:5432:5432"
+          ],
+          "options": "--health-cmd \"pg_isready -U fatwa_bootstrap -d postgres\" --health-interval 3s --health-timeout 5s --health-retries 30"
+        }
+      },
+      "env": {
+        "PGHOST": "127.0.0.1",
+        "PGPORT": "5432",
+        "PGDATABASE": "fatwa_ci",
+        "PGUSER": "fatwa_ci",
+        "PGPASSWORD": "${{ github.run_id }}-${{ github.run_attempt }}"
+      },
+      "steps": [
+        {
+          "name": "Checkout exact revision",
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "with": {
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Node runtime for dependency-free infra tooling",
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "24.16.0"
+          }
+        },
+        {
+          "name": "Python 3.13",
+          "uses": "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+          "with": {
+            "python-version": "3.13"
+          }
+        },
+        {
+          "name": "Install pinned S5 check tools",
+          "run": "python -m pip install --requirement infra/dev/requirements-ci.txt"
+        },
+        {
+          "name": "Install only committed S0 dependencies",
+          "run": "node infra/dev/application.mjs install"
+        },
+        {
+          "name": "Provision disposable non-superuser Django test role",
+          "env": {
+            "FATWA_CI_CONTAINER": "${{ job.services.postgres.id }}"
+          },
+          "run": "node infra/dev/ci-database.mjs"
+        },
+        {
+          "name": "Verify actual PostgreSQL backend, role, and server version",
+          "run": "node infra/dev/application.mjs database"
+        },
+        {
+          "name": "Lint",
+          "run": "node infra/dev/application.mjs lint"
+        },
+        {
+          "name": "Format check",
+          "run": "node infra/dev/application.mjs format"
+        },
+        {
+          "name": "Type check",
+          "run": "node infra/dev/application.mjs type"
+        },
+        {
+          "name": "Django system check",
+          "run": "node infra/dev/application.mjs system"
+        },
+        {
+          "name": "Migration consistency without database mutation",
+          "run": "node infra/dev/application.mjs migration"
+        },
+        {
+          "name": "Real S0 PostgreSQL tests",
+          "run": "node infra/dev/application.mjs tests"
+        },
+        {
+          "name": "Installed Python dependency vulnerability audit (no API key)",
+          "run": "node infra/dev/application.mjs audit"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,4 @@
+# S5 CI tools only. S0 owns all application dependencies.
+ruff==0.14.0
+mypy==1.18.2
+pip-audit==2.9.0
